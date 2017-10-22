@@ -53,7 +53,7 @@
 <link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
 
 
-  <meta name="keywords" content="Hexo, NexT" />
+  <meta name="keywords" content="rabbitMQ," />
 
 
 
@@ -70,6 +70,7 @@
 
 
 <meta name="description" content="AMQP关键性概念和流程 broker： 消息队列服务器实体 Exchange： 消息交换机，指定消息按照什么规则到哪个队列 Queue： 消息队列载体， 每个消息会被投放到一个或多个队列 Binding： 绑定，将Exchange和Queue按某种规则绑定起来 Routing Key： 路由关键字，Exchange按照这个关键字进行消息投递 vhost： 虚拟主机，一个broker可以开多个vh">
+<meta name="keywords" content="rabbitMQ">
 <meta property="og:type" content="article">
 <meta property="og:title" content="RabbitMQ之AMQP">
 <meta property="og:url" content="http://yoursite.com/2017/10/19/RabbitMQ之AMQP/index.html">
@@ -79,7 +80,7 @@
 <meta property="og:image" content="http://www.huangxiaobai.com/wp-content/uploads/2017/01/3178521620-57fba2b850ccc_articlex.png">
 <meta property="og:image" content="http://www.huangxiaobai.com/wp-content/uploads/2017/01/2741285098-57fba2ca6e2da_articlex.png">
 <meta property="og:image" content="http://www.huangxiaobai.com/wp-content/uploads/2017/01/4144211224-57fba2d656e45_articlex.png">
-<meta property="og:updated_time" content="2017-10-21T14:20:32.479Z">
+<meta property="og:updated_time" content="2017-10-22T02:35:49.872Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="RabbitMQ之AMQP">
 <meta name="twitter:description" content="AMQP关键性概念和流程 broker： 消息队列服务器实体 Exchange： 消息交换机，指定消息按照什么规则到哪个队列 Queue： 消息队列载体， 每个消息会被投放到一个或多个队列 Binding： 绑定，将Exchange和Queue按某种规则绑定起来 Routing Key： 路由关键字，Exchange按照这个关键字进行消息投递 vhost： 虚拟主机，一个broker可以开多个vh">
@@ -296,6 +297,28 @@
           </span>
 
           
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/RabbitMQ/" itemprop="url" rel="index">
+                    <span itemprop="name">RabbitMQ</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
 
           
             
@@ -413,6 +436,10 @@
 <li>自动ACK</li>
 </ul>
 <p>在自动 ACK 模式下, 当 broker 发送消息成功后, 会立即将此消息从消息队列中删除, 而不会等待消费者的 ACK 回复. 而在手动 ACK 模式下, 当 broker 发送消息给消费者时, 不会立即将此消息删除, 而是需要等待消费者的 ACK 回复后才会删除消息. 因此在手动 ACK 模式下, 当消费者收到消息并处理完成后, 需要向 broker 显示地发送 ACK 指令.在手动 ACK 模式下, 如果消费者因为意外的 crash 而没有发送 ACK 给 broker, 那么此时 broker 会将此消息转发给其他的消费者(如果此时没有消费者了, 那么 broker 会缓存此消息, 直到有新的消费者注册).</p>
+<h3 id="拒绝消息"><a href="#拒绝消息" class="headerlink" title="拒绝消息"></a>拒绝消息</h3><p>当一个消费者处理消息失败或此时不能处理消息时, 那么可以给 broker 发送一个拒绝消息的指令, 并且可以要求 broker 丢弃或重新分发此消息.不过需要注意的是, 如果此时只有一个消费者, 那么当此消费者拒收消息并要求 broker 重新分发此消息时, 那么就会造成了此消息不断地分发和拒收, 形成了死循环.</p>
+<h3 id="预取消息"><a href="#预取消息" class="headerlink" title="预取消息"></a>预取消息</h3><p>通过预取消息机制, 消费者可以一次性批量取出消息, 然后在处理后对这些批量消息进行统一的 ACK 回复, 这样可以提高消息的吞吐量.不过, 需要注意的时, RabbitMQ 仅支持 channel 级别的预取消息的数量配置, 不支持基于连接的预取消息数量配置</p>
+<h3 id="通道-Channel"><a href="#通道-Channel" class="headerlink" title="通道(Channel)"></a>通道(Channel)</h3><p>AMQP 不推荐一个应用程序发起多个对 broker 的连接, 因为这样会消耗系统资源并且也不利于防火墙的配置. 但是如果应用程序确实需要有多个不互相干扰的连接来进行不同的操作时该怎么办呢? 为了解决这个问题, AMQP 引入了 Channel 的 概念. 在 AMQP 0-9-1 中, 一个与 broker 的连接是被多个 Channel 复用的, 因此我们可以将 channel 理解为: 一个共享同一个 TCP 连接的轻量级的连接.</p>
+<p>基于同一个 TCP 连接的两个不同的 channel 直接是不会有任何的干扰的(在逻辑上可以等效地理解为两个独立的连接), 因此客户端和 broker 之间交互时, 需要附带上 channel id.通常来说, 在一个多线程消费消息的模型中, 每个线程单独打开一个 channel 是一个推荐的做法, 而最好不要在各个线程中共享一个 channel.</p>
 
       
     </div>
@@ -427,6 +454,12 @@
     
 
     <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/rabbitMQ/" rel="tag"># rabbitMQ</a>
+          
+        </div>
       
 
       
@@ -446,6 +479,10 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/10/22/PHP使用RabbitMQ之安装使用/" rel="prev" title="PHP使用RabbitMQ之安装使用">
+                PHP使用RabbitMQ之安装使用 <i class="fa fa-chevron-right"></i>
+              </a>
             
           </div>
         </div>
@@ -521,12 +558,21 @@
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">6</span>
+                <span class="site-state-item-count">7</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
           
 
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
           
 
           
@@ -534,7 +580,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-count">3</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
@@ -569,7 +615,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#AMQP关键性概念和流程"><span class="nav-number">1.</span> <span class="nav-text">AMQP关键性概念和流程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Exchange"><span class="nav-number">2.</span> <span class="nav-text">Exchange</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#direct-Exchange"><span class="nav-number">3.</span> <span class="nav-text">direct Exchange</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#fanout-Exchange"><span class="nav-number">4.</span> <span class="nav-text">fanout Exchange</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#topic-Exchange"><span class="nav-number">5.</span> <span class="nav-text">topic Exchange</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#header-exchange"><span class="nav-number">6.</span> <span class="nav-text">header exchange</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#queue-队列"><span class="nav-number">7.</span> <span class="nav-text">queue 队列</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#消费者"><span class="nav-number">8.</span> <span class="nav-text">消费者</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#消息ACK"><span class="nav-number">9.</span> <span class="nav-text">消息ACK</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#AMQP关键性概念和流程"><span class="nav-number">1.</span> <span class="nav-text">AMQP关键性概念和流程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Exchange"><span class="nav-number">2.</span> <span class="nav-text">Exchange</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#direct-Exchange"><span class="nav-number">3.</span> <span class="nav-text">direct Exchange</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#fanout-Exchange"><span class="nav-number">4.</span> <span class="nav-text">fanout Exchange</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#topic-Exchange"><span class="nav-number">5.</span> <span class="nav-text">topic Exchange</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#header-exchange"><span class="nav-number">6.</span> <span class="nav-text">header exchange</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#queue-队列"><span class="nav-number">7.</span> <span class="nav-text">queue 队列</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#消费者"><span class="nav-number">8.</span> <span class="nav-text">消费者</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#消息ACK"><span class="nav-number">9.</span> <span class="nav-text">消息ACK</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#拒绝消息"><span class="nav-number">10.</span> <span class="nav-text">拒绝消息</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#预取消息"><span class="nav-number">11.</span> <span class="nav-text">预取消息</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#通道-Channel"><span class="nav-number">12.</span> <span class="nav-text">通道(Channel)</span></a></li></ol></div>
             
 
           </div>
