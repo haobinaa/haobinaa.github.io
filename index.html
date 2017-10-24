@@ -375,7 +375,10 @@
 <p>/etc/init.d/php-fpm start</p>
 </blockquote>
 <p>此刻php -v，成功安装PHP</p>
-<h3 id="安装Nginx"><a href="#安装Nginx" class="headerlink" title="安装Nginx"></a>安装Nginx</h3>
+<h3 id="安装Nginx"><a href="#安装Nginx" class="headerlink" title="安装Nginx"></a>安装Nginx</h3><p>nginx由于各个模块都不太清楚就不编译安装了，找到一个rpm源，yum install之后，由于之前已经把php-fpm相关配置配置好并且成功启动，现在只需要在nginx.conf,把server配置一下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">在server块中修改location</div><div class="line">     location ~ \.php$ &#123;</div><div class="line">            root    html;</div><div class="line">            fastcgi_pass 127.0.0.1:9000;</div><div class="line">            fastcgi_param SCRIPT_FILENAME$document_root$fastcgi_script_name;</div><div class="line">            fastcgi_index index.php;</div><div class="line">            include fastcgi_params;</div><div class="line">        &#125;</div></pre></td></tr></table></figure>
+<p>在/usr/share/www/html下新建info.php输出phpinfo()；完美解决</p>
+
           
         
       
