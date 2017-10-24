@@ -69,18 +69,18 @@
 
 
 
-<meta name="description" content="分享，成长">
+<meta name="description" content="本次操作基于centos7 RabbitMQ是基于erlang，首先安装erlang  rpm -Uvh http://www.rabbitmq.com/releases/erlang/erlang-18.1-1.el7.centos.x86_64.rpm  然后安装rabbitMQ-server  rpm -Uvh http://www.rabbitmq.com/releases/rabbitm">
 <meta name="keywords" content="rabbitMQ">
 <meta property="og:type" content="article">
 <meta property="og:title" content="PHP使用RabbitMQ之安装使用">
 <meta property="og:url" content="http://yoursite.com/2017/10/22/PHP使用RabbitMQ之安装使用/index.html">
 <meta property="og:site_name" content="郝斌的时光客栈">
-<meta property="og:description" content="分享，成长">
+<meta property="og:description" content="本次操作基于centos7 RabbitMQ是基于erlang，首先安装erlang  rpm -Uvh http://www.rabbitmq.com/releases/erlang/erlang-18.1-1.el7.centos.x86_64.rpm  然后安装rabbitMQ-server  rpm -Uvh http://www.rabbitmq.com/releases/rabbitm">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2017-10-22T02:35:28.039Z">
+<meta property="og:updated_time" content="2017-10-23T11:06:08.871Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="PHP使用RabbitMQ之安装使用">
-<meta name="twitter:description" content="分享，成长">
+<meta name="twitter:description" content="本次操作基于centos7 RabbitMQ是基于erlang，首先安装erlang  rpm -Uvh http://www.rabbitmq.com/releases/erlang/erlang-18.1-1.el7.centos.x86_64.rpm  然后安装rabbitMQ-server  rpm -Uvh http://www.rabbitmq.com/releases/rabbitm">
 
 
 
@@ -342,7 +342,30 @@
       
 
       
-        
+        <p>本次操作基于centos7</p>
+<p>RabbitMQ是基于erlang，首先安装erlang</p>
+<blockquote>
+<p>rpm -Uvh <a href="http://www.rabbitmq.com/releases/erlang/erlang-18.1-1.el7.centos.x86_64.rpm" target="_blank" rel="external">http://www.rabbitmq.com/releases/erlang/erlang-18.1-1.el7.centos.x86_64.rpm</a></p>
+</blockquote>
+<p>然后安装rabbitMQ-server</p>
+<blockquote>
+<p>rpm -Uvh <a href="http://www.rabbitmq.com/releases/rabbitmq-server/v3.5.6/rabbitmq-server-3.5.6-1.noarch.rpm" target="_blank" rel="external">http://www.rabbitmq.com/releases/rabbitmq-server/v3.5.6/rabbitmq-server-3.5.6-1.noarch.rpm</a></p>
+</blockquote>
+<p>检查是否安装成功命令 <code>rpm -qa | grep rabbitmq</code></p>
+<ul>
+<li>开启rabbitmq<code>service rabbitmq-server start</code></li>
+<li>关闭rabbitmq<code>service rabbitmq-server stop</code></li>
+<li>查看rabbitmq运行状态<code>rabbitmqctl status</code></li>
+</ul>
+<p>安装rabbitmq-c-0.8.0</p>
+<blockquote>
+<p>wget <a href="https://github.com/alanxz/rabbitmq-c/releases/download/v0.8.0/rabbitmq-c-0.8.0.tar.gz" target="_blank" rel="external">https://github.com/alanxz/rabbitmq-c/releases/download/v0.8.0/rabbitmq-c-0.8.0.tar.gz</a><br>cd rabbitmq-c-0.8.0<br>./configure –prefix=/usr/local/rabbitmq-c<br>make<br>make install   </p>
+</blockquote>
+<p>安装AMQP扩展</p>
+<blockquote>
+<p>wget <a href="http://pecl.php.net/get/amqp-1.7.1.tgz" target="_blank" rel="external">http://pecl.php.net/get/amqp-1.7.1.tgz</a>  </p>
+</blockquote>
+
       
     </div>
     
@@ -451,7 +474,7 @@
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">8</span>
+                <span class="site-state-item-count">9</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -462,7 +485,7 @@
             
             <div class="site-state-item site-state-categories">
               <a href="/categories/index.html">
-                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-count">3</span>
                 <span class="site-state-item-name">分类</span>
               </a>
             </div>
@@ -473,7 +496,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">4</span>
+                <span class="site-state-item-count">5</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
