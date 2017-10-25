@@ -662,8 +662,11 @@
 </blockquote>
 <p>安装AMQP扩展</p>
 <blockquote>
-<p>wget <a href="http://pecl.php.net/get/amqp-1.7.1.tgz" target="_blank" rel="external">http://pecl.php.net/get/amqp-1.7.1.tgz</a>  </p>
+<p>wget <a href="http://pecl.php.net/get/amqp-1.7.1.tgz" target="_blank" rel="external">http://pecl.php.net/get/amqp-1.7.1.tgz</a><br>解压并进入：<br>phpize<br>./configure –with-php-config=/usr/local/php/bin/php-config –with-amqp –with-librabbitmq-dir=/usr/local/rabbitmq-c/<br>make &amp;&amp; make install</p>
 </blockquote>
+<p>执行phpize期间出现了一个错误<code>Cannot find autoconf. Please check your autoconf installation and the $PHP_AUTOCONF environment variable. Then, rerun this script.</code><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">yum install m4</div><div class="line">yum install autoconf</div></pre></td></tr></table></figure></p>
+<p>修改php配置文件，在最后一行加上<code>extionsion=amqp.so</code></p>
+<p>执行<code>php -m | grep amqp</code>,完美！</p>
 
           
         

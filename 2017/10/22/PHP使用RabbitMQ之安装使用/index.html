@@ -77,7 +77,7 @@
 <meta property="og:site_name" content="郝斌的时光客栈">
 <meta property="og:description" content="本次操作基于centos7 RabbitMQ是基于erlang，首先安装erlang  rpm -Uvh http://www.rabbitmq.com/releases/erlang/erlang-18.1-1.el7.centos.x86_64.rpm  然后安装rabbitMQ-server  rpm -Uvh http://www.rabbitmq.com/releases/rabbitm">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2017-10-23T11:06:08.871Z">
+<meta property="og:updated_time" content="2017-10-25T02:08:36.772Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="PHP使用RabbitMQ之安装使用">
 <meta name="twitter:description" content="本次操作基于centos7 RabbitMQ是基于erlang，首先安装erlang  rpm -Uvh http://www.rabbitmq.com/releases/erlang/erlang-18.1-1.el7.centos.x86_64.rpm  然后安装rabbitMQ-server  rpm -Uvh http://www.rabbitmq.com/releases/rabbitm">
@@ -363,8 +363,11 @@
 </blockquote>
 <p>安装AMQP扩展</p>
 <blockquote>
-<p>wget <a href="http://pecl.php.net/get/amqp-1.7.1.tgz" target="_blank" rel="external">http://pecl.php.net/get/amqp-1.7.1.tgz</a>  </p>
+<p>wget <a href="http://pecl.php.net/get/amqp-1.7.1.tgz" target="_blank" rel="external">http://pecl.php.net/get/amqp-1.7.1.tgz</a><br>解压并进入：<br>phpize<br>./configure –with-php-config=/usr/local/php/bin/php-config –with-amqp –with-librabbitmq-dir=/usr/local/rabbitmq-c/<br>make &amp;&amp; make install</p>
 </blockquote>
+<p>执行phpize期间出现了一个错误<code>Cannot find autoconf. Please check your autoconf installation and the $PHP_AUTOCONF environment variable. Then, rerun this script.</code><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">yum install m4</div><div class="line">yum install autoconf</div></pre></td></tr></table></figure></p>
+<p>修改php配置文件，在最后一行加上<code>extionsion=amqp.so</code></p>
+<p>执行<code>php -m | grep amqp</code>,完美！</p>
 
       
     </div>
