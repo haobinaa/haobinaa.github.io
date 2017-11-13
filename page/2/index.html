@@ -252,6 +252,332 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/10/18/servlet使用/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Haobin">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="郝斌的时光客栈">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2017/10/18/servlet使用/" itemprop="url">servlet使用</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-10-18T14:14:43+08:00">
+                2017-10-18
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/jsp/" itemprop="url" rel="index">
+                    <span itemprop="name">jsp</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>之前web方面一直是用PHP，对apace/nginx + php-fpm + php 的开发模式比较熟悉，从今年八月开始使用了java来开发系统，最开始看了Spring和Spring MVC，现在又用了Spring boot，确实PHP有很多需要向java学习的地方。java运行webserver的方式也与PHP不同，PHP是靠Apache或者Nginx等webserver来监听请求，通过cgi协议将http请求转发给解释器，java是完全靠自己实现了一套机制，用Tomcat等容器包裹住一个个javaweb应用。再次总结一下javaweb的基础，servlet</p>
+<h3 id="servlet生命周期和调用过程"><a href="#servlet生命周期和调用过程" class="headerlink" title="servlet生命周期和调用过程"></a>servlet生命周期和调用过程</h3><p><img src="https://camo.githubusercontent.com/4add5ddf8c0da7d49f0167902fab4c81f56ee167/687474703a2f2f3778706836642e636f6d312e7a302e676c622e636c6f7564646e2e636f6d2f6a6176617765625f736572766c65742d6c6966656379636c652e706e67" alt=""></p>
+<h3 id="使用细节"><a href="#使用细节" class="headerlink" title="使用细节"></a>使用细节</h3><p>我们一般是建立一个java类，继承servlet，然后利用doGet和doPost方法来接收get和post请求，然后在web.xml里面配置一个<code>&lt;servlet&gt;</code>标签，包含了<code>&lt;servlet-name&gt;</code>和<code>&lt;servlet-class&gt;</code>，<code>&lt;servlet-mapping&gt;</code>包含了<code>&lt;servlet-name&gt;</code>和<code>&lt;url-pattern&gt;</code>。其中一个<code>&lt;servlet&gt;</code>可以对应多个<code>&lt;servlet-mapping&gt;</code>，并且<code>&lt;servlet-mapping&gt;</code>中的<code>&lt;url-pattern&gt;</code>可以使用通配符，例如*.扩展名</p>
+<p>在网上看到一个url映射的例子：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">现有如下映射关系：</div><div class="line">Servlet1 -&gt; /abc/*</div><div class="line">Servlet2 -&gt; /*</div><div class="line">Servlet3 -&gt; /abc</div><div class="line">Servlet4 -&gt; *.do</div><div class="line"></div><div class="line">1.当URL为/abc/a.html时，同时匹配了/abc/*和/*，此时将调用Servlet1</div><div class="line">2.当URL为/abc时，同时匹配了/abc 和 /abc/*， 此时将调用Servlet3</div><div class="line">3.当URL为/abc/*.do时，同时匹配了 /abc/* 和 *.do， 此时调用 Servlet1</div><div class="line">4.当URL为/a.do时， 同时匹配了/* 和  *.do，此时调用 Servlet2</div><div class="line">5.当URL为/xxx/yyy/a.do， 同时匹配了/*和 *.do此时调用Servlet2</div></pre></td></tr></table></figure></p>
+<ul>
+<li>对象： servlet由servlet引擎调用，不能独立运行。客户端多次请求，服务器只创建一个servlet实例，之后驻留内存中继续服务直至web容器退出才销毁它。</li>
+<li>请求: 服务器针对客户端的每一次请求都会创建新的request和response对象(它们的生命周期很短)，传给service方法</li>
+<li>加载: servlet实例的创建和init方法的调用是在第一次请求时，而非服务器启动时，除非在<servlet>标签配置<load-on-start-up>,数字越小优先级越高</load-on-start-up></servlet></li>
+<li>缺省:映射路径为正斜杠/，则为当前web应用的缺省servlet,不匹配的都交给缺省</li>
+<li>线程安全: 访问同一资源会引发线程安全问题; SingleThreadModel标记接口(已弃用)</li>
+<li>ServletConfig: 在<servlet>标签配置<init-param>，通过getServletConfig方法获得配置。可配置输出字符集，读哪个配置文件等等。</init-param></servlet></li>
+<li>ServletContext: 代表当前web应用，含有一些web应用全局性方法，实现web资源共享、servlet转发等。通过ServletConfig.getServletContext方法获得，在<context-param>标签配置。</context-param></li>
+</ul>
+<h3 id="ServletContext对象"><a href="#ServletContext对象" class="headerlink" title="ServletContext对象"></a>ServletContext对象</h3><p>描述：在一个web应用中，所有的servlet会共享一个ServletContext对象，实现数据共享。<br>作用：</p>
+<ul>
+<li>获取web应用初始化参数</li>
+<li>实现servlet转发</li>
+<li>利用ServletContext对象读取资源<ul>
+<li>获取文件路径</li>
+<li>读取文件的三种方式</li>
+<li>.propertites文件（配置文件一般有xml和properties，Springboot中还有yml文件）</li>
+</ul>
+</li>
+</ul>
+<p>1.通过<code>ServleContext</code>的<code>getResourceAsStream</code>方法读取properties文件，类似：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">InputStream in = this.getServletContext.getResourceAsStream(&quot;/config/config.properties&quot;);</div><div class="line">Properties properties = new Properties();</div><div class="line">properties.load(in);</div></pre></td></tr></table></figure></p>
+<p>2.通过<code>servletContext</code>的<code>getRealPath</code>方法得到资源的绝对路径，在通过FileInputStream读取</p>
+<p>3.通过类装载器去读，<code>ClassLoader</code>的<code>getResourceAsStream</code>(如果读取资源文件的程序不是servlet)，文件不能太大。只装载一次，所以如要读到更新后的数据，通过类装载的方式得到资源文件的位置，再通过传统方式读取资源文件的数据（用<code>getResource</code>得到path，再用<code>FileInputStream</code>）</p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/10/18/TomCat使用/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Haobin">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="郝斌的时光客栈">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2017/10/18/TomCat使用/" itemprop="url">TomCat使用</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-10-18T11:16:21+08:00">
+                2017-10-18
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/jsp/" itemprop="url" rel="index">
+                    <span itemprop="name">jsp</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h3 id="Tomcat目录结构"><a href="#Tomcat目录结构" class="headerlink" title="Tomcat目录结构"></a>Tomcat目录结构</h3><ul>
+<li>bin:存放开关Tomcat的脚本</li>
+<li>conf: Tomcat配置文件</li>
+<li>lib： Tomcat服务的jar包</li>
+<li>logs： 日志文件</li>
+<li>temp： 存放运行期间产生的临时文件</li>
+<li>webapp： web应用所在目录，即外部访问web资源的目录</li>
+<li>work： Tomcat工作目录</li>
+</ul>
+<h3 id="web应用"><a href="#web应用" class="headerlink" title="web应用"></a>web应用</h3><ol>
+<li>web应用与web应用所在的目录： 一个web应用由多个静态web资源和动态web资源组成；<br>组成web应用的这些文件会由一个目录组织起来，这个目录称为web应用所在目录</li>
+<li>虚拟目录映射： 把主机上的资源映射到服务器对外访提供的访问路径上</li>
+<li>example: tomcat的<code>conf/server.xml</code>中，<code>&lt;Host&gt;</code>元素中一个<code>&lt;Context&gt;</code>对应一个web应用，例如<code>&lt;Context path=&quot;&quot; docBase=&quot;D:\test&quot;&gt;&lt;/Context&gt;</code><br><code>path</code>代表网站路径 <code>doBase</code>是文件路径</li>
+<li>web应用结构：<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">webapp------------------webroot目录</div><div class="line">        |---html、jsp、css、js等文件，外部可直接访问</div><div class="line">        |---WEB-INF目录</div><div class="line">            |---classes目录（java类）</div><div class="line">            |---lib（java类运行依赖的jar包）</div><div class="line">            |---web.xml（web应用配置文件）</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<h3 id="Tomcat运行体系"><a href="#Tomcat运行体系" class="headerlink" title="Tomcat运行体系"></a>Tomcat运行体系</h3><p><img src="https://camo.githubusercontent.com/228a8cc0748b7e49d8ae991f625c71b43b0e2143/687474703a2f2f3778706836642e636f6d312e7a302e676c622e636c6f7564646e2e636f6d2f6a6176617765625f746f6d6361742545342542442539332545372542332542422545372542422539332545362539452538342e706e67" alt="运行体系"></p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/09/21/first/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -413,7 +739,7 @@
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">11</span>
+                <span class="site-state-item-count">13</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -424,7 +750,7 @@
             
             <div class="site-state-item site-state-categories">
               <a href="/categories/index.html">
-                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-count">7</span>
                 <span class="site-state-item-name">分类</span>
               </a>
             </div>
@@ -435,7 +761,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-count">7</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
