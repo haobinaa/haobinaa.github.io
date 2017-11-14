@@ -345,7 +345,27 @@
       
         
           
-            <p><img src="../images/class_loader.png" alt=""></p>
+            <h4 id="java类加载"><a href="#java类加载" class="headerlink" title="java类加载"></a>java类加载</h4><p>JVM将类加载过程分为三个步骤：装载（Load），链接（Link）和初始化(Initialize)链接又分为三个步骤  </p>
+<ul>
+<li>装载： 查找并加载类的二进制数据；</li>
+<li>链接： <ul>
+<li>验证： 确保被加载类的正确性；</li>
+<li>准备： 为类的静态变量分配内存，并将其初始化为默认值；</li>
+<li>解析： 把类中的符号引用转换为直接引用（编译时，jvm不知道引用的类的实际内存地址，只能用符号代替，叫做符号引用；直接引用可以确定类的实际地址）；</li>
+</ul>
+</li>
+<li>初始化： 为类的静态变量赋予正确的初始值；</li>
+</ul>
+<p>类的初始化（类在什么时候会初始化）：</p>
+<ol>
+<li>创建类实例的时候，也就是new一个对象</li>
+<li>访问某个类或接口的静态变量，或者对该静态变量赋值</li>
+<li>反射</li>
+<li>调用类的静态方法</li>
+<li>初始化一个类的子类</li>
+<li>jvm启动时标明名的启动类，即文件名和类名相同的那个类</li>
+</ol>
+<p><img src="http://7xph6d.com1.z0.glb.clouddn.com/javaSE_%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8%E7%BB%93%E6%9E%84%E5%9B%BE.png" alt=""></p>
 
           
         
