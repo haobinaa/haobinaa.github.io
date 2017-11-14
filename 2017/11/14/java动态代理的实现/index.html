@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="java," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="java的动态代理机制的是需要Proxy类来实现的，我们来看一个简单的动态代理的实现,no bb, show the code:123456789101112131415161718192021222324252627282930313233343536373839404142public class DynamicProxyDemo &amp;#123;    public static void ma">
+<meta name="keywords" content="java">
+<meta property="og:type" content="article">
+<meta property="og:title" content="java动态代理的实现">
+<meta property="og:url" content="http://yoursite.com/2017/11/14/java动态代理的实现/index.html">
+<meta property="og:site_name" content="郝斌的时光客栈">
+<meta property="og:description" content="java的动态代理机制的是需要Proxy类来实现的，我们来看一个简单的动态代理的实现,no bb, show the code:123456789101112131415161718192021222324252627282930313233343536373839404142public class DynamicProxyDemo &amp;#123;    public static void ma">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2017-11-14T08:52:17.899Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="java动态代理的实现">
+<meta name="twitter:description" content="java的动态代理机制的是需要Proxy类来实现的，我们来看一个简单的动态代理的实现,no bb, show the code:123456789101112131415161718192021222324252627282930313233343536373839404142public class DynamicProxyDemo &amp;#123;    public static void ma">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/11/14/java动态代理的实现/"/>
+
+
+
+
+
+  <title>java动态代理的实现 | 郝斌的时光客栈</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">郝斌的时光客栈</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/11/14/java动态代理的实现/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Haobin">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="郝斌的时光客栈">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">java动态代理的实现</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-11-14T16:01:13+08:00">
+                2017-11-14
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/java/" itemprop="url" rel="index">
+                    <span itemprop="name">java</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>java的动态代理机制的是需要Proxy类来实现的，我们来看一个简单的动态代理的实现,no bb, show the code:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div></pre></td><td class="code"><pre><div class="line">public class DynamicProxyDemo &#123;</div><div class="line"></div><div class="line">    public static void main(String[] args) &#123;</div><div class="line">        DynamicSubject subject = new RealsSubject();</div><div class="line">        // 调用类</div><div class="line">        ProxyHandler invocationHandler = new ProxyHandler(subject);</div><div class="line">        // 创建代理对象</div><div class="line">        DynamicSubject ProxySubject = (DynamicSubject) Proxy.newProxyInstance(RealsSubject.class.getClassLoader(), RealsSubject.class.getInterfaces(), invocationHandler);</div><div class="line">        ProxySubject.request();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">&#125;</div><div class="line"></div><div class="line">interface DynamicSubject &#123;</div><div class="line">    void request();</div><div class="line">&#125;</div><div class="line"></div><div class="line">class RealsSubject implements DynamicSubject &#123;</div><div class="line">    @Override</div><div class="line">    public void request() &#123;</div><div class="line">        System.out.println(&quot;====RealSubject======&quot;);</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line"></div><div class="line">class ProxyHandler implements InvocationHandler &#123;</div><div class="line"></div><div class="line">    private DynamicSubject subject;</div><div class="line"></div><div class="line">    public ProxyHandler(DynamicSubject subject) &#123;</div><div class="line">        this.subject =subject;</div><div class="line">    &#125;</div><div class="line"></div><div class="line"></div><div class="line">    @Override</div><div class="line">    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable &#123;</div><div class="line">        System.out.println(&quot;======befor======&quot;);</div><div class="line">        Object result = method.invoke(subject,args);</div><div class="line">        System.out.println(&quot;======after======&quot;);</div><div class="line">        return result;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<h5 id="java-lang-reflect-Proxy"><a href="#java-lang-reflect-Proxy" class="headerlink" title="java.lang.reflect.Proxy"></a>java.lang.reflect.Proxy</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">// 方法 1: 该方法用于获取指定代理对象所关联的调用处理器</div><div class="line">public static InvocationHandler getInvocationHandler(Object proxy) </div><div class="line"></div><div class="line">// 方法 2：该方法用于获取关联于指定类装载器和一组接口的动态代理类的类对象</div><div class="line">public static Class&lt;?&gt; getProxyClass(ClassLoader loader, </div><div class="line">Class&lt;?&gt;... interfaces)</div><div class="line"></div><div class="line">// 方法 3：该方法用于判断指定类对象是否是一个动态代理类</div><div class="line">public static boolean isProxyClass(Class&lt;?&gt; cl) </div><div class="line"></div><div class="line">// 方法 4：该方法用于为指定类装载器、一组接口及调用处理器生成动态代理类实例</div><div class="line">public static Object newProxyInstance(ClassLoader loader,</div><div class="line"> Class&lt;?&gt;[] interfaces,InvocationHandler h)</div></pre></td></tr></table></figure>
+<h5 id="java-lang-reflect-InvocationHandler"><a href="#java-lang-reflect-InvocationHandler" class="headerlink" title="java.lang.reflect.InvocationHandler"></a>java.lang.reflect.InvocationHandler</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">/**</div><div class="line"> 该方法负责集中处理动态代理类上的所有方法调用。</div><div class="line"> 第一个参数既是代理类实例，</div><div class="line"> 第二个参数是被调用的方法对象</div><div class="line"> 第三个方法是调用参数。</div><div class="line"> 调用处理器根据这三个参数进行预处理或分派到委托类实例上发射执行</div><div class="line">*/</div><div class="line">public Object invoke(Object proxy, Method method, Object[] args)</div><div class="line">    throws Throwable;</div></pre></td></tr></table></figure>
+<h5 id="java-lang-ClassLoader"><a href="#java-lang-ClassLoader" class="headerlink" title="java.lang.ClassLoader"></a>java.lang.ClassLoader</h5><p>类装载器类，将类的字节码装载到 Java 虚拟机（JVM）中并为其定义类对象，然后该类才能被使用。Proxy类与普通类的唯一区别就是其字节码是由 JVM 在运行时动态生成的而非预存在于任何一个 .class 文件中。<br>每次生成动态代理类对象时都需要指定一个类装载器对象：newProxyInstance()方法第一个参数</p>
+<h4 id="动态代理机制"><a href="#动态代理机制" class="headerlink" title="动态代理机制"></a>动态代理机制</h4><ol>
+<li><p>实现InvocationHandler接口创建自己的调用处理器</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">// InvocationHandlerImpl 实现了 InvocationHandler 接口，并能实现方法调用从代理类到委托类的分派转发</div><div class="line">// 其内部通常包含指向委托类实例的引用，用于真正执行分派转发过来的方法调用</div><div class="line">InvocationHandler handler = new InvocationHandlerImpl(..);</div></pre></td></tr></table></figure>
+</li>
+<li><p>通过Proxy类指定ClassLoader对象和一组Interface来创建动态代理类</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">// 通过 Proxy 为包括 Interface 接口在内的一组接口动态创建代理类的类对象</div><div class="line">Class clazz = Proxy.getProxyClass(classLoader, new Class[] &#123; Interface.class, ... &#125;)</div></pre></td></tr></table></figure>
+</li>
+<li><p>通过反射机制获取动态代理类的构造函数，其唯一参数类型是调用处理器接口类型</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">Constructor constructor = clazz.getConstructor(new Class[] &#123; InvocationHandler.class &#125;)</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>4.通过构造函数创建动态代理类实例，构造时调用处理器对象作为参数被传入<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">Interface Proxy = (Interface)constructor.newInstance(new Object[] &#123; handler &#125;);</div></pre></td></tr></table></figure></p>
+<p>为了简化对象的创建过程，Proxy类的newProxyInstance方法封装了2-4步，所以代理对象的创建只需要两步：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">// InvocationHandlerImpl 实现了 InvocationHandler 接口，并能实现方法调用从代理类到委托类的分派转发</div><div class="line">InvocationHandler handler = new InvocationHandlerImpl(..); </div><div class="line"></div><div class="line">// 通过 Proxy 直接创建动态代理类实例</div><div class="line">Interface proxy = (Interface)Proxy.newProxyInstance( classLoader, </div><div class="line">     new Class[] &#123; Interface.class &#125;, </div><div class="line">     handler );</div></pre></td></tr></table></figure></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/java/" rel="tag"># java</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/11/13/SpringBoot学习一/" rel="next" title="SpringBoot学习一">
+                <i class="fa fa-chevron-left"></i> SpringBoot学习一
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/11/14/ClassLoader类加载器/" rel="prev" title="ClassLoader类加载器">
+                ClassLoader类加载器 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Haobin</p>
+            <p class="site-description motion-element" itemprop="description">分享，成长</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">14</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-5"><a class="nav-link" href="#java-lang-reflect-Proxy"><span class="nav-number">1.</span> <span class="nav-text">java.lang.reflect.Proxy</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#java-lang-reflect-InvocationHandler"><span class="nav-number">2.</span> <span class="nav-text">java.lang.reflect.InvocationHandler</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#java-lang-ClassLoader"><span class="nav-number">3.</span> <span class="nav-text">java.lang.ClassLoader</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#动态代理机制"><span class="nav-number"></span> <span class="nav-text">动态代理机制</span></a></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Haobin</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
