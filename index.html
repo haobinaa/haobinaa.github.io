@@ -548,6 +548,10 @@
 </ol>
 <p>4.通过构造函数创建动态代理类实例，构造时调用处理器对象作为参数被传入<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">Interface Proxy = (Interface)constructor.newInstance(new Object[] &#123; handler &#125;);</div></pre></td></tr></table></figure></p>
 <p>为了简化对象的创建过程，Proxy类的newProxyInstance方法封装了2-4步，所以代理对象的创建只需要两步：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">// InvocationHandlerImpl 实现了 InvocationHandler 接口，并能实现方法调用从代理类到委托类的分派转发</div><div class="line">InvocationHandler handler = new InvocationHandlerImpl(..); </div><div class="line"></div><div class="line">// 通过 Proxy 直接创建动态代理类实例</div><div class="line">Interface proxy = (Interface)Proxy.newProxyInstance( classLoader, </div><div class="line">     new Class[] &#123; Interface.class &#125;, </div><div class="line">     handler );</div></pre></td></tr></table></figure></p>
+<h6 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档:"></a>参考文档:</h6><ul>
+<li><a href="https://www.ibm.com/developerworks/cn/java/j-lo-proxy1/" target="_blank" rel="external">java动态代理机制分析</a></li>
+<li><a href="https://github.com/brianway/java-learning/blob/master/blogs/javase/java%E5%9F%BA%E7%A1%80%E5%B7%A9%E5%9B%BA%E7%AC%94%E8%AE%B0(4" target="_blank" rel="external">AOP中的动态代理</a>-%E4%BB%A3%E7%90%86.md)</li>
+</ul>
 
           
         
