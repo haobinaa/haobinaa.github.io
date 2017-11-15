@@ -78,7 +78,7 @@
 <meta property="og:description" content="java类加载JVM将类加载过程分为三个步骤：装载（Load），链接（Link）和初始化(Initialize)链接又分为三个步骤    装载： 查找并加载类的二进制数据； 链接：  验证： 确保被加载类的正确性； 准备： 为类的静态变量分配内存，并将其初始化为默认值； 解析： 把类中的符号引用转换为直接引用（编译时，jvm不知道引用的类的实际内存地址，只能用符号代替，叫做符号引用；直接引用可以确">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://7xph6d.com1.z0.glb.clouddn.com/javaSE_%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8%E7%BB%93%E6%9E%84%E5%9B%BE.png">
-<meta property="og:updated_time" content="2017-11-14T02:01:00.067Z">
+<meta property="og:updated_time" content="2017-11-15T06:54:49.817Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="ClassLoader类加载器">
 <meta name="twitter:description" content="java类加载JVM将类加载过程分为三个步骤：装载（Load），链接（Link）和初始化(Initialize)链接又分为三个步骤    装载： 查找并加载类的二进制数据； 链接：  验证： 确保被加载类的正确性； 准备： 为类的静态变量分配内存，并将其初始化为默认值； 解析： 把类中的符号引用转换为直接引用（编译时，jvm不知道引用的类的实际内存地址，只能用符号代替，叫做符号引用；直接引用可以确">
@@ -372,7 +372,10 @@
 </ol>
 <h4 id="java类加载机制"><a href="#java类加载机制" class="headerlink" title="java类加载机制"></a>java类加载机制</h4><p>java类加载器就是在运行时在JVM中动态的加载所需的类，java类加载器基于三个机制：委托，可见，单一。委托机制指的是将加载类的请求传递给父加载器，如果父加载器找不到或者不能加载这个类，那么再加载他。可见性机制指的是父加载器加载的类都能被子加载器看见，但是子加载器加载的类父加载器是看不见的。单一性机制指的是一个类只能被同一种加载器加载一次。</p>
 <ul>
-<li>委托机制：首先要明确的是java的类加载器是按照需求来加载类的，比如说，当一个应用需要一个类名为Abc.class.那么首先Application类加载器首先将加载这个类的请求传递给Extension类加载器，然后Extension类加载器会再次将加载请求传递给Bootstrap类加载器，这是Bootstrap类加载器会从JRE/lib/rt.jar目录下找Abc.class这个类文件，如果找到就执行byte code来执行程序。如果没有找到，那么将请求传递给Extension类加载器，如果Extension类加载器在JRE/lib/ext目录下没有找到Abc.class那么将请求传递给Application类加载器，Application类加载器如果在classpath没有找到Abc.class那么就会抛出ClassNotFoundException异常。</li>
+<li>委托机制：首先要明确的是java的类加载器是按照需求来加载类的，比如说，当一个应用需要一个类名为Abc.class.那么首先该<code>AppClassLoader</code>首先将加载这个类的请求传递给<code>ExtClassLoader</code>，然后<code>ExtClassLoader</code>会再次将加载请求传递给<code>BootStrapClassLoader</code>，这时<code>BootstrapClassLoader</code>会从JRE/lib/rt.jar目录下找Abc.class这个类文件，如果找到就执行byte code来执行程序。如果没有找到，那么将请求传递给<code>ExtClassLoader</code>，如果<code>ExtClassLoader</code>在JRE/lib/ext目录下没有找到Abc.class那么将请求传递给该类的<code>AppClassLoader</code>，<code>AppClassLoader</code>如果在classpath没有找到Abc.class那么就会抛出ClassNotFoundException异常。  <blockquote>
+<p>我们可以发现 <strong><em>委托是从下到上的，然而具体查找过程是从上到下的</em></strong></p>
+</blockquote>
+</li>
 <li>可见机制： 子加载器可以看见父加载器加载的文件，但是父加载器看不到子加载器加载的类文件</li>
 <li>单一机制： 一个类只能被同一种加载器加载一次。</li>
 </ul>
