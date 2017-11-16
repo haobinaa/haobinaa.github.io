@@ -77,7 +77,7 @@
 <meta property="og:site_name" content="郝斌的时光客栈">
 <meta property="og:description" content="流的概念流是一组有顺序的，有起点和终点的字节集合，是对数据传输的总称或抽象。即数据在两设备间的传输称为流，流的本质是数据传输，根据数据传输特性将流抽象为各种类，方便更直观的进行数据操作 IO流的分类 根据处理数据类型的不同分为：字符流和字节流 字符流：因为数据编码的不同，而有了对字符进行高效操作的流对象。本质其实就是基于字节流读取时，去查了指定的码表。 字符流和字节流的区别： 读写单位不同：字节流">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2017-11-16T05:58:02.672Z">
+<meta property="og:updated_time" content="2017-11-16T06:52:53.104Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="javaIO流">
 <meta name="twitter:description" content="流的概念流是一组有顺序的，有起点和终点的字节集合，是对数据传输的总称或抽象。即数据在两设备间的传输称为流，流的本质是数据传输，根据数据传输特性将流抽象为各种类，方便更直观的进行数据操作 IO流的分类 根据处理数据类型的不同分为：字符流和字节流 字符流：因为数据编码的不同，而有了对字符进行高效操作的流对象。本质其实就是基于字节流读取时，去查了指定的码表。 字符流和字节流的区别： 读写单位不同：字节流">
@@ -412,9 +412,66 @@
 </li>
 </ul>
 <p>写入文件<br>1.创建流对象，建立数据存放文件<br><code>FileWriter fw = new FileWriter(&quot;Test.txt&quot;)</code><br>2.调用流对象的写入方法，将数据写入流<br><code>fw.write(&quot;text&quot;)</code><br>3.关闭流资源，并将流中的数据清空到文件中<br><code>fw.close()</code></p>
-<h5 id="缓冲流"><a href="#缓冲流" class="headerlink" title="缓冲流"></a>缓冲流</h5><p>参考资料：  </p>
+<h5 id="缓冲流"><a href="#缓冲流" class="headerlink" title="缓冲流"></a>缓冲流</h5><p>为了提高数据读写的速度，Java API提供了带缓冲功能的流类，在使用这些流类时，会创建一个内部缓冲区数组<br>根据数据操作单位（字符流和字节流）可以把缓冲流分为：</p>
 <ul>
-<li><a href="https://www.ibm.com/developerworks/cn/java/j-lo-io-optimize/index.html" target="_blank" rel="external">java I/O操作</a></li>
+<li>BufferedInputStream 和 BufferedOutputStream</li>
+<li>BufferedReader 和 BufferedWriter</li>
+</ul>
+<p>缓冲流要”套接”在相应的节点流之上，对读写的数据提供了缓冲的功能，提高了读写的效率，同时增加了一些新的方法。</p>
+<p>对于输出的缓冲流，写出的数据会先在内存中缓存，使用flush()将会使内存中的数据立刻写出<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">// 1.创建缓冲流对象，缓冲流要套接在节点流之上</div><div class="line">br = new BufferedReader(new FileReader(&quot;d:\\IOTest\\source.txt&quot;));</div><div class="line">bw = new BufferedWriter(new FileWriter(&quot;d:\\IOTest\\destBF.txt&quot;));</div><div class="line"></div><div class="line">String str = null;</div><div class="line">//一次读取字符文本文件的一行字符</div><div class="line">while ((str = br.readLine()) != null) &#123; </div><div class="line"></div><div class="line">    bw.write(str); //一次写入一行字符串</div><div class="line"></div><div class="line">    bw.newLine(); //写入行分隔符</div><div class="line"></div><div class="line">&#125;</div><div class="line"></div><div class="line">bw.flush(); //step2:刷新缓冲区</div></pre></td></tr></table></figure></p>
+<h5 id="对象序列化流"><a href="#对象序列化流" class="headerlink" title="对象序列化流"></a>对象序列化流</h5><ul>
+<li>若某个类实现了 Serializable 接口，该类的对象就是可序列化的：<ul>
+<li>创建一个 ObjectOutputStream</li>
+<li>调用 ObjectOutputStream 对象的 writeObject(对象) 方法输出可序列化对象。注意写出一次，操作flush()</li>
+</ul>
+</li>
+<li>反序列化<ul>
+<li>创建一个 ObjectInputStream</li>
+<li>调用 readObject() 方法读取流中的对象</li>
+</ul>
+</li>
+</ul>
+<h5 id="RandomAccessFile类"><a href="#RandomAccessFile类" class="headerlink" title="RandomAccessFile类"></a>RandomAccessFile类</h5><p>RandomAccessFile 类支持 “随机访问” 的方式，程序可以直接跳到文件的任意地方来读、写文件。支持只访问文件的部分内容、可以向已存在的文件后追加内容。  </p>
+<ul>
+<li>RandomAccessFile 对象包含一个记录指针，用以标示当前读写处的位置。RandomAccessFile 类对象可以自由移动记录指针：<ul>
+<li>long getFilePointer()：获取文件记录指针的当前位置</li>
+<li>void seek(long pos)：将文件记录指针定位到 pos 位置</li>
+</ul>
+</li>
+<li>构造器：<ul>
+<li>public RandomAccessFile(File file, String mode)</li>
+<li>public RandomAccessFile(String name, String mode)</li>
+</ul>
+</li>
+<li>创建 RandomAccessFile 类实例需要指定一个 mode 参数，该参数指定 RandomAccessFile 的访问模式<ul>
+<li>r: 以只读方式打开</li>
+<li>rw：打开以便读取和写入</li>
+<li>rwd:打开以便读取和写入；同步文件内容的更新</li>
+<li>rws:打开以便读取和写入；同步文件内容和元数据的更新</li>
+</ul>
+</li>
+</ul>
+<p>读取文件：</p>
+<pre><code>RandomAccessFile raf = new RandomAccessFile(&quot;test.txt&quot;, &quot;rw&quot;）;
+raf.seek(5);
+byte [] b = new byte[1024];
+int off = 0;
+int len = 5;
+raf.read(b, off, len);
+String str = new String(b, 0, len);
+System.out.println(str);
+</code></pre><p>写入文件：</p>
+<pre><code>RandomAccessFile raf = new RandomAccessFile(&quot;test.txt&quot;, &quot;rw&quot;);
+raf.seek(5)
+// 读取出来
+String temp = raf.readLine();
+// 写入
+raf.seek(5);
+raf.write(&quot;xyz&quot;.getBytes());
+raf.write(temp.getBytes());
+</code></pre><p>参考资料：  </p>
+<ul>
+<li><a href="https://www.ibm.com/developerworks/cn/java/j-lo-io-optimize/index.html" target="_blank" rel="external">java I/O模型及优化建议</a></li>
 <li><a href="http://blog.csdn.net/zhaoyanjun6/article/details/54292148" target="_blank" rel="external">java I/O流</a></li>
 <li><a href="https://www.cnblogs.com/baixl/p/4170599.html" target="_blank" rel="external">java I/O操作</a></li>
 </ul>
@@ -589,7 +646,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-5"><a class="nav-link" href="#流的概念"><span class="nav-number">1.</span> <span class="nav-text">流的概念</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#IO流的分类"><span class="nav-number">2.</span> <span class="nav-text">IO流的分类</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#输入字节流InputStream"><span class="nav-number">3.</span> <span class="nav-text">输入字节流InputStream</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#输出字节流OutputStream"><span class="nav-number">4.</span> <span class="nav-text">输出字节流OutputStream</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#java-io梳理"><span class="nav-number">5.</span> <span class="nav-text">java io梳理</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#InputStream-amp-Reader"><span class="nav-number">6.</span> <span class="nav-text">InputStream & Reader</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#OutputStream-amp-Writer"><span class="nav-number">7.</span> <span class="nav-text">OutputStream & Writer</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#文件流"><span class="nav-number">8.</span> <span class="nav-text">文件流</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#缓冲流"><span class="nav-number">9.</span> <span class="nav-text">缓冲流</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-5"><a class="nav-link" href="#流的概念"><span class="nav-number">1.</span> <span class="nav-text">流的概念</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#IO流的分类"><span class="nav-number">2.</span> <span class="nav-text">IO流的分类</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#输入字节流InputStream"><span class="nav-number">3.</span> <span class="nav-text">输入字节流InputStream</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#输出字节流OutputStream"><span class="nav-number">4.</span> <span class="nav-text">输出字节流OutputStream</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#java-io梳理"><span class="nav-number">5.</span> <span class="nav-text">java io梳理</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#InputStream-amp-Reader"><span class="nav-number">6.</span> <span class="nav-text">InputStream & Reader</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#OutputStream-amp-Writer"><span class="nav-number">7.</span> <span class="nav-text">OutputStream & Writer</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#文件流"><span class="nav-number">8.</span> <span class="nav-text">文件流</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#缓冲流"><span class="nav-number">9.</span> <span class="nav-text">缓冲流</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#对象序列化流"><span class="nav-number">10.</span> <span class="nav-text">对象序列化流</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#RandomAccessFile类"><span class="nav-number">11.</span> <span class="nav-text">RandomAccessFile类</span></a></li></ol></div>
             
 
           </div>
