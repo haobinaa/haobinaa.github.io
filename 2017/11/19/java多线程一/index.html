@@ -77,7 +77,7 @@
 <meta property="og:site_name" content="郝斌的时光客栈">
 <meta property="og:description" content="线程状态线程共以下五种状态：  新建（New） : 线程被对象创建后，就进入了新建状态。Thread thread = new Thread() 就绪：(Runnable): 可执行状态，线程对象被创建后，其他线程调用了该对象的start方法，就会让该线程对象进入就绪态，随时可能被CPU调度执行。thread.start() 运行(Running): 线程获取CPU的权限执行，运行状态只能由就绪状">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2017-11-20T08:07:19.813Z">
+<meta property="og:updated_time" content="2017-11-20T08:10:32.461Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="java多线程(基础)">
 <meta name="twitter:description" content="线程状态线程共以下五种状态：  新建（New） : 线程被对象创建后，就进入了新建状态。Thread thread = new Thread() 就绪：(Runnable): 可执行状态，线程对象被创建后，其他线程调用了该对象的start方法，就会让该线程对象进入就绪态，随时可能被CPU调度执行。thread.start() 运行(Running): 线程获取CPU的权限执行，运行状态只能由就绪状">
@@ -350,9 +350,10 @@
 <li>阻塞(Blocked): 阻塞状态是线程由某种原因放弃CPU使用权，暂时停止运行。直到线程进入就绪状态，才有机会转到运行状态。阻塞分三种：<ul>
 <li>等待阻塞： 通过调用线程的wait()方法，让线程等待某工作的完成。</li>
 <li>同步阻塞： 线程在获取synchronized同步锁失败(因为锁被其它线程所占用)，它会进入同步阻塞状态。</li>
-<li>其他阻塞： 通过调用线程的sleep()或join()或发出了I/O请求时，线程会进入到阻塞状态。当sleep()状态超时、join()等待线程终止或者超时、或者I/O处理完毕时，线程重新转入就绪状态。<br>死亡状态（Dead）：线程执行完了，或因异常退出了Run方法</li>
+<li>其他阻塞： 通过调用线程的sleep()或join()或发出了I/O请求时，线程会进入到阻塞状态。当sleep()状态超时、join()等待线程终止或者超时、或者I/O处理完毕时，线程重新转入就绪状态。</li>
 </ul>
 </li>
+<li>死亡状态（Dead）：线程执行完了，或因异常退出了Run方法</li>
 </ul>
 <h4 id="多线程的实现"><a href="#多线程的实现" class="headerlink" title="多线程的实现"></a>多线程的实现</h4><p>在java中Thread和Runnable都是实现多线程的方式。Thread是一个类，本身实现了Runnable接口，Runnable是一个接口，让类有了更好的扩展性。此外Runnable还可以用于“资源的共享”。即，多个线程都是基于某一个Runnable对象建立的，它们会共享Runnable对象上的资源。通常，建议通过“Runnable”实现多线程！</p>
 <h5 id="通过Thread来实现多线程"><a href="#通过Thread来实现多线程" class="headerlink" title="通过Thread来实现多线程"></a>通过Thread来实现多线程</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line">class MyThread extends Thread&#123;  </div><div class="line">    private int ticket=10;  </div><div class="line">    public void run()&#123;</div><div class="line">        for(int i=0;i&lt;20;i++)&#123; </div><div class="line">            if(this.ticket&gt;0)&#123;</div><div class="line">                System.out.println(this.getName()+&quot; 卖票：ticket&quot;+this.ticket--);</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125; </div><div class="line">&#125;;</div><div class="line"></div><div class="line">public class ThreadTest &#123;  </div><div class="line">    public static void main(String[] args) &#123;  </div><div class="line">        // 启动3个线程t1,t2,t3；每个线程各卖10张票！</div><div class="line">        MyThread t1=new MyThread();</div><div class="line">        MyThread t2=new MyThread();</div><div class="line">        MyThread t3=new MyThread();</div><div class="line">        t1.start();</div><div class="line">        t2.start();</div><div class="line">        t3.start();</div><div class="line">    &#125;  </div><div class="line">&#125;</div></pre></td></tr></table></figure>
@@ -447,6 +448,10 @@
 
           <div class="post-nav-prev post-nav-item">
             
+              <a href="/2017/11/20/java多线程二/" rel="prev" title="java多线程(状态切换)">
+                java多线程(状态切换) <i class="fa fa-chevron-right"></i>
+              </a>
+            
           </div>
         </div>
       
@@ -521,7 +526,7 @@
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">17</span>
+                <span class="site-state-item-count">19</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
