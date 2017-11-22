@@ -69,18 +69,18 @@
 
 
 
-<meta name="description" content="joinjoin() 的作用：让“主线程”等待“子线程”结束之后才能继续运行 interrupt终止线程">
+<meta name="description" content="joinjoin() 的作用：让“主线程”等待“子线程”结束之后才能继续运行join源码分析:12345678910111213141516171819202122232425262728293031public final void join() throws InterruptedException &amp;#123;    join(0);&amp;#125;public final synchroniz">
 <meta name="keywords" content="java多线程">
 <meta property="og:type" content="article">
 <meta property="og:title" content="java多线程(线程终止和守护线程)">
 <meta property="og:url" content="http://yoursite.com/2017/11/21/java多线程三/index.html">
 <meta property="og:site_name" content="Do Or Die">
-<meta property="og:description" content="joinjoin() 的作用：让“主线程”等待“子线程”结束之后才能继续运行 interrupt终止线程">
+<meta property="og:description" content="joinjoin() 的作用：让“主线程”等待“子线程”结束之后才能继续运行join源码分析:12345678910111213141516171819202122232425262728293031public final void join() throws InterruptedException &amp;#123;    join(0);&amp;#125;public final synchroniz">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2017-11-21T04:55:14.998Z">
+<meta property="og:updated_time" content="2017-11-22T15:19:18.925Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="java多线程(线程终止和守护线程)">
-<meta name="twitter:description" content="joinjoin() 的作用：让“主线程”等待“子线程”结束之后才能继续运行 interrupt终止线程">
+<meta name="twitter:description" content="joinjoin() 的作用：让“主线程”等待“子线程”结束之后才能继续运行join源码分析:12345678910111213141516171819202122232425262728293031public final void join() throws InterruptedException &amp;#123;    join(0);&amp;#125;public final synchroniz">
 
 
 
@@ -342,8 +342,18 @@
       
 
       
-        <h4 id="join"><a href="#join" class="headerlink" title="join"></a>join</h4><p>join() 的作用：让“主线程”等待“子线程”结束之后才能继续运行</p>
-<h4 id="interrupt"><a href="#interrupt" class="headerlink" title="interrupt"></a>interrupt</h4><h4 id="终止线程"><a href="#终止线程" class="headerlink" title="终止线程"></a>终止线程</h4>
+        <h4 id="join"><a href="#join" class="headerlink" title="join"></a>join</h4><p>join() 的作用：让“主线程”等待“子线程”结束之后才能继续运行<br>join源码分析:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div></pre></td><td class="code"><pre><div class="line">public final void join() throws InterruptedException &#123;</div><div class="line">    join(0);</div><div class="line">&#125;</div><div class="line"></div><div class="line">public final synchronized void join(long millis)</div><div class="line">throws InterruptedException &#123;</div><div class="line">    long base = System.currentTimeMillis();</div><div class="line">    long now = 0;</div><div class="line"></div><div class="line">    if (millis &lt; 0) &#123;</div><div class="line">        throw new IllegalArgumentException(&quot;timeout value is negative&quot;);</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    // 如果millis是0，执行join</div><div class="line">    if (millis == 0) &#123;</div><div class="line">        // 如果子线程是alive状态，主线程执行wait阻塞</div><div class="line">        while (isAlive()) &#123;</div><div class="line">            wait(0);</div><div class="line">        &#125;</div><div class="line">    &#125; else &#123;</div><div class="line">    // 如果millis不是0，则主线程wait()，时间为delay</div><div class="line">        while (isAlive()) &#123;</div><div class="line">            long delay = millis - now;</div><div class="line">            if (delay &lt;= 0) &#123;</div><div class="line">                break;</div><div class="line">            &#125;</div><div class="line">            wait(delay);</div><div class="line">            now = System.currentTimeMillis() - base;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<h4 id="interrupt"><a href="#interrupt" class="headerlink" title="interrupt"></a>interrupt</h4><p>interrupt的JDK描述：</p>
+<blockquote>
+<p>interrupt()的作用是中断本线程。<br> 本线程中断自己是被允许的；其它线程调用本线程的interrupt()方法时，会通过checkAccess()检查权限。这有可能抛出SecurityException异常。<br> 如果本线程是处于阻塞状态：调用线程的wait(), wait(long)或wait(long, int)会让它进入等待(阻塞)状态，或者调用线程的join(), join(long), join(long, int), sleep(long), sleep(long, int)也会让它进入阻塞状态。若线程在阻塞状态时，调用了它的interrupt()方法，那么它的“中断状态”会被清除并且会收到一个InterruptedException异常。例如，线程通过wait()进入阻塞状态，此时通过interrupt()中断该线程；调用interrupt()会立即将线程的中断标记设为“true”，但是由于线程处于阻塞状态，所以该“中断标记”会立即被清除为“false”，同时，会产生一个InterruptedException的异常。<br> 如果线程被阻塞在一个Selector选择器中，那么通过interrupt()中断它时；线程的中断标记会被设置为true，并且它会立即从选择操作中返回。<br> 如果不属于前面所说的情况，那么通过interrupt()中断线程时，它的中断标记会被设置为“true”。<br> 中断一个“已终止的线程”不会产生任何操作。</p>
+</blockquote>
+<h4 id="终止线程的方式"><a href="#终止线程的方式" class="headerlink" title="终止线程的方式"></a>终止线程的方式</h4><h5 id="终止处于阻塞状态的线程"><a href="#终止处于阻塞状态的线程" class="headerlink" title="终止处于阻塞状态的线程"></a>终止处于阻塞状态的线程</h5><p> 通常我们是通过中断方式终止处于阻塞状态的线程<br> 当线程由于被调用了sleep(), wait(), join()等方法而进入阻塞状态；若此时调用线程的interrupt()将线程的中断标记设为true。由于处于阻塞状态，中断标记会被清除，同时产生一个InterruptedException异常。将InterruptedException放在适当的为止就能终止线程，形式如下：<br> <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">public void run() &#123;</div><div class="line">    try &#123;</div><div class="line">        while (true) &#123;</div><div class="line">            // 执行任务...</div><div class="line">        &#125;</div><div class="line">    &#125; catch (InterruptedException ie) &#123;  </div><div class="line">        // 由于产生InterruptedException异常，退出while(true)循环，线程终止！</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p> 在while(true)中不断的执行任务，当线程处于阻塞状态时，调用线程的interrupt()产生InterruptedException中断。中断的捕获在while(true)之外，这样就退出了while(true)循环！<br> 注意：对InterruptedException的捕获务一般放在while(true)循环体的外面，这样，在产生异常时就退出了while(true)循环。否则，InterruptedException在while(true)循环体之内，就需要额外的添加退出处理。形式如下：<br> <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">public void run() &#123;</div><div class="line">    while (true) &#123;</div><div class="line">        try &#123;</div><div class="line">            // 执行任务...</div><div class="line">        &#125; catch (InterruptedException ie) &#123;  </div><div class="line">            // InterruptedException在while(true)循环体内。</div><div class="line">            // 当线程产生了InterruptedException异常时，while(true)仍能继续运行！需要手动退出</div><div class="line">            break;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p> 上面的InterruptedException异常的捕获在whle(true)之内。当产生InterruptedException异常时，被catch处理之外，仍然在while(true)循环体内；要退出while(true)循环体，需要额外的执行退出while(true)的操作。</p>
+<h5 id="终止运行状态的线程"><a href="#终止运行状态的线程" class="headerlink" title="终止运行状态的线程"></a>终止运行状态的线程</h5><p> 1.通过终端标记终止<br> <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">public void run() &#123;</div><div class="line">    while (!isInterrupted()) &#123;</div><div class="line">        // 执行任务...</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p> isInterrupted()是判断线程的中断标记是不是为true。当线程处于运行状态，并且我们需要终止它时；可以调用线程的interrupt()方法，使用线程的中断标记为true，即isInterrupted()会返回true。此时，就会退出while循环。<br> 注意：interrupt()并不会终止处于“运行状态”的线程！它会将线程的中断标记设为true。</p>
+<p> 2.通过额外添加标记</p>
+
       
     </div>
     
@@ -518,7 +528,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#join"><span class="nav-number">1.</span> <span class="nav-text">join</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#interrupt"><span class="nav-number">2.</span> <span class="nav-text">interrupt</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#终止线程"><span class="nav-number">3.</span> <span class="nav-text">终止线程</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#join"><span class="nav-number">1.</span> <span class="nav-text">join</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#interrupt"><span class="nav-number">2.</span> <span class="nav-text">interrupt</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#终止线程的方式"><span class="nav-number">3.</span> <span class="nav-text">终止线程的方式</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#终止处于阻塞状态的线程"><span class="nav-number">3.1.</span> <span class="nav-text">终止处于阻塞状态的线程</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#终止运行状态的线程"><span class="nav-number">3.2.</span> <span class="nav-text">终止运行状态的线程</span></a></li></ol></li></ol></div>
             
 
           </div>
