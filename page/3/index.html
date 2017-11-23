@@ -53,7 +53,7 @@
 <link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
 
 
-  <meta name="keywords" content="java," />
+  <meta name="keywords" content="Hexo, NexT" />
 
 
 
@@ -69,18 +69,16 @@
 
 
 
-<meta name="description" content="在java中，经常遇到从classpath里面读取配置文件的东西，最开始以为classpath是某个目录，现在好好的理一下。  java项目中src路径下的文件在编译后会放到WEB-INF/clases路径下吧。默认的classpath是在这里。直接放到WEB-INF下的话，是不在classpath下的。用ClassPathXmlApplicationContext当然获取不到。  maven项目">
-<meta name="keywords" content="java">
-<meta property="og:type" content="article">
-<meta property="og:title" content="java的classpath理解">
-<meta property="og:url" content="http://yoursite.com/2017/11/06/java的classpath理解/index.html">
+<meta name="description" content="一息尚存，则吾志不移">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Do Or Die">
+<meta property="og:url" content="http://yoursite.com/page/3/index.html">
 <meta property="og:site_name" content="Do Or Die">
-<meta property="og:description" content="在java中，经常遇到从classpath里面读取配置文件的东西，最开始以为classpath是某个目录，现在好好的理一下。  java项目中src路径下的文件在编译后会放到WEB-INF/clases路径下吧。默认的classpath是在这里。直接放到WEB-INF下的话，是不在classpath下的。用ClassPathXmlApplicationContext当然获取不到。  maven项目">
+<meta property="og:description" content="一息尚存，则吾志不移">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2017-11-22T05:46:03.025Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="java的classpath理解">
-<meta name="twitter:description" content="在java中，经常遇到从classpath里面读取配置文件的东西，最开始以为classpath是某个目录，现在好好的理一下。  java项目中src路径下的文件在编译后会放到WEB-INF/clases路径下吧。默认的classpath是在这里。直接放到WEB-INF下的话，是不在classpath下的。用ClassPathXmlApplicationContext当然获取不到。  maven项目">
+<meta name="twitter:title" content="Do Or Die">
+<meta name="twitter:description" content="一息尚存，则吾志不移">
 
 
 
@@ -110,13 +108,13 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/2017/11/06/java的classpath理解/"/>
+  <link rel="canonical" href="http://yoursite.com/page/3/"/>
 
 
 
 
 
-  <title>java的classpath理解 | Do Or Die</title>
+  <title>Do Or Die</title>
   
 
 
@@ -135,7 +133,8 @@
     
   
 
-  <div class="container sidebar-position-left page-post-detail">
+  <div class="container sidebar-position-left 
+  page-home">
     <div class="headband"></div>
 
     <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
@@ -238,9 +237,9 @@
         <div class="content-wrap">
           <div id="content" class="content">
             
-
-  <div id="posts" class="posts-expand">
+  <section id="posts" class="posts-expand">
     
+      
 
   
 
@@ -253,7 +252,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/11/06/java的classpath理解/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/10/18/TomCat使用/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Leo Hao">
@@ -270,7 +269,9 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">java的classpath理解</h1>
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2017/10/18/TomCat使用/" itemprop="url">TomCat使用</a></h1>
         
 
         <div class="post-meta">
@@ -282,8 +283,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-11-06T15:57:50+08:00">
-                2017-11-06
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-10-18T11:16:21+08:00">
+                2017-10-18
               </time>
             
 
@@ -305,8 +306,8 @@
               
               
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/java/" itemprop="url" rel="index">
-                    <span itemprop="name">java</span>
+                  <a href="/categories/jsp/" itemprop="url" rel="index">
+                    <span itemprop="name">jsp</span>
                   </a>
                 </span>
 
@@ -342,19 +343,28 @@
       
 
       
-        <p>在java中，经常遇到从classpath里面读取配置文件的东西，最开始以为classpath是某个目录，现在好好的理一下。</p>
-<blockquote>
-<p>java项目中src路径下的文件在编译后会放到WEB-INF/clases路径下吧。默认的classpath是在这里。直接放到WEB-INF下的话，是不在classpath下的。用ClassPathXmlApplicationContext当然获取不到。 </p>
-<p>maven项目中resource目录就是默认的classpath<br>classPath即为java文件编译之后的class文件的编译目录一般为web-inf/classes，src下的xml在编译时也会复制到classPath下<br>ApplicationContext ctx = new ClassPathXmlApplicationContext(“xxxx.xml”);  //读取classPath下的spring.xml配置文件<br>ApplicationContext ctx = new FileSystemXmlApplicationContext(“WebRoot/WEB-INF/xxxx.xml”);   //读取WEB-INF 下的spring.xml文件  </p>
-</blockquote>
-<h3 id="classpath和classpath"><a href="#classpath和classpath" class="headerlink" title="classpath和classpath*"></a>classpath和classpath*</h3><p>classpath： 只会到你的class路径中查找找文件;<br>classpath*：不仅包含class路径，还包括jar文件中(class路径)进行查找.<br>java从classpath中获取资源的方法, ClassLoader提供的两个方法：</p>
-<ul>
-<li>public URL getResource(String name)</li>
-<li>public InputStream getResourceAsStream(String name)</li>
+        
+          
+            <h3 id="Tomcat目录结构"><a href="#Tomcat目录结构" class="headerlink" title="Tomcat目录结构"></a>Tomcat目录结构</h3><ul>
+<li>bin:存放开关Tomcat的脚本</li>
+<li>conf: Tomcat配置文件</li>
+<li>lib： Tomcat服务的jar包</li>
+<li>logs： 日志文件</li>
+<li>temp： 存放运行期间产生的临时文件</li>
+<li>webapp： web应用所在目录，即外部访问web资源的目录</li>
+<li>work： Tomcat工作目录</li>
 </ul>
-<p>这里name是资源的类路径，它是相对与“/”根路径下的位置。getResource得到的是一个URL对象来定位资源，而getResourceAsStream取得该资源输入流的引用保证程序可以从正确的位置抽取数据。但是真正使用的不是ClassLoader的这两个方法，而是Class的getResource和getResourceAsStream方法，因为Class对象可以从你的类得到（如YourClass.class或 YourClass.getClass()），而ClassLoader则需要再调用一次YourClass.getClassLoader()方法，不过根据JDK文档的说法，Class对象的这两个方法其实是“委托”（delegate）给装载它的ClassLoader来做的，所以只需要使用 Class对象的这两个方法就可以了</p>
-<p>使用例子<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div></pre></td><td class="code"><pre><div class="line">1.this.getClass().getResource（&quot;&quot;） </div><div class="line">得到的是当前类class文件的URI目录。不包括自己！</div><div class="line">如：file：/D：/workspace/jbpmtest3/bin/com/test/</div><div class="line"></div><div class="line">2.this.getClass().getResource（&quot;/&quot;） </div><div class="line">得到的是当前的classpath的绝对URI路径 。</div><div class="line">如：file：/D：/workspace/jbpmtest3/bin/</div><div class="line"></div><div class="line">3.this.getClass() .getClassLoader().getResource（&quot;&quot;） </div><div class="line">得到的也是当前ClassPath的绝对URI路径 。</div><div class="line">如：file：/D：/workspace/jbpmtest3/bin/</div><div class="line"></div><div class="line">4.ClassLoader.getSystemResource（&quot;&quot;） </div><div class="line">得到的也是当前ClassPath的绝对URI路径 。</div><div class="line">如：file：/D：/workspace/jbpmtest3/bin/</div><div class="line"></div><div class="line">5.Thread.currentThread().getContextClassLoader ().getResource（&quot;&quot;） </div><div class="line">得到的也是当前ClassPath的绝对URI路径 。</div><div class="line">如：file：/D：/workspace/jbpmtest3/bin/</div><div class="line"></div><div class="line">6.ServletActionContext.getServletContext().getRealPath(“/”) </div><div class="line">Web应用程序 中，得到Web应用程序的根目录的绝对路径。这样，我们只需要提供相对于Web应用程序根目录的路径，就可以构建出定位资源的绝对路径。</div><div class="line">如：file：/D:/workspace/.metadata/.plugins/org.eclipse.wst.server.core/tmp0/wtpwebapps/WebProject</div></pre></td></tr></table></figure></p>
+<h3 id="web应用"><a href="#web应用" class="headerlink" title="web应用"></a>web应用</h3><ol>
+<li>web应用与web应用所在的目录： 一个web应用由多个静态web资源和动态web资源组成；<br>组成web应用的这些文件会由一个目录组织起来，这个目录称为web应用所在目录</li>
+<li>虚拟目录映射： 把主机上的资源映射到服务器对外访提供的访问路径上</li>
+<li>example: tomcat的<code>conf/server.xml</code>中，<code>&lt;Host&gt;</code>元素中一个<code>&lt;Context&gt;</code>对应一个web应用，例如<code>&lt;Context path=&quot;&quot; docBase=&quot;D:\test&quot;&gt;&lt;/Context&gt;</code><br><code>path</code>代表网站路径 <code>doBase</code>是文件路径</li>
+<li>web应用结构：<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">webapp------------------webroot目录</div><div class="line">        |---html、jsp、css、js等文件，外部可直接访问</div><div class="line">        |---WEB-INF目录</div><div class="line">            |---classes目录（java类）</div><div class="line">            |---lib（java类运行依赖的jar包）</div><div class="line">            |---web.xml（web应用配置文件）</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<h3 id="Tomcat运行体系"><a href="#Tomcat运行体系" class="headerlink" title="Tomcat运行体系"></a>Tomcat运行体系</h3><p><img src="https://camo.githubusercontent.com/228a8cc0748b7e49d8ae991f625c71b43b0e2143/687474703a2f2f3778706836642e636f6d312e7a302e676c622e636c6f7564646e2e636f6d2f6a6176617765625f746f6d6361742545342542442539332545372542332542422545372542422539332545362539452538342e706e67" alt="运行体系"></p>
 
+          
+        
       
     </div>
     
@@ -369,40 +379,14 @@
 
     <footer class="post-footer">
       
-        <div class="post-tags">
-          
-            <a href="/tags/java/" rel="tag"><i class="fa fa-tag"></i> java</a>
-          
-        </div>
+
+      
+
       
 
       
       
-      
-
-      
-        <div class="post-nav">
-          <div class="post-nav-next post-nav-item">
-            
-              <a href="/2017/10/31/rabbitmq无法启动/" rel="next" title="Rabbitmq无法启动">
-                <i class="fa fa-chevron-left"></i> Rabbitmq无法启动
-              </a>
-            
-          </div>
-
-          <span class="post-nav-divider"></span>
-
-          <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2017/11/11/内部类总结/" rel="prev" title="内部类总结">
-                内部类总结 <i class="fa fa-chevron-right"></i>
-              </a>
-            
-          </div>
-        </div>
-      
-
-      
+        <div class="post-eof"></div>
       
     </footer>
   </div>
@@ -412,11 +396,14 @@
   </article>
 
 
+    
+  </section>
 
-    <div class="post-spread">
-      
-    </div>
-  </div>
+  
+  <nav class="pagination">
+    <a class="extend prev" rel="prev" href="/page/2/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span>
+  </nav>
+
 
 
           </div>
@@ -424,10 +411,6 @@
 
 
           
-  <div class="comments" id="comments">
-    
-  </div>
-
 
         </div>
         
@@ -448,17 +431,8 @@
       
 
       
-        <ul class="sidebar-nav motion-element">
-          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
-            文章目录
-          </li>
-          <li class="sidebar-nav-overview" data-target="site-overview">
-            站点概览
-          </li>
-        </ul>
-      
 
-      <section class="site-overview sidebar-panel">
+      <section class="site-overview sidebar-panel sidebar-panel-active">
         <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
           
             <p class="site-author-name" itemprop="name">Leo Hao</p>
@@ -519,22 +493,6 @@
 
       </section>
 
-      
-      <!--noindex-->
-        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
-          <div class="post-toc">
-
-            
-              
-            
-
-            
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#classpath和classpath"><span class="nav-number">1.</span> <span class="nav-text">classpath和classpath*</span></a></li></ol></div>
-            
-
-          </div>
-        </section>
-      <!--/noindex-->
       
 
       

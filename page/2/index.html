@@ -252,6 +252,296 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/11/13/activiti记录一/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2017/11/13/activiti记录一/" itemprop="url">activiti记录一(基本概念)</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-11-13T09:02:59+08:00">
+                2017-11-13
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/activiti/" itemprop="url" rel="index">
+                    <span itemprop="name">activiti</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h5 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h5><p>工作流</p>
+<blockquote>
+<p>工作流（workflow）就是工作流程的计算模型，即将工作流程中的工作如何前后组织在一起的逻辑和规则在计算机中以恰当的模型进行表示并对其实施计算。它主要解决的是“使在多个参与者之间按照某种预定义的规则传递文档、信息或任务的过程自动进行，从而实现某个预期的业务目标，或者促使此目标的实现”</p>
+</blockquote>
+<p>BPMN</p>
+<blockquote>
+<p>BPMN是一套流程建模的标准，主要目标是被所有业务用户容易理解的符号，支持从创建流程轮廓的业务分析到这些流程的最终实现，知道最终用户的管理监控。</p>
+</blockquote>
+<p>activiti</p>
+<blockquote>
+<p>Activiti是一个开源的工作流引擎，它实现了BPMN 2.0规范，可以发布设计好的流程定义，并通过api进行流程调度。</p>
+</blockquote>
+<p>特点：</p>
+<ul>
+<li>技术引擎+BPM平台</li>
+<li>强大的API，操作便捷</li>
+<li>支持Spring集成</li>
+<li>底层使用了MyBatis</li>
+</ul>
+<p>工作流的开发流程：</p>
+<ol>
+<li>创建流程图</li>
+<li>上传流程图（利用processEnginer保存流程图）</li>
+<li>部署流程图（RepositorySerivece加载流程图，然后部署流程图）</li>
+<li>启动流程：ProcessInstance 流程实例，Runtime，通过运行时服务(RuntimeSerivice得到流程实例)</li>
+<li>处理流程任务： 任务Task，通过任务服务(TaskSerivice)可以去检索待处理的任务(Handle task)</li>
+</ol>
+<h5 id="Activiti相关的操作类："><a href="#Activiti相关的操作类：" class="headerlink" title="Activiti相关的操作类："></a>Activiti相关的操作类：</h5><ul>
+<li>流程引擎配置ProcessE    ngineConfiguration：创建流程</li>
+<li>流程引擎ProcessEngine：拿到流程服务，比如仓库服务，运行时服务，任务服务</li>
+<li>流程实例ProcessInstance</li>
+<li>仓库服务RepositoryService</li>
+<li>运行服务RuntimeSerivice</li>
+<li>任务服务TaskService</li>
+<li>历史服务HistoryService</li>
+<li>管理和查询用户服务IdentifyService</li>
+<li>读取流程表单相关数据FormService</li>
+<li>引擎管理服务ManagementService</li>
+</ul>
+<h5 id="Activiti"><a href="#Activiti" class="headerlink" title="Activiti"></a>Activiti</h5><p>数据库表命名都是由ACT_开头。</p>
+<ul>
+<li>ACT<em>RE</em>*:’RE’表示repository。带有此前缀的表包含的是静态信息，如：流程定义、流程资源。</li>
+<li>ACT<em>RU</em>*:’RU’表示runtime。这是运行时的表，存储着流程变量、用户任务、职责等运行时的数据。</li>
+<li>ACT<em>ID</em>*:’ID’表示identity。这些表包含标识的信息，如用户、用户组等等。</li>
+<li>ACT<em>HI</em>*:’HI’表示history。这些表包含着历史的相关数据，如结束的流程实例、变量、任务等等。</li>
+<li>ACT<em>GE</em>*:普通数据，各种情况都使用的数据。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>表名</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ACT_GE_PROPERTY</td>
+<td>属性数据表。存储这个流程引擎级别的数据</td>
+</tr>
+<tr>
+<td>ACT_GE_BYTEARRAY</td>
+<td>用来保存部署文件的大文本数据</td>
+</tr>
+<tr>
+<td>ACT_RE_DEPLOYMENT</td>
+<td>用来存储部署时需要持久化保存下来的信息        </td>
+</tr>
+<tr>
+<td>ACT_RE_DEPLOYMENT</td>
+<td>用来存储部署时需要持久化保存下来的信息</td>
+</tr>
+<tr>
+<td>ACT_RE_PROCDEF</td>
+<td>业务流程定义数据表</td>
+</tr>
+<tr>
+<td>ACT_RE_MODEL</td>
+<td>流程设计模型部署表</td>
+</tr>
+<tr>
+<td>ACT_ID_GROUP</td>
+<td>用来存储用户组信息</td>
+</tr>
+<tr>
+<td>ACT_ID_MEMBERSHIP</td>
+<td>用来保存用户的分组信息</td>
+</tr>
+<tr>
+<td>ACT_ID_USER</td>
+<td>用来保存用户信息</td>
+</tr>
+<tr>
+<td>ACT_ID_INFO</td>
+<td>用户扩展信息表</td>
+</tr>
+<tr>
+<td>ACT_RU_EXECUTION</td>
+<td>运行时流程执行实例表</td>
+</tr>
+<tr>
+<td>ACT_RU_TASK</td>
+<td>运行时任务数据表</td>
+</tr>
+<tr>
+<td>ACT_RU_IDENTITYLINK</td>
+<td>任务参与者数据表。主要存储当前节点参与者的信息</td>
+</tr>
+<tr>
+<td>ACT_RU_VARIABLE</td>
+<td>运行时流程变量数据表</td>
+</tr>
+<tr>
+<td>ACT_RU_JOB</td>
+<td>运行时定时任务数据表</td>
+</tr>
+<tr>
+<td>ACT_HI_PROCINST</td>
+<td>历史流程实例表</td>
+</tr>
+<tr>
+<td>ACT_HI_ACTINST</td>
+<td>历史节点表</td>
+</tr>
+<tr>
+<td>ACT_HI_TASKINST</td>
+<td>历史任务实例表</td>
+</tr>
+<tr>
+<td>ACT_HI_DETAIL</td>
+<td>启动流程或者在任务complete之后,记录历史流程变量</td>
+</tr>
+<tr>
+<td>ACT_HI_ATTACHMENT</td>
+<td>历史附件表</td>
+</tr>
+<tr>
+<td>ACT_HI_COMMENT</td>
+<td>历史意见表</td>
+</tr>
+<tr>
+<td>ACT_HI_IDENTITYLINK</td>
+<td>历史流程人员表</td>
+</tr>
+<tr>
+<td>ACT_HI_VARINST</td>
+<td>历史变量表</td>
+</tr>
+</tbody>
+</table>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/11/11/内部类总结/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1739,169 +2029,11 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/10/18/TomCat使用/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="Leo Hao">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Do Or Die">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2017/10/18/TomCat使用/" itemprop="url">TomCat使用</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-10-18T11:16:21+08:00">
-                2017-10-18
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category" >
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/jsp/" itemprop="url" rel="index">
-                    <span itemprop="name">jsp</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h3 id="Tomcat目录结构"><a href="#Tomcat目录结构" class="headerlink" title="Tomcat目录结构"></a>Tomcat目录结构</h3><ul>
-<li>bin:存放开关Tomcat的脚本</li>
-<li>conf: Tomcat配置文件</li>
-<li>lib： Tomcat服务的jar包</li>
-<li>logs： 日志文件</li>
-<li>temp： 存放运行期间产生的临时文件</li>
-<li>webapp： web应用所在目录，即外部访问web资源的目录</li>
-<li>work： Tomcat工作目录</li>
-</ul>
-<h3 id="web应用"><a href="#web应用" class="headerlink" title="web应用"></a>web应用</h3><ol>
-<li>web应用与web应用所在的目录： 一个web应用由多个静态web资源和动态web资源组成；<br>组成web应用的这些文件会由一个目录组织起来，这个目录称为web应用所在目录</li>
-<li>虚拟目录映射： 把主机上的资源映射到服务器对外访提供的访问路径上</li>
-<li>example: tomcat的<code>conf/server.xml</code>中，<code>&lt;Host&gt;</code>元素中一个<code>&lt;Context&gt;</code>对应一个web应用，例如<code>&lt;Context path=&quot;&quot; docBase=&quot;D:\test&quot;&gt;&lt;/Context&gt;</code><br><code>path</code>代表网站路径 <code>doBase</code>是文件路径</li>
-<li>web应用结构：<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">webapp------------------webroot目录</div><div class="line">        |---html、jsp、css、js等文件，外部可直接访问</div><div class="line">        |---WEB-INF目录</div><div class="line">            |---classes目录（java类）</div><div class="line">            |---lib（java类运行依赖的jar包）</div><div class="line">            |---web.xml（web应用配置文件）</div></pre></td></tr></table></figure>
-</li>
-</ol>
-<h3 id="Tomcat运行体系"><a href="#Tomcat运行体系" class="headerlink" title="Tomcat运行体系"></a>Tomcat运行体系</h3><p><img src="https://camo.githubusercontent.com/228a8cc0748b7e49d8ae991f625c71b43b0e2143/687474703a2f2f3778706836642e636f6d312e7a302e676c622e636c6f7564646e2e636f6d2f6a6176617765625f746f6d6361742545342542442539332545372542332542422545372542422539332545362539452538342e706e67" alt="运行体系"></p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span>
+    <a class="extend prev" rel="prev" href="/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" href="/page/3/"><i class="fa fa-angle-right"></i></a>
   </nav>
 
 
@@ -1946,7 +2078,7 @@
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">20</span>
+                <span class="site-state-item-count">21</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>

@@ -252,6 +252,155 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/11/23/java多线程四/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2017/11/23/java多线程四/" itemprop="url">java多线程(生产者消费者模式)</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-11-23T12:36:23+08:00">
+                2017-11-23
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/java/" itemprop="url" rel="index">
+                    <span itemprop="name">java</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h4 id="生产者消费者"><a href="#生产者消费者" class="headerlink" title="生产者消费者"></a>生产者消费者</h4><ol>
+<li>生产者仅仅在仓储未满时候生产，仓满则停止生产</li>
+<li>消费者仅仅在仓储有产品时候才能消费，仓空则等待</li>
+<li>当消费者发现仓储没产品可消费时候会通知生产者生产</li>
+<li>生产者在生产出可消费产品时候，应该通知等待的消费者去消费</li>
+</ol>
+<h4 id="代码实现"><a href="#代码实现" class="headerlink" title="代码实现"></a>代码实现</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div><div class="line">110</div><div class="line">111</div><div class="line">112</div><div class="line">113</div><div class="line">114</div><div class="line">115</div><div class="line">116</div><div class="line">117</div><div class="line">118</div><div class="line">119</div></pre></td><td class="code"><pre><div class="line">package org.javacore.thread;</div><div class="line"></div><div class="line">class Depot &#123;</div><div class="line">    private int capacity;    // 仓库的容量</div><div class="line">    private int size;        // 仓库的实际数量</div><div class="line"></div><div class="line">    public Depot(int capacity) &#123;</div><div class="line">        this.capacity = capacity;</div><div class="line">        this.size = 0;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    // 生产</div><div class="line">    public synchronized void produce(int val) &#123;</div><div class="line">        try &#123;</div><div class="line">            // left 表示“想要生产的数量”(有可能生产量太多，需多此生产)</div><div class="line">            int left = val;</div><div class="line">            while (left &gt; 0) &#123;</div><div class="line">                // 库存已满时，等待“消费者”消费产品。</div><div class="line">                while (size &gt;= capacity)</div><div class="line">                    wait();</div><div class="line"></div><div class="line">                // 获取“实际生产的数量”(即库存中新增的数量)</div><div class="line">                // 如果“库存”+“想要生产的数量”&gt;“总的容量”，则“实际增量”=“总的容量”-“当前容量”。(此时填满仓库)</div><div class="line">                // 否则“实际增量”=“想要生产的数量”</div><div class="line">                int inc = (size+left) &gt; capacity ? (capacity-size) : left;</div><div class="line">                // 库存增加</div><div class="line">                size += inc;</div><div class="line">                // 减去已经生产的</div><div class="line">                left -= inc;</div><div class="line">                System.out.printf(&quot;%s produce(%3d) --&gt; left=%3d, inc=%3d, size=%3d\n&quot;,</div><div class="line">                    Thread.currentThread().getName(), val, left, inc, size);</div><div class="line">                // 通知“消费者”可以消费了。</div><div class="line">                notifyAll();</div><div class="line">            &#125;</div><div class="line">        &#125; catch (InterruptedException e) &#123;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    // 消费</div><div class="line">    public synchronized void consume(int val) &#123;</div><div class="line">        try &#123;</div><div class="line">            // left 表示“客户要消费数量”(有可能消费量太大，库存不够，需多次消费)</div><div class="line">            int left = val;</div><div class="line">            while (left &gt; 0) &#123;</div><div class="line">                // 库存为0时，等待“生产者”生产产品。</div><div class="line">                while (size &lt;= 0)</div><div class="line">                    wait();</div><div class="line">                // 获取“实际消费的数量”(即库存中实际减少的数量)</div><div class="line">                // 如果“库存”&lt;“客户要消费的数量”，则“实际消费量”=“库存”；</div><div class="line">                // 否则，“实际消费量”=“客户要消费的数量”。</div><div class="line">                int dec = (size&lt;left) ? size : left;</div><div class="line"></div><div class="line">                // 消费</div><div class="line">                size -= dec;</div><div class="line">                left -= dec;</div><div class="line"></div><div class="line">                System.out.printf(&quot;%s consume(%3d) &lt;-- left=%3d, dec=%3d, size=%3d\n&quot;,</div><div class="line">                    Thread.currentThread().getName(), val, left, dec, size);</div><div class="line">                notifyAll();</div><div class="line">            &#125;</div><div class="line">        &#125; catch (InterruptedException e) &#123;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public String toString() &#123;</div><div class="line">        return &quot;capacity:&quot;+capacity+&quot;, actual size:&quot;+size;</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line">// 生产者</div><div class="line">class Producer &#123;</div><div class="line">    private Depot depot;</div><div class="line"></div><div class="line">    public Producer(Depot depot) &#123;</div><div class="line">        this.depot = depot;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    // 消费产品：新建一个线程向仓库中生产产品。</div><div class="line">    public void produce(final int val) &#123;</div><div class="line">        new Thread() &#123;</div><div class="line">            public void run() &#123;</div><div class="line">                depot.produce(val);</div><div class="line">            &#125;</div><div class="line">        &#125;.start();</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line">// 消费者</div><div class="line">class Customer &#123;</div><div class="line">    private Depot depot;</div><div class="line"></div><div class="line">    public Customer(Depot depot) &#123;</div><div class="line">        this.depot = depot;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    // 消费产品：新建一个线程从仓库中消费产品。</div><div class="line">    public void consume(final int val) &#123;</div><div class="line">        new Thread() &#123;</div><div class="line">            public void run() &#123;</div><div class="line">                depot.consume(val);</div><div class="line">            &#125;</div><div class="line">        &#125;.start();</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line">public class ProductAndCustomer &#123;</div><div class="line">    public static void main(String[] args) &#123;</div><div class="line">        Depot mDepot = new Depot(100);</div><div class="line">        Producer mPro = new Producer(mDepot);</div><div class="line">        Customer mCus = new Customer(mDepot);</div><div class="line">        </div><div class="line">        // 三个生产者，两个消费者</div><div class="line">        mPro.produce(60);</div><div class="line">        mPro.produce(120);</div><div class="line">        mCus.consume(90);</div><div class="line">        mCus.consume(150);</div><div class="line">        mPro.produce(110);</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>多执行几次，可以看见不同结果<br>应该叫： 生产者-仓库-消费者模型</p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/11/22/equals和hashcode/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -534,10 +683,11 @@
 <p> java 中有两种线程：用户线程和守护线程。可以通过isDaemon()方法来区别它们：如果返回false，则说明该线程是“用户线程”；否则就是“守护线程”。<br> 用户线程一般用户执行用户级任务，而守护线程也就是“后台线程”，一般用来执行后台任务。需要注意的是：Java虚拟机在“用户线程”都结束后会后退出。</p>
 <p> JDK中描述：</p>
 <blockquote>
-<p>每个线程都有一个优先级。“高优先级线程”会优先于“低优先级线程”执行。每个线程都可以被标记为一个守护进程或非守护进程。在一些运行的主线程中创建新的子线程时，子线程的优先级被设置为等于“创建它的主线程的优先级”，当且仅当“创建它的主线程是守护线程”时“子线程才会是守护线程”。<br>  当Java虚拟机启动时，通常有一个单一的非守护线程（该线程通过是通过main()方法启动）。JVM会一直运行直到下面的任意一个条件发生，JVM就会终止运行：<br>  (01) 调用了exit()方法，并且exit()有权限被正常执行。<br>  (02) 所有的“非守护线程”都死了(即JVM中仅仅只有“守护线程”)。<br>  每一个线程都被标记为“守护线程”或“用户线程”。当只有守护线程运行时，JVM会自动退出。</p>
+<p>每个线程都有一个优先级。“高优先级线程”会优先于“低优先级线程”执行。每个线程都可以被标记为一个守护进程或非守护进程。在一些运行的主线程中创建新的子线程时，子线程的优先级被设置为等于“创建它的主线程的优先级”，当且仅当“创建它的主线程是守护线程”时“子线程才会是守护线程”(理解为守护线程创建的线程也是守护线程)。<br>  当Java虚拟机启动时，通常有一个单一的非守护线程（该线程通过是通过main()方法启动）。JVM会一直运行直到下面的任意一个条件发生，JVM就会终止运行：<br>  (01) 调用了exit()方法，并且exit()有权限被正常执行。<br>  (02) 所有的“非守护线程”都死了(即JVM中仅仅只有“守护线程”)。<br>  每一个线程都被标记为“守护线程”或“用户线程”。当只有守护线程运行时，JVM会自动退出。</p>
 </blockquote>
 <h5 id="守护线程"><a href="#守护线程" class="headerlink" title="守护线程"></a>守护线程</h5>  <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div></pre></td><td class="code"><pre><div class="line">class MyThread extends Thread&#123;  </div><div class="line">    public MyThread(String name) &#123;</div><div class="line">        super(name);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public void run()&#123;</div><div class="line">        try &#123;</div><div class="line">            for (int i=0; i&lt;5; i++) &#123;</div><div class="line">                Thread.sleep(3);</div><div class="line">                System.out.println(this.getName() +&quot;(isDaemon=&quot;+this.isDaemon()+ &quot;)&quot; +&quot;, loop &quot;+i);</div><div class="line">            &#125;</div><div class="line">        &#125; catch (InterruptedException e) &#123;</div><div class="line">        &#125;</div><div class="line">    &#125; </div><div class="line">&#125;; </div><div class="line"></div><div class="line">class MyDaemon extends Thread&#123;  </div><div class="line">    public MyDaemon(String name) &#123;</div><div class="line">        super(name);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public void run()&#123;</div><div class="line">        try &#123;</div><div class="line">            for (int i=0; i&lt;10000; i++) &#123;</div><div class="line">                Thread.sleep(1);</div><div class="line">                System.out.println(this.getName() +&quot;(isDaemon=&quot;+this.isDaemon()+ &quot;)&quot; +&quot;, loop &quot;+i);</div><div class="line">            &#125;</div><div class="line">        &#125; catch (InterruptedException e) &#123;</div><div class="line">        &#125;</div><div class="line">    &#125; </div><div class="line">&#125;</div><div class="line">public class Demo &#123;  </div><div class="line">    public static void main(String[] args) &#123;  </div><div class="line"></div><div class="line">        System.out.println(Thread.currentThread().getName()</div><div class="line">                +&quot;(isDaemon=&quot;+Thread.currentThread().isDaemon()+ &quot;)&quot;);</div><div class="line"></div><div class="line">        Thread t1=new MyThread(&quot;t1&quot;);    // 新建t1</div><div class="line">        Thread t2=new MyDaemon(&quot;t2&quot;);    // 新建t2</div><div class="line">        t2.setDaemon(true);                // 设置t2为守护线程</div><div class="line">        t1.start();                        // 启动t1</div><div class="line">        t2.start();                        // 启动t2</div><div class="line">    &#125;  </div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<h5 id="线程优先级-1"><a href="#线程优先级-1" class="headerlink" title="线程优先级"></a>线程优先级</h5>  <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div></pre></td><td class="code"><pre><div class="line">class MyThread extends Thread&#123;  </div><div class="line">    public MyThread(String name) &#123;</div><div class="line">        super(name);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public void run()&#123;</div><div class="line">        for (int i=0; i&lt;5; i++) &#123;</div><div class="line">            System.out.println(Thread.currentThread().getName()</div><div class="line">                    +&quot;(&quot;+Thread.currentThread().getPriority()+ &quot;)&quot;</div><div class="line">                    +&quot;, loop &quot;+i);</div><div class="line">        &#125;</div><div class="line">    &#125; </div><div class="line">&#125;; </div><div class="line"></div><div class="line">public class Demo &#123;  </div><div class="line">    public static void main(String[] args) &#123;  </div><div class="line"></div><div class="line">        System.out.println(Thread.currentThread().getName()</div><div class="line">                +&quot;(&quot;+Thread.currentThread().getPriority()+ &quot;)&quot;);</div><div class="line"></div><div class="line">        Thread t1=new MyThread(&quot;t1&quot;);    // 新建t1</div><div class="line">        Thread t2=new MyThread(&quot;t2&quot;);    // 新建t2</div><div class="line">        t1.setPriority(1);                // 设置t1的优先级为1</div><div class="line">        t2.setPriority(10);                // 设置t2的优先级为10</div><div class="line">        t1.start();                        // 启动t1</div><div class="line">        t2.start();                        // 启动t2</div><div class="line">    &#125;  </div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>  t1和main是用户线程，t2是守护线程，当t1和main执行结束，只剩下守护线程，jvm退出。</p>
+<h5 id="线程优先级-1"><a href="#线程优先级-1" class="headerlink" title="线程优先级"></a>线程优先级</h5>  <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div></pre></td><td class="code"><pre><div class="line">class MyThread extends Thread&#123;  </div><div class="line">    public MyThread(String name) &#123;</div><div class="line">        super(name);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public void run()&#123;</div><div class="line">        for (int i=0; i&lt;5; i++) &#123;</div><div class="line">            System.out.println(Thread.currentThread().getName()</div><div class="line">                    +&quot;(&quot;+Thread.currentThread().getPriority()+ &quot;)&quot;</div><div class="line">                    +&quot;, loop &quot;+i);</div><div class="line">        &#125;</div><div class="line">    &#125; </div><div class="line">&#125;; </div><div class="line"></div><div class="line">public class Demo &#123;  </div><div class="line">    public static void main(String[] args) &#123;  </div><div class="line">        // 主线程优先级5</div><div class="line">        System.out.println(Thread.currentThread().getName()</div><div class="line">                +&quot;(&quot;+Thread.currentThread().getPriority()+ &quot;)&quot;);</div><div class="line"></div><div class="line">        Thread t1=new MyThread(&quot;t1&quot;);    // 新建t1</div><div class="line">        Thread t2=new MyThread(&quot;t2&quot;);    // 新建t2</div><div class="line">        t1.setPriority(1);                // 设置t1的优先级为1</div><div class="line">        t2.setPriority(10);                // 设置t2的优先级为10</div><div class="line">        // t1和t2并发执行(时间片调度)</div><div class="line">        t1.start();                        // 启动t1</div><div class="line">        t2.start();                        // 启动t2</div><div class="line">    &#125;  </div><div class="line">&#125;</div></pre></td></tr></table></figure>
 
           
         
@@ -1951,301 +2101,11 @@ raf.write(temp.getBytes());
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/11/13/activiti记录一/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="Leo Hao">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Do Or Die">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2017/11/13/activiti记录一/" itemprop="url">activiti记录一(基本概念)</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-11-13T09:02:59+08:00">
-                2017-11-13
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category" >
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/activiti/" itemprop="url" rel="index">
-                    <span itemprop="name">activiti</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h5 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h5><p>工作流</p>
-<blockquote>
-<p>工作流（workflow）就是工作流程的计算模型，即将工作流程中的工作如何前后组织在一起的逻辑和规则在计算机中以恰当的模型进行表示并对其实施计算。它主要解决的是“使在多个参与者之间按照某种预定义的规则传递文档、信息或任务的过程自动进行，从而实现某个预期的业务目标，或者促使此目标的实现”</p>
-</blockquote>
-<p>BPMN</p>
-<blockquote>
-<p>BPMN是一套流程建模的标准，主要目标是被所有业务用户容易理解的符号，支持从创建流程轮廓的业务分析到这些流程的最终实现，知道最终用户的管理监控。</p>
-</blockquote>
-<p>activiti</p>
-<blockquote>
-<p>Activiti是一个开源的工作流引擎，它实现了BPMN 2.0规范，可以发布设计好的流程定义，并通过api进行流程调度。</p>
-</blockquote>
-<p>特点：</p>
-<ul>
-<li>技术引擎+BPM平台</li>
-<li>强大的API，操作便捷</li>
-<li>支持Spring集成</li>
-<li>底层使用了MyBatis</li>
-</ul>
-<p>工作流的开发流程：</p>
-<ol>
-<li>创建流程图</li>
-<li>上传流程图（利用processEnginer保存流程图）</li>
-<li>部署流程图（RepositorySerivece加载流程图，然后部署流程图）</li>
-<li>启动流程：ProcessInstance 流程实例，Runtime，通过运行时服务(RuntimeSerivice得到流程实例)</li>
-<li>处理流程任务： 任务Task，通过任务服务(TaskSerivice)可以去检索待处理的任务(Handle task)</li>
-</ol>
-<h5 id="Activiti相关的操作类："><a href="#Activiti相关的操作类：" class="headerlink" title="Activiti相关的操作类："></a>Activiti相关的操作类：</h5><ul>
-<li>流程引擎配置ProcessE    ngineConfiguration：创建流程</li>
-<li>流程引擎ProcessEngine：拿到流程服务，比如仓库服务，运行时服务，任务服务</li>
-<li>流程实例ProcessInstance</li>
-<li>仓库服务RepositoryService</li>
-<li>运行服务RuntimeSerivice</li>
-<li>任务服务TaskService</li>
-<li>历史服务HistoryService</li>
-<li>管理和查询用户服务IdentifyService</li>
-<li>读取流程表单相关数据FormService</li>
-<li>引擎管理服务ManagementService</li>
-</ul>
-<h5 id="Activiti"><a href="#Activiti" class="headerlink" title="Activiti"></a>Activiti</h5><p>数据库表命名都是由ACT_开头。</p>
-<ul>
-<li>ACT<em>RE</em>*:’RE’表示repository。带有此前缀的表包含的是静态信息，如：流程定义、流程资源。</li>
-<li>ACT<em>RU</em>*:’RU’表示runtime。这是运行时的表，存储着流程变量、用户任务、职责等运行时的数据。</li>
-<li>ACT<em>ID</em>*:’ID’表示identity。这些表包含标识的信息，如用户、用户组等等。</li>
-<li>ACT<em>HI</em>*:’HI’表示history。这些表包含着历史的相关数据，如结束的流程实例、变量、任务等等。</li>
-<li>ACT<em>GE</em>*:普通数据，各种情况都使用的数据。</li>
-</ul>
-<table>
-<thead>
-<tr>
-<th>表名</th>
-<th>功能</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>ACT_GE_PROPERTY</td>
-<td>属性数据表。存储这个流程引擎级别的数据</td>
-</tr>
-<tr>
-<td>ACT_GE_BYTEARRAY</td>
-<td>用来保存部署文件的大文本数据</td>
-</tr>
-<tr>
-<td>ACT_RE_DEPLOYMENT</td>
-<td>用来存储部署时需要持久化保存下来的信息        </td>
-</tr>
-<tr>
-<td>ACT_RE_DEPLOYMENT</td>
-<td>用来存储部署时需要持久化保存下来的信息</td>
-</tr>
-<tr>
-<td>ACT_RE_PROCDEF</td>
-<td>业务流程定义数据表</td>
-</tr>
-<tr>
-<td>ACT_RE_MODEL</td>
-<td>流程设计模型部署表</td>
-</tr>
-<tr>
-<td>ACT_ID_GROUP</td>
-<td>用来存储用户组信息</td>
-</tr>
-<tr>
-<td>ACT_ID_MEMBERSHIP</td>
-<td>用来保存用户的分组信息</td>
-</tr>
-<tr>
-<td>ACT_ID_USER</td>
-<td>用来保存用户信息</td>
-</tr>
-<tr>
-<td>ACT_ID_INFO</td>
-<td>用户扩展信息表</td>
-</tr>
-<tr>
-<td>ACT_RU_EXECUTION</td>
-<td>运行时流程执行实例表</td>
-</tr>
-<tr>
-<td>ACT_RU_TASK</td>
-<td>运行时任务数据表</td>
-</tr>
-<tr>
-<td>ACT_RU_IDENTITYLINK</td>
-<td>任务参与者数据表。主要存储当前节点参与者的信息</td>
-</tr>
-<tr>
-<td>ACT_RU_VARIABLE</td>
-<td>运行时流程变量数据表</td>
-</tr>
-<tr>
-<td>ACT_RU_JOB</td>
-<td>运行时定时任务数据表</td>
-</tr>
-<tr>
-<td>ACT_HI_PROCINST</td>
-<td>历史流程实例表</td>
-</tr>
-<tr>
-<td>ACT_HI_ACTINST</td>
-<td>历史节点表</td>
-</tr>
-<tr>
-<td>ACT_HI_TASKINST</td>
-<td>历史任务实例表</td>
-</tr>
-<tr>
-<td>ACT_HI_DETAIL</td>
-<td>启动流程或者在任务complete之后,记录历史流程变量</td>
-</tr>
-<tr>
-<td>ACT_HI_ATTACHMENT</td>
-<td>历史附件表</td>
-</tr>
-<tr>
-<td>ACT_HI_COMMENT</td>
-<td>历史意见表</td>
-</tr>
-<tr>
-<td>ACT_HI_IDENTITYLINK</td>
-<td>历史流程人员表</td>
-</tr>
-<tr>
-<td>ACT_HI_VARINST</td>
-<td>历史变量表</td>
-</tr>
-</tbody>
-</table>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
   <nav class="pagination">
-    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right"></i></a>
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right"></i></a>
   </nav>
 
 
@@ -2290,7 +2150,7 @@ raf.write(temp.getBytes());
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">20</span>
+                <span class="site-state-item-count">21</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
