@@ -77,7 +77,7 @@
 <meta property="og:site_name" content="Do Or Die">
 <meta property="og:description" content="才学java的时候，打印某个对象是打印的一串莫名其妙的数字，后来知道这个是hashcode，就以为hashcode是对象的某个地址信息，直到看了一些文章才发现事实并非如此。 euqlasequals的作用是用来判断两个对象是否相等，定义在Object中，通过两个对象的地址来判断对象是否相等。 类没有覆盖equals方法时如果类没有覆盖equals方法，如果通过equals比较两个对象，实际上是比较">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2017-11-22T10:28:02.784Z">
+<meta property="og:updated_time" content="2017-11-23T02:03:05.208Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="equals和hashcode">
 <meta name="twitter:description" content="才学java的时候，打印某个对象是打印的一串莫名其妙的数字，后来知道这个是hashcode，就以为hashcode是对象的某个地址信息，直到看了一些文章才发现事实并非如此。 euqlasequals的作用是用来判断两个对象是否相等，定义在Object中，通过两个对象的地址来判断对象是否相等。 类没有覆盖equals方法时如果类没有覆盖equals方法，如果通过equals比较两个对象，实际上是比较">
@@ -353,9 +353,10 @@
 <h5 id="散列的碰撞"><a href="#散列的碰撞" class="headerlink" title="散列的碰撞"></a>散列的碰撞</h5><p>简单的散列方法就是取余，2%10和12%10这两个产生的键都是一样的，这就是碰撞</p>
 <ul>
 <li>链接法处理碰撞<br>让发生碰撞的数据公用一个地址，可以让数组的每个slot（槽）都指向一个链表。 </li>
-<li>开放寻址法处理碰撞</li>
+<li>开放寻址法处理碰撞<br>让每个数据尽量分散的映射到一些探查序列上，让每个数据使用探查序列中任何一种的可能性相同，就是所谓的<strong>一致散列</strong>。</li>
 </ul>
 </blockquote>
+<p>常用的方法：线性探查（按着顺序），二次探查、双重探查</p>
 <h3 id="hashcode与equals的关系"><a href="#hashcode与equals的关系" class="headerlink" title="hashcode与equals的关系"></a>hashcode与equals的关系</h3><p>当我们往散列表中插入元素时，是通过hashcode找到元素位置，所以有:</p>
 <ol>
 <li>两个对象相等，那么hashcode一定相等</li>
