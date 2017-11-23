@@ -252,6 +252,155 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/11/13/SpringBoot学习一/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2017/11/13/SpringBoot学习一/" itemprop="url">SpringBoot学习一</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-11-13T10:20:16+08:00">
+                2017-11-13
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/SpringBoot/" itemprop="url" rel="index">
+                    <span itemprop="name">SpringBoot</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+          一、启动SpringBoot
+pom依赖文件123456789101112&lt;parent&gt;    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;    &lt;artifactId&gt;spring-boot-starte
+          ...
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2017/11/13/SpringBoot学习一/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/11/13/activiti记录一/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -345,157 +494,17 @@
       
         
           
-            <h5 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h5><p>工作流</p>
-<blockquote>
-<p>工作流（workflow）就是工作流程的计算模型，即将工作流程中的工作如何前后组织在一起的逻辑和规则在计算机中以恰当的模型进行表示并对其实施计算。它主要解决的是“使在多个参与者之间按照某种预定义的规则传递文档、信息或任务的过程自动进行，从而实现某个预期的业务目标，或者促使此目标的实现”</p>
-</blockquote>
-<p>BPMN</p>
-<blockquote>
-<p>BPMN是一套流程建模的标准，主要目标是被所有业务用户容易理解的符号，支持从创建流程轮廓的业务分析到这些流程的最终实现，知道最终用户的管理监控。</p>
-</blockquote>
-<p>activiti</p>
-<blockquote>
-<p>Activiti是一个开源的工作流引擎，它实现了BPMN 2.0规范，可以发布设计好的流程定义，并通过api进行流程调度。</p>
-</blockquote>
-<p>特点：</p>
-<ul>
-<li>技术引擎+BPM平台</li>
-<li>强大的API，操作便捷</li>
-<li>支持Spring集成</li>
-<li>底层使用了MyBatis</li>
-</ul>
-<p>工作流的开发流程：</p>
-<ol>
-<li>创建流程图</li>
-<li>上传流程图（利用processEnginer保存流程图）</li>
-<li>部署流程图（RepositorySerivece加载流程图，然后部署流程图）</li>
-<li>启动流程：ProcessInstance 流程实例，Runtime，通过运行时服务(RuntimeSerivice得到流程实例)</li>
-<li>处理流程任务： 任务Task，通过任务服务(TaskSerivice)可以去检索待处理的任务(Handle task)</li>
-</ol>
-<h5 id="Activiti相关的操作类："><a href="#Activiti相关的操作类：" class="headerlink" title="Activiti相关的操作类："></a>Activiti相关的操作类：</h5><ul>
-<li>流程引擎配置ProcessE    ngineConfiguration：创建流程</li>
-<li>流程引擎ProcessEngine：拿到流程服务，比如仓库服务，运行时服务，任务服务</li>
-<li>流程实例ProcessInstance</li>
-<li>仓库服务RepositoryService</li>
-<li>运行服务RuntimeSerivice</li>
-<li>任务服务TaskService</li>
-<li>历史服务HistoryService</li>
-<li>管理和查询用户服务IdentifyService</li>
-<li>读取流程表单相关数据FormService</li>
-<li>引擎管理服务ManagementService</li>
-</ul>
-<h5 id="Activiti"><a href="#Activiti" class="headerlink" title="Activiti"></a>Activiti</h5><p>数据库表命名都是由ACT_开头。</p>
-<ul>
-<li>ACT<em>RE</em>*:’RE’表示repository。带有此前缀的表包含的是静态信息，如：流程定义、流程资源。</li>
-<li>ACT<em>RU</em>*:’RU’表示runtime。这是运行时的表，存储着流程变量、用户任务、职责等运行时的数据。</li>
-<li>ACT<em>ID</em>*:’ID’表示identity。这些表包含标识的信息，如用户、用户组等等。</li>
-<li>ACT<em>HI</em>*:’HI’表示history。这些表包含着历史的相关数据，如结束的流程实例、变量、任务等等。</li>
-<li>ACT<em>GE</em>*:普通数据，各种情况都使用的数据。</li>
-</ul>
-<table>
-<thead>
-<tr>
-<th>表名</th>
-<th>功能</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>ACT_GE_PROPERTY</td>
-<td>属性数据表。存储这个流程引擎级别的数据</td>
-</tr>
-<tr>
-<td>ACT_GE_BYTEARRAY</td>
-<td>用来保存部署文件的大文本数据</td>
-</tr>
-<tr>
-<td>ACT_RE_DEPLOYMENT</td>
-<td>用来存储部署时需要持久化保存下来的信息        </td>
-</tr>
-<tr>
-<td>ACT_RE_DEPLOYMENT</td>
-<td>用来存储部署时需要持久化保存下来的信息</td>
-</tr>
-<tr>
-<td>ACT_RE_PROCDEF</td>
-<td>业务流程定义数据表</td>
-</tr>
-<tr>
-<td>ACT_RE_MODEL</td>
-<td>流程设计模型部署表</td>
-</tr>
-<tr>
-<td>ACT_ID_GROUP</td>
-<td>用来存储用户组信息</td>
-</tr>
-<tr>
-<td>ACT_ID_MEMBERSHIP</td>
-<td>用来保存用户的分组信息</td>
-</tr>
-<tr>
-<td>ACT_ID_USER</td>
-<td>用来保存用户信息</td>
-</tr>
-<tr>
-<td>ACT_ID_INFO</td>
-<td>用户扩展信息表</td>
-</tr>
-<tr>
-<td>ACT_RU_EXECUTION</td>
-<td>运行时流程执行实例表</td>
-</tr>
-<tr>
-<td>ACT_RU_TASK</td>
-<td>运行时任务数据表</td>
-</tr>
-<tr>
-<td>ACT_RU_IDENTITYLINK</td>
-<td>任务参与者数据表。主要存储当前节点参与者的信息</td>
-</tr>
-<tr>
-<td>ACT_RU_VARIABLE</td>
-<td>运行时流程变量数据表</td>
-</tr>
-<tr>
-<td>ACT_RU_JOB</td>
-<td>运行时定时任务数据表</td>
-</tr>
-<tr>
-<td>ACT_HI_PROCINST</td>
-<td>历史流程实例表</td>
-</tr>
-<tr>
-<td>ACT_HI_ACTINST</td>
-<td>历史节点表</td>
-</tr>
-<tr>
-<td>ACT_HI_TASKINST</td>
-<td>历史任务实例表</td>
-</tr>
-<tr>
-<td>ACT_HI_DETAIL</td>
-<td>启动流程或者在任务complete之后,记录历史流程变量</td>
-</tr>
-<tr>
-<td>ACT_HI_ATTACHMENT</td>
-<td>历史附件表</td>
-</tr>
-<tr>
-<td>ACT_HI_COMMENT</td>
-<td>历史意见表</td>
-</tr>
-<tr>
-<td>ACT_HI_IDENTITYLINK</td>
-<td>历史流程人员表</td>
-</tr>
-<tr>
-<td>ACT_HI_VARINST</td>
-<td>历史变量表</td>
-</tr>
-</tbody>
-</table>
+          概念工作流
 
-          
+工作流（workflow）就是工作流程的计算模型，即将工作流程中的工作如何前后组织在一起的逻辑和规则在计算机中以恰当的模型进行表示并对其实施计算。它主要解决的是“使在多个参与者之间按照某种预定义的规则传递文档、信息或任务的过程自动进行，从而实现某个预期的业务目标，或者促使此目标的实现”
+          ...
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2017/11/13/activiti记录一/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
         
       
     </div>
@@ -635,11 +644,18 @@
       
         
           
-            <p>内部类的知识点较多，我看了好几篇文章，想系统的总结一下。</p>
-<p>内部类分为：静态内部类，成员内部类，方法内部类，匿名内部类</p>
-<h6 id="静态内部类"><a href="#静态内部类" class="headerlink" title="静态内部类"></a>静态内部类</h6><p>静态内部类是定义在另一个类里面用static修饰class的类，静态内部类是不需要依赖于外部类</p>
+          内部类的知识点较多，我看了好几篇文章，想系统的总结一下。
+内部类分为：静态内部类，成员内部类，方法内部类，匿名内部类
+静态内部类静态内部类是定义在另一个类里面用static修饰class的类，静态内部类是不需要依赖于外部类
 
           
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2017/11/11/内部类总结/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
         
       
     </div>
@@ -779,20 +795,17 @@
       
         
           
-            <p>在java中，经常遇到从classpath里面读取配置文件的东西，最开始以为classpath是某个目录，现在好好的理一下。</p>
-<blockquote>
-<p>java项目中src路径下的文件在编译后会放到WEB-INF/clases路径下吧。默认的classpath是在这里。直接放到WEB-INF下的话，是不在classpath下的。用ClassPathXmlApplicationContext当然获取不到。 </p>
-<p>maven项目中resource目录就是默认的classpath<br>classPath即为java文件编译之后的class文件的编译目录一般为web-inf/classes，src下的xml在编译时也会复制到classPath下<br>ApplicationContext ctx = new ClassPathXmlApplicationContext(“xxxx.xml”);  //读取classPath下的spring.xml配置文件<br>ApplicationContext ctx = new FileSystemXmlApplicationContext(“WebRoot/WEB-INF/xxxx.xml”);   //读取WEB-INF 下的spring.xml文件  </p>
-</blockquote>
-<h3 id="classpath和classpath"><a href="#classpath和classpath" class="headerlink" title="classpath和classpath*"></a>classpath和classpath*</h3><p>classpath： 只会到你的class路径中查找找文件;<br>classpath*：不仅包含class路径，还包括jar文件中(class路径)进行查找.<br>java从classpath中获取资源的方法, ClassLoader提供的两个方法：</p>
-<ul>
-<li>public URL getResource(String name)</li>
-<li>public InputStream getResourceAsStream(String name)</li>
-</ul>
-<p>这里name是资源的类路径，它是相对与“/”根路径下的位置。getResource得到的是一个URL对象来定位资源，而getResourceAsStream取得该资源输入流的引用保证程序可以从正确的位置抽取数据。但是真正使用的不是ClassLoader的这两个方法，而是Class的getResource和getResourceAsStream方法，因为Class对象可以从你的类得到（如YourClass.class或 YourClass.getClass()），而ClassLoader则需要再调用一次YourClass.getClassLoader()方法，不过根据JDK文档的说法，Class对象的这两个方法其实是“委托”（delegate）给装载它的ClassLoader来做的，所以只需要使用 Class对象的这两个方法就可以了</p>
-<p>使用例子<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div></pre></td><td class="code"><pre><div class="line">1.this.getClass().getResource（&quot;&quot;） </div><div class="line">得到的是当前类class文件的URI目录。不包括自己！</div><div class="line">如：file：/D：/workspace/jbpmtest3/bin/com/test/</div><div class="line"></div><div class="line">2.this.getClass().getResource（&quot;/&quot;） </div><div class="line">得到的是当前的classpath的绝对URI路径 。</div><div class="line">如：file：/D：/workspace/jbpmtest3/bin/</div><div class="line"></div><div class="line">3.this.getClass() .getClassLoader().getResource（&quot;&quot;） </div><div class="line">得到的也是当前ClassPath的绝对URI路径 。</div><div class="line">如：file：/D：/workspace/jbpmtest3/bin/</div><div class="line"></div><div class="line">4.ClassLoader.getSystemResource（&quot;&quot;） </div><div class="line">得到的也是当前ClassPath的绝对URI路径 。</div><div class="line">如：file：/D：/workspace/jbpmtest3/bin/</div><div class="line"></div><div class="line">5.Thread.currentThread().getContextClassLoader ().getResource（&quot;&quot;） </div><div class="line">得到的也是当前ClassPath的绝对URI路径 。</div><div class="line">如：file：/D：/workspace/jbpmtest3/bin/</div><div class="line"></div><div class="line">6.ServletActionContext.getServletContext().getRealPath(“/”) </div><div class="line">Web应用程序 中，得到Web应用程序的根目录的绝对路径。这样，我们只需要提供相对于Web应用程序根目录的路径，就可以构建出定位资源的绝对路径。</div><div class="line">如：file：/D:/workspace/.metadata/.plugins/org.eclipse.wst.server.core/tmp0/wtpwebapps/WebProject</div></pre></td></tr></table></figure></p>
+          在java中，经常遇到从classpath里面读取配置文件的东西，最开始以为classpath是某个目录，现在好好的理一下。
 
-          
+java项目中src路径下的文件在编译后会放到WEB-INF/clases路径下吧。默认的classpath是在这里。直接放到WEB-INF下的话，是不在classpath
+          ...
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2017/11/06/java的classpath理解/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
         
       
     </div>
@@ -932,12 +945,15 @@
       
         
           
-            <p>最近一直忙项目，Spring boot好多坑 -_- ！！ 今晚来折腾一下rabbitMQ，打开vagrant，<code>service rabbitmq-server start</code>，启动不了，报错如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">DIAGNOSTICS</div><div class="line">===========</div><div class="line"></div><div class="line">attempted to contact: [rabbit@10]</div><div class="line"></div><div class="line">rabbit@10:</div><div class="line">* unable to connect to epmd (port 4369) on 192: badarg (unknown POSIX error)</div><div class="line"></div><div class="line"></div><div class="line">current node details:</div><div class="line">- node name: &apos;rabbitmq-cli-60@192&apos;</div><div class="line">- home dir: /var/lib/rabbitmq</div><div class="line">- cookie hash: rb2CNGgDqm+k5+jq1wj6vg==</div></pre></td></tr></table></figure></p>
-<p>这不是坑爹吗，赶紧百度，CSDN上有人说是什么hostname被改了，我又忘了我之前的hostname是什么，还有人说是报错中<code>cookie hash</code>对应的值应该与<code>.erlang.cookie</code>的值相等，我由于是rpm装的rabbitmq，<code>.erlang.cookie</code>的路径应该是<code>/var/lib/rabbitmq/.erlang.cookie</code>，打开果然不一样，然后把上面的值复制进去，重启，还是报一样的错，并且<code>cookie hash</code>变了，果然网上的答案水分很大，继续搜索，终于找到答案。</p>
-<p><code>vim /etc/rabbitmq/rabbitmq-env.conf</code>，在文件中写入<code>NODENAME=rabbit@localhost</code>，保存。再次启动rabbitmq-server，成功！</p>
-<p>另外在rabbit-mq的日志看到rabbitmq的各个信息:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">node           : rabbit@he07</div><div class="line">home dir       : /var/lib/rabbitmq</div><div class="line">config file(s) : /etc/rabbitmq/rabbitmq.config (not found)</div><div class="line">cookie hash    : qhOGp9TtH4Rn+BekiYXxIg==</div><div class="line">log            : /var/log/rabbitmq/rabbit@he07.log</div><div class="line">sasl log       : /var/log/rabbitmq/rabbit@he07-sasl.log</div><div class="line">database dir   : /var/lib/rabbitmq/mnesia/rabbit@he07</div></pre></td></tr></table></figure></p>
-
-          
+          最近一直忙项目，Spring boot好多坑 -_- ！！ 今晚来折腾一下rabbitMQ，打开vagrant，service rabbitmq-server start，启动不了，报错如下：12345678910111213DIAGNOSTICS===========attempted to co
+          ...
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2017/10/31/rabbitmq无法启动/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
         
       
     </div>
@@ -1077,41 +1093,18 @@
       
         
           
-            <p>为了装rabbitMQ，不得不又重新编译一次PHP，正好换上最新的PHP7.1.2，以后还可以装个Swoole来玩玩，记录一下安装的过程</p>
-<h3 id="安装PHP"><a href="#安装PHP" class="headerlink" title="安装PHP"></a>安装PHP</h3><ol>
-<li>先下载PHP的源码包，在PHP的官网<blockquote>
-<p>wget -O php7.tar.gz <a href="http://hk2.php.net/get/php-7.1.10.tar.gz/from/this/mirror(-O的意思是以文件形式下载" target="_blank" rel="external">http://hk2.php.net/get/php-7.1.10.tar.gz/from/this/mirror(-O的意思是以文件形式下载</a>)</p>
-</blockquote>
-</li>
-</ol>
-<p>2.解压并进入</p>
-<blockquote>
-<p>tar -xvf php7.tar.gz<br>cd php-7.1.2</p>
-</blockquote>
-<p>3.安装依赖包</p>
-<blockquote>
-<p>yum install libxml2 libxml2-devel openssl openssl-devel bzip2 bzip2-devel libcurl libcurl-devel libjpeg libjpeg-devel libpng libpng-devel freetype freetype-devel gmp gmp-devel libmcrypt libmcrypt-devel readline readline-devel libxslt libxslt-devel</p>
-</blockquote>
-<p>4.编译配置<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div></pre></td><td class="code"><pre><div class="line">./configure \</div><div class="line">--prefix=/usr/local/php \</div><div class="line">--with-config-file-path=/etc \</div><div class="line">--enable-fpm \</div><div class="line">--with-fpm-user=nginx  \</div><div class="line">--with-fpm-group=nginx \</div><div class="line">--enable-inline-optimization \</div><div class="line">--disable-debug \</div><div class="line">--disable-rpath \</div><div class="line">--enable-shared  \</div><div class="line">--enable-soap \</div><div class="line">--with-libxml-dir \</div><div class="line">--with-xmlrpc \</div><div class="line">--with-openssl \</div><div class="line">--with-mcrypt \</div><div class="line">--with-mhash \</div><div class="line">--with-pcre-regex \</div><div class="line">--with-sqlite3 \</div><div class="line">--with-zlib \</div><div class="line">--enable-bcmath \</div><div class="line">--with-iconv \</div><div class="line">--with-bz2 \</div><div class="line">--enable-calendar \</div><div class="line">--with-curl \</div><div class="line">--with-cdb \</div><div class="line">--enable-dom \</div><div class="line">--enable-exif \</div><div class="line">--enable-fileinfo \</div><div class="line">--enable-filter \</div><div class="line">--with-pcre-dir \</div><div class="line">--enable-ftp \</div><div class="line">--with-gd \</div><div class="line">--with-openssl-dir \</div><div class="line">--with-jpeg-dir \</div><div class="line">--with-png-dir \</div><div class="line">--with-zlib-dir  \</div><div class="line">--with-freetype-dir \</div><div class="line">--enable-gd-native-ttf \</div><div class="line">--enable-gd-jis-conv \</div><div class="line">--with-gettext \</div><div class="line">--with-gmp \</div><div class="line">--with-mhash \</div><div class="line">--enable-json \</div><div class="line">--enable-mbstring \</div><div class="line">--enable-mbregex \</div><div class="line">--enable-mbregex-backtrack \</div><div class="line">--with-libmbfl \</div><div class="line">--with-onig \</div><div class="line">--enable-pdo \</div><div class="line">--with-mysqli=mysqlnd \</div><div class="line">--with-pdo-mysql=mysqlnd \</div><div class="line">--with-zlib-dir \</div><div class="line">--with-pdo-sqlite \</div><div class="line">--with-readline \</div><div class="line">--enable-session \</div><div class="line">--enable-shmop \</div><div class="line">--enable-simplexml \</div><div class="line">--enable-sockets  \</div><div class="line">--enable-sysvmsg \</div><div class="line">--enable-sysvsem \</div><div class="line">--enable-sysvshm \</div><div class="line">--enable-wddx \</div><div class="line">--with-libxml-dir \</div><div class="line">--with-xsl \</div><div class="line">--enable-zip \</div><div class="line">--enable-mysqlnd-compression-support \</div><div class="line">--with-pear \</div><div class="line">--enable-opcache</div></pre></td></tr></table></figure></p>
-<p>5.make安装</p>
-<blockquote>
-<p>make &amp;&amp; make install （其实建议两个分开，有错误方便排查）</p>
-</blockquote>
-<p>6.配置环境变量</p>
-<blockquote>
-<p>vim /etc/profile<br>在末尾追加：<br>PATH=$PATH:/usr/local/php/bin<br>export PATH<br>执行命令使改动生效<br>source /etc/profile</p>
-</blockquote>
-<p>7.配置php-fpm<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">cp php.ini-production /etc/php.ini</div><div class="line">cp /usr/local/php/etc/php-fpm.conf.default /usr/local/php/etc/php-fpm.conf</div><div class="line">cp /usr/local/php/etc/php-fpm.d/www.conf.default /usr/local/php/etc/php-fpm.d/www.conf</div><div class="line">cp sapi/fpm/init.d.php-fpm /etc/init.d/php-fpm</div><div class="line">chmod +x /etc/init.d/php-fpm</div></pre></td></tr></table></figure></p>
-<p>8.启动php-fpm</p>
-<blockquote>
-<p>/etc/init.d/php-fpm start</p>
-</blockquote>
-<p>此刻php -v，成功安装PHP</p>
-<h3 id="安装Nginx"><a href="#安装Nginx" class="headerlink" title="安装Nginx"></a>安装Nginx</h3><p>nginx由于各个模块都不太清楚就不编译安装了，找到一个rpm源，yum install之后，由于之前已经把php-fpm相关配置配置好并且成功启动，现在只需要在nginx.conf,把server配置一下</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">在server块中修改location</div><div class="line">     location ~ \.php$ &#123;</div><div class="line">            root    html;</div><div class="line">            fastcgi_pass 127.0.0.1:9000;</div><div class="line">            fastcgi_param SCRIPT_FILENAME$document_root$fastcgi_script_name;</div><div class="line">            fastcgi_index index.php;</div><div class="line">            include fastcgi_params;</div><div class="line">        &#125;</div></pre></td></tr></table></figure>
-<p>在/usr/share/www/html下新建info.php输出phpinfo()；完美解决</p>
-
-          
+          为了装rabbitMQ，不得不又重新编译一次PHP，正好换上最新的PHP7.1.2，以后还可以装个Swoole来玩玩，记录一下安装的过程
+安装PHP
+先下载PHP的源码包，在PHP的官网
+wget -O php7.tar.gz http://hk2.php.net/get/php-7.1.10.ta
+          ...
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2017/10/24/记录一次编译安装PHP的过程/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
         
       
     </div>
@@ -1251,11 +1244,17 @@
       
         
           
-            <p>无意间看到一位大学同学发的朋友圈动态，是在学校准备二战考研，此时才发觉，我已经离开学生这个身份快半年了。</p>
-<p>我遇到了很优秀的学习毕业的朋友，技术扎实，什么东西都上手很快，对各个方面都有了解，运动能力也超棒。与之相比，我似乎白活了二十几年。</p>
-<p>不过相处一段时间后我才知道，这位朋友每天都两点多睡觉甚至更晚，没有其他的爱好，会研究一下股票和基金，经常阅读开源项目，对代码要求很严格。我问他这样累不累，他的回答是这样很正常啊。原来我们眼里的“十分辛苦”的生活节奏，在人家眼里是最正常的。与这位朋友一样，我没有优越的家庭环境，虽然在初中和高中都是名列前茅，但是高考确只考了一个普通的一本专业。我自以为大学很努力，每天都在学校的实验室待到十点，坚持了几年，现在发现世界上其实有很多起点比我高，走的比我快的人比我更努力。我不是985甚至不是211的毕业生，但是我可以付出与他们一样的时间去阅读和学习，好在计算机科学在应用技术这方面不需要太多的天赋，只要花时间去学习，任何语言任何框架都是可以学会的。世界上的天才很少，更多的是一群坚持不懈的人，我的起点比别人低，那我就用低姿态多积累一段时间，我少做几件事，把想学的东西学好，不说卓越，应该也会在知识的掌握和思维方面不差于其他人。</p>
-
-          
+          无意间看到一位大学同学发的朋友圈动态，是在学校准备二战考研，此时才发觉，我已经离开学生这个身份快半年了。
+我遇到了很优秀的学习毕业的朋友，技术扎实，什么东西都上手很快，对各个方面都有了解，运动能力也超棒。与之相比，我似乎白活了二十几年。
+不过相处一段时间后我才知道，这位朋友每天都两点多睡觉甚至更晚，
+          ...
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2017/10/22/学习与天才/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
         
       
     </div>
@@ -1395,55 +1394,21 @@
       
         
           
-            <p>本次操作基于centos7</p>
-<p>RabbitMQ是基于erlang，首先安装erlang</p>
-<blockquote>
-<p>rpm -Uvh <a href="http://www.rabbitmq.com/releases/erlang/erlang-18.1-1.el7.centos.x86_64.rpm" target="_blank" rel="external">http://www.rabbitmq.com/releases/erlang/erlang-18.1-1.el7.centos.x86_64.rpm</a></p>
-</blockquote>
-<p>然后安装rabbitMQ-server</p>
-<blockquote>
-<p>rpm -Uvh <a href="http://www.rabbitmq.com/releases/rabbitmq-server/v3.5.6/rabbitmq-server-3.5.6-1.noarch.rpm" target="_blank" rel="external">http://www.rabbitmq.com/releases/rabbitmq-server/v3.5.6/rabbitmq-server-3.5.6-1.noarch.rpm</a></p>
-</blockquote>
-<p>检查是否安装成功命令 <code>rpm -qa | grep rabbitmq</code></p>
-<ul>
-<li>开启rabbitmq<code>service rabbitmq-server start</code></li>
-<li>关闭rabbitmq<code>service rabbitmq-server stop</code></li>
-<li>查看rabbitmq运行状态<code>rabbitmqctl status</code></li>
-</ul>
-<p>安装rabbitmq-c-0.8.0</p>
-<blockquote>
-<p>wget <a href="https://github.com/alanxz/rabbitmq-c/releases/download/v0.8.0/rabbitmq-c-0.8.0.tar.gz" target="_blank" rel="external">https://github.com/alanxz/rabbitmq-c/releases/download/v0.8.0/rabbitmq-c-0.8.0.tar.gz</a><br>cd rabbitmq-c-0.8.0<br>./configure –prefix=/usr/local/rabbitmq-c<br>make<br>make install   </p>
-</blockquote>
-<p>安装AMQP扩展</p>
-<blockquote>
-<p>wget <a href="http://pecl.php.net/get/amqp-1.7.1.tgz" target="_blank" rel="external">http://pecl.php.net/get/amqp-1.7.1.tgz</a><br>解压并进入：<br>phpize<br>./configure –with-php-config=/usr/local/php/bin/php-config –with-amqp –with-librabbitmq-dir=/usr/local/rabbitmq-c/<br>make &amp;&amp; make install</p>
-</blockquote>
-<p>执行phpize期间出现了一个错误<code>Cannot find autoconf. Please check your autoconf installation and the $PHP_AUTOCONF environment variable. Then, rerun this script.</code><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">yum install m4</div><div class="line">yum install autoconf</div></pre></td></tr></table></figure></p>
-<p>修改php配置文件，在最后一行加上<code>extionsion=amqp.so</code></p>
-<p>执行<code>php -m | grep amqp</code>,完美！</p>
-<p>接下来看看AMQP类的大概使用</p>
-<h3 id="一、AMQPConnection"><a href="#一、AMQPConnection" class="headerlink" title="一、AMQPConnection"></a>一、AMQPConnection</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">public bool connect ( void )</div><div class="line">public __construct ([ array $credentials = array() ] )</div><div class="line">public bool disconnect ( void )</div><div class="line">public string getHost ( void )</div><div class="line">public string getLogin ( void )</div><div class="line">public string getPassword ( void )</div><div class="line">public int getPort ( void )</div><div class="line">public string getVhost ( void )</div><div class="line">public bool isConnected ( void )</div><div class="line">public bool reconnect ( void )</div><div class="line">public bool setHost ( string $host )</div><div class="line">public bool setLogin ( string $login )</div><div class="line">public bool setPassword ( string $password )</div><div class="line">public bool setPort ( int $port )</div><div class="line">public bool setVhost ( string $vhost )</div></pre></td></tr></table></figure>
-<ol>
-<li><p>construct<br>$credentials是凭证，是传一些配置参数。包括host、vhost、port、login、password(前五个值会有默认值，建议在config里面初始化)、read_timeout、connect_timeout、write_timeout（这三个值是最新版才有）</p>
-</li>
-<li><p>AMQPChannel  </p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">client ：客户端</div><div class="line">Broker：英文含义是代理，这里指代理服务器，也是通常说的server，也可以指Rabbit cluster的节点，</div><div class="line">也就是在AMQPConnection的配置文件中的host、port</div><div class="line">virtual_host：虚拟host，这个可以理解为在Broker中，虚拟出来的消息处理模块。一个Broker中</div><div class="line">可以创建多个virtual_host.</div><div class="line">exchange：逻辑上属于virtual_host的子模块，负责消息转发到queue中。</div><div class="line">queue：逻辑上属于virtual_host的子模块。</div><div class="line">channel：通道。链接virtual_host的通道。</div><div class="line">routingkey：</div><div class="line"></div><div class="line">virtual_host和channel的设置都是为了增加并发性能，降低资源消耗的。</div></pre></td></tr></table></figure>
-</li>
-</ol>
-<p>3.AMQPExchange<br>主要是::setType(String $exchangeType)设置exchange的类型，是rabbitmq的核心。目前有：AMQP_EX_TYPE_DIRECT、 AMQP_EX_TYPE_FANOUT、AMQP_EX_TYPE_HEADERS 、 AMQP_EX_TYPE_TOPIC   </p>
-<p>4.AMQPQueue<br>::setFlags(int $flag)，可选参数：AMQP_DURABLE, AMQP_PASSIVE,AMQP_EXCLUSIVE, AMQP_AUTODELETE  </p>
-<p>auto_delete:默认参数，当队列中有消费者，则队列存在，当没有消费者链接，则队列删除</p>
-<p>durable：持久化，队列不删除，注意仅仅是队列持久，消息不持久（消息的持久在publish时的增加属性delivery_mode）。消费的消息，从队列里删除，未消费的消息保存在队列中，不需要关注是否有消费者。最实用</p>
-<p>passive：声明一个已存在的队列。意义不大，如果队列不存在会抛出异常。</p>
-<p>exclusive：排他队列，如果一个队列被声明为排他队列，该队列仅对首次声明它的连接可见，并在连接断开时自动删除。这里需要注意三点：</p>
-<ul>
-<li>排他队列是基于连接可见的，同一连接的不同信道是可以同时访问同一个连接创建的排他队列的。</li>
-<li>“首次”，如果一个连接已经声明了一个排他队列，其他连接是不允许建立同名的排他队列的，这个与普通队列不同。</li>
-<li>即使该队列是持久化的，一旦连接关闭或者客户端退出，该排他队列都会被自动删除的。这种队列适用于只限于一个客户端发送读取消息的应用场景。</li>
-</ul>
-<p>本文来自：<a href="http://www.huangxiaobai.com/archives/1294" target="_blank" rel="external">PHP的AMQP类</a></p>
+          本次操作基于centos7
+RabbitMQ是基于erlang，首先安装erlang
 
-          
+rpm -Uvh http://www.rabbitmq.com/releases/erlang/erlang-18.1-1.el7.centos.x86_64.rpm
+
+然后安装rabbitMQ-server
+
+          ...
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2017/10/22/PHP使用RabbitMQ之安装使用/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
         
       
     </div>
@@ -1583,102 +1548,20 @@
       
         
           
-            <h3 id="AMQP关键性概念和流程"><a href="#AMQP关键性概念和流程" class="headerlink" title="AMQP关键性概念和流程"></a>AMQP关键性概念和流程</h3><ul>
-<li>broker： 消息队列服务器实体</li>
-<li>Exchange： 消息交换机，指定消息按照什么规则到哪个队列</li>
-<li>Queue： 消息队列载体， 每个消息会被投放到一个或多个队列</li>
-<li>Binding： 绑定，将Exchange和Queue按某种规则绑定起来</li>
-<li>Routing Key： 路由关键字，Exchange按照这个关键字进行消息投递</li>
-<li>vhost： 虚拟主机，一个broker可以开多个vhost，用作不同用户的权限分离</li>
-<li>producer：生产者，消息的投递程序</li>
-<li>consumer： 消费者， 消息的接受程序</li>
-<li>channel： 消息通道， 在客户端的每个连接都可以建立多个channel，每个channel代表一个会话任务</li>
-</ul>
-<p>AMQP消息模型如图所示：<br><img src="http://www.huangxiaobai.com/wp-content/uploads/2017/01/3178521620-57fba2b850ccc_articlex.png" alt="AMQP消息模型"><br>我们可以知道，消息的发送步骤：  </p>
-<ol>
-<li>消息生产者将消息发布（publish）到exchange中</li>
-<li>exchange根据队列的绑定关系（routes）将消息发布到不同的queue总</li>
-<li>AMQP根据订阅规则将消息发送给消费者或消费者自行根据需要从消息队列中获取消息</li>
-</ol>
-<p>消息队列的完整使用流程如下：  </p>
-<ol>
-<li>客户端连接到消息队列服务器，打开一个channel</li>
-<li>客户端声明一个queue，并设置相关属性</li>
-<li>客户端使用routing key， 并设置相关属性</li>
-<li>客户端使用routing key，在exchange和queue之间建立绑定关系</li>
-<li>客户端投递消息到exchange</li>
-</ol>
-<p>以上步骤exchange、queue、routingkey三个决定了从exchange到queue的唯一线路<br>6.当exchange接受到消息后，就根据消息的key和已经设置好的binding，进行消息路由，把消息投递到队列里面。</p>
-<h3 id="Exchange"><a href="#Exchange" class="headerlink" title="Exchange"></a>Exchange</h3><p>Exchange的任务主要是接受消息并将消息路由到0个或多个queue中，而路由的算法受到exchange类型和绑定（binding）的关系影响，AMQP提供了以下Exchange类型：</p>
-<table>
-<thead>
-<tr>
-<th>类型</th>
-<th>默认预定义的名字</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Direct Exchange</td>
-<td>空字符串和 amq.direct</td>
-</tr>
-<tr>
-<td>Fanout Exchange</td>
-<td>amq.fanout</td>
-</tr>
-<tr>
-<td>Topic Exchange</td>
-<td>amp.topic</td>
-</tr>
-<tr>
-<td>Headers Exchange</td>
-<td>amq.match(RabbitMQ中还有amq.headers)</td>
-</tr>
-</tbody>
-</table>
-<p>每个Exchange有以下属性：</p>
-<ul>
-<li>Name和Exchange的name</li>
-<li>Durability，是否为持久的Exchange，当为真时，broker重启后也会保留此Exchange</li>
-<li>Auto-delete， 当为真时，如果所有绑定的queue都不在使用时，此exchange会自动删除</li>
-</ul>
-<p>默认的exchange是由broker预创建的匿名（即名字是空字符）的direct exchange，对于简单的程序，默认的exchange有一个实用的属性：如果没有显式地绑定 Exchnge, 那么创建的每个 queue 都会自动绑定到这个默认的 exchagne 中, 并且此时这个 queue 的 route key 就是这个queue 的名字.</p>
-<h3 id="direct-Exchange"><a href="#direct-Exchange" class="headerlink" title="direct Exchange"></a>direct Exchange</h3><p><img src="http://www.huangxiaobai.com/wp-content/uploads/2017/01/2741285098-57fba2ca6e2da_articlex.png" alt=""><br>direct Exchange根据routing key把消息发送到不同的queue. direct exchange 适合用于消息的单播发送. direct exchange 的工作流程如下:</p>
-<ul>
-<li>一个 queue 使用 K 作为 route key 绑定到 direct exchange 中</li>
-<li>当direct exchange 收到一个 route key 为 R 的消息时, 如果 R == K, 则此 exchange 会将此消息路由到此 queue 中</li>
-</ul>
-<h3 id="fanout-Exchange"><a href="#fanout-Exchange" class="headerlink" title="fanout Exchange"></a>fanout Exchange</h3><p>一个 fanout exchange 会将消息分发给所有绑定到此 exchange 的 queue 中, 而不会考虑 queue 的 route key. 即如果有 N 个 Queue 绑定到一个 fanout exchange 时, 那么当此 exchange 收到消息时, 会将此消息分发到这 N 个 queue 中. 由于此性质, fanout exchange 也常用消息的广播<br><img src="http://www.huangxiaobai.com/wp-content/uploads/2017/01/4144211224-57fba2d656e45_articlex.png" alt=""></p>
-<h3 id="topic-Exchange"><a href="#topic-Exchange" class="headerlink" title="topic Exchange"></a>topic Exchange</h3><p>topic exchange 会根据 route key 将消息分发到与此消息的 route key 相匹配的并且绑定到此 exchagne 中的 queue 中(如果有多个 queue 使用了相同的 route key 绑定到此 exchange, 那么这些 queue 都会收到消息). 根据此性质, topic exchange 经常用于实现 publish/subscribe 模型, 即消息的多播模型.</p>
-<h3 id="header-exchange"><a href="#header-exchange" class="headerlink" title="header exchange"></a>header exchange</h3><p>header exchange 不使用 route key 作为路由的依据, 而是使用消息头属性来路由消息.</p>
-<h3 id="queue-队列"><a href="#queue-队列" class="headerlink" title="queue 队列"></a>queue 队列</h3><p>AMQP 中的 队列 的概念和其他消息队列中 队列 的概念类似, 它有如下几个重要的概念:</p>
-<ul>
-<li>Name, 名字</li>
-<li>Durable, 是否是持久的. 当为真时, 即使 broker 重启时, 此 queue 也不会被删除.</li>
-<li>Exclusive, 是否是独占的, 当为真时, 表示此 queue 只能有一个消费者, 并且当此消费者的连接断开时, 此 queue 会被删除.</li>
-<li>Auto-delete, 当为真时, 此 队列 会在最后一个消费者取消订阅时被删除.<br>在使用一个队列时, 需要先进行声明. 如果我们声明的队列不存在, 那么 broker 就会自动创建它. 不过如果此队列已经存在时, 我们就需要注意了, 若我们声明的队列的属性和已存在的队列的属性一致, 则不会有任何的问题, 但是如果先后两次声明的队列的属性不一致, 则会有 PRECONDITION_FAILED 错误(错误码为406).</li>
-</ul>
-<p>队列名：AMQP 的队列名不能以 “amq.” 开头, 因为这样的队列名是 AMQP broker 内部所使用的. 当我们使用了这样的队列名时, 那么会有一个 ACCESS_REFUSED 错误(错误码为 403)</p>
-<p>持久队列：持久队列会被持久化到磁盘中, 因此即使 broker 重启了, 持久队列也依然存在.不过需要注意的是, 不要将持久队列和消息的持久化混淆. 当 broker 重启时, 持久队列会自动重新声明, 然而只有队列中的持久化消息(persistent message)才会被恢复.</p>
-<p>队列绑定：队列的绑定关系是 exchagne 用于消息路由的规则, 即一个 exchange 能够将消息路由到某个队列的前提是此队列已经绑定到这个 exchange 中了. 当队列绑定到一个 exchange 中时, 我们还可以设置一个额外的参数, 即 route key, 这个 key 会被 direct exchange 和 topic exchange 作为额外的路由信息而使用, 换句话说, route key 扮演着过滤器的角色.当一个消息没有被路由到任意的队列时(例如此 exchange 没有任何的 queue 绑定着), 那么此时会根据消息的属性来决定是将此消息丢弃还是返回给生产者.</p>
-<h3 id="消费者"><a href="#消费者" class="headerlink" title="消费者"></a>消费者</h3><p>消费者支持两种消费分发模式：</p>
-<ul>
-<li>push 模式, 即 broker 主动推送消息给消费者</li>
-<li>pull 模式, 即消费者主动从 broker 中拉取消息</li>
-</ul>
-<p>在 push 模式时, 应用程序需要告知 broker 它对哪些消息感兴趣, 即也就是我们所说的订阅一个消息主题. 每个消费者都有一个惟一的标识符, 即consumer tag, 我们可以用这个 tag 来取消一个消费者对某个主题的订阅(unsubscribe).</p>
-<h3 id="消息ACK"><a href="#消息ACK" class="headerlink" title="消息ACK"></a>消息ACK</h3><p>AMQP有两种ACK模式：</p>
-<ul>
-<li>手动ACK</li>
-<li>自动ACK</li>
-</ul>
-<p>在自动 ACK 模式下, 当 broker 发送消息成功后, 会立即将此消息从消息队列中删除, 而不会等待消费者的 ACK 回复. 而在手动 ACK 模式下, 当 broker 发送消息给消费者时, 不会立即将此消息删除, 而是需要等待消费者的 ACK 回复后才会删除消息. 因此在手动 ACK 模式下, 当消费者收到消息并处理完成后, 需要向 broker 显示地发送 ACK 指令.在手动 ACK 模式下, 如果消费者因为意外的 crash 而没有发送 ACK 给 broker, 那么此时 broker 会将此消息转发给其他的消费者(如果此时没有消费者了, 那么 broker 会缓存此消息, 直到有新的消费者注册).</p>
-<h3 id="拒绝消息"><a href="#拒绝消息" class="headerlink" title="拒绝消息"></a>拒绝消息</h3><p>当一个消费者处理消息失败或此时不能处理消息时, 那么可以给 broker 发送一个拒绝消息的指令, 并且可以要求 broker 丢弃或重新分发此消息.不过需要注意的是, 如果此时只有一个消费者, 那么当此消费者拒收消息并要求 broker 重新分发此消息时, 那么就会造成了此消息不断地分发和拒收, 形成了死循环.</p>
-<h3 id="预取消息"><a href="#预取消息" class="headerlink" title="预取消息"></a>预取消息</h3><p>通过预取消息机制, 消费者可以一次性批量取出消息, 然后在处理后对这些批量消息进行统一的 ACK 回复, 这样可以提高消息的吞吐量.不过, 需要注意的时, RabbitMQ 仅支持 channel 级别的预取消息的数量配置, 不支持基于连接的预取消息数量配置</p>
-<h3 id="通道-Channel"><a href="#通道-Channel" class="headerlink" title="通道(Channel)"></a>通道(Channel)</h3><p>AMQP 不推荐一个应用程序发起多个对 broker 的连接, 因为这样会消耗系统资源并且也不利于防火墙的配置. 但是如果应用程序确实需要有多个不互相干扰的连接来进行不同的操作时该怎么办呢? 为了解决这个问题, AMQP 引入了 Channel 的 概念. 在 AMQP 0-9-1 中, 一个与 broker 的连接是被多个 Channel 复用的, 因此我们可以将 channel 理解为: 一个共享同一个 TCP 连接的轻量级的连接.</p>
-<p>基于同一个 TCP 连接的两个不同的 channel 直接是不会有任何的干扰的(在逻辑上可以等效地理解为两个独立的连接), 因此客户端和 broker 之间交互时, 需要附带上 channel id.通常来说, 在一个多线程消费消息的模型中, 每个线程单独打开一个 channel 是一个推荐的做法, 而最好不要在各个线程中共享一个 channel.</p>
-
-          
+          AMQP关键性概念和流程
+broker： 消息队列服务器实体
+Exchange： 消息交换机，指定消息按照什么规则到哪个队列
+Queue： 消息队列载体， 每个消息会被投放到一个或多个队列
+Binding： 绑定，将Exchange和Queue按某种规则绑定起来
+Routing Key： 路由关键字
+          ...
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2017/10/19/RabbitMQ之AMQP/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
         
       
     </div>
@@ -1796,206 +1679,22 @@
       
         
           
-            <p>消息队列是一个队列结构的中间件，通常用于大流量系统分流，将消息或者内容放入队列中，不需要立即处理，直接返回，另有一个程序不停的读这个队列，按顺序处理。</p>
-<h3 id="消息队列介质"><a href="#消息队列介质" class="headerlink" title="消息队列介质"></a>消息队列介质</h3><ul>
-<li>MySQL： 可靠性高，易实现，速度慢</li>
-<li>Redis： 速度快，单条大消息包效率低</li>
-<li>消息系统： 专业性强，可靠</li>
-</ul>
-<h3 id="消息处理触发机制"><a href="#消息处理触发机制" class="headerlink" title="消息处理触发机制"></a>消息处理触发机制</h3><ul>
-<li>死循环读取： 用一个程序不断读取队列，比较容易实现，故障时无法及时修复</li>
-<li>定时任务： 每隔几秒或者几分钟处理队列，压力均分，有处理上限</li>
-<li>守护进程： 类似于PHP-FPM，检测队列是否有内容，有内容则出队处理</li>
-</ul>
-<h3 id="常见的消息队列介质的应用"><a href="#常见的消息队列介质的应用" class="headerlink" title="常见的消息队列介质的应用"></a>常见的消息队列介质的应用</h3><ul>
-<li><p>MySQL处理消息队列：将业务数据插入一张表，有一个status记录状态，另一个程序来读这张表，来改变status</p>
-</li>
-<li><p>Redis消息队列： 利用redis的list结构，一般是实现秒杀业务，将消息入队，如果list长度等于商品库存则秒杀结束，然后用另一个程序来按顺序读取redis队列</p>
-</li>
-<li><p>RabbitMQ： 一个实现了AMQP（advance message queue protocol高级消息队列协议）的消息队列系统,结构如下：</p>
-</li>
-</ul>
-<p><img src="http://img.blog.csdn.net/20140220173559828" alt=""></p>
-<p>clientA/B: 也叫producer（生产者），数据发送方。一个message有两个部分：payload(传输的数据)和label（一个描述payload的标签，通过label来决定将这个message发送给哪个consumer）</p>
-<p>client1/2/3: 也叫consumer（消费者），数据的接收方。</p>
-<p>exchanges: 生产者发送消息的通道</p>
-<p>queue： 消费者接受消息的队列</p>
-<p>binding： 消息从exchange处取得route到queue的方式</p>
-<h4 id="在PHP中使用rabbitMQ"><a href="#在PHP中使用rabbitMQ" class="headerlink" title="在PHP中使用rabbitMQ"></a>在PHP中使用rabbitMQ</h4><ul>
-<li>RabbitMQ的安装（rabbitMQ-server、 php-amqplib 官方推荐的插件）</li>
-<li>生产者向消息通道发送消息</li>
-<li>消费者处理消息</li>
-</ul>
+          消息队列是一个队列结构的中间件，通常用于大流量系统分流，将消息或者内容放入队列中，不需要立即处理，直接返回，另有一个程序不停的读这个队列，按顺序处理。
+消息队列介质
+MySQL： 可靠性高，易实现，速度慢
+Redis： 速度快，单条大消息包效率低
+消息系统： 专业性强，可靠
 
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/10/18/servlet使用/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="Leo Hao">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Do Or Die">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2017/10/18/servlet使用/" itemprop="url">servlet使用</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-10-18T14:14:43+08:00">
-                2017-10-18
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category" >
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/jsp/" itemprop="url" rel="index">
-                    <span itemprop="name">jsp</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>之前web方面一直是用PHP，对apace/nginx + php-fpm + php 的开发模式比较熟悉，从今年八月开始使用了java来开发系统，最开始看了Spring和Spring MVC，现在又用了Spring boot，确实PHP有很多需要向java学习的地方。java运行webserver的方式也与PHP不同，PHP是靠Apache或者Nginx等webserver来监听请求，通过cgi协议将http请求转发给解释器，java是完全靠自己实现了一套机制，用Tomcat等容器包裹住一个个javaweb应用。再次总结一下javaweb的基础，servlet</p>
-<h3 id="servlet生命周期和调用过程"><a href="#servlet生命周期和调用过程" class="headerlink" title="servlet生命周期和调用过程"></a>servlet生命周期和调用过程</h3><p><img src="https://camo.githubusercontent.com/4add5ddf8c0da7d49f0167902fab4c81f56ee167/687474703a2f2f3778706836642e636f6d312e7a302e676c622e636c6f7564646e2e636f6d2f6a6176617765625f736572766c65742d6c6966656379636c652e706e67" alt=""></p>
-<h3 id="使用细节"><a href="#使用细节" class="headerlink" title="使用细节"></a>使用细节</h3><p>我们一般是建立一个java类，继承servlet，然后利用doGet和doPost方法来接收get和post请求，然后在web.xml里面配置一个<code>&lt;servlet&gt;</code>标签，包含了<code>&lt;servlet-name&gt;</code>和<code>&lt;servlet-class&gt;</code>，<code>&lt;servlet-mapping&gt;</code>包含了<code>&lt;servlet-name&gt;</code>和<code>&lt;url-pattern&gt;</code>。其中一个<code>&lt;servlet&gt;</code>可以对应多个<code>&lt;servlet-mapping&gt;</code>，并且<code>&lt;servlet-mapping&gt;</code>中的<code>&lt;url-pattern&gt;</code>可以使用通配符，例如*.扩展名</p>
-<p>在网上看到一个url映射的例子：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">现有如下映射关系：</div><div class="line">Servlet1 -&gt; /abc/*</div><div class="line">Servlet2 -&gt; /*</div><div class="line">Servlet3 -&gt; /abc</div><div class="line">Servlet4 -&gt; *.do</div><div class="line"></div><div class="line">1.当URL为/abc/a.html时，同时匹配了/abc/*和/*，此时将调用Servlet1</div><div class="line">2.当URL为/abc时，同时匹配了/abc 和 /abc/*， 此时将调用Servlet3</div><div class="line">3.当URL为/abc/*.do时，同时匹配了 /abc/* 和 *.do， 此时调用 Servlet1</div><div class="line">4.当URL为/a.do时， 同时匹配了/* 和  *.do，此时调用 Servlet2</div><div class="line">5.当URL为/xxx/yyy/a.do， 同时匹配了/*和 *.do此时调用Servlet2</div></pre></td></tr></table></figure></p>
-<ul>
-<li>对象： servlet由servlet引擎调用，不能独立运行。客户端多次请求，服务器只创建一个servlet实例，之后驻留内存中继续服务直至web容器退出才销毁它。</li>
-<li>请求: 服务器针对客户端的每一次请求都会创建新的request和response对象(它们的生命周期很短)，传给service方法</li>
-<li>加载: servlet实例的创建和init方法的调用是在第一次请求时，而非服务器启动时，除非在<servlet>标签配置<load-on-start-up>,数字越小优先级越高</load-on-start-up></servlet></li>
-<li>缺省:映射路径为正斜杠/，则为当前web应用的缺省servlet,不匹配的都交给缺省</li>
-<li>线程安全: 访问同一资源会引发线程安全问题; SingleThreadModel标记接口(已弃用)</li>
-<li>ServletConfig: 在<servlet>标签配置<init-param>，通过getServletConfig方法获得配置。可配置输出字符集，读哪个配置文件等等。</init-param></servlet></li>
-<li>ServletContext: 代表当前web应用，含有一些web应用全局性方法，实现web资源共享、servlet转发等。通过ServletConfig.getServletContext方法获得，在<context-param>标签配置。</context-param></li>
-</ul>
-<h3 id="ServletContext对象"><a href="#ServletContext对象" class="headerlink" title="ServletContext对象"></a>ServletContext对象</h3><p>描述：在一个web应用中，所有的servlet会共享一个ServletContext对象，实现数据共享。<br>作用：</p>
-<ul>
-<li>获取web应用初始化参数</li>
-<li>实现servlet转发</li>
-<li>利用ServletContext对象读取资源<ul>
-<li>获取文件路径</li>
-<li>读取文件的三种方式</li>
-<li>.propertites文件（配置文件一般有xml和properties，Springboot中还有yml文件）</li>
-</ul>
-</li>
-</ul>
-<p>1.通过<code>ServleContext</code>的<code>getResourceAsStream</code>方法读取properties文件，类似：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">InputStream in = this.getServletContext.getResourceAsStream(&quot;/config/config.properties&quot;);</div><div class="line">Properties properties = new Properties();</div><div class="line">properties.load(in);</div></pre></td></tr></table></figure></p>
-<p>2.通过<code>servletContext</code>的<code>getRealPath</code>方法得到资源的绝对路径，在通过FileInputStream读取</p>
-<p>3.通过类装载器去读，<code>ClassLoader</code>的<code>getResourceAsStream</code>(如果读取资源文件的程序不是servlet)，文件不能太大。只装载一次，所以如要读到更新后的数据，通过类装载的方式得到资源文件的位置，再通过传统方式读取资源文件的数据（用<code>getResource</code>得到path，再用<code>FileInputStream</code>）</p>
-
-          
+消息处理触发机制
+死循
+          ...
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2017/10/18/消息队列/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
         
       
     </div>
@@ -2078,7 +1777,7 @@
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">21</span>
+                <span class="site-state-item-count">22</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
