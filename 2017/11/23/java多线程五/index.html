@@ -77,7 +77,7 @@
 <meta property="og:site_name" content="Do Or Die">
 <meta property="og:description" content="操作系统语义(缓存一致性)计算机在运行程序时，每条指令都是在CPU中执行的，在执行过程中势必会涉及到数据的读写。我们知道程序运行的数据是存储在主存中，这时就会有一个问题，读写主存中的数据没有CPU中执行指令的速度快，如果任何的交互都需要与主存打交道则会大大影响效率，所以就有了CPU高速缓存。CPU高速缓存为某个CPU独有，只与在该CPU运行的线程有关。有了CPU高速缓存虽然解决了效率问题，但是它会">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2017-11-24T14:48:36.411Z">
+<meta property="og:updated_time" content="2017-11-26T12:12:59.434Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="java多线程(Java内存模型)">
 <meta name="twitter:description" content="操作系统语义(缓存一致性)计算机在运行程序时，每条指令都是在CPU中执行的，在执行过程中势必会涉及到数据的读写。我们知道程序运行的数据是存储在主存中，这时就会有一个问题，读写主存中的数据没有CPU中执行指令的速度快，如果任何的交互都需要与主存打交道则会大大影响效率，所以就有了CPU高速缓存。CPU高速缓存为某个CPU独有，只与在该CPU运行的线程有关。有了CPU高速缓存虽然解决了效率问题，但是它会">
@@ -373,7 +373,26 @@
 </li>
 <li>编译器重排序。编译器在不改变单线程程序语义的前提下，可以重新安排语句的执行顺序；</li>
 <li><p>处理器重排序。如果不存在数据依赖性，处理器可以改变语句对应机器指令的执行顺序；</p>
-<h5 id="happens-before内存模型"><a href="#happens-before内存模型" class="headerlink" title="happens-before内存模型"></a>happens-before内存模型</h5></li>
+<h5 id="happens-before内存模型"><a href="#happens-before内存模型" class="headerlink" title="happens-before内存模型"></a>happens-before内存模型</h5><p>happens-before来阐述多线程之间的内存可见性：</p>
+<blockquote>
+<p>在JMM中，如果一个操作执行的结果需要对另一个操作可见，那么这两个操作之间必须存在happens-before关系。</p>
+</blockquote>
+<p>例如:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">x = 1;     //线程A执行</div><div class="line">j = x;     //线程B执行</div></pre></td></tr></table></figure>
+<p>j如果要满足等于1，假设线程A的操作(x=1)happens-before线程B操作，那么可以确定线程B执行后一定有j等于1，如果他们不存在happens-before原则，那么j=1不一定成立。happens-before定义如下：</p>
+</li>
+<li>如果一个操作happens-before另一个操作，那么第一个操作的执行结果将对第二个操作可见，而且第一个操作的执行顺序排在第二个操作之前</li>
+<li><p>两个操作之间存在happens-before关系，并不意味着一定要按照happens-before原则制定的顺序来执行。如果重排序之后的执行结果与按照happens-before关系来执行的结果一致，那么这种重排序并不非法</p>
+<p>happens-before原则：</p>
+</li>
+<li>程序次序规则：一个线程内，按照代码顺序，书写在前面的操作先行发生于书写在后面的操作；</li>
+<li>锁定规则：一个unLock操作先行发生于后面对同一个锁lock操作；</li>
+<li>volatile变量规则：对一个变量的写操作先行发生于后面对这个变量的读操作；</li>
+<li>传递规则：如果操作A先行发生于操作B，而操作B又先行发生于操作C，则可以得出操作A先行发生于操作C；</li>
+<li>线程启动规则：Thread对象的start()方法先行发生于此线程的每个一个动作；</li>
+<li>线程中断规则：对线程interrupt()方法的调用先行发生于被中断线程的代码检测到中断事件的发生；</li>
+<li>线程终结规则：线程中所有的操作都先行发生于线程的终止检测，我们可以通过Thread.join()方法结束、Thread.isAlive()的返回值手段检测到线程已经终止执行；</li>
+<li>对象终结规则：一个对象的初始化完成先行发生于他的finalize()方法的开始；</li>
 </ol>
 
       
@@ -414,6 +433,10 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/11/26/java多线程六/" rel="prev" title="java多线程(内存模型)">
+                java多线程(内存模型) <i class="fa fa-chevron-right"></i>
+              </a>
             
           </div>
         </div>
@@ -489,7 +512,7 @@
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">22</span>
+                <span class="site-state-item-count">23</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
