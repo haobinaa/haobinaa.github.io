@@ -72,14 +72,14 @@
 <meta name="description" content="操作系统语义(缓存一致性)计算机在运行程序时，每条指令都是在CPU中执行的，在执行过程中势必会涉及到数据的读写。我们知道程序运行的数据是存储在主存中，这时就会有一个问题，读写主存中的数据没有CPU中执行指令的速度快，如果任何的交互都需要与主存打交道则会大大影响效率，所以就有了CPU高速缓存。CPU高速缓存为某个CPU独有，只与在该CPU运行的线程有关。有了CPU高速缓存虽然解决了效率问题，但是它会">
 <meta name="keywords" content="java多线程">
 <meta property="og:type" content="article">
-<meta property="og:title" content="java多线程(Java内存模型)">
+<meta property="og:title" content="java多线程(Java内存模型一)">
 <meta property="og:url" content="http://yoursite.com/2017/11/23/java多线程五/index.html">
 <meta property="og:site_name" content="Do Or Die">
 <meta property="og:description" content="操作系统语义(缓存一致性)计算机在运行程序时，每条指令都是在CPU中执行的，在执行过程中势必会涉及到数据的读写。我们知道程序运行的数据是存储在主存中，这时就会有一个问题，读写主存中的数据没有CPU中执行指令的速度快，如果任何的交互都需要与主存打交道则会大大影响效率，所以就有了CPU高速缓存。CPU高速缓存为某个CPU独有，只与在该CPU运行的线程有关。有了CPU高速缓存虽然解决了效率问题，但是它会">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2017-11-26T12:12:59.434Z">
+<meta property="og:updated_time" content="2017-11-26T12:46:05.087Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="java多线程(Java内存模型)">
+<meta name="twitter:title" content="java多线程(Java内存模型一)">
 <meta name="twitter:description" content="操作系统语义(缓存一致性)计算机在运行程序时，每条指令都是在CPU中执行的，在执行过程中势必会涉及到数据的读写。我们知道程序运行的数据是存储在主存中，这时就会有一个问题，读写主存中的数据没有CPU中执行指令的速度快，如果任何的交互都需要与主存打交道则会大大影响效率，所以就有了CPU高速缓存。CPU高速缓存为某个CPU独有，只与在该CPU运行的线程有关。有了CPU高速缓存虽然解决了效率问题，但是它会">
 
 
@@ -116,7 +116,7 @@
 
 
 
-  <title>java多线程(Java内存模型) | Do Or Die</title>
+  <title>java多线程(Java内存模型一) | Do Or Die</title>
   
 
 
@@ -270,7 +270,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">java多线程(Java内存模型)</h1>
+          <h1 class="post-title" itemprop="name headline">java多线程(Java内存模型一)</h1>
         
 
         <div class="post-meta">
@@ -365,6 +365,7 @@
 <h4 id="volatile"><a href="#volatile" class="headerlink" title="volatile"></a>volatile</h4><blockquote>
 <p>volatile可以保证线程可见性且提供了一定的有序性，但是无法保证原子性。在JVM底层volatile是采用“内存屏障”来实现的</p>
 </blockquote>
+<p> 一个变量如果用volatile修饰了，则Java可以确保所有线程看到这个变量的值是一致的，如果某个线程对volatile修饰的共享变量进行更新，那么其他线程可以立马看到这个更新，这就是所谓的线程可见性。</p>
 <p> 可以看出volatile的两个功能:</p>
 <ol>
 <li>保证可见性，不保证原子性</li>
@@ -392,7 +393,8 @@
 <li>线程启动规则：Thread对象的start()方法先行发生于此线程的每个一个动作；</li>
 <li>线程中断规则：对线程interrupt()方法的调用先行发生于被中断线程的代码检测到中断事件的发生；</li>
 <li>线程终结规则：线程中所有的操作都先行发生于线程的终止检测，我们可以通过Thread.join()方法结束、Thread.isAlive()的返回值手段检测到线程已经终止执行；</li>
-<li>对象终结规则：一个对象的初始化完成先行发生于他的finalize()方法的开始；</li>
+<li><p>对象终结规则：一个对象的初始化完成先行发生于他的finalize()方法的开始；</p>
+<h4 id="内存屏障"><a href="#内存屏障" class="headerlink" title="内存屏障"></a>内存屏障</h4></li>
 </ol>
 
       
@@ -434,8 +436,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2017/11/26/java多线程六/" rel="prev" title="java多线程(内存模型)">
-                java多线程(内存模型) <i class="fa fa-chevron-right"></i>
+              <a href="/2017/11/26/java多线程六/" rel="prev" title="java多线程(内存模型二)">
+                java多线程(内存模型二) <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -569,7 +571,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#操作系统语义-缓存一致性"><span class="nav-number">1.</span> <span class="nav-text">操作系统语义(缓存一致性)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#java内存模型"><span class="nav-number">2.</span> <span class="nav-text">java内存模型</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#原子性"><span class="nav-number">2.1.</span> <span class="nav-text">原子性</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#可见性"><span class="nav-number">2.2.</span> <span class="nav-text">可见性</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#有序性"><span class="nav-number">2.3.</span> <span class="nav-text">有序性</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#volatile"><span class="nav-number">3.</span> <span class="nav-text">volatile</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#指令重排序"><span class="nav-number">3.1.</span> <span class="nav-text">指令重排序</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#happens-before内存模型"><span class="nav-number">3.2.</span> <span class="nav-text">happens-before内存模型</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#操作系统语义-缓存一致性"><span class="nav-number">1.</span> <span class="nav-text">操作系统语义(缓存一致性)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#java内存模型"><span class="nav-number">2.</span> <span class="nav-text">java内存模型</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#原子性"><span class="nav-number">2.1.</span> <span class="nav-text">原子性</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#可见性"><span class="nav-number">2.2.</span> <span class="nav-text">可见性</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#有序性"><span class="nav-number">2.3.</span> <span class="nav-text">有序性</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#volatile"><span class="nav-number">3.</span> <span class="nav-text">volatile</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#指令重排序"><span class="nav-number">3.1.</span> <span class="nav-text">指令重排序</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#happens-before内存模型"><span class="nav-number">3.2.</span> <span class="nav-text">happens-before内存模型</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#内存屏障"><span class="nav-number">4.</span> <span class="nav-text">内存屏障</span></a></li></ol></div>
             
 
           </div>
