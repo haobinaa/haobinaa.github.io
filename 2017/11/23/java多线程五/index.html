@@ -77,7 +77,7 @@
 <meta property="og:site_name" content="Do Or Die">
 <meta property="og:description" content="操作系统语义(缓存一致性)计算机在运行程序时，每条指令都是在CPU中执行的，在执行过程中势必会涉及到数据的读写。我们知道程序运行的数据是存储在主存中，这时就会有一个问题，读写主存中的数据没有CPU中执行指令的速度快，如果任何的交互都需要与主存打交道则会大大影响效率，所以就有了CPU高速缓存。CPU高速缓存为某个CPU独有，只与在该CPU运行的线程有关。有了CPU高速缓存虽然解决了效率问题，但是它会">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2017-11-27T01:54:05.982Z">
+<meta property="og:updated_time" content="2017-11-27T06:09:03.249Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="java多线程(Java内存模型一)">
 <meta name="twitter:description" content="操作系统语义(缓存一致性)计算机在运行程序时，每条指令都是在CPU中执行的，在执行过程中势必会涉及到数据的读写。我们知道程序运行的数据是存储在主存中，这时就会有一个问题，读写主存中的数据没有CPU中执行指令的速度快，如果任何的交互都需要与主存打交道则会大大影响效率，所以就有了CPU高速缓存。CPU高速缓存为某个CPU独有，只与在该CPU运行的线程有关。有了CPU高速缓存虽然解决了效率问题，但是它会">
@@ -305,8 +305,8 @@
               
               
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/java/" itemprop="url" rel="index">
-                    <span itemprop="name">java</span>
+                  <a href="/categories/java并发/" itemprop="url" rel="index">
+                    <span itemprop="name">java并发</span>
                   </a>
                 </span>
 
@@ -409,7 +409,7 @@
 <tr>
 <td>LoadLoad Barriers</td>
 <td style="text-align:left">Load1; LoadLoad; Load2</td>
-<td style="text-align:left">确保Load1数据的装载，之前于Load2及所有后续装载指令的装载。</td>
+<td style="text-align:left">确保Load1数据的装载之前于Load2及所有后续装载指令的装载。</td>
 </tr>
 <tr>
 <td>StoreStore Barriers</td>
@@ -468,7 +468,7 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2017/11/26/java多线程六/" rel="prev" title="java多线程(内存模型二)">
+              <a href="/2017/11/25/java多线程六/" rel="prev" title="java多线程(内存模型二)">
                 java多线程(内存模型二) <i class="fa fa-chevron-right"></i>
               </a>
             
@@ -546,7 +546,7 @@
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">23</span>
+                <span class="site-state-item-count">25</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -557,7 +557,7 @@
             
             <div class="site-state-item site-state-categories">
               <a href="/categories/index.html">
-                <span class="site-state-item-count">8</span>
+                <span class="site-state-item-count">9</span>
                 <span class="site-state-item-name">分类</span>
               </a>
             </div>
@@ -568,7 +568,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-count">8</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
