@@ -77,7 +77,7 @@
 <meta property="og:site_name" content="Do Or Die">
 <meta property="og:description" content="操作系统语义(缓存一致性)计算机在运行程序时，每条指令都是在CPU中执行的，在执行过程中势必会涉及到数据的读写。我们知道程序运行的数据是存储在主存中，这时就会有一个问题，读写主存中的数据没有CPU中执行指令的速度快，如果任何的交互都需要与主存打交道则会大大影响效率，所以就有了CPU高速缓存。CPU高速缓存为某个CPU独有，只与在该CPU运行的线程有关。有了CPU高速缓存虽然解决了效率问题，但是它会">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2017-11-26T12:46:05.087Z">
+<meta property="og:updated_time" content="2017-11-27T01:54:05.982Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="java多线程(Java内存模型一)">
 <meta name="twitter:description" content="操作系统语义(缓存一致性)计算机在运行程序时，每条指令都是在CPU中执行的，在执行过程中势必会涉及到数据的读写。我们知道程序运行的数据是存储在主存中，这时就会有一个问题，读写主存中的数据没有CPU中执行指令的速度快，如果任何的交互都需要与主存打交道则会大大影响效率，所以就有了CPU高速缓存。CPU高速缓存为某个CPU独有，只与在该CPU运行的线程有关。有了CPU高速缓存虽然解决了效率问题，但是它会">
@@ -394,8 +394,40 @@
 <li>线程中断规则：对线程interrupt()方法的调用先行发生于被中断线程的代码检测到中断事件的发生；</li>
 <li>线程终结规则：线程中所有的操作都先行发生于线程的终止检测，我们可以通过Thread.join()方法结束、Thread.isAlive()的返回值手段检测到线程已经终止执行；</li>
 <li><p>对象终结规则：一个对象的初始化完成先行发生于他的finalize()方法的开始；</p>
-<h4 id="内存屏障"><a href="#内存屏障" class="headerlink" title="内存屏障"></a>内存屏障</h4></li>
+<h4 id="内存屏障"><a href="#内存屏障" class="headerlink" title="内存屏障"></a>内存屏障</h4><p>通过内存屏障可以禁止特定类型处理器的重排序，从而让程序按我们预想的流程去执行</p>
+</li>
 </ol>
+<table>
+<thead>
+<tr>
+<th>屏障类型</th>
+<th style="text-align:left">指令示例</th>
+<th style="text-align:left">说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LoadLoad Barriers</td>
+<td style="text-align:left">Load1; LoadLoad; Load2</td>
+<td style="text-align:left">确保Load1数据的装载，之前于Load2及所有后续装载指令的装载。</td>
+</tr>
+<tr>
+<td>StoreStore Barriers</td>
+<td style="text-align:left">Store1; StoreStore; Store2</td>
+<td style="text-align:left">确保Store1数据对其他处理器可见（刷新到内存），之前于Store2及所有后续存储指令的存储</td>
+</tr>
+<tr>
+<td>LoadStore Barriers</td>
+<td style="text-align:left">Load1; LoadStore; Store2</td>
+<td style="text-align:left">确保Load1数据装载，之前于Store2及所有后续的存储指令刷新到内存。</td>
+</tr>
+<tr>
+<td>StoreLoad Barriers</td>
+<td style="text-align:left">Store1; StoreLoad; Load2</td>
+<td style="text-align:left">确保Store1数据对其他处理器变得可见（指刷新到内存），之前于Load2及所有后续装载指令的装载。StoreLoad Barriers会使该屏障之前的所有内存访问指令（存储和装载指令）完成之后，才执行该屏障之后的内存访问指令</td>
+</tr>
+</tbody>
+</table>
 
       
     </div>
