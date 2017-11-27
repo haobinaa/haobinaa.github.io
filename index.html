@@ -345,8 +345,13 @@
       
         
           
-          
-          
+          元注解元注解的作用是为了注释其他注解
+@Target说明了注解修饰的对象范围，可能的值在枚举类ElementType中:
+
+ElemenetType.CONSTRUCTOR 构造器声明 
+ElemenetType.FIELD 域声明（包括 enum 实例） 
+ElemenetType.LOCAL_V
+          ...
           <!--noindex-->
           <div class="post-button text-center">
             <a class="btn" href="/2017/11/27/java注解/#more" rel="contents">

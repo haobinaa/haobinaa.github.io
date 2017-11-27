@@ -69,18 +69,18 @@
 
 
 
-<meta name="description" content="一息尚存，则吾志不移">
+<meta name="description" content="元注解元注解的作用是为了注释其他注解 @Target说明了注解修饰的对象范围，可能的值在枚举类ElementType中:  ElemenetType.CONSTRUCTOR 构造器声明  ElemenetType.FIELD 域声明（包括 enum 实例）  ElemenetType.LOCAL_VARIABLE 局部变量声明  ElemenetType.METHOD 方法声明  Elemenet">
 <meta name="keywords" content="java">
 <meta property="og:type" content="article">
 <meta property="og:title" content="java注解">
 <meta property="og:url" content="http://yoursite.com/2017/11/27/java注解/index.html">
 <meta property="og:site_name" content="Do Or Die">
-<meta property="og:description" content="一息尚存，则吾志不移">
+<meta property="og:description" content="元注解元注解的作用是为了注释其他注解 @Target说明了注解修饰的对象范围，可能的值在枚举类ElementType中:  ElemenetType.CONSTRUCTOR 构造器声明  ElemenetType.FIELD 域声明（包括 enum 实例）  ElemenetType.LOCAL_VARIABLE 局部变量声明  ElemenetType.METHOD 方法声明  Elemenet">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2017-11-27T06:10:08.135Z">
+<meta property="og:updated_time" content="2017-11-27T07:26:34.782Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="java注解">
-<meta name="twitter:description" content="一息尚存，则吾志不移">
+<meta name="twitter:description" content="元注解元注解的作用是为了注释其他注解 @Target说明了注解修饰的对象范围，可能的值在枚举类ElementType中:  ElemenetType.CONSTRUCTOR 构造器声明  ElemenetType.FIELD 域声明（包括 enum 实例）  ElemenetType.LOCAL_VARIABLE 局部变量声明  ElemenetType.METHOD 方法声明  Elemenet">
 
 
 
@@ -342,7 +342,47 @@
       
 
       
-        
+        <h3 id="元注解"><a href="#元注解" class="headerlink" title="元注解"></a>元注解</h3><p>元注解的作用是为了注释其他注解</p>
+<h4 id="Target"><a href="#Target" class="headerlink" title="@Target"></a>@Target</h4><p>说明了注解修饰的对象范围，可能的值在枚举类<code>ElementType</code>中:</p>
+<ul>
+<li>ElemenetType.CONSTRUCTOR 构造器声明 </li>
+<li>ElemenetType.FIELD 域声明（包括 enum 实例） </li>
+<li>ElemenetType.LOCAL_VARIABLE 局部变量声明 </li>
+<li>ElemenetType.METHOD 方法声明 </li>
+<li>ElemenetType.PACKAGE 包声明 </li>
+<li>ElemenetType.PARAMETER 参数声明 </li>
+<li>ElemenetType.TYPE 类，接口（包括注解类型）或enum声明 </li>
+</ul>
+<h4 id="Retention"><a href="#Retention" class="headerlink" title="@Retention"></a>@Retention</h4><p>表示需要在什么级别保存该注释信息，用于描述注解的生命周期（即：被描述的注解在什么范围内有效）。可能的值在枚举类<br><code>RetentionPolicy</code>中：</p>
+<ul>
+<li>RetentionPolicy.SOURCE 源文件有效(被编译器抛弃)</li>
+<li>RetentionPolicy.CLASS class文件有效(被VM抛弃)</li>
+<li>RetentionPolicy.RUNTIME VM将在运行期也保留注解，因此可以通过反射机制读取注解的信息</li>
+</ul>
+<h4 id="Documented"><a href="#Documented" class="headerlink" title="@Documented"></a>@Documented</h4><p>将此注解包含在javadoc中 ，它代表着此注解会被javadoc工具提取成文档。在doc文档中的内容会因为此注解的信息内容不同而不同。相当于@see,@param等</p>
+<h4 id="Inherited"><a href="#Inherited" class="headerlink" title="@Inherited"></a>@Inherited</h4><p>允许子类继承父类中的注解</p>
+<h3 id="自定义注解"><a href="#自定义注解" class="headerlink" title="自定义注解"></a>自定义注解</h3><p>使用@interface自定义注解时，自动继承了java.lang.annotation.Annotation接口，由编译程序自动完成其他细节。在定义注解时，不能继承其他的注解或接口。@interface用来声明一个注解，其中的每一个方法实际上是声明了一个配置参数。方法的名称就是参数的名称，返回值类型就是参数的类型（返回值类型只能是基本类型、Class、String、enum）。可以通过default来声明参数的默认值</p>
+<ul>
+<li>定义注解格式：<br>public @interface 注解名 {定义体}</li>
+<li>注解参数支持类型：  <ol>
+<li>所有基本类型</li>
+<li>String类型</li>
+<li>Class类型</li>
+<li>enum类型</li>
+<li>Annotation类型</li>
+<li>以上所有类型的数组</li>
+</ol>
+</li>
+</ul>
+<p>先定义一个注解Definination:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">@Target(&#123;ElementType.TYPE, ElementType.METHOD, ElementType.FIELD, ElementType.CONSTRUCTOR&#125;)</div><div class="line">@Retention(RetentionPolicy.RUNTIME)</div><div class="line">public @interface Definination &#123;</div><div class="line">    String name();</div><div class="line">    int id() default 0;</div><div class="line">    Class&lt;Long&gt; gid();</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>在<code>UseAntation</code>中使用注解<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div></pre></td><td class="code"><pre><div class="line">@Definination(name = &quot;type&quot;, gid = Long.class) //类注解</div><div class="line">public class UseAnotation &#123;</div><div class="line">    // 类成员注解</div><div class="line">    @Definination(name = &quot;param&quot;, id = 1, gid = Long.class)</div><div class="line">    private Integer age;</div><div class="line"></div><div class="line">    // 构造方法注解</div><div class="line">    @Definination(name = &quot;construct&quot;, id = 2, gid = Long.class)</div><div class="line">    public UseAnotation() &#123;&#125;</div><div class="line"></div><div class="line">    // 类方法注解</div><div class="line">    @Definination(name = &quot;public method&quot;, id = 3, gid = Long.class)</div><div class="line">    public void publicClassMethod() &#123;</div><div class="line"></div><div class="line">    &#125;</div><div class="line"></div><div class="line">    // 类方法注解</div><div class="line">    @Definination(name = &quot;protected method&quot;, id = 4, gid = Long.class)</div><div class="line">    protected void protectedClassMethod() &#123;&#125;</div><div class="line"></div><div class="line">    // 类方法注解</div><div class="line">    @Definination(name = &quot;private method&quot;, id = 5, gid = Long.class)</div><div class="line">    private  void privateClassMethod() &#123;&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>实现注解<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div></pre></td><td class="code"><pre><div class="line">public class AnotationImplement &#123;</div><div class="line">    /**</div><div class="line">     * 打印UseAntation中所有的类注解</div><div class="line">     */</div><div class="line">    public static void parseTypeAnotation() throws ClassNotFoundException &#123;</div><div class="line">        Class clazz = Class.forName(&quot;org.javacore.anotation.UseAnotation&quot;);</div><div class="line">        Annotation[] annotations = clazz.getAnnotations();</div><div class="line">        for (Annotation annotation : annotations) &#123;</div><div class="line">            Definination definination = (Definination) annotation;</div><div class="line">            System.out.println(&quot;id = &quot; + definination.id() + &quot; ;name = &quot; + definination.name() + &quot; ;gid = &quot; + definination.gid());</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public static void parseMethodAnotation() &#123;</div><div class="line">        Method[] methods = UseAnotation.class.getDeclaredMethods();</div><div class="line">        for (Method method : methods) &#123;</div><div class="line">            // 判断方法中是否有指定注解类型的注解</div><div class="line">            boolean hasAnnotation = method.isAnnotationPresent(Definination.class);</div><div class="line">            if (hasAnnotation) &#123;</div><div class="line">                // 根据注解类型返回方法的指定类型注解</div><div class="line">                Definination annotation = method.getAnnotation(Definination.class);</div><div class="line">                System.out.println(&quot;method = &quot; + method.getName()</div><div class="line">                    + &quot; ; id = &quot; + annotation.id() + &quot; ; description = &quot;</div><div class="line">                    + annotation.name() + &quot;; gid= &quot; + annotation.gid());</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public static void parseConstructAnnotation() &#123;</div><div class="line">        Constructor[] constructors = UseAnotation.class.getConstructors();</div><div class="line">        for (Constructor constructor : constructors) &#123;</div><div class="line">            boolean hasAnnotation = constructor.isAnnotationPresent(Definination.class);</div><div class="line">            if (hasAnnotation) &#123;</div><div class="line">                Definination annotation = (Definination) constructor.getAnnotation(Definination.class);</div><div class="line">                System.out.println(&quot;constructor = &quot; + constructor.getName()</div><div class="line">                    + &quot; ; id = &quot; + annotation.id() + &quot; ; description = &quot;</div><div class="line">                    + annotation.name() + &quot;; gid= &quot;+annotation.gid());</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public static void main(String[] args) throws ClassNotFoundException &#123;</div><div class="line">        System.out.println(&quot;class annotation:&quot;);</div><div class="line">        parseTypeAnotation();</div><div class="line">        System.out.println(&quot;method annotation: &quot;);</div><div class="line">        parseMethodAnotation();</div><div class="line">        System.out.println(&quot;constructor annotation: &quot;);</div><div class="line">        parseConstructAnnotation();</div><div class="line">    &#125;</div></pre></td></tr></table></figure></p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="https://github.com/brianway/java-learning/blob/master/blogs/javase/java%E5%9F%BA%E7%A1%80%E5%B7%A9%E5%9B%BA%E7%AC%94%E8%AE%B0(6" target="_blank" rel="external">java注解</a>-%E6%B3%A8%E8%A7%A3.md)</li>
+<li><a href="http://www.cnblogs.com/peida/archive/2013/04/24/3036689.html" target="_blank" rel="external">自定义注解入门</a></li>
+<li><a href="http://blog.csdn.net/tigerdsh/article/details/8848890" target="_blank" rel="external">java注解的几大用法</a></li>
+</ul>
+
       
     </div>
     
@@ -432,8 +472,17 @@
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
 
-      <section class="site-overview sidebar-panel sidebar-panel-active">
+      <section class="site-overview sidebar-panel">
         <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
           
             <p class="site-author-name" itemprop="name">Leo Hao</p>
@@ -494,6 +543,22 @@
 
       </section>
 
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#元注解"><span class="nav-number">1.</span> <span class="nav-text">元注解</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Target"><span class="nav-number">1.1.</span> <span class="nav-text">@Target</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Retention"><span class="nav-number">1.2.</span> <span class="nav-text">@Retention</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Documented"><span class="nav-number">1.3.</span> <span class="nav-text">@Documented</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Inherited"><span class="nav-number">1.4.</span> <span class="nav-text">@Inherited</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#自定义注解"><span class="nav-number">2.</span> <span class="nav-text">自定义注解</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">3.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
       
 
       
