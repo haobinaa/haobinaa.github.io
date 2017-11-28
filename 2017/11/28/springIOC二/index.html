@@ -69,19 +69,17 @@
 
 
 
-<meta name="description" content="java注解配置bean@Component 参考资料spring基于注解的配置">
+<meta name="description" content="java注解配置bean@Component @Controller 控制器(注入服务) @Service 服务(注入Dao) @Repositroy dao的访问 @Compoent 把普通的pojo实例化到Spring容器，相当于&amp;lt;bean id=&amp;quot;&amp;quot; class=&amp;quot;&amp;quot;  利用以上注解标注类，然后在xml中配置&amp;lt;context:compone">
 <meta property="og:type" content="article">
 <meta property="og:title" content="springIOC(注解和java类配置bean)">
 <meta property="og:url" content="http://yoursite.com/2017/11/28/springIOC二/index.html">
 <meta property="og:site_name" content="Do Or Die">
-<meta property="og:description" content="java注解配置bean@Component 参考资料spring基于注解的配置">
+<meta property="og:description" content="java注解配置bean@Component @Controller 控制器(注入服务) @Service 服务(注入Dao) @Repositroy dao的访问 @Compoent 把普通的pojo实例化到Spring容器，相当于&amp;lt;bean id=&amp;quot;&amp;quot; class=&amp;quot;&amp;quot;  利用以上注解标注类，然后在xml中配置&amp;lt;context:compone">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="http://img.blog.csdn.net/20150415145520890">
-<meta property="og:updated_time" content="2017-11-28T08:37:11.200Z">
+<meta property="og:updated_time" content="2017-11-28T10:47:45.583Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="springIOC(注解和java类配置bean)">
-<meta name="twitter:description" content="java注解配置bean@Component 参考资料spring基于注解的配置">
-<meta name="twitter:image" content="http://img.blog.csdn.net/20150415145520890">
+<meta name="twitter:description" content="java注解配置bean@Component @Controller 控制器(注入服务) @Service 服务(注入Dao) @Repositroy dao的访问 @Compoent 把普通的pojo实例化到Spring容器，相当于&amp;lt;bean id=&amp;quot;&amp;quot; class=&amp;quot;&amp;quot;  利用以上注解标注类，然后在xml中配置&amp;lt;context:compone">
 
 
 
@@ -321,7 +319,27 @@
       
 
       
-        <h3 id="java注解配置bean"><a href="#java注解配置bean" class="headerlink" title="java注解配置bean"></a>java注解配置bean</h3><h4 id="Component"><a href="#Component" class="headerlink" title="@Component"></a>@Component</h4><p><img src="http://img.blog.csdn.net/20150415145520890" alt=""></p>
+        <h3 id="java注解配置bean"><a href="#java注解配置bean" class="headerlink" title="java注解配置bean"></a>java注解配置bean</h3><h4 id="Component"><a href="#Component" class="headerlink" title="@Component"></a>@Component</h4><ul>
+<li>@Controller 控制器(注入服务)</li>
+<li>@Service 服务(注入Dao)</li>
+<li>@Repositroy dao的访问</li>
+<li>@Compoent 把普通的pojo实例化到Spring容器，相当于<code>&lt;bean id=&quot;&quot; class=&quot;&quot;</code></li>
+</ul>
+<p>利用以上注解标注类，然后在xml中配置<code>&lt;context:component-scan base.package=&quot;XX&quot;&gt;</code>来扫描对应包下所有的注解，可以把标注的类自动转换成bean<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;  </div><div class="line">&lt;beans xmlns=&quot;http://www.springframework.org/schema/beans&quot;  </div><div class="line">    xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot; xmlns:p=&quot;http://www.springframework.org/schema/p&quot;  </div><div class="line">    xmlns:context=&quot;http://www.springframework.org/schema/context&quot;  </div><div class="line">    xsi:schemaLocation=&quot;http://www.springframework.org/schema/beans    </div><div class="line">                http://www.springframework.org/schema/beans/spring-beans-3.0.xsd    </div><div class="line">        http://www.springframework.org/schema/context    </div><div class="line">        http://www.springframework.org/schema/context/spring-context-3.0.xsd&quot;&gt;  </div><div class="line">     &lt;!-- 配置的bean所在包的位置 --&gt;    </div><div class="line">    &lt;context:component-scan base-package=&quot;com.haobin&quot; /&gt;  </div><div class="line">&lt;/beans&gt;</div></pre></td></tr></table></figure></p>
+<h4 id="Autowired"><a href="#Autowired" class="headerlink" title="@Autowired"></a>@Autowired</h4><p> @Autowired 注释，它可以对类成员变量、方法及构造函数进行标注，完成自动装配的工作。 </p>
+<p> 在默认情况下使用@Autowired注释进行自动注入时，Spring容器中匹配的候选Bean数目必须有且仅有一个。当找不到一个匹配的Bean时，Spring容器将抛出BeanCreationException异常，并指出必须至少拥有一个匹配的Bean。当不能确定Spring容器中一定拥有某个类的Bean时，可以在需要自动注入该类Bean的地方可以使用@Autowired(required=false)，这等于告诉Spring：在找不到匹配Bean时也不报错。<br> 和找不到一个类型匹配Bean相反的一个错误是：如果Spring容器中拥有多个候选Bean，Spring容器在启动时也会抛出BeanCreationException异常。</p>
+<h4 id="Resource"><a href="#Resource" class="headerlink" title="@Resource"></a>@Resource</h4><p> @Resource的作用相当于@Autowired，只不过@Autowired按byType自动注入，而@Resource默认按byName自动注入。</p>
+<p> @Resource有两个属性是比较重要的，分别是name和type，Spring将 @Resource注解的name属性解析为bean的名字，而type属性则解析为bean的类型。</p>
+<h3 id="java类配置bean"><a href="#java类配置bean" class="headerlink" title="java类配置bean"></a>java类配置bean</h3><p>基于Java配置选项，可以编写大多数的Spring不用配置XML，但有几个基于Java的注释的帮助下解释。从Spring3.0开始支持使用java代码来代替XML来配置Spring，基于Java配置Spring依靠Spring的JavaConfig项目提供的很多优点。通过使用@Configuration， @Bean ，@Importand，@DependsOnannotations来实现Java的配置Spring.</p>
+<h4 id="Configuration和-Bean"><a href="#Configuration和-Bean" class="headerlink" title="@Configuration和@Bean"></a>@Configuration和@Bean</h4><p> @Configuration注解的类指明该类主要是作为一个bean的来源定义。此外，@Configurationd定义的classes允许在同一个类中使用@Bean定义的方法来定义依赖的bean<br> <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">@Configuration  </div><div class="line">public class CompanyConfig &#123;  </div><div class="line">    @Bean  </div><div class="line">    public Employee employee()&#123;  </div><div class="line">        return new Employee();  </div><div class="line">    &#125;  </div><div class="line">  </div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p> 以上等同于配置文件:<br> <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">&lt;bean id=&quot;companyConfig&quot; class=&quot;com.haobin.anno.CompanyConfig&quot;/&gt;</div></pre></td></tr></table></figure></p>
+<p> 配置类可以有声明多个@Bean。一旦配置类定义，可以加载和提供他们使用AnnotationConfigApplicationContext 如下，以Spring容器：<br> <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">public static void main(String[] args) &#123;  </div><div class="line">    ApplicationContext ctx= new AnnotationConfigApplicationContext(CompanyConfig.class);  </div><div class="line">    Employee employee=ctx.getBean(Employee.class);  </div><div class="line">    employee.setName(&quot;笨笨&quot;);  </div><div class="line">    employee.setId(2012);  </div><div class="line">    System.out.println(employee);</div></pre></td></tr></table></figure></p>
+<p> <code>ApplicationContext</code> 接口的最常用的实现类是 <code>ClassPathXmlApplicationContext</code> 和 <code>FileSystemXmlApplicationContext</code>，以及面向 Portlet 的 <code>XmlPortletApplicationContext</code> 和面向 web 的 <code>XmlWebApplicationContext</code>，它们都是面向 XML 的。</p>
+<p>Spring 3.0 新增了另外两个实现类：<code>AnnotationConfigApplicationContext</code> 和 <code>AnnotationConfigWebApplicationContext</code>。从名字便可以看出，它们是为注解而生，直接依赖于注解作为容器配置信息来 源的 IoC 容器初始化类。由于 <code>AnnotationConfigWebApplicationContext</code> 是 <code>AnnotationConfigApplicationContext</code> 的 web 版本，其用法与后者相比几乎没有什么差别</p>
+<p><code>AnnotationConfigApplicationContext</code> 搭配上 @Configuration 和 @Bean 注解，自此，XML 配置方式不再是 Spring IoC 容器的唯一配置方式。两者在一定范围内存在着竞争的关系，但是它们在大多数情况下还是相互协作的关系，两者的结合使得 Spring IoC 容器的配置更简单，更强大。之前，我们将配置信息集中写在 XML 中，如今使用注解，配置信息的载体由 XML 文件转移到了 Java 类中。我们通常将用于存放配置信息的类的类名以 “Config” 结尾，比如 AppDaoConfig.java、AppServiceConfig.java 等等。我们需要在用于指定配置信息的类上加上 @Configuration 注解，以明确指出该类是 Bean 配置的信息源</p>
+<blockquote>
+<p>配置类不能是 <code>final</code> 的；配置类不能是本地化的，亦即不能将配置类定义在其他类的方法内部；配置类必须有一个无参构造函数。<code>AnnotationConfigApplicationContext</code> 将配置类中标注了 @Bean 的方法的返回值识别为 Spring Bean，并注册到容器中，受 IoC 容器管理。@Bean 的作用等价于 XML 配置中的 标签</p>
+</blockquote>
 <h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p><a href="http://blog.csdn.net/evankaka/article/details/44942615" target="_blank" rel="external">spring基于注解的配置</a></p>
 
       
@@ -488,7 +506,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#java注解配置bean"><span class="nav-number">1.</span> <span class="nav-text">java注解配置bean</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Component"><span class="nav-number">1.1.</span> <span class="nav-text">@Component</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">2.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#java注解配置bean"><span class="nav-number">1.</span> <span class="nav-text">java注解配置bean</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Component"><span class="nav-number">1.1.</span> <span class="nav-text">@Component</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Autowired"><span class="nav-number">1.2.</span> <span class="nav-text">@Autowired</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Resource"><span class="nav-number">1.3.</span> <span class="nav-text">@Resource</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#java类配置bean"><span class="nav-number">2.</span> <span class="nav-text">java类配置bean</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Configuration和-Bean"><span class="nav-number">2.1.</span> <span class="nav-text">@Configuration和@Bean</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">3.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
             
 
           </div>
