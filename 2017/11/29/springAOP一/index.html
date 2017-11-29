@@ -53,7 +53,7 @@
 <link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
 
 
-  <meta name="keywords" content="生活感悟," />
+  <meta name="keywords" content="Hexo, NexT" />
 
 
 
@@ -69,18 +69,17 @@
 
 
 
-<meta name="description" content="无意间看到一位大学同学发的朋友圈动态，是在学校准备二战考研，此时才发觉，我已经离开学生这个身份快半年了。 我遇到了很优秀的学习毕业的朋友，技术扎实，什么东西都上手很快，对各个方面都有了解，运动能力也超棒。与之相比，我似乎白活了二十几年。 不过相处一段时间后我才知道，这位朋友每天都两点多睡觉甚至更晚，没有其他的爱好，会研究一下股票和基金，经常阅读开源项目，对代码要求很严格。我问他这样累不累，他的回答">
-<meta name="keywords" content="生活感悟">
+<meta name="description" content="JDK的动态代理基于JDK的动态代理在之前的文章已经写了传送门。 还有另外一种代动态代理CGLib(Code Generation Library):CGLIB是一个强大的高性能，高质量的代码生成类库，可以在运行期扩展Java类与实现Java接口，CGLib封装了asm，可以再运行期动态生成新的class。和JDK动态代理相比较：JDK创建代理有一个限制，就是只能为接口创建代理实例，而对于没有通过">
 <meta property="og:type" content="article">
-<meta property="og:title" content="学习与天才">
-<meta property="og:url" content="http://yoursite.com/2017/10/22/学习与天才/index.html">
+<meta property="og:title" content="springAOP(动态代理)">
+<meta property="og:url" content="http://yoursite.com/2017/11/29/springAOP一/index.html">
 <meta property="og:site_name" content="Do Or Die">
-<meta property="og:description" content="无意间看到一位大学同学发的朋友圈动态，是在学校准备二战考研，此时才发觉，我已经离开学生这个身份快半年了。 我遇到了很优秀的学习毕业的朋友，技术扎实，什么东西都上手很快，对各个方面都有了解，运动能力也超棒。与之相比，我似乎白活了二十几年。 不过相处一段时间后我才知道，这位朋友每天都两点多睡觉甚至更晚，没有其他的爱好，会研究一下股票和基金，经常阅读开源项目，对代码要求很严格。我问他这样累不累，他的回答">
+<meta property="og:description" content="JDK的动态代理基于JDK的动态代理在之前的文章已经写了传送门。 还有另外一种代动态代理CGLib(Code Generation Library):CGLIB是一个强大的高性能，高质量的代码生成类库，可以在运行期扩展Java类与实现Java接口，CGLib封装了asm，可以再运行期动态生成新的class。和JDK动态代理相比较：JDK创建代理有一个限制，就是只能为接口创建代理实例，而对于没有通过">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2017-11-16T13:17:01.316Z">
+<meta property="og:updated_time" content="2017-11-29T02:29:48.659Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="学习与天才">
-<meta name="twitter:description" content="无意间看到一位大学同学发的朋友圈动态，是在学校准备二战考研，此时才发觉，我已经离开学生这个身份快半年了。 我遇到了很优秀的学习毕业的朋友，技术扎实，什么东西都上手很快，对各个方面都有了解，运动能力也超棒。与之相比，我似乎白活了二十几年。 不过相处一段时间后我才知道，这位朋友每天都两点多睡觉甚至更晚，没有其他的爱好，会研究一下股票和基金，经常阅读开源项目，对代码要求很严格。我问他这样累不累，他的回答">
+<meta name="twitter:title" content="springAOP(动态代理)">
+<meta name="twitter:description" content="JDK的动态代理基于JDK的动态代理在之前的文章已经写了传送门。 还有另外一种代动态代理CGLib(Code Generation Library):CGLIB是一个强大的高性能，高质量的代码生成类库，可以在运行期扩展Java类与实现Java接口，CGLib封装了asm，可以再运行期动态生成新的class。和JDK动态代理相比较：JDK创建代理有一个限制，就是只能为接口创建代理实例，而对于没有通过">
 
 
 
@@ -110,13 +109,13 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/2017/10/22/学习与天才/"/>
+  <link rel="canonical" href="http://yoursite.com/2017/11/29/springAOP一/"/>
 
 
 
 
 
-  <title>学习与天才 | Do Or Die</title>
+  <title>springAOP(动态代理) | Do Or Die</title>
   
 
 
@@ -253,7 +252,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/10/22/学习与天才/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/11/29/springAOP一/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Leo Hao">
@@ -270,7 +269,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">学习与天才</h1>
+          <h1 class="post-title" itemprop="name headline">springAOP(动态代理)</h1>
         
 
         <div class="post-meta">
@@ -282,8 +281,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-10-22T12:58:17+08:00">
-                2017-10-22
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-11-29T09:56:09+08:00">
+                2017-11-29
               </time>
             
 
@@ -292,28 +291,6 @@
             
           </span>
 
-          
-            <span class="post-category" >
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/life/" itemprop="url" rel="index">
-                    <span itemprop="name">life</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
           
 
           
@@ -342,9 +319,12 @@
       
 
       
-        <p>无意间看到一位大学同学发的朋友圈动态，是在学校准备二战考研，此时才发觉，我已经离开学生这个身份快半年了。</p>
-<p>我遇到了很优秀的学习毕业的朋友，技术扎实，什么东西都上手很快，对各个方面都有了解，运动能力也超棒。与之相比，我似乎白活了二十几年。</p>
-<p>不过相处一段时间后我才知道，这位朋友每天都两点多睡觉甚至更晚，没有其他的爱好，会研究一下股票和基金，经常阅读开源项目，对代码要求很严格。我问他这样累不累，他的回答是这样很正常啊。原来我们眼里的“十分辛苦”的生活节奏，在人家眼里是最正常的。与这位朋友一样，我没有优越的家庭环境，虽然在初中和高中都是名列前茅，但是高考确只考了一个普通的一本专业。我自以为大学很努力，每天都在学校的实验室待到十点，坚持了几年，现在发现世界上其实有很多起点比我高，走的比我快的人比我更努力。我不是985甚至不是211的毕业生，但是我可以付出与他们一样的时间去阅读和学习，好在计算机科学在应用技术这方面不需要太多的天赋，只要花时间去学习，任何语言任何框架都是可以学会的。世界上的天才很少，更多的是一群坚持不懈的人，我的起点比别人低，那我就用低姿态多积累一段时间，我少做几件事，把想学的东西学好，不说卓越，应该也会在知识的掌握和思维方面不差于其他人。</p>
+        <h3 id="JDK的动态代理"><a href="#JDK的动态代理" class="headerlink" title="JDK的动态代理"></a>JDK的动态代理</h3><p>基于JDK的动态代理在之前的文章已经写了<a href="https://haobinaa.github.io/2017/11/14/java%E5%8A%A8%E6%80%81%E4%BB%A3%E7%90%86%E7%9A%84%E5%AE%9E%E7%8E%B0/" target="_blank" rel="external">传送门</a>。</p>
+<p>还有另外一种代动态代理CGLib(Code Generation Library):<br>CGLIB是一个强大的高性能，高质量的代码生成类库，可以在运行期扩展Java类与实现Java接口，CGLib封装了asm，可以再运行期动态生成新的class。和JDK动态代理相比较：JDK创建代理有一个限制，就是只能为接口创建代理实例，而对于没有通过接口定义业务方法的类，则可以通过CGLib创建动态代理</p>
+<h3 id="CGlib动态代理"><a href="#CGlib动态代理" class="headerlink" title="CGlib动态代理"></a>CGlib动态代理</h3><p>cglib的使用就比较简单，首先创建一个类<code>SayHello</code><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">public class SayHello &#123;</div><div class="line">    public void say () &#123;</div><div class="line">        System.out.println(&quot;hello world!&quot;);</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>创建代理类<code>CglibProxy</code><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line">public class CglibProxy implements MethodInterceptor&#123;</div><div class="line"></div><div class="line">    private Enhancer enhancer = new Enhancer();</div><div class="line"></div><div class="line">    public Object getProxy (Class clazz) &#123;</div><div class="line">    // 设置需要创建子类的类</div><div class="line">        enhancer.setSuperclass(clazz);</div><div class="line">        enhancer.setCallback(this);</div><div class="line">        // 通过字节码技术创建子类实例</div><div class="line">        return enhancer.create();</div><div class="line">    &#125;</div><div class="line">    public Object intercept(Object o, Method method, Object[] objects, MethodProxy methodProxy) throws Throwable &#123;</div><div class="line">        System.out.println(&quot;前置代理&quot;);</div><div class="line">        Object obj = methodProxy.invokeSuper(o, objects);</div><div class="line">        System.out.println(&quot;后置代理&quot;);</div><div class="line">        return obj;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>测试代码<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">public class main &#123;</div><div class="line">    public static void main(String[] args) &#123;</div><div class="line">        CglibProxy cglibProxy = new CglibProxy();</div><div class="line">        SayHello proxy = (SayHello) cglibProxy.getProxy(SayHello.class);</div><div class="line">        proxy.say();</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>CGLib所创建的动态代理对象的性能比JDK所创建的代理对象性能高不少，大概10倍，但CGLib在创建代理对象时所花费的时间却比JDK动态代理多大概8倍，所以对于singleton的代理对象或者具有实例池的代理，因为无需频繁的创建新的实例，所以比较适合CGLib动态代理技术，反之则适用于JDK动态代理技术。另外，由于CGLib采用动态创建子类的方式生成代理对象，所以不能对目标类中的final，private等方法进行处理。所以，大家需要根据实际的情况选择使用什么样的代理了。同样的，Spring的AOP编程中相关的ProxyFactory代理工厂内部就是使用JDK动态代理或CGLib动态代理的，通过动态代理，将增强（advice)应用到目标类中。</p>
 
       
     </div>
@@ -360,12 +340,6 @@
 
     <footer class="post-footer">
       
-        <div class="post-tags">
-          
-            <a href="/tags/生活感悟/" rel="tag"><i class="fa fa-tag"></i> 生活感悟</a>
-          
-        </div>
-      
 
       
       
@@ -375,8 +349,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2017/10/22/PHP使用RabbitMQ之安装使用/" rel="next" title="PHP使用RabbitMQ之安装使用">
-                <i class="fa fa-chevron-left"></i> PHP使用RabbitMQ之安装使用
+              <a href="/2017/11/28/springIOC二/" rel="next" title="springIOC(注解和java类配置bean)">
+                <i class="fa fa-chevron-left"></i> springIOC(注解和java类配置bean)
               </a>
             
           </div>
@@ -384,10 +358,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2017/10/24/记录一次编译安装PHP的过程/" rel="prev" title="记录一次编译安装PHP的过程">
-                记录一次编译安装PHP的过程 <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -439,8 +409,17 @@
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
 
-      <section class="site-overview sidebar-panel sidebar-panel-active">
+      <section class="site-overview sidebar-panel">
         <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
           
             <p class="site-author-name" itemprop="name">Leo Hao</p>
@@ -501,6 +480,22 @@
 
       </section>
 
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#JDK的动态代理"><span class="nav-number">1.</span> <span class="nav-text">JDK的动态代理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CGlib动态代理"><span class="nav-number">2.</span> <span class="nav-text">CGlib动态代理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
       
 
       
