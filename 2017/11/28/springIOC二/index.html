@@ -76,7 +76,7 @@
 <meta property="og:site_name" content="Do Or Die">
 <meta property="og:description" content="java注解配置bean@Component @Controller 控制器(注入服务) @Service 服务(注入Dao) @Repositroy dao的访问 @Compoent 把普通的pojo实例化到Spring容器，相当于&amp;lt;bean id=&amp;quot;&amp;quot; class=&amp;quot;&amp;quot;  利用以上注解标注类，然后在xml中配置&amp;lt;context:compone">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2017-11-28T10:47:45.583Z">
+<meta property="og:updated_time" content="2017-11-29T07:03:19.773Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="springIOC(注解和java类配置bean)">
 <meta name="twitter:description" content="java注解配置bean@Component @Controller 控制器(注入服务) @Service 服务(注入Dao) @Repositroy dao的访问 @Compoent 把普通的pojo实例化到Spring容器，相当于&amp;lt;bean id=&amp;quot;&amp;quot; class=&amp;quot;&amp;quot;  利用以上注解标注类，然后在xml中配置&amp;lt;context:compone">
@@ -328,6 +328,8 @@
 <p>利用以上注解标注类，然后在xml中配置<code>&lt;context:component-scan base.package=&quot;XX&quot;&gt;</code>来扫描对应包下所有的注解，可以把标注的类自动转换成bean<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;  </div><div class="line">&lt;beans xmlns=&quot;http://www.springframework.org/schema/beans&quot;  </div><div class="line">    xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot; xmlns:p=&quot;http://www.springframework.org/schema/p&quot;  </div><div class="line">    xmlns:context=&quot;http://www.springframework.org/schema/context&quot;  </div><div class="line">    xsi:schemaLocation=&quot;http://www.springframework.org/schema/beans    </div><div class="line">                http://www.springframework.org/schema/beans/spring-beans-3.0.xsd    </div><div class="line">        http://www.springframework.org/schema/context    </div><div class="line">        http://www.springframework.org/schema/context/spring-context-3.0.xsd&quot;&gt;  </div><div class="line">     &lt;!-- 配置的bean所在包的位置 --&gt;    </div><div class="line">    &lt;context:component-scan base-package=&quot;com.haobin&quot; /&gt;  </div><div class="line">&lt;/beans&gt;</div></pre></td></tr></table></figure></p>
 <h4 id="Autowired"><a href="#Autowired" class="headerlink" title="@Autowired"></a>@Autowired</h4><p> @Autowired 注释，它可以对类成员变量、方法及构造函数进行标注，完成自动装配的工作。 </p>
 <p> 在默认情况下使用@Autowired注释进行自动注入时，Spring容器中匹配的候选Bean数目必须有且仅有一个。当找不到一个匹配的Bean时，Spring容器将抛出BeanCreationException异常，并指出必须至少拥有一个匹配的Bean。当不能确定Spring容器中一定拥有某个类的Bean时，可以在需要自动注入该类Bean的地方可以使用@Autowired(required=false)，这等于告诉Spring：在找不到匹配Bean时也不报错。<br> 和找不到一个类型匹配Bean相反的一个错误是：如果Spring容器中拥有多个候选Bean，Spring容器在启动时也会抛出BeanCreationException异常。</p>
+<p> 如果一个接口有多个实现类，需要配合@Qualifier配合使用，注明是哪个实现类</p>
+<p> @AutoWired一般是注入到接口上，接口的实现类需要标注@Service等component注解</p>
 <h4 id="Resource"><a href="#Resource" class="headerlink" title="@Resource"></a>@Resource</h4><p> @Resource的作用相当于@Autowired，只不过@Autowired按byType自动注入，而@Resource默认按byName自动注入。</p>
 <p> @Resource有两个属性是比较重要的，分别是name和type，Spring将 @Resource注解的name属性解析为bean的名字，而type属性则解析为bean的类型。</p>
 <h3 id="java类配置bean"><a href="#java类配置bean" class="headerlink" title="java类配置bean"></a>java类配置bean</h3><p>基于Java配置选项，可以编写大多数的Spring不用配置XML，但有几个基于Java的注释的帮助下解释。从Spring3.0开始支持使用java代码来代替XML来配置Spring，基于Java配置Spring依靠Spring的JavaConfig项目提供的很多优点。通过使用@Configuration， @Bean ，@Importand，@DependsOnannotations来实现Java的配置Spring.</p>
@@ -453,7 +455,7 @@
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">28</span>
+                <span class="site-state-item-count">29</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
