@@ -77,7 +77,7 @@
 <meta property="og:site_name" content="Do Or Die">
 <meta property="og:description" content="AOP概念AOP（Aspect-Oriented Programming，面向切面编程）用一种称为“横切”的技术，剖解开封装的对象内部，并将那些影响了多个类的公共行为封装到一个可重用模块，并将其名为“Aspect”，即切面。AOP把软件系统分为两个部分：核心关注点和横切关注点。业务处理的主要流程是核心关注点，与之关系不大的部分是横切关注点。  实现AOP的技术，主要分为两大类：一是采用动态代理技术">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2017-12-01T09:37:12.924Z">
+<meta property="og:updated_time" content="2017-12-04T03:23:21.445Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="springAOP(AOP)">
 <meta name="twitter:description" content="AOP概念AOP（Aspect-Oriented Programming，面向切面编程）用一种称为“横切”的技术，剖解开封装的对象内部，并将那些影响了多个类的公共行为封装到一个可重用模块，并将其名为“Aspect”，即切面。AOP把软件系统分为两个部分：核心关注点和横切关注点。业务处理的主要流程是核心关注点，与之关系不大的部分是横切关注点。  实现AOP的技术，主要分为两大类：一是采用动态代理技术">
@@ -407,6 +407,8 @@
 <h4 id="后置异常通知"><a href="#后置异常通知" class="headerlink" title="后置异常通知"></a>后置异常通知</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">@AfterThrowing (    </div><div class="line">value=&quot;切入点表达式或命名切入点&quot;,    </div><div class="line">pointcut=&quot;切入点表达式或命名切入点&quot;,    </div><div class="line">argNames=&quot;参数列表参数名&quot;,    </div><div class="line">throwing=&quot;异常对应参数名&quot;)</div></pre></td></tr></table></figure>
 <h4 id="后置最终通知"><a href="#后置最终通知" class="headerlink" title="后置最终通知"></a>后置最终通知</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">@After (    </div><div class="line">value=&quot;切入点表达式或命名切入点&quot;,    </div><div class="line">argNames=&quot;参数列表参数名&quot;)</div></pre></td></tr></table></figure>
 <h4 id="环绕通知"><a href="#环绕通知" class="headerlink" title="环绕通知"></a>环绕通知</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">@Around (    </div><div class="line">value=&quot;切入点表达式或命名切入点&quot;,    </div><div class="line">argNames=&quot;参数列表参数名&quot;)</div></pre></td></tr></table></figure>
+<h4 id="xml文件的定义"><a href="#xml文件的定义" class="headerlink" title="xml文件的定义"></a>xml文件的定义</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;  </div><div class="line">&lt;beans xmlns=&quot;http://www.springframework.org/schema/beans&quot;  </div><div class="line">    xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot; xmlns:context=&quot;http://www.springframework.org/schema/context&quot;  </div><div class="line">    xmlns:aop=&quot;http://www.springframework.org/schema/aop&quot;  </div><div class="line">    xsi:schemaLocation=&quot;    </div><div class="line">           http://www.springframework.org/schema/beans    </div><div class="line">           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd    </div><div class="line">           http://www.springframework.org/schema/aop    </div><div class="line">           http://www.springframework.org/schema/aop/spring-aop-3.0.xsd  </div><div class="line">           http://www.springframework.org/schema/context    </div><div class="line">           http://www.springframework.org/schema/context/spring-context-3.0.xsd&quot;&gt;  </div><div class="line">  </div><div class="line">    &lt;!-- 指定自动搜索bean组件、自动搜索切面类 --&gt;  </div><div class="line">        &lt;context:component-scan base-package=&quot;com.haobin.spring.aop.aspectj&quot;/&gt;  </div><div class="line">    &lt;!-- 启动@AspectJ支持 --&gt;  </div><div class="line">    &lt;!-- proxy-target-class默认&quot;false&quot;,更改为&quot;ture&quot;使用CGLib动态代理 --&gt;    </div><div class="line">    &lt;aop:aspectj-autoproxy proxy-target-class=&quot;false&quot;/&gt;  </div><div class="line">&lt;/beans&gt;</div></pre></td></tr></table></figure>
+<p>这里通过component-scan扫描bean，spring生成bean的策略，如果没有name属性的申明，就会采取首字母小写的风格</p>
 <h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
 <li><a href="http://blog.csdn.net/evankaka/article/details/45242505" target="_blank" rel="external">基于Schema的AOP</a></li>
 <li><a href="http://blog.csdn.net/evankaka/article/details/45394409" target="_blank" rel="external">基于AspectJ注解的AOP</a></li>
@@ -450,6 +452,10 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/12/01/spring事务/" rel="prev" title="spring事务">
+                spring事务 <i class="fa fa-chevron-right"></i>
+              </a>
             
           </div>
         </div>
@@ -525,7 +531,7 @@
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">30</span>
+                <span class="site-state-item-count">34</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -536,7 +542,7 @@
             
             <div class="site-state-item site-state-categories">
               <a href="/categories/index.html">
-                <span class="site-state-item-count">10</span>
+                <span class="site-state-item-count">11</span>
                 <span class="site-state-item-name">分类</span>
               </a>
             </div>
@@ -547,7 +553,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">8</span>
+                <span class="site-state-item-count">9</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
@@ -582,7 +588,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#AOP概念"><span class="nav-number">1.</span> <span class="nav-text">AOP概念</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#术语"><span class="nav-number">1.1.</span> <span class="nav-text">术语</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#基于Schema的AOP配置"><span class="nav-number">2.</span> <span class="nav-text">基于Schema的AOP配置</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#声明切入点"><span class="nav-number">2.1.</span> <span class="nav-text">声明切入点</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#声明通知"><span class="nav-number">2.2.</span> <span class="nav-text">声明通知</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#AspectJ风格的AOP"><span class="nav-number">3.</span> <span class="nav-text">AspectJ风格的AOP</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#启用-AspectJ"><span class="nav-number">3.1.</span> <span class="nav-text">启用@AspectJ</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#声明切面"><span class="nav-number">3.2.</span> <span class="nav-text">声明切面</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#声明切入点-1"><span class="nav-number">3.3.</span> <span class="nav-text">声明切入点</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#声明通知-1"><span class="nav-number">3.4.</span> <span class="nav-text">声明通知</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#后置返回通知"><span class="nav-number">3.5.</span> <span class="nav-text">后置返回通知</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#后置异常通知"><span class="nav-number">3.6.</span> <span class="nav-text">后置异常通知</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#后置最终通知"><span class="nav-number">3.7.</span> <span class="nav-text">后置最终通知</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#环绕通知"><span class="nav-number">3.8.</span> <span class="nav-text">环绕通知</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">4.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#AOP概念"><span class="nav-number">1.</span> <span class="nav-text">AOP概念</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#术语"><span class="nav-number">1.1.</span> <span class="nav-text">术语</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#基于Schema的AOP配置"><span class="nav-number">2.</span> <span class="nav-text">基于Schema的AOP配置</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#声明切入点"><span class="nav-number">2.1.</span> <span class="nav-text">声明切入点</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#声明通知"><span class="nav-number">2.2.</span> <span class="nav-text">声明通知</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#AspectJ风格的AOP"><span class="nav-number">3.</span> <span class="nav-text">AspectJ风格的AOP</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#启用-AspectJ"><span class="nav-number">3.1.</span> <span class="nav-text">启用@AspectJ</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#声明切面"><span class="nav-number">3.2.</span> <span class="nav-text">声明切面</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#声明切入点-1"><span class="nav-number">3.3.</span> <span class="nav-text">声明切入点</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#声明通知-1"><span class="nav-number">3.4.</span> <span class="nav-text">声明通知</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#后置返回通知"><span class="nav-number">3.5.</span> <span class="nav-text">后置返回通知</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#后置异常通知"><span class="nav-number">3.6.</span> <span class="nav-text">后置异常通知</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#后置最终通知"><span class="nav-number">3.7.</span> <span class="nav-text">后置最终通知</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#环绕通知"><span class="nav-number">3.8.</span> <span class="nav-text">环绕通知</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#xml文件的定义"><span class="nav-number">3.9.</span> <span class="nav-text">xml文件的定义</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">4.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
             
 
           </div>
