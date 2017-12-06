@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="springmvc," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="SpringMVC原理组件以及作用 前端控制器(DispatcherServlet):收请求，响应结果，相当于转发器，中央处理器。减少了其他组件之间的耦合度 处理器映射器(HandlerMapping)：根据请求的url查找Handler Handler处理器：按照HandlerAdapter的要求编写 处理器适配器(HandlerAdapter)：按照特定规则(HandlerAdapter要求的">
+<meta name="keywords" content="springmvc">
+<meta property="og:type" content="article">
+<meta property="og:title" content="springMVC(入门配置)">
+<meta property="og:url" content="http://yoursite.com/2017/12/06/springMVC一/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="SpringMVC原理组件以及作用 前端控制器(DispatcherServlet):收请求，响应结果，相当于转发器，中央处理器。减少了其他组件之间的耦合度 处理器映射器(HandlerMapping)：根据请求的url查找Handler Handler处理器：按照HandlerAdapter的要求编写 处理器适配器(HandlerAdapter)：按照特定规则(HandlerAdapter要求的">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://7xph6d.com1.z0.glb.clouddn.com/springmvc_%E6%A0%B8%E5%BF%83%E6%9E%B6%E6%9E%84%E5%9B%BE.jpg">
+<meta property="og:updated_time" content="2017-12-06T15:00:06.862Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="springMVC(入门配置)">
+<meta name="twitter:description" content="SpringMVC原理组件以及作用 前端控制器(DispatcherServlet):收请求，响应结果，相当于转发器，中央处理器。减少了其他组件之间的耦合度 处理器映射器(HandlerMapping)：根据请求的url查找Handler Handler处理器：按照HandlerAdapter的要求编写 处理器适配器(HandlerAdapter)：按照特定规则(HandlerAdapter要求的">
+<meta name="twitter:image" content="http://7xph6d.com1.z0.glb.clouddn.com/springmvc_%E6%A0%B8%E5%BF%83%E6%9E%B6%E6%9E%84%E5%9B%BE.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/12/06/springMVC一/"/>
+
+
+
+
+
+  <title>springMVC(入门配置) | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/12/06/springMVC一/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">springMVC(入门配置)</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-12-06T17:45:07+08:00">
+                2017-12-06
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/spring/" itemprop="url" rel="index">
+                    <span itemprop="name">spring</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="SpringMVC原理"><a href="#SpringMVC原理" class="headerlink" title="SpringMVC原理"></a>SpringMVC原理</h3><h4 id="组件以及作用"><a href="#组件以及作用" class="headerlink" title="组件以及作用"></a>组件以及作用</h4><ul>
+<li>前端控制器(DispatcherServlet):收请求，响应结果，相当于转发器，中央处理器。减少了其他组件之间的耦合度</li>
+<li>处理器映射器(HandlerMapping)：根据请求的url查找Handler</li>
+<li>Handler处理器：按照HandlerAdapter的要求编写</li>
+<li>处理器适配器(HandlerAdapter)：按照特定规则(HandlerAdapter要求的规则)执行Handler</li>
+<li>视图解析器(ViewResolver)：进行视图解析，根据逻辑视图解析成真正的视图(View)</li>
+<li>视图(View)：View是一个接口实现类实现不同的View类型（jsp,pdf等等）</li>
+</ul>
+<p>spring mvc核心架构：<br><img src="http://7xph6d.com1.z0.glb.clouddn.com/springmvc_%E6%A0%B8%E5%BF%83%E6%9E%B6%E6%9E%84%E5%9B%BE.jpg" alt=""></p>
+<ol>
+<li><p>发起请求到前端控制器(DispatcherServlet)</p>
+</li>
+<li><p>前端控制器请求处理器映射器(HandlerMapping)查找Handler(可根据xml配置、注解进行查找)</p>
+</li>
+<li><p>处理器映射器(HandlerMapping)向前端控制器返回Handler</p>
+</li>
+<li><p>前端控制器调用处理器适配器(HandlerAdapter)执行Handler</p>
+</li>
+<li><p>处理器适配器(HandlerAdapter)去执行Handler</p>
+</li>
+<li><p>Handler执行完，给适配器返回ModelAndView(Springmvc框架的一个底层对象)</p>
+</li>
+<li><p>处理器适配器(HandlerAdapter)向前端控制器返回ModelAndView</p>
+</li>
+<li><p>前端控制器(DispatcherServlet)请求视图解析器(ViewResolver)进行视图解析，根据逻辑视图名解析成真正的视图(jsp)</p>
+</li>
+<li><p>视图解析器(ViewResolver)向前端控制器(DispatcherServlet)返回View</p>
+</li>
+<li><p>前端控制器进行视图渲染，即将模型数据(在ModelAndView对象中)填充到request域</p>
+</li>
+<li><p>前端控制器向用户响应结果</p>
+</li>
+</ol>
+<h3 id="入门配置"><a href="#入门配置" class="headerlink" title="入门配置"></a>入门配置</h3><h4 id="web-xml"><a href="#web-xml" class="headerlink" title="web.xml"></a>web.xml</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line">&lt;servlet&gt;</div><div class="line">    &lt;servlet-name&gt;springmvc&lt;/servlet-name&gt;</div><div class="line">    &lt;servlet-class&gt;org.springframework.web.servlet.DispatcherServlet&lt;/servlet-class&gt;</div><div class="line">    &lt;!-- contextConfigLocation配置springmvc加载的配置文件(配置处理器映射器、适配器等等)--&gt;</div><div class="line">    &lt;init-param&gt;</div><div class="line">        &lt;param-name&gt;contextConfigLocation&lt;/param-name&gt;</div><div class="line">        &lt;param-value&gt;classpath:springmvc.xml&lt;/param-value&gt;</div><div class="line">    &lt;/init-param&gt;</div><div class="line">&lt;/servlet&gt;</div><div class="line">&lt;servlet-mapping&gt;</div><div class="line">    &lt;servlet-name&gt;springmvc&lt;/servlet-name&gt;</div><div class="line">    &lt;!--</div><div class="line">    第一种:*.action,访问以.action结尾，由DispatcherServlet进行解析</div><div class="line">    第二种:/,所有访问的地址由DispatcherServlet进行解析，对静态文件的解析需要配置不让DispatcherServlet进行解析，</div><div class="line">            使用此种方式和实现RESTful风格的url</div><div class="line">    第三种:/*,这样配置不对，使用这种配置，最终要转发到一个jsp页面时，仍然会由DispatcherServlet解析jsp地址，</div><div class="line">            不能根据jsp页面找到handler，会报错</div><div class="line">    --&gt;</div><div class="line">    &lt;url-pattern&gt;*.action&lt;/url-pattern&gt;</div><div class="line">&lt;/servlet-mapping&gt;</div></pre></td></tr></table></figure>
+<h4 id="contextConfigLocation配置"><a href="#contextConfigLocation配置" class="headerlink" title="contextConfigLocation配置"></a>contextConfigLocation配置</h4><ul>
+<li><p>配置handler</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">&lt;bean name=&quot;/queryItems.action&quot; class=&quot;com.iot.ssm.controller.ItemsController&quot;/&gt;</div></pre></td></tr></table></figure>
+</li>
+<li><p>配置处理器映射器(HandlerMapping)</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">  &lt;!-- 处理器映射器</div><div class="line">    将bean的name作为url进行查找，需要在配置Handler时指定beanname(就是url)</div><div class="line">    所有的映射器都实现了HandlerMapping接口</div><div class="line">     --&gt;</div><div class="line">&lt;bean class=&quot;org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping&quot;/&gt;</div></pre></td></tr></table></figure>
+</li>
+<li><p>配置处理器适配器</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">&lt;!-- 处理器适配器</div><div class="line">     所有处理器适配器都实现了HandlerAdapter接口</div><div class="line">     --&gt;</div><div class="line">    &lt;bean class=&quot;org.springframework.web.servlet.mvc.SimpleControllerHandlerAdapter&quot;/&gt;</div><div class="line">    此适配器能执行实现了Controller接口的Handler</div><div class="line">    </div><div class="line">    public class ItemsController implements HttpRequestHandler &#123;</div><div class="line">        // to do someting</div><div class="line">    &#125;</div></pre></td></tr></table></figure>
+</li>
+<li><p>配置视图解析器</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">&lt;!-- 视图解析器</div><div class="line">    解析jsp,默认使用jstl,classpath下要有jstl的包</div><div class="line">    --&gt;</div><div class="line">    &lt;bean class=&quot;org.springframework.web.servlet.view.InternalResourceViewResolver&quot;/&gt;</div></pre></td></tr></table></figure>
+</li>
+<li><p>视图解析器配置前缀和后缀</p>
+</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">&lt;bean class=&quot;org.springframework.web.servlet.view.InternalResourceViewResolver&quot;&gt;</div><div class="line">         &lt;!-- 配置jsp路径的前缀 --&gt;</div><div class="line">         &lt;property name=&quot;prefix&quot; value=&quot;/WEB-INF/jsp/&quot;/&gt;</div><div class="line">         &lt;!-- 配置jsp路径的后缀 --&gt;</div><div class="line">         &lt;property name=&quot;suffix&quot; value=&quot;.jsp&quot;/&gt;</div><div class="line"> &lt;/bean&gt;</div></pre></td></tr></table></figure>
+<h4 id="注解的处理器映射器和适配器"><a href="#注解的处理器映射器和适配器" class="headerlink" title="注解的处理器映射器和适配器"></a>注解的处理器映射器和适配器</h4><ul>
+<li>配置注解的处理器映射器和适配器<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">&lt;!-- 注解的映射器 --&gt;</div><div class="line">    &lt;bean class=&quot;org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping&quot;/&gt;</div><div class="line"></div><div class="line">&lt;!-- 注解的适配器 --&gt;</div><div class="line">    &lt;bean class=&quot;org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter&quot;/&gt;</div></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>也可以使用以下代替<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">&lt;!-- 使用mvc:annotation-driven代替上面两个注解映射器和注解适配的配置</div><div class="line">  mvc:annotation-driven默认加载很多的参数绑定方法，</div><div class="line">  比如json转换解析器默认加载了，如果使用mvc:annotation-driven则不用配置上面的RequestMappingHandlerMapping和RequestMappingHandlerAdapter</div><div class="line">  实际开发时使用mvc:annotation-driven</div><div class="line">  --&gt;</div><div class="line"> &lt;mvc:annotation-driven&gt;&lt;/mvc:annotation-driven&gt;</div></pre></td></tr></table></figure></p>
+<ul>
+<li><p>基于注解的handler</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">// 使用@Controller标识他是一个控制器</div><div class="line">@Controller</div><div class="line">public class ItemsController &#123;</div><div class="line">    // url映射</div><div class="line">    @RequestMapping(&quot;/query&quot;)</div><div class="line">    public ModelAndView queryItems() throws Exception&#123;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+<li><p>Spring容器加载handler</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">&lt;!-- 对于注解的Handler 可以单个配置  --&gt;</div><div class="line">    &lt;!--  &lt;bean  class=&quot;com.iot.ssm.controller.ItemsController&quot;/&gt; --&gt;</div><div class="line">    </div><div class="line">    &lt;!--  实际开发中加你使用组件扫描 --&gt;</div><div class="line">    &lt;!-- 可以扫描controller、service、...</div><div class="line">    这里让扫描controller，指定controller的包</div><div class="line">     --&gt;</div><div class="line">    &lt;context:component-scan base-package=&quot;com.iot.ssm.controller&quot;&gt;&lt;/context:component-scan&gt;</div></pre></td></tr></table></figure>
+</li>
+</ul>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="http://www.jianshu.com/p/5af726f0bc97" target="_blank" rel="external">spring mvc 基本配置</a></li>
+<li><a href="http://blog.csdn.net/h3243212/article/details/50828141" target="_blank" rel="external">spring mvc概览</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/springmvc/" rel="tag"><i class="fa fa-tag"></i> springmvc</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/12/04/mysql索引/" rel="next" title="mysql索引">
+                <i class="fa fa-chevron-left"></i> mysql索引
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">一息尚存，则吾志不移</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">35</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">10</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">11</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#SpringMVC原理"><span class="nav-number">1.</span> <span class="nav-text">SpringMVC原理</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#组件以及作用"><span class="nav-number">1.1.</span> <span class="nav-text">组件以及作用</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#入门配置"><span class="nav-number">2.</span> <span class="nav-text">入门配置</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#web-xml"><span class="nav-number">2.1.</span> <span class="nav-text">web.xml</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#contextConfigLocation配置"><span class="nav-number">2.2.</span> <span class="nav-text">contextConfigLocation配置</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#注解的处理器映射器和适配器"><span class="nav-number">2.3.</span> <span class="nav-text">注解的处理器映射器和适配器</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">3.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
