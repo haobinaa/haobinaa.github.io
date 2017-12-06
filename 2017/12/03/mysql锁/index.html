@@ -77,7 +77,7 @@
 <meta property="og:site_name" content="Do Or Die">
 <meta property="og:description" content="概述MySQL各存储引擎使用了三种类型（级别）的锁定机制：表级锁定，行级锁定和页级锁定 表级锁定(table-level)颗粒度最大的锁定机制，该锁定机制实现非常简单，带来的系统负面影响最小，所以获取和释放锁的速度很快。由于表级锁一次会将整个表锁定，所以可以很好的避免困扰我们的死锁问题。 当然，锁定颗粒度大所带来最大的负面影响就是出现锁定资源争用的概率也会最高，致使并大度大打折扣。使用表级锁定的主">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2017-12-05T14:15:49.769Z">
+<meta property="og:updated_time" content="2017-12-06T02:06:44.541Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="mysql锁">
 <meta name="twitter:description" content="概述MySQL各存储引擎使用了三种类型（级别）的锁定机制：表级锁定，行级锁定和页级锁定 表级锁定(table-level)颗粒度最大的锁定机制，该锁定机制实现非常简单，带来的系统负面影响最小，所以获取和释放锁的速度很快。由于表级锁一次会将整个表锁定，所以可以很好的避免困扰我们的死锁问题。 当然，锁定颗粒度大所带来最大的负面影响就是出现锁定资源争用的概率也会最高，致使并大度大打折扣。使用表级锁定的主">
@@ -457,7 +457,44 @@
 <li>在REPEATABLE-READ隔离级别下，如果两个线程同时对相同条件记录用SELECT…FOR UPDATE加排他锁，在没有符合该条件记录情况下，两个线程都会加锁成功。程序发现记录尚不存在，就试图插入一条新记录，如果两个线程都这么做，就会出现死锁。这种情况下，将隔离级别改成READ COMMITTED，就可避免问题。</li>
 <li>当隔离级别为READ COMMITTED时，如果两个线程都先执行SELECT…FOR UPDATE，判断是否存在符合条件的记录，如果没有，就插入记录。此时，只有一个线程能插入成功，另一个线程会出现锁等待，当第1个线程提交后，第2个线程会因主键重出错，但虽然这个线程出错了，却会获得一个排他锁。这时如果有第3个线程又来申请排他锁，也会出现死锁。对于这种情况，可以直接做插入操作，然后再捕获主键重异常，或者在遇到主键重错误时，总是执行ROLLBACK释放获得的排他锁</li>
 </ul>
-<h4 id="使用表锁"><a href="#使用表锁" class="headerlink" title="使用表锁"></a>使用表锁</h4><h4 id="innodb锁的优化"><a href="#innodb锁的优化" class="headerlink" title="innodb锁的优化"></a>innodb锁的优化</h4><h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<h4 id="innodb使用表锁的情况"><a href="#innodb使用表锁的情况" class="headerlink" title="innodb使用表锁的情况"></a>innodb使用表锁的情况</h4><p>innodb大部分情况应该使用行级锁，以下这些情况也可以考虑使用表级锁：</p>
+<ul>
+<li>事务需要更新大部分或全部数据，表又比较大，如果使用默认的行锁，不仅这个事务执行效率低，而且可能造成其他事务长时间锁等待和锁冲突，这种情况下可以考虑使用表锁来提高该事务的执行速度</li>
+<li>事务涉及多个表，比较复杂，很可能引起死锁，造成大量事务回滚。这种情况也可以考虑一次性锁定事务涉及的表，从而避免死锁、减少数据库因事务回滚带来的开销</li>
+</ul>
+<p>如果以上的情况太多，应该考虑myisam表了。</p>
+<p>在innodb中使用表锁：</p>
+<ul>
+<li>使用LOCK TABLES虽然可以给InnoDB加表级锁，但必须说明的是，表锁不是由InnoDB存储引擎层管理的，而是由其上一层──MySQL Server负责的，仅当autocommit=0、InnoDB_table_locks=1（默认设置）时，InnoDB层才能知道MySQL加的表锁，MySQL Server也才能感知InnoDB加的行锁，这种情况下，InnoDB才能自动识别涉及表级锁的死锁，否则，InnoDB将无法自动检测并处理这种死锁</li>
+<li>在用 LOCK TABLES对InnoDB表加锁时要注意，要将AUTOCOMMIT设为0，否则MySQL不会给表加锁；事务结束前，不要用UNLOCK TABLES释放表锁，因为UNLOCK TABLES会隐含地提交事务；COMMIT或ROLLBACK并不能释放用LOCK TABLES加的表级锁，必须用UNLOCK TABLES释放表锁。 例如：<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">写t1并从t2读</div><div class="line">SET AUTOCOMMIT=0;</div><div class="line">LOCK TABLES t1 WRITE, t2 READ, ...;</div><div class="line">[do something with tables t1 and t2 here];</div><div class="line">COMMIT;</div><div class="line">UNLOCK TABLES;</div></pre></td></tr></table></figure>
+</li>
+</ul>
+<h4 id="innodb锁的优化和注意点"><a href="#innodb锁的优化和注意点" class="headerlink" title="innodb锁的优化和注意点"></a>innodb锁的优化和注意点</h4><p>innoDB存储引擎由于实现了行级锁定，虽然在锁定机制的实现方面所带来的性能损耗可能比表级锁定会要更高一些，但是在整体并发处理能力方面要远远优于MyISAM的表级锁定的。当系统并发量较高的时候，InnoDB的整体性能和MyISAM相比就会有比较明显的优势了。但是，InnoDB的行级锁定同样也有其脆弱的一面，当我们使用不当的时候，可能会让InnoDB的整体性能表现不仅不能比MyISAM高，甚至可能会更差</p>
+<ol>
+<li>使用行级锁定：<ul>
+<li>尽可能让所有的数据检索都通过索引来完成，从而避免InnoDB因为无法通过索引键加锁而升级为表级锁定</li>
+<li>合理设计索引，让InnoDB在索引键上面加锁的时候尽可能准确，尽可能的缩小锁定范围，避免造成不必要的锁定而影响其他Query的执行</li>
+<li>尽可能减少基于范围的数据检索过滤条件，避免因为间隙锁带来的负面影响而锁定了不该锁定的记录</li>
+<li>尽量控制事务的大小，减少锁定的资源量和锁定时间长度</li>
+<li>在业务环境允许的情况下，尽量使用较低级别的事务隔离，以减少MySQL因为实现事务隔离级别所带来的附加成本<h5 id="innodb减少死锁"><a href="#innodb减少死锁" class="headerlink" title="innodb减少死锁"></a>innodb减少死锁</h5></li>
+</ul>
+</li>
+</ol>
+<ul>
+<li>类似业务模块中，尽可能按照相同的访问顺序来访问，防止产生死锁</li>
+<li>在同一个事务中，尽可能做到一次锁定所需要的所有资源，减少死锁产生概率</li>
+<li>对于非常容易产生死锁的业务部分，可以尝试使用升级锁定颗粒度，通过表级锁定来减少死锁产生的概率</li>
+</ul>
+<h5 id="innodb行锁争夺情况"><a href="#innodb行锁争夺情况" class="headerlink" title="innodb行锁争夺情况"></a>innodb行锁争夺情况</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">show status like &apos;InnoDB_row_lock%&apos;;</div><div class="line">+-------------------------------+-------+</div><div class="line">| Variable_name                 | Value |</div><div class="line">+-------------------------------+-------+</div><div class="line">| Innodb_row_lock_current_waits | 0     |</div><div class="line">| Innodb_row_lock_time          | 0     |</div><div class="line">| Innodb_row_lock_time_avg      | 0     |</div><div class="line">| Innodb_row_lock_time_max      | 0     |</div><div class="line">| Innodb_row_lock_waits         | 0     |</div><div class="line">+-------------------------------+-------+</div></pre></td></tr></table></figure>
+<ul>
+<li>InnoDB_row_lock_current_waits：当前正在等待锁定的数量；</li>
+<li>InnoDB_row_lock_time：从系统启动到现在锁定总时间长度；</li>
+<li>InnoDB_row_lock_time_avg：每次等待所花平均时间；</li>
+<li>InnoDB_row_lock_time_max：从系统启动到现在等待最常的一次所花的时间；</li>
+<li>InnoDB_row_lock_waits：系统启动后到现在总共等待的次数；</li>
+</ul>
+<p>对于这5个状态变量，比较重要的主要是InnoDB_row_lock_time_avg（等待平均时长），InnoDB_row_lock_waits（等待总次数）以及InnoDB_row_lock_time（等待总时长）这三项。尤其是当等待次数很高，而且每次等待时长也不小的时候，我们就需要分析系统中为什么会有如此多的等待，然后根据分析结果着手指定优化计划。</p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
 <li><a href="http://www.cnblogs.com/luyucheng/p/6297752.html" target="_blank" rel="external">mysql锁详解</a></li>
 <li><a href="http://www.jianshu.com/p/163c96983ca9" target="_blank" rel="external">mysql优化笔记</a></li>
 <li><a href="http://www.cnblogs.com/ggjucheng/archive/2012/11/14/2770445.html" target="_blank" rel="external">mysql数据库锁定机制</a></li>
@@ -637,7 +674,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#表级锁定-table-level"><span class="nav-number">1.1.</span> <span class="nav-text">表级锁定(table-level)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#行级锁定-row-level"><span class="nav-number">1.2.</span> <span class="nav-text">行级锁定(row-level)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#页级锁定"><span class="nav-number">1.3.</span> <span class="nav-text">页级锁定</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#总结"><span class="nav-number">1.4.</span> <span class="nav-text">总结</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#表级锁定"><span class="nav-number">2.</span> <span class="nav-text">表级锁定</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#MySQL表级锁模式"><span class="nav-number">2.1.</span> <span class="nav-text">MySQL表级锁模式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#如果加表锁"><span class="nav-number">2.2.</span> <span class="nav-text">如果加表锁</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#MyIsam表锁优化"><span class="nav-number">2.3.</span> <span class="nav-text">MyIsam表锁优化</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#行级锁定"><span class="nav-number">3.</span> <span class="nav-text">行级锁定</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Innodb锁定模式以及实现机制"><span class="nav-number">3.1.</span> <span class="nav-text">Innodb锁定模式以及实现机制</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Innodb行锁的实现"><span class="nav-number">3.2.</span> <span class="nav-text">Innodb行锁的实现</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#间隙锁-next-key"><span class="nav-number">3.3.</span> <span class="nav-text">间隙锁(next-key)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#死锁"><span class="nav-number">3.4.</span> <span class="nav-text">死锁</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#避免死锁的方法"><span class="nav-number">3.4.1.</span> <span class="nav-text">避免死锁的方法</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#使用表锁"><span class="nav-number">3.5.</span> <span class="nav-text">使用表锁</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#innodb锁的优化"><span class="nav-number">3.6.</span> <span class="nav-text">innodb锁的优化</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">4.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#表级锁定-table-level"><span class="nav-number">1.1.</span> <span class="nav-text">表级锁定(table-level)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#行级锁定-row-level"><span class="nav-number">1.2.</span> <span class="nav-text">行级锁定(row-level)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#页级锁定"><span class="nav-number">1.3.</span> <span class="nav-text">页级锁定</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#总结"><span class="nav-number">1.4.</span> <span class="nav-text">总结</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#表级锁定"><span class="nav-number">2.</span> <span class="nav-text">表级锁定</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#MySQL表级锁模式"><span class="nav-number">2.1.</span> <span class="nav-text">MySQL表级锁模式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#如果加表锁"><span class="nav-number">2.2.</span> <span class="nav-text">如果加表锁</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#MyIsam表锁优化"><span class="nav-number">2.3.</span> <span class="nav-text">MyIsam表锁优化</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#行级锁定"><span class="nav-number">3.</span> <span class="nav-text">行级锁定</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Innodb锁定模式以及实现机制"><span class="nav-number">3.1.</span> <span class="nav-text">Innodb锁定模式以及实现机制</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Innodb行锁的实现"><span class="nav-number">3.2.</span> <span class="nav-text">Innodb行锁的实现</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#间隙锁-next-key"><span class="nav-number">3.3.</span> <span class="nav-text">间隙锁(next-key)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#死锁"><span class="nav-number">3.4.</span> <span class="nav-text">死锁</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#避免死锁的方法"><span class="nav-number">3.4.1.</span> <span class="nav-text">避免死锁的方法</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#innodb使用表锁的情况"><span class="nav-number">3.5.</span> <span class="nav-text">innodb使用表锁的情况</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#innodb锁的优化和注意点"><span class="nav-number">3.6.</span> <span class="nav-text">innodb锁的优化和注意点</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#innodb减少死锁"><span class="nav-number">3.6.1.</span> <span class="nav-text">innodb减少死锁</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#innodb行锁争夺情况"><span class="nav-number">3.6.2.</span> <span class="nav-text">innodb行锁争夺情况</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">4.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
             
 
           </div>
