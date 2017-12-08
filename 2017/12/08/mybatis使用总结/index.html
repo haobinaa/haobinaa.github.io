@@ -53,7 +53,7 @@
 <link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
 
 
-  <meta name="keywords" content="spring," />
+  <meta name="keywords" content="mybatis," />
 
 
 
@@ -69,18 +69,20 @@
 
 
 
-<meta name="description" content="事务介绍事务是一系列连贯的动作，这些动作要么全部完成，要么全部不起作用。具有ACID属性 Spring中的事务管理spring在不同的事务管理API之上定义了一个抽象层。而应用程序开发人员不必了解底层的事务管理API，就可以使用Spring的事务管理机制。 Spring支持两种事务管理方式：  编程式事务管理： 将事务管理代码嵌入到业务方法中来控制事务的提交和回滚，在编程式事务中，必须在每个业务操">
-<meta name="keywords" content="spring">
+<meta name="description" content="概览原生jdbc缺陷原生jdbc十分繁琐，而且占位符不利于维护，缺点很明显  数据库使用时创建连接，不使用就释放，频繁的开启和关闭，十分浪费资源（使用数据库连接池管理连接） sql语句写在java代码中，不利于维护(将sql独立出来在xml文件中) preparedStatement设置参数，十分繁琐且不利于维护(将参数以及占位符也配置在xml中) 从resultSet中取得的数据需要遍历获得,很">
+<meta name="keywords" content="mybatis">
 <meta property="og:type" content="article">
-<meta property="og:title" content="spring事务">
-<meta property="og:url" content="http://yoursite.com/2017/12/01/spring事务/index.html">
+<meta property="og:title" content="mybatis使用总结">
+<meta property="og:url" content="http://yoursite.com/2017/12/08/mybatis使用总结/index.html">
 <meta property="og:site_name" content="Do Or Die">
-<meta property="og:description" content="事务介绍事务是一系列连贯的动作，这些动作要么全部完成，要么全部不起作用。具有ACID属性 Spring中的事务管理spring在不同的事务管理API之上定义了一个抽象层。而应用程序开发人员不必了解底层的事务管理API，就可以使用Spring的事务管理机制。 Spring支持两种事务管理方式：  编程式事务管理： 将事务管理代码嵌入到业务方法中来控制事务的提交和回滚，在编程式事务中，必须在每个业务操">
+<meta property="og:description" content="概览原生jdbc缺陷原生jdbc十分繁琐，而且占位符不利于维护，缺点很明显  数据库使用时创建连接，不使用就释放，频繁的开启和关闭，十分浪费资源（使用数据库连接池管理连接） sql语句写在java代码中，不利于维护(将sql独立出来在xml文件中) preparedStatement设置参数，十分繁琐且不利于维护(将参数以及占位符也配置在xml中) 从resultSet中取得的数据需要遍历获得,很">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2017-12-04T13:22:47.257Z">
+<meta property="og:image" content="http://7xph6d.com1.z0.glb.clouddn.com/mybatis_%E6%A1%86%E6%9E%B6%E5%9B%BE.png">
+<meta property="og:updated_time" content="2017-12-08T10:08:27.644Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="spring事务">
-<meta name="twitter:description" content="事务介绍事务是一系列连贯的动作，这些动作要么全部完成，要么全部不起作用。具有ACID属性 Spring中的事务管理spring在不同的事务管理API之上定义了一个抽象层。而应用程序开发人员不必了解底层的事务管理API，就可以使用Spring的事务管理机制。 Spring支持两种事务管理方式：  编程式事务管理： 将事务管理代码嵌入到业务方法中来控制事务的提交和回滚，在编程式事务中，必须在每个业务操">
+<meta name="twitter:title" content="mybatis使用总结">
+<meta name="twitter:description" content="概览原生jdbc缺陷原生jdbc十分繁琐，而且占位符不利于维护，缺点很明显  数据库使用时创建连接，不使用就释放，频繁的开启和关闭，十分浪费资源（使用数据库连接池管理连接） sql语句写在java代码中，不利于维护(将sql独立出来在xml文件中) preparedStatement设置参数，十分繁琐且不利于维护(将参数以及占位符也配置在xml中) 从resultSet中取得的数据需要遍历获得,很">
+<meta name="twitter:image" content="http://7xph6d.com1.z0.glb.clouddn.com/mybatis_%E6%A1%86%E6%9E%B6%E5%9B%BE.png">
 
 
 
@@ -110,13 +112,13 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/2017/12/01/spring事务/"/>
+  <link rel="canonical" href="http://yoursite.com/2017/12/08/mybatis使用总结/"/>
 
 
 
 
 
-  <title>spring事务 | Do Or Die</title>
+  <title>mybatis使用总结 | Do Or Die</title>
   
 
 
@@ -253,7 +255,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/12/01/spring事务/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/12/08/mybatis使用总结/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Leo Hao">
@@ -270,7 +272,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">spring事务</h1>
+          <h1 class="post-title" itemprop="name headline">mybatis使用总结</h1>
         
 
         <div class="post-meta">
@@ -282,8 +284,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-12-01T17:40:32+08:00">
-                2017-12-01
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-12-08T17:39:56+08:00">
+                2017-12-08
               </time>
             
 
@@ -342,66 +344,26 @@
       
 
       
-        <h3 id="事务介绍"><a href="#事务介绍" class="headerlink" title="事务介绍"></a>事务介绍</h3><p>事务是一系列连贯的动作，这些动作要么全部完成，要么全部不起作用。具有ACID属性</p>
-<h4 id="Spring中的事务管理"><a href="#Spring中的事务管理" class="headerlink" title="Spring中的事务管理"></a>Spring中的事务管理</h4><p>spring在不同的事务管理API之上定义了一个抽象层。而应用程序开发人员不必了解底层的事务管理API，就可以使用Spring的事务管理机制。</p>
-<p>Spring支持两种事务管理方式：</p>
-<ol>
-<li><p>编程式事务管理： 将事务管理代码嵌入到业务方法中来控制事务的提交和回滚，在编程式事务中，必须在每个业务操作中包含额外的事务管理代码</p>
-</li>
-<li><p>申明式事务管理：它将事务管理代码从业务方法中分离出来，以声明的方式来实现事务管理。事务管理作为一种横切关注点，可以通过AOP方法模块化。Spring通过Spring AOP框架支持声明式事务管理</p>
-</li>
-</ol>
-<h3 id="Spring事务传播"><a href="#Spring事务传播" class="headerlink" title="Spring事务传播"></a>Spring事务传播</h3><p>当事务方法被另一个事务方法调用时，必须指定事务应该如何传播。例如：方法可能继续在现有事务中运行，也可能开启一个新事务，并在自己的事务中运行。</p>
-<p>Spring定义了七种传播行为</p>
-<table>
-<thead>
-<tr>
-<th>name</th>
-<th style="text-align:left">description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>PROPAGATION_REQUIRED</td>
-<td style="text-align:left">如果当前没有事务，就新建一个事务，如果已经存在一个事务，加入到这个事务中</td>
-</tr>
-<tr>
-<td>PROPAGATION_SUPPORTS</td>
-<td style="text-align:left">支持当前事务，如果当前没有事务，就以非事务方式执行</td>
-</tr>
-<tr>
-<td>PROPAGATION_MANDATORY</td>
-<td style="text-align:left">使用当前的事务，如果当前没有事务，就抛出异常</td>
-</tr>
-<tr>
-<td>PROPAGATION_REQUIRES_NEW</td>
-<td style="text-align:left">新建事务，如果当前存在事务，把当前事务挂起</td>
-</tr>
-<tr>
-<td>PROPAGATION_NOT_SUPPORTED</td>
-<td style="text-align:left">以非事务方式执行操作，如果当前存在事务，就把当前事务挂起</td>
-</tr>
-<tr>
-<td>PROPAGATION_NEVER</td>
-<td style="text-align:left">以非事务方式执行，如果当前存在事务，则抛出异常</td>
-</tr>
-<tr>
-<td>PROPAGATION_NESTED</td>
-<td style="text-align:left">如果当前存在事务，则在嵌套事务内执行。如果当前没有事务，则执行与PROPAGATION_REQUIRED类似的操作</td>
-</tr>
-</tbody>
-</table>
-<h4 id="编程式事务管理"><a href="#编程式事务管理" class="headerlink" title="编程式事务管理"></a>编程式事务管理</h4><p>在代码中显示的调用<code>beginTranscation()</code>、<code>commit()</code>、<code>rollback()</code>等事务管理相关的方法，我们可以在代码中灵活的配置事务，在底层，Spring仍然把事务操作委托给持久化框架来执行</p>
-<p>如果在代码中调用<code>commit</code>等方法，逻辑就散落在代码中了，Spring还提供了<code>TranscationTemplate</code>模板回调模式</p>
-<h4 id="声明式事务管理"><a href="#声明式事务管理" class="headerlink" title="声明式事务管理"></a>声明式事务管理</h4><p>Spring 的声明式事务管理在底层是建立在 AOP 的基础之上的。其本质是对方法前后进行拦截，然后在目标方法开始之前创建或者加入一个事务，在执行完目标方法之后根据执行情况提交或者回滚事务。</p>
-<h4 id="并发事务导致的问题"><a href="#并发事务导致的问题" class="headerlink" title="并发事务导致的问题"></a>并发事务导致的问题</h4><ul>
-<li>脏读： 脏读发生在一个事务读取了另一个事务改写但尚未提交的数据时。如果改写在稍后被回滚了，那么第一个事务获取的数据就是无效的</li>
-<li>不可重复读： 发生在一个事务执行相同的查询两次或两次以上，但是每次都得到不同的数据时。这通常是因为另一个并发事务在两次查询期间更新了数据</li>
-<li>幻读： 与不可重复读类似。它发生在一个事务(T1)读取了几行数据，接着另一个并发事务(T2)插入了一些数据时。在随后的查询中，第一个事务(T1)就会发现多了一些原本不存在的记录</li>
+        <h3 id="概览"><a href="#概览" class="headerlink" title="概览"></a>概览</h3><h4 id="原生jdbc缺陷"><a href="#原生jdbc缺陷" class="headerlink" title="原生jdbc缺陷"></a>原生jdbc缺陷</h4><p>原生jdbc十分繁琐，而且占位符不利于维护，缺点很明显</p>
+<ul>
+<li>数据库使用时创建连接，不使用就释放，频繁的开启和关闭，十分浪费资源（使用数据库连接池管理连接）</li>
+<li>sql语句写在java代码中，不利于维护(将sql独立出来在xml文件中)</li>
+<li><code>preparedStatement</code>设置参数，十分繁琐且不利于维护(将参数以及占位符也配置在xml中)</li>
+<li>从resultSet中取得的数据需要遍历获得,很麻烦(将结果集映射成对象)</li>
 </ul>
-<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
-<li><a href="http://blog.csdn.net/evankaka/article/details/45478007" target="_blank" rel="external">spring 事务管理</a></li>
-<li><a href="https://www.ibm.com/developerworks/cn/education/opensource/os-cn-spring-trans/index.html" target="_blank" rel="external">全面分析spring事务管理</a></li>
+<h4 id="mybatis配置使用"><a href="#mybatis配置使用" class="headerlink" title="mybatis配置使用"></a>mybatis配置使用</h4><p><img src="http://7xph6d.com1.z0.glb.clouddn.com/mybatis_%E6%A1%86%E6%9E%B6%E5%9B%BE.png" alt=""></p>
+<p>执行过程：</p>
+<ul>
+<li>配置mybatis的配置文件(sqlMapConfig.xml)</li>
+<li>通过配置文件，加载mybatis运行环境，创建SqlSessionFactory会话工厂</li>
+<li>通过SqlSessionFactory创建SqlSession。SqlSession是一个面向用户接口（提供操作数据库方法）</li>
+<li>调用sqlSession的方法去操作数据。sqlSession通过Executor去执行操作</li>
+<li>释放资源，关闭sqlSession</li>
+</ul>
+<p>sqlMapConfig.xml配置：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; ?&gt;</div><div class="line"> &lt;!DOCTYPE configuration</div><div class="line">         PUBLIC &quot;-//mybatis.org//DTD Config 3.0//EN&quot;</div><div class="line">         &quot;http://mybatis.org/dtd/mybatis-3-config.dtd&quot;&gt;</div><div class="line"> &lt;configuration&gt;</div><div class="line">     &lt;!-- 和spring整合后 environments配置将废除--&gt;</div><div class="line">     &lt;environments default=&quot;development&quot;&gt;</div><div class="line">         &lt;environment id=&quot;development&quot;&gt;</div><div class="line">             &lt;!-- 使用jdbc事务管理，事务控制由mybatis--&gt;</div><div class="line">             &lt;transactionManager type=&quot;JDBC&quot; /&gt;</div><div class="line">             &lt;!-- 数据库连接池,由mybatis管理--&gt;</div><div class="line">             &lt;dataSource type=&quot;POOLED&quot;&gt;</div><div class="line">                 &lt;property name=&quot;driver&quot; value=&quot;com.mysql.jdbc.Driver&quot; /&gt;</div><div class="line">                 &lt;property name=&quot;url&quot; value=&quot;jdbc:mysql://localhost:3306/mybatis_learn?characterEncoding=utf-8&quot; /&gt;</div><div class="line">                 &lt;property name=&quot;username&quot; value=&quot;root&quot; /&gt;</div><div class="line">                 &lt;property name=&quot;password&quot; value=&quot;xxx&quot; /&gt;</div><div class="line">             &lt;/dataSource&gt;</div><div class="line">         &lt;/environment&gt;</div><div class="line">     &lt;/environments&gt;</div><div class="line"> </div><div class="line"> &lt;/configuration&gt;</div></pre></td></tr></table></figure></p>
+<h3 id="sqlSession"><a href="#sqlSession" class="headerlink" title="sqlSession"></a>sqlSession</h3><ul>
+<li>SqlSessionFactoryBuilder:<br>通过SqlSessionFactoryBuilder创建会话工厂SqlSessionFactory将SqlSessionFactoryBuilder当成一个工具类使用即可，不需要使用单例管理SqlSessionFactoryBuilder。在需要创建SqlSessionFactory时候，只需要new一次SqlSessionFactoryBuilder即可<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3></li>
+<li><a href="http://blog.csdn.net/h3243212/article/details/50756622" target="_blank" rel="external">mybatis学习笔记</a></li>
 </ul>
 
       
@@ -420,7 +382,7 @@
       
         <div class="post-tags">
           
-            <a href="/tags/spring/" rel="tag"><i class="fa fa-tag"></i> spring</a>
+            <a href="/tags/mybatis/" rel="tag"><i class="fa fa-tag"></i> mybatis</a>
           
         </div>
       
@@ -433,8 +395,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2017/11/30/springAOP二/" rel="next" title="springAOP(AOP)">
-                <i class="fa fa-chevron-left"></i> springAOP(AOP)
+              <a href="/2017/12/07/mysql基础类型/" rel="next" title="mysql基础类型">
+                <i class="fa fa-chevron-left"></i> mysql基础类型
               </a>
             
           </div>
@@ -443,8 +405,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2017/12/02/mysql事务/" rel="prev" title="mysql事务">
-                mysql事务 <i class="fa fa-chevron-right"></i>
+              <a href="/2017/12/09/springMVC二/" rel="prev" title="springMVC(结合mybatis)">
+                springMVC(结合mybatis) <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -578,7 +540,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#事务介绍"><span class="nav-number">1.</span> <span class="nav-text">事务介绍</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Spring中的事务管理"><span class="nav-number">1.1.</span> <span class="nav-text">Spring中的事务管理</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Spring事务传播"><span class="nav-number">2.</span> <span class="nav-text">Spring事务传播</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#编程式事务管理"><span class="nav-number">2.1.</span> <span class="nav-text">编程式事务管理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#声明式事务管理"><span class="nav-number">2.2.</span> <span class="nav-text">声明式事务管理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#并发事务导致的问题"><span class="nav-number">2.3.</span> <span class="nav-text">并发事务导致的问题</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">3.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#概览"><span class="nav-number">1.</span> <span class="nav-text">概览</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#原生jdbc缺陷"><span class="nav-number">1.1.</span> <span class="nav-text">原生jdbc缺陷</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#mybatis配置使用"><span class="nav-number">1.2.</span> <span class="nav-text">mybatis配置使用</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#sqlSession"><span class="nav-number">2.</span> <span class="nav-text">sqlSession</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">3.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
             
 
           </div>
