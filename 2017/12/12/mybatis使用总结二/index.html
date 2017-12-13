@@ -69,18 +69,18 @@
 
 
 
-<meta name="description" content="查询一对一查询实现用户表和订单表的查询，查询出某用户的订单信息  resultType方式  mapper.xml1234567891011&amp;lt;select id=&amp;quot;findOrdersUser&amp;quot;  resultType=&amp;quot;com.iot.mybatis.po.OrdersCustom&amp;quot;&amp;gt;  SELECT      orders.*,      u">
+<meta name="description" content="查询user表:  id  username …….. oder表： id   user_id number(订单编号) oder_detail表: id    orders_id   items_id    items_num items表： id  name price……. 一对一查询实现用户表和订单表的查询，查询出某用户的订单信息  resultType方式  mapper.xml1234">
 <meta name="keywords" content="mybatis">
 <meta property="og:type" content="article">
 <meta property="og:title" content="mybatis使用总结二">
 <meta property="og:url" content="http://yoursite.com/2017/12/12/mybatis使用总结二/index.html">
 <meta property="og:site_name" content="Do Or Die">
-<meta property="og:description" content="查询一对一查询实现用户表和订单表的查询，查询出某用户的订单信息  resultType方式  mapper.xml1234567891011&amp;lt;select id=&amp;quot;findOrdersUser&amp;quot;  resultType=&amp;quot;com.iot.mybatis.po.OrdersCustom&amp;quot;&amp;gt;  SELECT      orders.*,      u">
+<meta property="og:description" content="查询user表:  id  username …….. oder表： id   user_id number(订单编号) oder_detail表: id    orders_id   items_id    items_num items表： id  name price……. 一对一查询实现用户表和订单表的查询，查询出某用户的订单信息  resultType方式  mapper.xml1234">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2017-12-12T15:00:31.003Z">
+<meta property="og:updated_time" content="2017-12-13T09:53:21.135Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="mybatis使用总结二">
-<meta name="twitter:description" content="查询一对一查询实现用户表和订单表的查询，查询出某用户的订单信息  resultType方式  mapper.xml1234567891011&amp;lt;select id=&amp;quot;findOrdersUser&amp;quot;  resultType=&amp;quot;com.iot.mybatis.po.OrdersCustom&amp;quot;&amp;gt;  SELECT      orders.*,      u">
+<meta name="twitter:description" content="查询user表:  id  username …….. oder表： id   user_id number(订单编号) oder_detail表: id    orders_id   items_id    items_num items表： id  name price……. 一对一查询实现用户表和订单表的查询，查询出某用户的订单信息  resultType方式  mapper.xml1234">
 
 
 
@@ -342,7 +342,11 @@
       
 
       
-        <h3 id="查询"><a href="#查询" class="headerlink" title="查询"></a>查询</h3><h4 id="一对一查询"><a href="#一对一查询" class="headerlink" title="一对一查询"></a>一对一查询</h4><p>实现用户表和订单表的查询，查询出某用户的订单信息</p>
+        <h3 id="查询"><a href="#查询" class="headerlink" title="查询"></a>查询</h3><p>user表:  id  username ……..</p>
+<p>oder表： id   user_id number(订单编号)</p>
+<p>oder_detail表: id    orders_id   items_id    items_num</p>
+<p>items表： id  name price…….</p>
+<h4 id="一对一查询"><a href="#一对一查询" class="headerlink" title="一对一查询"></a>一对一查询</h4><p>实现用户表和订单表的查询，查询出某用户的订单信息</p>
 <ul>
 <li>resultType方式</li>
 </ul>
@@ -353,7 +357,8 @@
 </ul>
 <p>mapper.xml<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div></pre></td><td class="code"><pre><div class="line">&lt;!-- 订单查询关联用户的resultMap</div><div class="line">将整个查询的结果映射到com.iot.mybatis.po.Orders中</div><div class="line"> --&gt;</div><div class="line">&lt;resultMap type=&quot;com.iot.mybatis.po.Orders&quot; id=&quot;OrdersUserResultMap&quot;&gt;</div><div class="line">    &lt;!-- 配置映射的订单信息 --&gt;</div><div class="line">    &lt;!-- id：指定查询列中的唯一标识，订单信息的中的唯 一标识，如果有多个列组成唯一标识，配置多个id</div><div class="line">        column：订单信息的唯一标识列</div><div class="line">        property：订单信息的唯一标识列所映射到Orders中哪个属性</div><div class="line">      --&gt;</div><div class="line">    &lt;id column=&quot;id&quot; property=&quot;id&quot;/&gt;</div><div class="line">    &lt;result column=&quot;user_id&quot; property=&quot;userId&quot;/&gt;</div><div class="line">    &lt;result column=&quot;number&quot; property=&quot;number&quot;/&gt;</div><div class="line">    &lt;result column=&quot;createtime&quot; property=&quot;createtime&quot;/&gt;</div><div class="line">    &lt;result column=&quot;note&quot; property=&quot;note&quot;/&gt;</div><div class="line"></div><div class="line">    &lt;!-- 配置映射的关联的用户信息 --&gt;</div><div class="line">    &lt;!-- association：用于映射关联查询单个对象的信息</div><div class="line">    property：要将关联查询的用户信息映射到Orders中哪个属性</div><div class="line">     --&gt;</div><div class="line">    &lt;association property=&quot;user&quot;  javaType=&quot;com.iot.mybatis.po.User&quot;&gt;</div><div class="line">        &lt;!-- id：关联查询用户的唯 一标识</div><div class="line">        column：指定唯 一标识用户信息的列</div><div class="line">        javaType：映射到user的哪个属性</div><div class="line">         --&gt;</div><div class="line">        &lt;id column=&quot;user_id&quot; property=&quot;id&quot;/&gt;</div><div class="line">        &lt;result column=&quot;username&quot; property=&quot;username&quot;/&gt;</div><div class="line">        &lt;result column=&quot;sex&quot; property=&quot;sex&quot;/&gt;</div><div class="line">        &lt;result column=&quot;address&quot; property=&quot;address&quot;/&gt;</div><div class="line">    &lt;/association&gt;</div><div class="line">&lt;/resultMap&gt;</div><div class="line"></div><div class="line">statement定义：</div><div class="line">&lt;select id=&quot;findOrdersUserResultMap&quot; resultMap=&quot;OrdersUserResultMap&quot;&gt;</div><div class="line">    SELECT</div><div class="line">    orders.*,</div><div class="line">    user.username,</div><div class="line">    user.sex,</div><div class="line">    user.address</div><div class="line">    FROM</div><div class="line">    orders,</div><div class="line">    user</div><div class="line">    WHERE orders.user_id = user.id</div><div class="line">&lt;/select&gt;</div></pre></td></tr></table></figure></p>
 <p>mapper.java<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">public List&lt;Orders&gt; findOrdersUserResultMap()throws Exception;</div></pre></td></tr></table></figure></p>
-<h4 id="一对多查询"><a href="#一对多查询" class="headerlink" title="一对多查询"></a>一对多查询</h4><h4 id="多对多查询"><a href="#多对多查询" class="headerlink" title="多对多查询"></a>多对多查询</h4><h3 id="延迟加载"><a href="#延迟加载" class="headerlink" title="延迟加载"></a>延迟加载</h3><h3 id="查询缓存"><a href="#查询缓存" class="headerlink" title="查询缓存"></a>查询缓存</h3><h3 id="与Spring结合以及逆向工程"><a href="#与Spring结合以及逆向工程" class="headerlink" title="与Spring结合以及逆向工程"></a>与Spring结合以及逆向工程</h3>
+<h4 id="一对多查询"><a href="#一对多查询" class="headerlink" title="一对多查询"></a>一对多查询</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">SELECT </div><div class="line">  orders.*,</div><div class="line">  user.username,</div><div class="line">  user.sex,</div><div class="line">  user.address,</div><div class="line">  orderdetail.id as orderdetail_id,</div><div class="line">  orderdetail.items_id,</div><div class="line">  orderdetail.items_num,</div><div class="line">  orderdetail.orders_id</div><div class="line">FROM</div><div class="line">  orders,</div><div class="line">  user,</div><div class="line">  orderdetail</div><div class="line">WHERE orders.user_id = user.id AND orderdetail.orders_id=orders.id</div></pre></td></tr></table></figure>
+<h4 id="多对多查询"><a href="#多对多查询" class="headerlink" title="多对多查询"></a>多对多查询</h4><h3 id="延迟加载"><a href="#延迟加载" class="headerlink" title="延迟加载"></a>延迟加载</h3><h3 id="查询缓存"><a href="#查询缓存" class="headerlink" title="查询缓存"></a>查询缓存</h3><h3 id="与Spring结合以及逆向工程"><a href="#与Spring结合以及逆向工程" class="headerlink" title="与Spring结合以及逆向工程"></a>与Spring结合以及逆向工程</h3>
       
     </div>
     
@@ -392,6 +397,10 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/12/13/mysql连接查询/" rel="prev" title="mysql连接查询">
+                mysql连接查询 <i class="fa fa-chevron-right"></i>
+              </a>
             
           </div>
         </div>
@@ -467,7 +476,7 @@
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">40</span>
+                <span class="site-state-item-count">41</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>

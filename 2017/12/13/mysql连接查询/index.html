@@ -53,7 +53,7 @@
 <link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
 
 
-  <meta name="keywords" content="java," />
+  <meta name="keywords" content="mysql," />
 
 
 
@@ -69,20 +69,18 @@
 
 
 
-<meta name="description" content="之前web方面一直是用PHP，对apace/nginx + php-fpm + php 的开发模式比较熟悉，从今年八月开始使用了java来开发系统，最开始看了Spring和Spring MVC，现在又用了Spring boot，确实PHP有很多需要向java学习的地方。java运行webserver的方式也与PHP不同，PHP是靠Apache或者Nginx等webserver来监听请求，通过cgi">
-<meta name="keywords" content="java">
+<meta name="description" content="连表查询在项目中用的很频繁，今天在这里总结一下 假设两张表user:       id      name        dept_iddept:       id      dept_name 交叉连接(cross join)交叉连接是一个笛卡尔积的结果，表1中每条数据都会跟表2中的数据联系起来。假t1有两条数据，t2有三条数据，那么 select * from t1,t2就会出现6条数据 内连">
+<meta name="keywords" content="mysql">
 <meta property="og:type" content="article">
-<meta property="og:title" content="servlet使用">
-<meta property="og:url" content="http://yoursite.com/2017/10/18/servlet使用/index.html">
+<meta property="og:title" content="mysql连接查询">
+<meta property="og:url" content="http://yoursite.com/2017/12/13/mysql连接查询/index.html">
 <meta property="og:site_name" content="Do Or Die">
-<meta property="og:description" content="之前web方面一直是用PHP，对apace/nginx + php-fpm + php 的开发模式比较熟悉，从今年八月开始使用了java来开发系统，最开始看了Spring和Spring MVC，现在又用了Spring boot，确实PHP有很多需要向java学习的地方。java运行webserver的方式也与PHP不同，PHP是靠Apache或者Nginx等webserver来监听请求，通过cgi">
+<meta property="og:description" content="连表查询在项目中用的很频繁，今天在这里总结一下 假设两张表user:       id      name        dept_iddept:       id      dept_name 交叉连接(cross join)交叉连接是一个笛卡尔积的结果，表1中每条数据都会跟表2中的数据联系起来。假t1有两条数据，t2有三条数据，那么 select * from t1,t2就会出现6条数据 内连">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="https://camo.githubusercontent.com/4add5ddf8c0da7d49f0167902fab4c81f56ee167/687474703a2f2f3778706836642e636f6d312e7a302e676c622e636c6f7564646e2e636f6d2f6a6176617765625f736572766c65742d6c6966656379636c652e706e67">
-<meta property="og:updated_time" content="2017-11-27T06:09:24.098Z">
+<meta property="og:updated_time" content="2017-12-13T14:09:21.777Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="servlet使用">
-<meta name="twitter:description" content="之前web方面一直是用PHP，对apace/nginx + php-fpm + php 的开发模式比较熟悉，从今年八月开始使用了java来开发系统，最开始看了Spring和Spring MVC，现在又用了Spring boot，确实PHP有很多需要向java学习的地方。java运行webserver的方式也与PHP不同，PHP是靠Apache或者Nginx等webserver来监听请求，通过cgi">
-<meta name="twitter:image" content="https://camo.githubusercontent.com/4add5ddf8c0da7d49f0167902fab4c81f56ee167/687474703a2f2f3778706836642e636f6d312e7a302e676c622e636c6f7564646e2e636f6d2f6a6176617765625f736572766c65742d6c6966656379636c652e706e67">
+<meta name="twitter:title" content="mysql连接查询">
+<meta name="twitter:description" content="连表查询在项目中用的很频繁，今天在这里总结一下 假设两张表user:       id      name        dept_iddept:       id      dept_name 交叉连接(cross join)交叉连接是一个笛卡尔积的结果，表1中每条数据都会跟表2中的数据联系起来。假t1有两条数据，t2有三条数据，那么 select * from t1,t2就会出现6条数据 内连">
 
 
 
@@ -112,13 +110,13 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/2017/10/18/servlet使用/"/>
+  <link rel="canonical" href="http://yoursite.com/2017/12/13/mysql连接查询/"/>
 
 
 
 
 
-  <title>servlet使用 | Do Or Die</title>
+  <title>mysql连接查询 | Do Or Die</title>
   
 
 
@@ -255,7 +253,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/10/18/servlet使用/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/12/13/mysql连接查询/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Leo Hao">
@@ -272,7 +270,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">servlet使用</h1>
+          <h1 class="post-title" itemprop="name headline">mysql连接查询</h1>
         
 
         <div class="post-meta">
@@ -284,8 +282,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-10-18T14:14:43+08:00">
-                2017-10-18
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-12-13T18:08:55+08:00">
+                2017-12-13
               </time>
             
 
@@ -307,8 +305,8 @@
               
               
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/javaWeb/" itemprop="url" rel="index">
-                    <span itemprop="name">javaWeb</span>
+                  <a href="/categories/mysql/" itemprop="url" rel="index">
+                    <span itemprop="name">mysql</span>
                   </a>
                 </span>
 
@@ -344,33 +342,165 @@
       
 
       
-        <p>之前web方面一直是用PHP，对apace/nginx + php-fpm + php 的开发模式比较熟悉，从今年八月开始使用了java来开发系统，最开始看了Spring和Spring MVC，现在又用了Spring boot，确实PHP有很多需要向java学习的地方。java运行webserver的方式也与PHP不同，PHP是靠Apache或者Nginx等webserver来监听请求，通过cgi协议将http请求转发给解释器，java是完全靠自己实现了一套机制，用Tomcat等容器包裹住一个个javaweb应用。再次总结一下javaweb的基础，servlet</p>
-<h3 id="servlet生命周期和调用过程"><a href="#servlet生命周期和调用过程" class="headerlink" title="servlet生命周期和调用过程"></a>servlet生命周期和调用过程</h3><p><img src="https://camo.githubusercontent.com/4add5ddf8c0da7d49f0167902fab4c81f56ee167/687474703a2f2f3778706836642e636f6d312e7a302e676c622e636c6f7564646e2e636f6d2f6a6176617765625f736572766c65742d6c6966656379636c652e706e67" alt=""></p>
-<h3 id="使用细节"><a href="#使用细节" class="headerlink" title="使用细节"></a>使用细节</h3><p>我们一般是建立一个java类，继承servlet，然后利用doGet和doPost方法来接收get和post请求，然后在web.xml里面配置一个<code>&lt;servlet&gt;</code>标签，包含了<code>&lt;servlet-name&gt;</code>和<code>&lt;servlet-class&gt;</code>，<code>&lt;servlet-mapping&gt;</code>包含了<code>&lt;servlet-name&gt;</code>和<code>&lt;url-pattern&gt;</code>。其中一个<code>&lt;servlet&gt;</code>可以对应多个<code>&lt;servlet-mapping&gt;</code>，并且<code>&lt;servlet-mapping&gt;</code>中的<code>&lt;url-pattern&gt;</code>可以使用通配符，例如*.扩展名</p>
-<p>在网上看到一个url映射的例子：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">现有如下映射关系：</div><div class="line">Servlet1 -&gt; /abc/*</div><div class="line">Servlet2 -&gt; /*</div><div class="line">Servlet3 -&gt; /abc</div><div class="line">Servlet4 -&gt; *.do</div><div class="line"></div><div class="line">1.当URL为/abc/a.html时，同时匹配了/abc/*和/*，此时将调用Servlet1</div><div class="line">2.当URL为/abc时，同时匹配了/abc 和 /abc/*， 此时将调用Servlet3</div><div class="line">3.当URL为/abc/*.do时，同时匹配了 /abc/* 和 *.do， 此时调用 Servlet1</div><div class="line">4.当URL为/a.do时， 同时匹配了/* 和  *.do，此时调用 Servlet2</div><div class="line">5.当URL为/xxx/yyy/a.do， 同时匹配了/*和 *.do此时调用Servlet2</div></pre></td></tr></table></figure></p>
+        <p>连表查询在项目中用的很频繁，今天在这里总结一下</p>
+<p>假设两张表<br>user:       id      name        dept_id<br>dept:       id      dept_name</p>
+<h3 id="交叉连接-cross-join"><a href="#交叉连接-cross-join" class="headerlink" title="交叉连接(cross join)"></a>交叉连接(cross join)</h3><p>交叉连接是一个笛卡尔积的结果，表1中每条数据都会跟表2中的数据联系起来。假t1有两条数据，t2有三条数据，那么 <code>select * from t1,t2</code>就会出现6条数据</p>
+<h3 id="内连接-inner-join"><a href="#内连接-inner-join" class="headerlink" title="内连接(inner join)"></a>内连接(inner join)</h3><p>内连接返回两个表同时匹配的数据。(重点是同时满足)   </p>
+<h4 id="等值连接"><a href="#等值连接" class="headerlink" title="等值连接"></a>等值连接</h4><p><code>select * from t1 inner join t2 on t1.id = t2.id</code>,或者是<code>select * from t1,t2 where t1.id = t2.id</code></p>
+<h4 id="不等值连接"><a href="#不等值连接" class="headerlink" title="不等值连接"></a>不等值连接</h4><p><code>select * from t1 inner join t2 on t1.id &gt; t2.id</code></p>
+<h4 id="自连接"><a href="#自连接" class="headerlink" title="自连接"></a>自连接</h4><p>把一个表当做两个表来看，自己与自己做连接，常用的如同菜单的id和pid关系</p>
+<p><code>select * from menu t1 inner join menu t2 on t1.pid = t2.id</code></p>
+<p>通常可以把<code>inner join</code>简写成<code>join</code></p>
+<p>总结：内连接类似从笛卡尔积中返回符合条件的所有集合</p>
+<h3 id="外连接"><a href="#外连接" class="headerlink" title="外连接"></a>外连接</h3><p>外连接返回两个表中满足一个表的条件即可</p>
+<h4 id="左连接-left-outer-join"><a href="#左连接-left-outer-join" class="headerlink" title="左连接(left [outer] join)"></a>左连接(left [outer] join)</h4><p>左连接返回左边表所有数据，如果右表没有满足条件的行则用null填充</p>
+<p><code>select * from t1 left join t2 on t1.id = t2.id</code></p>
+<p>t1的所有行都会匹配出来，t1中符合条件的记录会和t2中符合条件记录的将连接起来(即t1的id等于t2的id的记录)，t1中不符合条件的记录将会用null来连接</p>
+<h4 id="右连接-left-outer-join"><a href="#右连接-left-outer-join" class="headerlink" title="右连接(left [outer] join)"></a>右连接(left [outer] join)</h4><p>与左连接相反，返回的数据将以右表为主，匹配不到的用null来连接</p>
+<h3 id="联合查询-union-和-union-all"><a href="#联合查询-union-和-union-all" class="headerlink" title="联合查询(union 和 union all)"></a>联合查询(union 和 union all)</h3><p>语法：<code>select column_name from table1 union select column_name from table2</code></p>
+<p>加入有两个表<br>t1:</p>
+<table>
+<thead>
+<tr>
+<th>t1id</th>
+<th>t1str</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr>
+<td>2</td>
+<td>2</td>
+</tr>
+<tr>
+<td>3</td>
+<td>3</td>
+</tr>
+</tbody>
+</table>
+<p>t2:</p>
+<table>
+<thead>
+<tr>
+<th>t2id</th>
+<th>t2str</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2</td>
+<td>a</td>
+</tr>
+<tr>
+<td>3</td>
+<td>b</td>
+</tr>
+</tbody>
+</table>
+<p><code>select * from t1 union select * from t2</code></p>
+<p>| t1id | t1str |<br>| 1     | 1     |<br>| 2     | 2     |<br>| 3     | 3     |<br>| 2     | a     |<br>| 3     | b     |</p>
+<p>t1和t2的结果集被显示在了一起，默认以t1的字段为准，这里要注意：  </p>
 <ul>
-<li>对象： servlet由servlet引擎调用，不能独立运行。客户端多次请求，服务器只创建一个servlet实例，之后驻留内存中继续服务直至web容器退出才销毁它。</li>
-<li>请求: 服务器针对客户端的每一次请求都会创建新的request和response对象(它们的生命周期很短)，传给service方法</li>
-<li>加载: servlet实例的创建和init方法的调用是在第一次请求时，而非服务器启动时，除非在<servlet>标签配置<load-on-start-up>,数字越小优先级越高</load-on-start-up></servlet></li>
-<li>缺省:映射路径为正斜杠/，则为当前web应用的缺省servlet,不匹配的都交给缺省</li>
-<li>线程安全: 访问同一资源会引发线程安全问题; SingleThreadModel标记接口(已弃用)</li>
-<li>ServletConfig: 在<servlet>标签配置<init-param>，通过getServletConfig方法获得配置。可配置输出字符集，读哪个配置文件等等。</init-param></servlet></li>
-<li>ServletContext: 代表当前web应用，含有一些web应用全局性方法，实现web资源共享、servlet转发等。通过ServletConfig.getServletContext方法获得，在<context-param>标签配置。</context-param></li>
+<li>使用union查询的时候，两个语句查询出的字段数目必须要相同</li>
+<li>查询的结果中两个语句重复的数据会被合成一条，如果要显示重复的记录，就需要使用 <code>union all</code></li>
 </ul>
-<h3 id="ServletContext对象"><a href="#ServletContext对象" class="headerlink" title="ServletContext对象"></a>ServletContext对象</h3><p>描述：在一个web应用中，所有的servlet会共享一个ServletContext对象，实现数据共享。<br>作用：</p>
-<ul>
-<li>获取web应用初始化参数</li>
-<li>实现servlet转发</li>
-<li>利用ServletContext对象读取资源<ul>
-<li>获取文件路径</li>
-<li>读取文件的三种方式</li>
-<li>.propertites文件（配置文件一般有xml和properties，Springboot中还有yml文件）</li>
+<h3 id="全连接-full-join"><a href="#全连接-full-join" class="headerlink" title="全连接(full join)"></a>全连接(full join)</h3><p>我查了一下资料，mysql并不支持全连接(full join)这个功能，但是可以通过<code>left join</code>、<code>right join</code>、<code>union</code>实现全连接</p>
+<p>还是上面例子的两个表t1、t2</p>
+<p><code>select * from t1 left join t2 on t1.t1id = t2.t2id</code></p>
+<table>
+<thead>
+<tr>
+<th>t1id</th>
+<th>t1str</th>
+<th>t2id</th>
+<th>t2str</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>1</td>
+<td>null</td>
+<td>null</td>
+</tr>
+<tr>
+<td>2</td>
+<td>2</td>
+<td>2</td>
+<td>a</td>
+</tr>
+<tr>
+<td>3</td>
+<td>3</td>
+<td>3</td>
+<td>b</td>
+</tr>
+</tbody>
+</table>
+<p><code>select * from t1 left join t2 on t1.t1id = t2.t2id</code></p>
+<table>
+<thead>
+<tr>
+<th>t1id</th>
+<th>t1str</th>
+<th>t2id</th>
+<th>t2str</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2</td>
+<td>2</td>
+<td>2</td>
+<td>a</td>
+</tr>
+<tr>
+<td>3</td>
+<td>3</td>
+<td>3</td>
+<td>b</td>
+</tr>
+</tbody>
+</table>
+<p>实现全连接即把左右连接结合在一起:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">select * from t1 left join t2 on t1.t1id = t2.t2id</div><div class="line">union</div><div class="line">select * from t1 left join t2 on t1.t1id = t2.t2id</div></pre></td></tr></table></figure>
+<table>
+<thead>
+<tr>
+<th>t1id</th>
+<th>t1str</th>
+<th>t2id</th>
+<th>t2str</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>1</td>
+<td>null</td>
+<td>null</td>
+</tr>
+<tr>
+<td>2</td>
+<td>2</td>
+<td>2</td>
+<td>a</td>
+</tr>
+<tr>
+<td>3</td>
+<td>3</td>
+<td>3</td>
+<td>b</td>
+</tr>
+</tbody>
+</table>
+<h4 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h4><ul>
+<li><a href="http://www.zsythink.net/archives/1105" target="_blank" rel="external">mysql多表查询</a></li>
+<li><a href="http://www.jianshu.com/p/1d02f1e9aad1" target="_blank" rel="external">mysql联表查询总结</a></li>
 </ul>
-</li>
-</ul>
-<p>1.通过<code>ServleContext</code>的<code>getResourceAsStream</code>方法读取properties文件，类似：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">InputStream in = this.getServletContext.getResourceAsStream(&quot;/config/config.properties&quot;);</div><div class="line">Properties properties = new Properties();</div><div class="line">properties.load(in);</div></pre></td></tr></table></figure></p>
-<p>2.通过<code>servletContext</code>的<code>getRealPath</code>方法得到资源的绝对路径，在通过FileInputStream读取</p>
-<p>3.通过类装载器去读，<code>ClassLoader</code>的<code>getResourceAsStream</code>(如果读取资源文件的程序不是servlet)，文件不能太大。只装载一次，所以如要读到更新后的数据，通过类装载的方式得到资源文件的位置，再通过传统方式读取资源文件的数据（用<code>getResource</code>得到path，再用<code>FileInputStream</code>）</p>
 
       
     </div>
@@ -388,7 +518,7 @@
       
         <div class="post-tags">
           
-            <a href="/tags/java/" rel="tag"><i class="fa fa-tag"></i> java</a>
+            <a href="/tags/mysql/" rel="tag"><i class="fa fa-tag"></i> mysql</a>
           
         </div>
       
@@ -401,8 +531,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2017/10/18/TomCat使用/" rel="next" title="TomCat使用">
-                <i class="fa fa-chevron-left"></i> TomCat使用
+              <a href="/2017/12/12/mybatis使用总结二/" rel="next" title="mybatis使用总结二">
+                <i class="fa fa-chevron-left"></i> mybatis使用总结二
               </a>
             
           </div>
@@ -410,10 +540,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2017/10/18/消息队列/" rel="prev" title="消息队列">
-                消息队列 <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -546,7 +672,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#servlet生命周期和调用过程"><span class="nav-number">1.</span> <span class="nav-text">servlet生命周期和调用过程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用细节"><span class="nav-number">2.</span> <span class="nav-text">使用细节</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ServletContext对象"><span class="nav-number">3.</span> <span class="nav-text">ServletContext对象</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#交叉连接-cross-join"><span class="nav-number">1.</span> <span class="nav-text">交叉连接(cross join)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#内连接-inner-join"><span class="nav-number">2.</span> <span class="nav-text">内连接(inner join)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#等值连接"><span class="nav-number">2.1.</span> <span class="nav-text">等值连接</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#不等值连接"><span class="nav-number">2.2.</span> <span class="nav-text">不等值连接</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#自连接"><span class="nav-number">2.3.</span> <span class="nav-text">自连接</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#外连接"><span class="nav-number">3.</span> <span class="nav-text">外连接</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#左连接-left-outer-join"><span class="nav-number">3.1.</span> <span class="nav-text">左连接(left [outer] join)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#右连接-left-outer-join"><span class="nav-number">3.2.</span> <span class="nav-text">右连接(left [outer] join)</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#联合查询-union-和-union-all"><span class="nav-number">4.</span> <span class="nav-text">联合查询(union 和 union all)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#全连接-full-join"><span class="nav-number">5.</span> <span class="nav-text">全连接(full join)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#参考资料"><span class="nav-number">5.1.</span> <span class="nav-text">参考资料</span></a></li></ol></li></ol></div>
             
 
           </div>
