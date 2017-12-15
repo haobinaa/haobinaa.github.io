@@ -69,17 +69,17 @@
 
 
 
-<meta name="description" content="title: java遍历集合date: 2017-12-15 11:37:04tags: javacategories: javaSE 前言阿里巴巴java开发手册上面写道：不要在 foreach 循环里进行元素的 add / remove 操作，remove 元素使用 Iterator 方式。经测试确实在foreach里面remove元素会抛出ConcurrentModificationEx">
+<meta name="description" content="title: java foreach遍历的问题date: 2017-12-15 11:37:04tags: javacategories: javaSE 前言阿里巴巴java开发手册上面写道：不要在 foreach 循环里进行元素的 add / remove 操作，remove 元素使用 Iterator 方式。经测试确实在foreach里面remove元素会抛出ConcurrentModif">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Do Or Die">
 <meta property="og:url" content="http://yoursite.com/2017/12/15/java遍历集合/index.html">
 <meta property="og:site_name" content="Do Or Die">
-<meta property="og:description" content="title: java遍历集合date: 2017-12-15 11:37:04tags: javacategories: javaSE 前言阿里巴巴java开发手册上面写道：不要在 foreach 循环里进行元素的 add / remove 操作，remove 元素使用 Iterator 方式。经测试确实在foreach里面remove元素会抛出ConcurrentModificationEx">
+<meta property="og:description" content="title: java foreach遍历的问题date: 2017-12-15 11:37:04tags: javacategories: javaSE 前言阿里巴巴java开发手册上面写道：不要在 foreach 循环里进行元素的 add / remove 操作，remove 元素使用 Iterator 方式。经测试确实在foreach里面remove元素会抛出ConcurrentModif">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2017-12-15T05:59:18.019Z">
+<meta property="og:updated_time" content="2017-12-15T08:13:13.799Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Do Or Die">
-<meta name="twitter:description" content="title: java遍历集合date: 2017-12-15 11:37:04tags: javacategories: javaSE 前言阿里巴巴java开发手册上面写道：不要在 foreach 循环里进行元素的 add / remove 操作，remove 元素使用 Iterator 方式。经测试确实在foreach里面remove元素会抛出ConcurrentModificationEx">
+<meta name="twitter:description" content="title: java foreach遍历的问题date: 2017-12-15 11:37:04tags: javacategories: javaSE 前言阿里巴巴java开发手册上面写道：不要在 foreach 循环里进行元素的 add / remove 操作，remove 元素使用 Iterator 方式。经测试确实在foreach里面remove元素会抛出ConcurrentModif">
 
 
 
@@ -320,7 +320,7 @@
 
       
         <hr>
-<p>title: java遍历集合<br>date: 2017-12-15 11:37:04<br>tags: java<br>categories: javaSE</p>
+<p>title: java foreach遍历的问题<br>date: 2017-12-15 11:37:04<br>tags: java<br>categories: javaSE</p>
 <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>阿里巴巴java开发手册上面写道：不要在 foreach 循环里进行元素的 add / remove 操作，remove 元素使用 Iterator 方式。经测试确实在foreach里面remove元素会抛出<code>ConcurrentModificationException</code>异常</p>
 <p>查了一些资料，自己动手实验了一遍，探究其中原因</p>
 <h4 id="foreach循环"><a href="#foreach循环" class="headerlink" title="foreach循环"></a>foreach循环</h4><p>编译一个foreach循环的字节码可以看到，一个ArrayList的foreach循环其实是通过Iterator实现的，比如</p>
