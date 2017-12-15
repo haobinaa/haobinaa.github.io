@@ -53,7 +53,7 @@
 <link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
 
 
-  <meta name="keywords" content="Hexo, NexT" />
+  <meta name="keywords" content="java," />
 
 
 
@@ -69,17 +69,18 @@
 
 
 
-<meta name="description" content="title: java foreach遍历的问题date: 2017-12-15 11:37:04tags: javacategories: javaSE 前言阿里巴巴java开发手册上面写道：不要在 foreach 循环里进行元素的 add / remove 操作，remove 元素使用 Iterator 方式。经测试确实在foreach里面remove元素会抛出ConcurrentModif">
+<meta name="description" content="前言阿里巴巴java开发手册上面写道：不要在 foreach 循环里进行元素的 add / remove 操作，remove 元素使用 Iterator 方式。经测试确实在foreach里面remove元素会抛出ConcurrentModificationException异常 查了一些资料，自己动手实验了一遍，探究其中原因 foreach循环编译一个foreach循环的字节码可以看到，一个Arr">
+<meta name="keywords" content="java">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Do Or Die">
+<meta property="og:title" content="java增强循环">
 <meta property="og:url" content="http://yoursite.com/2017/12/15/java遍历集合/index.html">
 <meta property="og:site_name" content="Do Or Die">
-<meta property="og:description" content="title: java foreach遍历的问题date: 2017-12-15 11:37:04tags: javacategories: javaSE 前言阿里巴巴java开发手册上面写道：不要在 foreach 循环里进行元素的 add / remove 操作，remove 元素使用 Iterator 方式。经测试确实在foreach里面remove元素会抛出ConcurrentModif">
+<meta property="og:description" content="前言阿里巴巴java开发手册上面写道：不要在 foreach 循环里进行元素的 add / remove 操作，remove 元素使用 Iterator 方式。经测试确实在foreach里面remove元素会抛出ConcurrentModificationException异常 查了一些资料，自己动手实验了一遍，探究其中原因 foreach循环编译一个foreach循环的字节码可以看到，一个Arr">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2017-12-15T08:13:13.799Z">
+<meta property="og:updated_time" content="2017-12-15T08:21:48.788Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Do Or Die">
-<meta name="twitter:description" content="title: java foreach遍历的问题date: 2017-12-15 11:37:04tags: javacategories: javaSE 前言阿里巴巴java开发手册上面写道：不要在 foreach 循环里进行元素的 add / remove 操作，remove 元素使用 Iterator 方式。经测试确实在foreach里面remove元素会抛出ConcurrentModif">
+<meta name="twitter:title" content="java增强循环">
+<meta name="twitter:description" content="前言阿里巴巴java开发手册上面写道：不要在 foreach 循环里进行元素的 add / remove 操作，remove 元素使用 Iterator 方式。经测试确实在foreach里面remove元素会抛出ConcurrentModificationException异常 查了一些资料，自己动手实验了一遍，探究其中原因 foreach循环编译一个foreach循环的字节码可以看到，一个Arr">
 
 
 
@@ -115,7 +116,7 @@
 
 
 
-  <title> | Do Or Die</title>
+  <title>java增强循环 | Do Or Die</title>
   
 
 
@@ -269,7 +270,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline"></h1>
+          <h1 class="post-title" itemprop="name headline">java增强循环</h1>
         
 
         <div class="post-meta">
@@ -281,7 +282,7 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-12-15T11:37:05+08:00">
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-12-15T11:37:04+08:00">
                 2017-12-15
               </time>
             
@@ -291,6 +292,28 @@
             
           </span>
 
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/javaSE/" itemprop="url" rel="index">
+                    <span itemprop="name">javaSE</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
           
 
           
@@ -319,9 +342,7 @@
       
 
       
-        <hr>
-<p>title: java foreach遍历的问题<br>date: 2017-12-15 11:37:04<br>tags: java<br>categories: javaSE</p>
-<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>阿里巴巴java开发手册上面写道：不要在 foreach 循环里进行元素的 add / remove 操作，remove 元素使用 Iterator 方式。经测试确实在foreach里面remove元素会抛出<code>ConcurrentModificationException</code>异常</p>
+        <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>阿里巴巴java开发手册上面写道：不要在 foreach 循环里进行元素的 add / remove 操作，remove 元素使用 Iterator 方式。经测试确实在foreach里面remove元素会抛出<code>ConcurrentModificationException</code>异常</p>
 <p>查了一些资料，自己动手实验了一遍，探究其中原因</p>
 <h4 id="foreach循环"><a href="#foreach循环" class="headerlink" title="foreach循环"></a>foreach循环</h4><p>编译一个foreach循环的字节码可以看到，一个ArrayList的foreach循环其实是通过Iterator实现的，比如</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">List&lt;String&gt; list = new ArrayList&lt;&gt; ();</div><div class="line">list.add(&quot;1&quot;);</div><div class="line">list.add(&quot;2&quot;);</div><div class="line"></div><div class="line">for (String item : list) &#123;</div><div class="line">    System.out.println(item);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
@@ -360,6 +381,12 @@
     
 
     <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/java/" rel="tag"><i class="fa fa-tag"></i> java</a>
+          
+        </div>
       
 
       
