@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="springmvc," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="数据校验使用hibernate校验框架(hibernate-validator)进行后端的数据校验 maven依赖： 12345&amp;lt;dependency&amp;gt;    &amp;lt;groupId&amp;gt;org.hibernate&amp;lt;/groupId&amp;gt;    &amp;lt;artifactId&amp;gt;hibernate-validator&amp;lt;/artifactId&amp;gt;    &amp;lt;ve">
+<meta name="keywords" content="springmvc">
+<meta property="og:type" content="article">
+<meta property="og:title" content="springMVC(数据处理)">
+<meta property="og:url" content="http://yoursite.com/2017/12/21/springMVC四/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="数据校验使用hibernate校验框架(hibernate-validator)进行后端的数据校验 maven依赖： 12345&amp;lt;dependency&amp;gt;    &amp;lt;groupId&amp;gt;org.hibernate&amp;lt;/groupId&amp;gt;    &amp;lt;artifactId&amp;gt;hibernate-validator&amp;lt;/artifactId&amp;gt;    &amp;lt;ve">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2017-12-21T09:17:04.088Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="springMVC(数据处理)">
+<meta name="twitter:description" content="数据校验使用hibernate校验框架(hibernate-validator)进行后端的数据校验 maven依赖： 12345&amp;lt;dependency&amp;gt;    &amp;lt;groupId&amp;gt;org.hibernate&amp;lt;/groupId&amp;gt;    &amp;lt;artifactId&amp;gt;hibernate-validator&amp;lt;/artifactId&amp;gt;    &amp;lt;ve">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/12/21/springMVC四/"/>
+
+
+
+
+
+  <title>springMVC(数据处理) | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/12/21/springMVC四/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">springMVC(数据处理)</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-12-21T09:27:03+08:00">
+                2017-12-21
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/spring/" itemprop="url" rel="index">
+                    <span itemprop="name">spring</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="数据校验"><a href="#数据校验" class="headerlink" title="数据校验"></a>数据校验</h3><p>使用hibernate校验框架(<code>hibernate-validator</code>)进行后端的数据校验</p>
+<p>maven依赖：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">&lt;dependency&gt;</div><div class="line">    &lt;groupId&gt;org.hibernate&lt;/groupId&gt;</div><div class="line">    &lt;artifactId&gt;hibernate-validator&lt;/artifactId&gt;</div><div class="line">    &lt;version&gt;5.2.4.Final&lt;/version&gt;</div><div class="line">&lt;/dependency&gt;</div></pre></td></tr></table></figure>
+<h4 id="配置校验器"><a href="#配置校验器" class="headerlink" title="配置校验器"></a>配置校验器</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line">&lt;!-- 校验器 --&gt;</div><div class="line">&lt;bean id=&quot;validator&quot;</div><div class="line">      class=&quot;org.springframework.validation.beanvalidation.LocalValidatorFactoryBean&quot;&gt;</div><div class="line">    &lt;!-- hibernate校验器--&gt;</div><div class="line">    &lt;property name=&quot;providerClass&quot; value=&quot;org.hibernate.validator.HibernateValidator&quot; /&gt;</div><div class="line">    &lt;!-- 指定校验使用的资源文件，在文件中配置校验错误信息，如果不指定则默认使用classpath下的ValidationMessages.properties --&gt;</div><div class="line">    &lt;property name=&quot;validationMessageSource&quot; ref=&quot;messageSource&quot; /&gt;</div><div class="line">&lt;/bean&gt;</div><div class="line">&lt;!-- 校验错误信息配置文件 --&gt;</div><div class="line">&lt;bean id=&quot;messageSource&quot;</div><div class="line">      class=&quot;org.springframework.context.support.ReloadableResourceBundleMessageSource&quot;&gt;</div><div class="line">    &lt;!-- 资源文件名--&gt;</div><div class="line">    &lt;property name=&quot;basenames&quot;&gt;</div><div class="line">        &lt;list&gt;</div><div class="line">            &lt;value&gt;classpath:CustomValidationMessages&lt;/value&gt;</div><div class="line">        &lt;/list&gt;</div><div class="line">    &lt;/property&gt;</div><div class="line">    &lt;!-- 资源文件编码格式 --&gt;</div><div class="line">    &lt;property name=&quot;fileEncodings&quot; value=&quot;utf-8&quot; /&gt;</div><div class="line">    &lt;!-- 对资源文件内容缓存时间，单位秒 --&gt;</div><div class="line">    &lt;property name=&quot;cacheSeconds&quot; value=&quot;120&quot; /&gt;</div><div class="line">&lt;/bean&gt;</div></pre></td></tr></table></figure>
+<p>将校验器注入处理器适配器<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">&lt;mvc:annotation-driven conversion-service=&quot;conversionService&quot;</div><div class="line">                       validator=&quot;validator&quot;&gt;</div><div class="line">&lt;/mvc:annotation-driven&gt;</div></pre></td></tr></table></figure></p>
+<p><code>CustomValidationMessages.properties</code>配置校验错误信息：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">items.name.length.error=请输入1到30个字符的商品名称</div><div class="line">items.createtime.isNUll=请输入商品的生产日期</div></pre></td></tr></table></figure></p>
+<h4 id="pojo中添加校验规则"><a href="#pojo中添加校验规则" class="headerlink" title="pojo中添加校验规则"></a>pojo中添加校验规则</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">public class Items &#123;</div><div class="line">    private Integer id;</div><div class="line">    //校验名称在1到30字符中间</div><div class="line">    //message是提示校验出错显示的信息</div><div class="line">    //groups：此校验属于哪个分组，groups可以定义多个分组</div><div class="line">    @Size(min=1,max=30,message=&quot;&#123;items.name.length.error&#125;&quot;)</div><div class="line">    private String name;</div><div class="line"></div><div class="line">    private Float price;</div><div class="line"></div><div class="line">    private String pic;</div><div class="line"></div><div class="line">    //非空校验</div><div class="line">    @NotNull(message=&quot;&#123;items.createtime.isNUll&#125;&quot;)</div><div class="line">    private Date createtime;</div></pre></td></tr></table></figure>
+<h4 id="controller中校验"><a href="#controller中校验" class="headerlink" title="controller中校验"></a>controller中校验</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">// 校验pojo</div><div class="line">@RequestMapping(&quot;/editItemsSubmit&quot;)</div><div class="line">public String editItemsSubmit(</div><div class="line">        @Validated ItemsCustom itemsCustom,</div><div class="line">        BindingResult bindingResult)</div></pre></td></tr></table></figure>
+<p>捕获错误并返回错误信息<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">//获取校验错误信息</div><div class="line">if(bindingResult.hasErrors())&#123;</div><div class="line">    // 输出错误信息</div><div class="line">    List&lt;ObjectError&gt; allErrors = bindingResult.getAllErrors();</div><div class="line"></div><div class="line">    for (ObjectError objectError :allErrors)&#123;</div><div class="line">        // 输出错误信息</div><div class="line">        System.out.println(objectError.getDefaultMessage());</div><div class="line">    &#125;</div><div class="line">    // 将错误信息传到页面</div><div class="line">    model.addAttribute(&quot;allErrors&quot;, allErrors);;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<h4 id="分组校验"><a href="#分组校验" class="headerlink" title="分组校验"></a>分组校验</h4><p>有时候不同的controller对同一个pojo需要不同的校验规则，使用分组校验的方式</p>
+<p>申明校验分组<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">public interface ValidGroup1 &#123;</div><div class="line">    //接口中不需要定义任何方法，仅是对不同的校验规则进行分组</div><div class="line">    //此分组只校验商品名称长度</div><div class="line"></div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>校验规则中添加分组<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">//校验名称在1到30字符中间</div><div class="line">//message是提示校验出错显示的信息</div><div class="line">//groups：此校验属于哪个分组，groups可以定义多个分组</div><div class="line">@Size(min=1,max=30,message=&quot;&#123;items.name.length.error&#125;&quot;,groups = &#123;ValidGroup1.class&#125;)</div><div class="line">private String name;</div></pre></td></tr></table></figure></p>
+<p>在Controller中指定分组<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">// @Validated的value值指定是哪个分组</div><div class="line">@RequestMapping(&quot;/editItemsSubmit&quot;)</div><div class="line">public String editItemsSubmit(</div><div class="line">        @Validated(value = ValidGroup1.class)ItemsCustom itemsCustom,</div><div class="line">        BindingResult bindingResult)</div></pre></td></tr></table></figure></p>
+<h3 id="异常处理"><a href="#异常处理" class="headerlink" title="异常处理"></a>异常处理</h3><p>异常分为两种：   </p>
+<ol>
+<li>预期异常（在代码中可以预见发生的，代码可捕获的异常）</li>
+<li>runtime异常，运行期间产生的RuntimeException，系统在运行期间，dao、service、controller抛出的异常都由springmvc前端控制器交给异常处理器(<code>ExceptionResolver</code>)处理</li>
+</ol>
+<h4 id="自定义异常类"><a href="#自定义异常类" class="headerlink" title="自定义异常类"></a>自定义异常类</h4><p>自己可以针对不同的异常类型，自定义异常类，继承于<code>Exception</code><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line">public class CustomException  extends  Exception&#123;</div><div class="line">    //异常信息</div><div class="line">    public String message;</div><div class="line"></div><div class="line">    public CustomException(String message)&#123;</div><div class="line">        super(message);</div><div class="line">        this.message = message;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public String getMessage() &#123;</div><div class="line">        return message;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public void setMessage(String message) &#123;</div><div class="line">        this.message = message;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<h4 id="全局异常处理器"><a href="#全局异常处理器" class="headerlink" title="全局异常处理器"></a>全局异常处理器</h4><p>系统在运行期间遇到异常，会在程序中向上抛出，顺序是:dao-&gt;service-&gt;controller-&gt;前端控制器-&gt;全局异常处理器</p>
+<p>全局异常处理器接受到抛出的异常后，进行的处理是：  </p>
+<ol>
+<li>如果异常是系统自定义异常，直接返回异常信息</li>
+<li>如果不是系统自定义的异常，构造一个自定义的异常类型</li>
+</ol>
+<p>SpringMVC提供的<code>HandlerExceptionResolver</code>接口：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div></pre></td><td class="code"><pre><div class="line"> public ModelAndView resolveException(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) &#123;</div><div class="line">        //handler就是处理器适配器要执行Handler对象（只有method）</div><div class="line">        //解析出异常类型</div><div class="line">        //如果该 异常类型是系统 自定义的异常，直接取出异常信息，在错误页面展示</div><div class="line">        //String message = null;</div><div class="line">        //if(ex instanceof CustomException)&#123;</div><div class="line">            //message = ((CustomException)ex).getMessage();</div><div class="line">        //&#125;else&#123;</div><div class="line">            ////如果该 异常类型不是系统 自定义的异常，构造一个自定义的异常类型（信息为“未知错误”）</div><div class="line">            //message=&quot;未知错误&quot;;</div><div class="line">        //&#125;</div><div class="line"></div><div class="line">        //上边代码变为</div><div class="line">        CustomException customException;</div><div class="line">        if(ex instanceof CustomException)&#123;</div><div class="line">            customException = (CustomException)ex;</div><div class="line">        &#125;else&#123;</div><div class="line">            customException = new CustomException(&quot;未知错误&quot;);</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        //错误信息</div><div class="line">        String message = customException.getMessage();</div><div class="line"></div><div class="line">        ModelAndView modelAndView = new ModelAndView();</div><div class="line"></div><div class="line">        //将错误信息传到页面</div><div class="line">        modelAndView.addObject(&quot;message&quot;, message);</div><div class="line"></div><div class="line">        //指向错误页面</div><div class="line">        modelAndView.setViewName(&quot;error&quot;);</div><div class="line"></div><div class="line">        return modelAndView;</div><div class="line"></div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<h3 id="拦截器"><a href="#拦截器" class="headerlink" title="拦截器"></a>拦截器</h3><h4 id="拦截定义"><a href="#拦截定义" class="headerlink" title="拦截定义"></a>拦截定义</h4><p>定义拦拦截器需要实现<code>HandlerInterceptor</code>接口：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div></pre></td><td class="code"><pre><div class="line">public class HandlerInterceptor1 implements HandlerInterceptor&#123;</div><div class="line">    //进入 Handler方法之前执行</div><div class="line">    //用于身份认证、身份授权</div><div class="line">    //比如身份认证，如果认证通过表示当前用户没有登陆，需要此方法拦截不再向下执行</div><div class="line">    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception &#123;</div><div class="line"></div><div class="line">        //return false表示拦截，不向下执行</div><div class="line">        //return true表示放行</div><div class="line">        return false;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    //进入Handler方法之后，返回modelAndView之前执行</div><div class="line">    //应用场景从modelAndView出发：将公用的模型数据(比如菜单导航)在这里传到视图，也可以在这里统一指定视图</div><div class="line">    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception &#123;</div><div class="line"></div><div class="line">    &#125;</div><div class="line"></div><div class="line">    //执行Handler完成执行此方法</div><div class="line">    //应用场景：统一异常处理，统一日志处理</div><div class="line">    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception &#123;</div><div class="line"></div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>HandlerInterpceptor接口需要实现三个方法：  </p>
+<ul>
+<li><p><code>public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)</code>，进入Handler方法之前执行，一般用于身份认证，授权认证</p>
+</li>
+<li><p><code>public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView)</code></p>
+<ul>
+<li>进入handler方法之后，返回modelAndView之前执行</li>
+<li>可以将公共的模型数据放到这里传到视图（导航栏之类的）</li>
+</ul>
+</li>
+<li><code>public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex)</code><ul>
+<li>handler执行完之后执行</li>
+<li>一般用于统一异常处理或者是统一日志记录</li>
+</ul>
+</li>
+</ul>
+<h4 id="拦截器配置"><a href="#拦截器配置" class="headerlink" title="拦截器配置"></a>拦截器配置</h4><h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="http://blog.csdn.net/h3243212/article/details/51016271" target="_blank" rel="external">brainway的博客</a></li>
+<li>很多资料都是参考于这个博主的博客，来源应该是传智播客的SpringMVC+Mybatis的视频</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/springmvc/" rel="tag"><i class="fa fa-tag"></i> springmvc</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/12/20/springMVC三/" rel="next" title="springMVC(参数绑定)">
+                <i class="fa fa-chevron-left"></i> springMVC(参数绑定)
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">一息尚存，则吾志不移</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">47</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">10</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">13</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#数据校验"><span class="nav-number">1.</span> <span class="nav-text">数据校验</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#配置校验器"><span class="nav-number">1.1.</span> <span class="nav-text">配置校验器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#pojo中添加校验规则"><span class="nav-number">1.2.</span> <span class="nav-text">pojo中添加校验规则</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#controller中校验"><span class="nav-number">1.3.</span> <span class="nav-text">controller中校验</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#分组校验"><span class="nav-number">1.4.</span> <span class="nav-text">分组校验</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#异常处理"><span class="nav-number">2.</span> <span class="nav-text">异常处理</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#自定义异常类"><span class="nav-number">2.1.</span> <span class="nav-text">自定义异常类</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#全局异常处理器"><span class="nav-number">2.2.</span> <span class="nav-text">全局异常处理器</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#拦截器"><span class="nav-number">3.</span> <span class="nav-text">拦截器</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#拦截定义"><span class="nav-number">3.1.</span> <span class="nav-text">拦截定义</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#拦截器配置"><span class="nav-number">3.2.</span> <span class="nav-text">拦截器配置</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">4.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
