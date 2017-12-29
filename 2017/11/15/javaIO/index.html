@@ -69,18 +69,18 @@
 
 
 
-<meta name="description" content="流的概念流是一组有顺序的，有起点和终点的字节集合，是对数据传输的总称或抽象。即数据在两设备间的传输称为流，流的本质是数据传输，根据数据传输特性将流抽象为各种类，方便更直观的进行数据操作 IO流的分类 根据处理数据类型的不同分为：字符流和字节流 字符流：因为数据编码的不同，而有了对字符进行高效操作的流对象。本质其实就是基于字节流读取时，去查了指定的码表。 字符流和字节流的区别： 读写单位不同：字节流">
+<meta name="description" content="概述java流类图结构http://ojpgmz933.bkt.clouddn.com/17-11-11/66017095.jpg java流的概念流是一组有顺序的，有起点和终点的字节集合，是对数据传输的总称或抽象。即数据在两设备间的传输称为流，流的本质是数据传输，根据数据传输特性将流抽象为各种类，方便更直观的进行数据操作。 根据处理数据类型的不同分为字符流和字节流 根据数据流入不同分为输入流和输">
 <meta name="keywords" content="javaIO">
 <meta property="og:type" content="article">
 <meta property="og:title" content="javaIO流">
 <meta property="og:url" content="http://yoursite.com/2017/11/15/javaIO/index.html">
 <meta property="og:site_name" content="Do Or Die">
-<meta property="og:description" content="流的概念流是一组有顺序的，有起点和终点的字节集合，是对数据传输的总称或抽象。即数据在两设备间的传输称为流，流的本质是数据传输，根据数据传输特性将流抽象为各种类，方便更直观的进行数据操作 IO流的分类 根据处理数据类型的不同分为：字符流和字节流 字符流：因为数据编码的不同，而有了对字符进行高效操作的流对象。本质其实就是基于字节流读取时，去查了指定的码表。 字符流和字节流的区别： 读写单位不同：字节流">
+<meta property="og:description" content="概述java流类图结构http://ojpgmz933.bkt.clouddn.com/17-11-11/66017095.jpg java流的概念流是一组有顺序的，有起点和终点的字节集合，是对数据传输的总称或抽象。即数据在两设备间的传输称为流，流的本质是数据传输，根据数据传输特性将流抽象为各种类，方便更直观的进行数据操作。 根据处理数据类型的不同分为字符流和字节流 根据数据流入不同分为输入流和输">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2017-11-27T06:07:59.762Z">
+<meta property="og:updated_time" content="2017-12-29T09:56:29.737Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="javaIO流">
-<meta name="twitter:description" content="流的概念流是一组有顺序的，有起点和终点的字节集合，是对数据传输的总称或抽象。即数据在两设备间的传输称为流，流的本质是数据传输，根据数据传输特性将流抽象为各种类，方便更直观的进行数据操作 IO流的分类 根据处理数据类型的不同分为：字符流和字节流 字符流：因为数据编码的不同，而有了对字符进行高效操作的流对象。本质其实就是基于字节流读取时，去查了指定的码表。 字符流和字节流的区别： 读写单位不同：字节流">
+<meta name="twitter:description" content="概述java流类图结构http://ojpgmz933.bkt.clouddn.com/17-11-11/66017095.jpg java流的概念流是一组有顺序的，有起点和终点的字节集合，是对数据传输的总称或抽象。即数据在两设备间的传输称为流，流的本质是数据传输，根据数据传输特性将流抽象为各种类，方便更直观的进行数据操作。 根据处理数据类型的不同分为字符流和字节流 根据数据流入不同分为输入流和输">
 
 
 
@@ -342,20 +342,14 @@
       
 
       
-        <h5 id="流的概念"><a href="#流的概念" class="headerlink" title="流的概念"></a>流的概念</h5><p>流是一组有顺序的，有起点和终点的字节集合，是对数据传输的总称或抽象。即数据在两设备间的传输称为流，流的本质是数据传输，根据数据传输特性将流抽象为各种类，方便更直观的进行数据操作</p>
-<h5 id="IO流的分类"><a href="#IO流的分类" class="headerlink" title="IO流的分类"></a>IO流的分类</h5><ul>
-<li>根据处理数据类型的不同分为：字符流和字节流<ul>
-<li>字符流：因为数据编码的不同，而有了对字符进行高效操作的流对象。本质其实就是基于字节流读取时，去查了指定的码表。</li>
-<li>字符流和字节流的区别：<ol>
-<li>读写单位不同：字节流以字节（8bit）为单位，字符流以字符为单位，根据码表映射字符，一次可能读多个字节。</li>
-<li>处理对象不同：字节流能处理所有类型的数据（如图片、avi等），而字符流只能处理字符类型的数据。</li>
-<li>字节流：一次读入或读出是8位二进制。字符流：一次读入或读出是16位二进制</li>
-<li>字节流（inputStream、outputStream），字符流（Reader、Writer）</li>
-</ol>
-</li>
-</ul>
-</li>
-</ul>
+        <h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><h4 id="java流类图结构"><a href="#java流类图结构" class="headerlink" title="java流类图结构"></a>java流类图结构</h4><p><img src="" alt=""><a href="http://ojpgmz933.bkt.clouddn.com/17-11-11/66017095.jpg" target="_blank" rel="external">http://ojpgmz933.bkt.clouddn.com/17-11-11/66017095.jpg</a></p>
+<h4 id="java流的概念"><a href="#java流的概念" class="headerlink" title="java流的概念"></a>java流的概念</h4><p>流是一组有顺序的，有起点和终点的字节集合，是对数据传输的总称或抽象。即数据在两设备间的传输称为流，流的本质是数据传输，根据数据传输特性将流抽象为各种类，方便更直观的进行数据操作。</p>
+<p>根据处理数据类型的不同分为字符流和字节流</p>
+<p>根据数据流入不同分为输入流和输出流</p>
+<h3 id="File类"><a href="#File类" class="headerlink" title="File类"></a>File类</h3><p>java.io.File: 文件和目录路径名的抽象表示形式，和平台无关</p>
+<p>File能新建、删除、重命名文件和目录，但是不能访问文件内容本身，如果需要访问文件本身，需要使用输入/输出流</p>
+<h3 id="字节流"><a href="#字节流" class="headerlink" title="字节流"></a>字节流</h3><p>Java 中的字节流处理的最基本单位为单个字节，它通常用来处理二进制数据。Java 中最基本的两个字节流类是 <code>InputStream</code> 和 <code>OutputStream</code>，它们分别代表了组基本的输入字节流和输出字节流。<code>InputStream</code> 类与 <code>OutputStream</code> 类均为抽象类，我们在实际使用中通常使用 Java 类库中提供的它们的一系列子类。</p>
+<p>以<code>InputStream</code>为例，有一个从字节流中读取字节的方法:<br><code>public abstract int read() throws IOException;</code></p>
 <h5 id="输入字节流InputStream"><a href="#输入字节流InputStream" class="headerlink" title="输入字节流InputStream"></a>输入字节流InputStream</h5><ul>
 <li><code>InputStream</code>是所有输入字节流的父类，是一个抽象类</li>
 <li><code>ByteArrayInputStream</code>、<code>StringBufferInputStream</code>、<code>FileInputStream</code>是三种基本的介质流，分别从Byte数组、String Buffer、本地文件中读取数据</li>
@@ -471,9 +465,10 @@ raf.write(&quot;xyz&quot;.getBytes());
 raf.write(temp.getBytes());
 </code></pre><p>参考资料：  </p>
 <ul>
-<li><a href="https://www.ibm.com/developerworks/cn/java/j-lo-io-optimize/index.html" target="_blank" rel="external">java I/O模型及优化建议</a></li>
+<li><a href="https://www.ibm.com/developerworks/cn/java/j-lo-io-optimize/index.html" target="_blank" rel="external">IBM java I/O模型及优化建议</a></li>
 <li><a href="http://blog.csdn.net/zhaoyanjun6/article/details/54292148" target="_blank" rel="external">java I/O流</a></li>
 <li><a href="https://www.cnblogs.com/baixl/p/4170599.html" target="_blank" rel="external">java I/O操作</a></li>
+<li><a href="http://skye.fun/2017/11/11/JAVA%20IO%20%E6%B5%81%E8%AF%BB%E5%86%99%E6%80%BB%E7%BB%93/#more" target="_blank" rel="external">java流总结</a></li>
 </ul>
 
       
@@ -593,7 +588,7 @@ raf.write(temp.getBytes());
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">49</span>
+                <span class="site-state-item-count">51</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -604,7 +599,7 @@ raf.write(temp.getBytes());
             
             <div class="site-state-item site-state-categories">
               <a href="/categories/index.html">
-                <span class="site-state-item-count">11</span>
+                <span class="site-state-item-count">12</span>
                 <span class="site-state-item-name">分类</span>
               </a>
             </div>
@@ -615,7 +610,7 @@ raf.write(temp.getBytes());
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">14</span>
+                <span class="site-state-item-count">16</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
@@ -650,7 +645,7 @@ raf.write(temp.getBytes());
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-5"><a class="nav-link" href="#流的概念"><span class="nav-number">1.</span> <span class="nav-text">流的概念</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#IO流的分类"><span class="nav-number">2.</span> <span class="nav-text">IO流的分类</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#输入字节流InputStream"><span class="nav-number">3.</span> <span class="nav-text">输入字节流InputStream</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#输出字节流OutputStream"><span class="nav-number">4.</span> <span class="nav-text">输出字节流OutputStream</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#java-io梳理"><span class="nav-number">5.</span> <span class="nav-text">java io梳理</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#InputStream-amp-Reader"><span class="nav-number">6.</span> <span class="nav-text">InputStream & Reader</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#OutputStream-amp-Writer"><span class="nav-number">7.</span> <span class="nav-text">OutputStream & Writer</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#文件流"><span class="nav-number">8.</span> <span class="nav-text">文件流</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#缓冲流"><span class="nav-number">9.</span> <span class="nav-text">缓冲流</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#对象序列化流"><span class="nav-number">10.</span> <span class="nav-text">对象序列化流</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#RandomAccessFile类"><span class="nav-number">11.</span> <span class="nav-text">RandomAccessFile类</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#java流类图结构"><span class="nav-number">1.1.</span> <span class="nav-text">java流类图结构</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#java流的概念"><span class="nav-number">1.2.</span> <span class="nav-text">java流的概念</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#File类"><span class="nav-number">2.</span> <span class="nav-text">File类</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#字节流"><span class="nav-number">3.</span> <span class="nav-text">字节流</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#输入字节流InputStream"><span class="nav-number">3.0.1.</span> <span class="nav-text">输入字节流InputStream</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#输出字节流OutputStream"><span class="nav-number">3.0.2.</span> <span class="nav-text">输出字节流OutputStream</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#java-io梳理"><span class="nav-number">3.0.3.</span> <span class="nav-text">java io梳理</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#InputStream-amp-Reader"><span class="nav-number">3.0.4.</span> <span class="nav-text">InputStream & Reader</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#OutputStream-amp-Writer"><span class="nav-number">3.0.5.</span> <span class="nav-text">OutputStream & Writer</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#文件流"><span class="nav-number">3.0.6.</span> <span class="nav-text">文件流</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#缓冲流"><span class="nav-number">3.0.7.</span> <span class="nav-text">缓冲流</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#对象序列化流"><span class="nav-number">3.0.8.</span> <span class="nav-text">对象序列化流</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#RandomAccessFile类"><span class="nav-number">3.0.9.</span> <span class="nav-text">RandomAccessFile类</span></a></li></ol></li></ol></li></ol></div>
             
 
           </div>
