@@ -79,7 +79,7 @@
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://bubkoo.qiniudn.com/heap-and-array.png">
 <meta property="og:image" content="http://bubkoo.qiniudn.com/heap-and-array-zero-based.png">
-<meta property="og:updated_time" content="2017-12-27T14:24:32.041Z">
+<meta property="og:updated_time" content="2018-01-02T13:25:43.115Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="排序算法">
 <meta name="twitter:description" content="插入排序直接插入排序思路： 将一个记录插入到一个已经排序好的有序表中，找到合适的位置插入。一般将第一个记录当做有序表，从第二个记录还是逐个插入 代码：12345678910111213141516171819public static void insertSort(int[] array) &amp;#123;    // 将第一个记录看成已经排序好的序列    for(int i = 1; i &amp;lt">
@@ -364,12 +364,21 @@
 <li>Right(i) = 2(i + 1)，i 的右子节点下标</li>
 </ul>
 <p>类似下图:<br><img src="http://bubkoo.qiniudn.com/heap-and-array-zero-based.png" alt=""></p>
-<h5 id="堆排序的原理"><a href="#堆排序的原理" class="headerlink" title="堆排序的原理"></a>堆排序的原理</h5><ul>
-<li>最大堆调整（Max-Heapify）：将堆的末端子节点作调整，使得子节点永远小于父节点</li>
-<li>创建最大堆（Build-Max-Heap）：将堆所有数据重新排序，使其成为最大堆</li>
-<li>堆排序（Heap-Sort）：移除位在第一个数据的根节点，并做最大堆调整的递归运算<h3 id="交换排序"><a href="#交换排序" class="headerlink" title="交换排序"></a>交换排序</h3><h4 id="冒泡排序"><a href="#冒泡排序" class="headerlink" title="冒泡排序"></a>冒泡排序</h4><h4 id="快速排序"><a href="#快速排序" class="headerlink" title="快速排序"></a>快速排序</h4></li>
+<h5 id="堆排序的原理"><a href="#堆排序的原理" class="headerlink" title="堆排序的原理"></a>堆排序的原理</h5><p>几个操作：</p>
+<ul>
+<li>最大堆调整（Max-Heapify）：将堆的末端子节点作调整，使得子节点永远小于父节点<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line">public static void maxHeapfiy(int[] array, int index, int heapSize) &#123;</div><div class="line">    int iMax = index;</div><div class="line">    int iLeft = 2 * index + 1;</div><div class="line">    int iRight = 2 * (index + 1);</div><div class="line">    if(iLeft &lt; heapSize &amp;&amp; array[index] &lt; array[iLeft]) &#123;</div><div class="line">        iMax = iLeft;</div><div class="line">    &#125;</div><div class="line">    if(iRight &lt; heapSize &amp;&amp; array[index] &lt; array[iRight]) &#123;</div><div class="line">        iMax = iRight;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    if(iMax != index) &#123;</div><div class="line">        swap(array, iMax, index);</div><div class="line">        // 递归调整</div><div class="line">        maxHeapfiy(array, iMax, heapSize);</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
 </ul>
-<h3 id="归并排序"><a href="#归并排序" class="headerlink" title="归并排序"></a>归并排序</h3><h3 id="桶排序-基数排序"><a href="#桶排序-基数排序" class="headerlink" title="桶排序(基数排序)"></a>桶排序(基数排序)</h3>
+<p>使得i节点之后的下标都满足最大堆的性质</p>
+<ul>
+<li><p>创建最大堆（Build-Max-Heap）：将堆所有数据重新排序，使其成为最大堆</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">public static void buildMaxHeadp(int[] array, int heapSize) &#123;</div><div class="line">    int i;</div><div class="line">    // (heapSize -1)/2以后的节点都是叶子节点，没必要调整</div><div class="line">    int iParent = (int)Math.floor((heapSize - 1) / 2);</div><div class="line">    for(i = iParent; i &gt;= 0; i--) &#123;</div><div class="line">        maxHeapfiy(array, i, heapSize);</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+<li><p>堆排序（Heap-Sort）：移除位在第一个数据的根节点，并做最大堆调整的递归运算</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">public static void heapSort1(int[] array, int heapSize) &#123;</div><div class="line">    buildMaxHeadp(array, heapSize);</div><div class="line">    for (int i = heapSize - 1; i &gt; 0; i--) &#123;</div><div class="line">        swap(array, 0, i);</div><div class="line">        maxHeapfiy(array, 0, i);</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+</ul>
+<h3 id="交换排序"><a href="#交换排序" class="headerlink" title="交换排序"></a>交换排序</h3><h4 id="冒泡排序"><a href="#冒泡排序" class="headerlink" title="冒泡排序"></a>冒泡排序</h4><h4 id="快速排序"><a href="#快速排序" class="headerlink" title="快速排序"></a>快速排序</h4><h3 id="归并排序"><a href="#归并排序" class="headerlink" title="归并排序"></a>归并排序</h3><h3 id="桶排序-基数排序"><a href="#桶排序-基数排序" class="headerlink" title="桶排序(基数排序)"></a>桶排序(基数排序)</h3>
       
     </div>
     
@@ -567,7 +576,7 @@
         <div class="copyright" >
   
   &copy; 
-  <span itemprop="copyrightYear">2017</span>
+  <span itemprop="copyrightYear">2018</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
