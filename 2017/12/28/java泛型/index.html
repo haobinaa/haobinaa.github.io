@@ -69,18 +69,18 @@
 
 
 
-<meta name="description" content="一息尚存，则吾志不移">
+<meta name="description" content="简介语法糖语法糖指在计算机语言中添加的某种语法，这种语法对语言的功能并没有影响，但是更方便程序员使用。Java中最常用的语法糖主要有泛型、变长参数、条件编译、自动拆装箱、内部类等。虚拟机并不支持这些语法，它们在编译阶段就被还原回了简单的基础语法结构，这个过程成为解语法糖。 泛型的好处 提高安全性: 将运行期的错误转换到编译期. 如果我们在对一个对象所赋的值不符合其泛型的规定, 就会编译报错  避免">
 <meta name="keywords" content="java">
 <meta property="og:type" content="article">
-<meta property="og:title" content="java泛型">
+<meta property="og:title" content="java泛型详解">
 <meta property="og:url" content="http://yoursite.com/2017/12/28/java泛型/index.html">
 <meta property="og:site_name" content="Do Or Die">
-<meta property="og:description" content="一息尚存，则吾志不移">
+<meta property="og:description" content="简介语法糖语法糖指在计算机语言中添加的某种语法，这种语法对语言的功能并没有影响，但是更方便程序员使用。Java中最常用的语法糖主要有泛型、变长参数、条件编译、自动拆装箱、内部类等。虚拟机并不支持这些语法，它们在编译阶段就被还原回了简单的基础语法结构，这个过程成为解语法糖。 泛型的好处 提高安全性: 将运行期的错误转换到编译期. 如果我们在对一个对象所赋的值不符合其泛型的规定, 就会编译报错  避免">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-01-05T02:11:24.711Z">
+<meta property="og:updated_time" content="2018-01-08T16:14:21.865Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="java泛型">
-<meta name="twitter:description" content="一息尚存，则吾志不移">
+<meta name="twitter:title" content="java泛型详解">
+<meta name="twitter:description" content="简介语法糖语法糖指在计算机语言中添加的某种语法，这种语法对语言的功能并没有影响，但是更方便程序员使用。Java中最常用的语法糖主要有泛型、变长参数、条件编译、自动拆装箱、内部类等。虚拟机并不支持这些语法，它们在编译阶段就被还原回了简单的基础语法结构，这个过程成为解语法糖。 泛型的好处 提高安全性: 将运行期的错误转换到编译期. 如果我们在对一个对象所赋的值不符合其泛型的规定, 就会编译报错  避免">
 
 
 
@@ -116,7 +116,7 @@
 
 
 
-  <title>java泛型 | Do Or Die</title>
+  <title>java泛型详解 | Do Or Die</title>
   
 
 
@@ -270,7 +270,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">java泛型</h1>
+          <h1 class="post-title" itemprop="name headline">java泛型详解</h1>
         
 
         <div class="post-meta">
@@ -342,7 +342,69 @@
       
 
       
-        
+        <h3 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h3><h4 id="语法糖"><a href="#语法糖" class="headerlink" title="语法糖"></a>语法糖</h4><p>语法糖指在计算机语言中添加的某种语法，这种语法对语言的功能并没有影响，但是更方便程序员使用。Java中最常用的语法糖主要有泛型、变长参数、条件编译、自动拆装箱、内部类等。虚拟机并不支持这些语法，它们在编译阶段就被还原回了简单的基础语法结构，这个过程成为解语法糖。</p>
+<h4 id="泛型的好处"><a href="#泛型的好处" class="headerlink" title="泛型的好处"></a>泛型的好处</h4><ol>
+<li><p>提高安全性: 将运行期的错误转换到编译期. 如果我们在对一个对象所赋的值不符合其泛型的规定, 就会编译报错</p>
+</li>
+<li><p>避免强转: 比如我们在使用List时, 如果我们不使用泛型, 当从List中取出元素时, 其类型会是默认的Object, 我们必须将其向下转型为String才能使用。比如:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">List l = new ArrayList();</div><div class="line">l.add(&quot;abc&quot;);</div><div class="line">String s = (String) l.get(0);</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>如果使用泛型，就可以保证存入和取出的都是String，不必进行cast<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">List&lt;String&gt; l = new ArrayList&lt;&gt;();</div><div class="line">l.add(&quot;abc&quot;);</div><div class="line">String s = l.get(0);</div></pre></td></tr></table></figure></p>
+<h3 id="泛型的使用"><a href="#泛型的使用" class="headerlink" title="泛型的使用"></a>泛型的使用</h3><h4 id="定义类-接口"><a href="#定义类-接口" class="headerlink" title="定义类/接口"></a>定义类/接口</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">public class Test&lt;T&gt; &#123;</div><div class="line"></div><div class="line">   private T obj;</div><div class="line"></div><div class="line">   public T getObj() &#123;</div><div class="line">     return obj;</div><div class="line">   &#125;</div><div class="line"></div><div class="line">    public void setObj(T obj) &#123;</div><div class="line">       this.obj = obj;</div><div class="line">   &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>注意点：</p>
+<ul>
+<li>变量类型中的泛型，和实例类型中的泛型，必须保证相同（不支持继承关系）</li>
+</ul>
+<p>示例：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">public class Container&lt;K, V&gt; &#123;</div><div class="line"></div><div class="line">    private K key;</div><div class="line">    private V value;</div><div class="line"></div><div class="line">    public Container(K k, V v) &#123;</div><div class="line">        key = k;</div><div class="line">        value = v;</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line"></div><div class="line">// 使用这些接口、父类派生子类时不能再包含类型形参，需要传入具体的类型。</div><div class="line">public class A extends Container&lt;Integer, String&gt;&#123;&#125;</div></pre></td></tr></table></figure></p>
+<ul>
+<li>既然有了这个规定, 因此在JDK1.7时就推出了一个新特性叫菱形泛型(The Diamond), 就是说后面的泛型可以省略直接写成&lt;&gt;, 反正前后一致(类型推断)</li>
+</ul>
+<h4 id="定义方法"><a href="#定义方法" class="headerlink" title="定义方法"></a>定义方法</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">修饰符&lt;T, S&gt; 返回值类型 方法名（形参列表）</div><div class="line">｛</div><div class="line">方法体</div><div class="line"> ｝</div><div class="line"> </div><div class="line"> public class Main&#123;</div><div class="line"> // 方形方法与泛型类的方法不同</div><div class="line">       public static &lt;T&gt; void out(T t)&#123;</div><div class="line">                 System.out.println(t);</div><div class="line">       &#125;</div><div class="line">       public static void main(String[] args)&#123;</div><div class="line">               out(&quot;hansheng&quot;);</div><div class="line">               out(123);</div><div class="line">       &#125;</div><div class="line"> &#125;</div></pre></td></tr></table></figure>
+<p>注意点：</p>
+<ul>
+<li>泛型的声明，必须在方法的修饰符（public,static,final,abstract等）之后，返回值声明之前</li>
+<li>方法参数列表，以及方法体中用到的所有泛型变量，都必须声明</li>
+</ul>
+<h4 id="泛型的通配符"><a href="#泛型的通配符" class="headerlink" title="泛型的通配符"></a>泛型的通配符</h4><ul>
+<li>作用： 规定只允许某一部分类作为泛型</li>
+<li>分类：<ul>
+<li>无边界的分配符(&lt;?&gt;):无边界的通配符的主要作用就是让泛型能够接受未知类型的数据</li>
+<li>固定上边界通配符(&lt;? extends E&gt;):使用固定上边界的通配符的泛型, 就能够接受指定类及其子类类型的数据。要声明使用该类通配符, 采用&lt;? extends E&gt;的形式, 这里的E就是该泛型的上边界. 注意: 这里虽然用的是extends关键字, 却不仅限于继承了父类E的子类, 也可以代指显现了接口E的类</li>
+<li>固定下边界通配符(&lt;? super E&gt;):使用固定下边界的通配符的泛型, 就能够接受指定类及其父类类型的数据。要声明使用该类通配符, 采用&lt;? super E&gt;的形式, 这里的E就是该泛型的下边界</li>
+</ul>
+</li>
+</ul>
+<h5 id="无边界通配符"><a href="#无边界通配符" class="headerlink" title="无边界通配符"></a>无边界通配符</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">public static void printList(List&lt;?&gt; list) &#123;</div><div class="line">for (Object o : list) &#123;</div><div class="line">      System.out.println(o);</div><div class="line">   &#125;</div><div class="line">&#125;</div><div class="line"> public static void main(String[] args) &#123;</div><div class="line">   List&lt;String&gt; l1 = new ArrayList&lt;&gt;();</div><div class="line">   l1.add(&quot;aa&quot;);</div><div class="line">    l1.add(&quot;bb&quot;);</div><div class="line">   l1.add(&quot;cc&quot;);</div><div class="line">   printList(l1);</div><div class="line">   List&lt;Integer&gt; l2 = new ArrayList&lt;&gt;();</div><div class="line">   l2.add(11);</div><div class="line">    l2.add(22);</div><div class="line">   l2.add(33);</div><div class="line">   printList(l2);</div></pre></td></tr></table></figure>
+<p>注意：</p>
+<ul>
+<li>这里的printList方法不能写成public static void printList(List<object> list)的形式。原因在上文提到过，变量类型中的泛型，和实例类型中的泛型，必须保证相同。两者之间不支持继承关系。</object></li>
+<li>我们不能对List&lt;?&gt;使用add，get以及List拥有的其他方法。原因是，我们不确定该List的类型, 也就不知道add，或者get方法的参数类型。但是也有特例：<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">public static void addTest(List&lt;?&gt; list) &#123;</div><div class="line">    Object o = new Object();</div><div class="line">// list.add(o); // 编译报错</div><div class="line">// list.add(1); // 编译报错</div><div class="line">// list.add(&quot;ABC&quot;); // 编译报错 </div><div class="line">   list.add(null); // 特例</div><div class="line">// String s = list.get(0); // 编译报错</div><div class="line">// Integer i = list.get(1); // 编译报错 </div><div class="line">   Object o = list.get(2); // 特例</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>由于参数的泛型不确定，调用者可能会传List<number>，也可能传List<string>。<br>当调用者传过来的参数是List<interger>，执行到list.add(o)以及list.(“ABC”)的时候，系统肯定会抛出异常，使得后面的代码无法执行。</interger></string></number></p>
+<p>所以，编译器其实是把运行时可能出现的异常放在编译阶段来检查，提高了代码的健壮性以及安全性。</p>
+<h5 id="固定上边界通配符"><a href="#固定上边界通配符" class="headerlink" title="固定上边界通配符"></a>固定上边界通配符</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">public static double sumOfList(List&lt;? extends Number&gt; list) &#123;</div><div class="line">    double s = 0.0;</div><div class="line">    for (Number n : list) &#123;</div><div class="line">      // 注意这里得到的n是其上边界类型的, 也就是Number,需要将其转换为double.  </div><div class="line">      s += n.doubleValue();</div><div class="line">    &#125;</div><div class="line">    return s;</div><div class="line"> &#125;</div><div class="line"> public static void main(String[] args) &#123;</div><div class="line">    List&lt;Integer&gt; list1 = Arrays.asList(1, 2, 3, 4);</div><div class="line">    System.out.println(sumOfList(list1));</div><div class="line">    List&lt;Double&gt; list2 = Arrays.asList(1.1, 2.2, 3.3, 4.4);</div><div class="line">    System.out.println(sumOfList(list2));</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>注意： </p>
+<ul>
+<li>不能对List&lt;? extends E&gt;使用add方法,原因是不确定该List的类型, 也就不知道add方法的参数类型。但是也有特例：<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">public static void addTest2(List&lt;? extends Number&gt; l) &#123;</div><div class="line">// l.add(1); // 编译报错</div><div class="line">// l.add(1.1); // 编译报错 </div><div class="line">   l.add(null);</div><div class="line">   Number number = l.get(1); // 正常 </div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>目的跟第一种通配符类似，就是编译器其实是把运行时可能出现的异常放在编译阶段来检查。</p>
+<p>但是，我们可以保证不管参数是什么泛型，里面的元素肯定是Number或者其子类，所以，从List中获取一个Number元素的get()方法是允许的。</p>
+<h5 id="固定下边界通配符"><a href="#固定下边界通配符" class="headerlink" title="固定下边界通配符"></a>固定下边界通配符</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">public static void addNumbers(List&lt;? super Integer&gt; list) &#123;</div><div class="line">     for (int i = 1; i &lt;= 10; i++) &#123;</div><div class="line">         list.add(i);</div><div class="line">     &#125;</div><div class="line"> &#125;</div><div class="line"> public static void main(String[] args) &#123;</div><div class="line">     List&lt;Object&gt; list1 = new ArrayList&lt;&gt;();</div><div class="line">     addNumbers(list1);</div><div class="line">     System.out.println(list1);</div><div class="line">     List&lt;Number&gt; list2 = new ArrayList&lt;&gt;();</div><div class="line">     addNumbers(list2);</div><div class="line">     System.out.println(list2);</div><div class="line">     List&lt;Double&gt; list3 = new ArrayList&lt;&gt;();</div><div class="line">  // addNumbers(list3); // 编译报错 </div><div class="line"> &#125;</div></pre></td></tr></table></figure>
+<ul>
+<li>我们不能对List&lt;? super E&gt;使用get方法。原因是不确定该List的类型, 也就不知道get方法的参数类型。但是也有特例：<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">public static void getTest2(List&lt;? super Integer&gt; list) &#123;</div><div class="line"> // Integer i = list.get(0); //编译报错 </div><div class="line">    Object o = list.get(1);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>目的跟第一种通配符类似，就是编译器其实是把运行时可能出现的异常放在编译阶段来检查。</p>
+<p>但是，我们可以保证不管参数是什么泛型，里面的元素肯定是Integer，所以，从List中add一个Integer元素的add()方法是允许的</p>
+<h3 id="类型擦除"><a href="#类型擦除" class="headerlink" title="类型擦除"></a>类型擦除</h3><h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="https://zhuanlan.zhihu.com/p/28242753" target="_blank" rel="external">java泛型详解</a></li>
+<li><a href="http://www.importnew.com/24029.html" target="_blank" rel="external">importNews java泛型</a></li>
+<li><a href="https://www.jianshu.com/p/c8ee2cfa5b33" target="_blank" rel="external">java泛型</a></li>
+</ul>
+
       
     </div>
     
@@ -436,8 +498,17 @@
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
 
-      <section class="site-overview sidebar-panel sidebar-panel-active">
+      <section class="site-overview sidebar-panel">
         <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
           
             <p class="site-author-name" itemprop="name">Leo Hao</p>
@@ -498,6 +569,22 @@
 
       </section>
 
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#简介"><span class="nav-number">1.</span> <span class="nav-text">简介</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#语法糖"><span class="nav-number">1.1.</span> <span class="nav-text">语法糖</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#泛型的好处"><span class="nav-number">1.2.</span> <span class="nav-text">泛型的好处</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#泛型的使用"><span class="nav-number">2.</span> <span class="nav-text">泛型的使用</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#定义类-接口"><span class="nav-number">2.1.</span> <span class="nav-text">定义类/接口</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#定义方法"><span class="nav-number">2.2.</span> <span class="nav-text">定义方法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#泛型的通配符"><span class="nav-number">2.3.</span> <span class="nav-text">泛型的通配符</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#无边界通配符"><span class="nav-number">2.3.1.</span> <span class="nav-text">无边界通配符</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#固定上边界通配符"><span class="nav-number">2.3.2.</span> <span class="nav-text">固定上边界通配符</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#固定下边界通配符"><span class="nav-number">2.3.3.</span> <span class="nav-text">固定下边界通配符</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#类型擦除"><span class="nav-number">3.</span> <span class="nav-text">类型擦除</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">4.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
       
 
       
