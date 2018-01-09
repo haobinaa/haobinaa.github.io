@@ -77,7 +77,7 @@
 <meta property="og:site_name" content="Do Or Die">
 <meta property="og:description" content="简介语法糖语法糖指在计算机语言中添加的某种语法，这种语法对语言的功能并没有影响，但是更方便程序员使用。Java中最常用的语法糖主要有泛型、变长参数、条件编译、自动拆装箱、内部类等。虚拟机并不支持这些语法，它们在编译阶段就被还原回了简单的基础语法结构，这个过程成为解语法糖。 泛型的好处 提高安全性: 将运行期的错误转换到编译期. 如果我们在对一个对象所赋的值不符合其泛型的规定, 就会编译报错  避免">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-01-09T02:51:27.949Z">
+<meta property="og:updated_time" content="2018-01-09T03:02:21.180Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="java泛型详解">
 <meta name="twitter:description" content="简介语法糖语法糖指在计算机语言中添加的某种语法，这种语法对语言的功能并没有影响，但是更方便程序员使用。Java中最常用的语法糖主要有泛型、变长参数、条件编译、自动拆装箱、内部类等。虚拟机并不支持这些语法，它们在编译阶段就被还原回了简单的基础语法结构，这个过程成为解语法糖。 泛型的好处 提高安全性: 将运行期的错误转换到编译期. 如果我们在对一个对象所赋的值不符合其泛型的规定, 就会编译报错  避免">
@@ -407,7 +407,7 @@
 <p>如果我们要add元素应该怎么做呢？可以使用&lt;? super T&gt;：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line">public class GenericWriting &#123;</div><div class="line">    static List&lt;Apple&gt; apples = new ArrayList&lt;Apple&gt;();</div><div class="line">    static List&lt;Fruit&gt; fruit = new ArrayList&lt;Fruit&gt;();</div><div class="line">    static &lt;T&gt; void writeExact(List&lt;T&gt; list, T item) &#123;</div><div class="line">        list.add(item);</div><div class="line">    &#125;</div><div class="line">    static void f1() &#123;</div><div class="line">        writeExact(apples, new Apple());</div><div class="line">        writeExact(fruit, new Apple());</div><div class="line">    &#125;</div><div class="line">    // 固定下边界</div><div class="line">    static &lt;T&gt; void writeWithWildcard(List&lt;? super T&gt; list, T item) &#123;</div><div class="line">        list.add(item)</div><div class="line">    &#125;</div><div class="line">    static void f2() &#123;</div><div class="line">        writeWithWildcard(apples, new Apple());</div><div class="line">        writeWithWildcard(fruit, new Apple());</div><div class="line">    &#125;</div><div class="line">    public static void main(String[] args) &#123;</div><div class="line">        f1(); f2();</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
 <p>这样我们可以往容器里面添加元素了，但是使用super的坏处是以后不能get容器里面的元素了，原因很简单，我们继续从编译器的角度考虑这个问题，对于List&lt;? super Apple&gt; list，它可以有下面几种含义：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">List&lt;? super Apple&gt; list = new ArrayList&lt;Apple&gt;();</div><div class="line">List&lt;? super Apple&gt; list = new ArrayList&lt;Fruit&gt;();</div><div class="line">List&lt;? super Apple&gt; list = new ArrayList&lt;Object&gt;();</div></pre></td></tr></table></figure></p>
 <p>当我们尝试通过list来get一个Apple的时候，可能会get得到一个Fruit，这个Fruit可以是Orange等其他类型的Fruit。</p>
-<p>根据上面的例子，我们可以总结出一条规律，”Producer Extends, Consumer Super”：</p>
+<p>根据上面的例子，我们可以总结出一条规律，”Producer Extends, Consumer Super”(PECS原则)：</p>
 <ul>
 <li>“Producer Extends” – 如果你需要一个只读List，用它来produce T，那么使用? extends T。</li>
 <li>Consumer Super” – 如果你需要一个只写List，用它来consume T，那么使用? super T。</li>
@@ -559,7 +559,7 @@
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">52</span>
+                <span class="site-state-item-count">53</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
