@@ -53,7 +53,7 @@
 <link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
 
 
-  <meta name="keywords" content="Hexo, NexT" />
+  <meta name="keywords" content="springboot," />
 
 
 
@@ -69,19 +69,18 @@
 
 
 
-<meta name="description" content="消息队列是一个队列结构的中间件，通常用于大流量系统分流，将消息或者内容放入队列中，不需要立即处理，直接返回，另有一个程序不停的读这个队列，按顺序处理。 消息队列介质 MySQL： 可靠性高，易实现，速度慢 Redis： 速度快，单条大消息包效率低 消息系统： 专业性强，可靠  消息处理触发机制 死循环读取： 用一个程序不断读取队列，比较容易实现，故障时无法及时修复 定时任务： 每隔几秒或者几分钟处">
+<meta name="description" content="概述JPAJPA(Java Persistence API)是Sun官方提出的Java持久化规范。它为Java开发人员提供了一种对象/关联映射工具来管理Java应用中的关系数据。他的出现主要是为了简化现有的持久化开发工作和整合ORM技术，结束现在Hibernate，TopLink，JDO等ORM框架各自为营的局面。值得注意的是，JPA是在充分吸收了现有Hibernate，TopLink，JDO等O">
+<meta name="keywords" content="springboot">
 <meta property="og:type" content="article">
-<meta property="og:title" content="消息队列">
-<meta property="og:url" content="http://yoursite.com/2017/10/18/消息队列/index.html">
+<meta property="og:title" content="SpringBoot(JPA基础)">
+<meta property="og:url" content="http://yoursite.com/2018/01/15/SpringBoot学习五/index.html">
 <meta property="og:site_name" content="Do Or Die">
-<meta property="og:description" content="消息队列是一个队列结构的中间件，通常用于大流量系统分流，将消息或者内容放入队列中，不需要立即处理，直接返回，另有一个程序不停的读这个队列，按顺序处理。 消息队列介质 MySQL： 可靠性高，易实现，速度慢 Redis： 速度快，单条大消息包效率低 消息系统： 专业性强，可靠  消息处理触发机制 死循环读取： 用一个程序不断读取队列，比较容易实现，故障时无法及时修复 定时任务： 每隔几秒或者几分钟处">
+<meta property="og:description" content="概述JPAJPA(Java Persistence API)是Sun官方提出的Java持久化规范。它为Java开发人员提供了一种对象/关联映射工具来管理Java应用中的关系数据。他的出现主要是为了简化现有的持久化开发工作和整合ORM技术，结束现在Hibernate，TopLink，JDO等ORM框架各自为营的局面。值得注意的是，JPA是在充分吸收了现有Hibernate，TopLink，JDO等O">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="http://img.blog.csdn.net/20140220173559828">
-<meta property="og:updated_time" content="2017-10-18T15:58:33.170Z">
+<meta property="og:updated_time" content="2018-01-15T15:34:14.618Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="消息队列">
-<meta name="twitter:description" content="消息队列是一个队列结构的中间件，通常用于大流量系统分流，将消息或者内容放入队列中，不需要立即处理，直接返回，另有一个程序不停的读这个队列，按顺序处理。 消息队列介质 MySQL： 可靠性高，易实现，速度慢 Redis： 速度快，单条大消息包效率低 消息系统： 专业性强，可靠  消息处理触发机制 死循环读取： 用一个程序不断读取队列，比较容易实现，故障时无法及时修复 定时任务： 每隔几秒或者几分钟处">
-<meta name="twitter:image" content="http://img.blog.csdn.net/20140220173559828">
+<meta name="twitter:title" content="SpringBoot(JPA基础)">
+<meta name="twitter:description" content="概述JPAJPA(Java Persistence API)是Sun官方提出的Java持久化规范。它为Java开发人员提供了一种对象/关联映射工具来管理Java应用中的关系数据。他的出现主要是为了简化现有的持久化开发工作和整合ORM技术，结束现在Hibernate，TopLink，JDO等ORM框架各自为营的局面。值得注意的是，JPA是在充分吸收了现有Hibernate，TopLink，JDO等O">
 
 
 
@@ -111,13 +110,13 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/2017/10/18/消息队列/"/>
+  <link rel="canonical" href="http://yoursite.com/2018/01/15/SpringBoot学习五/"/>
 
 
 
 
 
-  <title>消息队列 | Do Or Die</title>
+  <title>SpringBoot(JPA基础) | Do Or Die</title>
   
 
 
@@ -254,7 +253,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/10/18/消息队列/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/01/15/SpringBoot学习五/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Leo Hao">
@@ -271,7 +270,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">消息队列</h1>
+          <h1 class="post-title" itemprop="name headline">SpringBoot(JPA基础)</h1>
         
 
         <div class="post-meta">
@@ -283,8 +282,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-10-18T21:49:19+08:00">
-                2017-10-18
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-01-15T22:58:54+08:00">
+                2018-01-15
               </time>
             
 
@@ -293,6 +292,28 @@
             
           </span>
 
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/spring/" itemprop="url" rel="index">
+                    <span itemprop="name">spring</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
           
 
           
@@ -321,35 +342,14 @@
       
 
       
-        <p>消息队列是一个队列结构的中间件，通常用于大流量系统分流，将消息或者内容放入队列中，不需要立即处理，直接返回，另有一个程序不停的读这个队列，按顺序处理。</p>
-<h3 id="消息队列介质"><a href="#消息队列介质" class="headerlink" title="消息队列介质"></a>消息队列介质</h3><ul>
-<li>MySQL： 可靠性高，易实现，速度慢</li>
-<li>Redis： 速度快，单条大消息包效率低</li>
-<li>消息系统： 专业性强，可靠</li>
-</ul>
-<h3 id="消息处理触发机制"><a href="#消息处理触发机制" class="headerlink" title="消息处理触发机制"></a>消息处理触发机制</h3><ul>
-<li>死循环读取： 用一个程序不断读取队列，比较容易实现，故障时无法及时修复</li>
-<li>定时任务： 每隔几秒或者几分钟处理队列，压力均分，有处理上限</li>
-<li>守护进程： 类似于PHP-FPM，检测队列是否有内容，有内容则出队处理</li>
-</ul>
-<h3 id="常见的消息队列介质的应用"><a href="#常见的消息队列介质的应用" class="headerlink" title="常见的消息队列介质的应用"></a>常见的消息队列介质的应用</h3><ul>
-<li><p>MySQL处理消息队列：将业务数据插入一张表，有一个status记录状态，另一个程序来读这张表，来改变status</p>
-</li>
-<li><p>Redis消息队列： 利用redis的list结构，一般是实现秒杀业务，将消息入队，如果list长度等于商品库存则秒杀结束，然后用另一个程序来按顺序读取redis队列</p>
-</li>
-<li><p>RabbitMQ： 一个实现了AMQP（advance message queue protocol高级消息队列协议）的消息队列系统,结构如下：</p>
-</li>
-</ul>
-<p><img src="http://img.blog.csdn.net/20140220173559828" alt=""></p>
-<p>clientA/B: 也叫producer（生产者），数据发送方。一个message有两个部分：payload(传输的数据)和label（一个描述payload的标签，通过label来决定将这个message发送给哪个consumer）</p>
-<p>client1/2/3: 也叫consumer（消费者），数据的接收方。</p>
-<p>exchanges: 生产者发送消息的通道</p>
-<p>queue： 消费者接受消息的队列</p>
-<p>binding： 消息从exchange处取得route到queue的方式</p>
-<h4 id="在PHP中使用rabbitMQ"><a href="#在PHP中使用rabbitMQ" class="headerlink" title="在PHP中使用rabbitMQ"></a>在PHP中使用rabbitMQ</h4><ul>
-<li>RabbitMQ的安装（rabbitMQ-server、 php-amqplib 官方推荐的插件）</li>
-<li>生产者向消息通道发送消息</li>
-<li>消费者处理消息</li>
+        <h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><h4 id="JPA"><a href="#JPA" class="headerlink" title="JPA"></a>JPA</h4><p>JPA(Java Persistence API)是Sun官方提出的Java持久化规范。它为Java开发人员提供了一种对象/关联映射工具来管理Java应用中的关系数据。他的出现主要是为了简化现有的持久化开发工作和整合ORM技术，结束现在Hibernate，TopLink，JDO等ORM框架各自为营的局面。值得注意的是，JPA是在充分吸收了现有Hibernate，TopLink，JDO等ORM框架的基础上发展而来的，具有易于使用，伸缩性强等优点。从目前的开发社区的反应上看，JPA受到了极大的支持和赞扬，其中就包括了Spring与EJB3.0的开发团队</p>
+<p>注意:JPA是一套规范，不是一套产品，那么像Hibernate,TopLink,JDO他们是一套产品，如果说这些产品实现了这个JPA规范，那么我们就可以叫他们为JPA的实现产品。</p>
+<h4 id="spring-data-jpa"><a href="#spring-data-jpa" class="headerlink" title="spring data jpa"></a>spring data jpa</h4><p>Spring Data JPA 是 Spring 基于 ORM 框架、JPA 规范的基础上封装的一套JPA应用框架，可使开发者用极简的代码即可实现对数据的访问和操作。</p>
+<h3 id="基本查询"><a href="#基本查询" class="headerlink" title="基本查询"></a>基本查询</h3><h4 id="预先生成的方法"><a href="#预先生成的方法" class="headerlink" title="预先生成的方法"></a>预先生成的方法</h4><p>spring data jpa 默认预先生成了一些基本的CURD的方法，例如：增、删、改等等<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">public interface CustomerRepostory extends JpaRepository&lt;Customer, Long&gt; &#123;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>CustomerRepository继承了JpaRepository之后就拥有了CrudRepository、QueryByExampleExecutor、PagingAndSortingRepository的基本能力了，包括基本的增删改查都有了。</p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="http://www.spring4all.com/article/459" target="_blank" rel="external">jpa基本配置</a></li>
+<li><a href="http://www.ityouknow.com/springboot/2016/08/20/springboot(%E4%BA%94" target="_blank" rel="external">springboot JPA的使用</a>-spring-data-jpa%E7%9A%84%E4%BD%BF%E7%94%A8.html)</li>
 </ul>
 
       
@@ -366,6 +366,12 @@
 
     <footer class="post-footer">
       
+        <div class="post-tags">
+          
+            <a href="/tags/springboot/" rel="tag"><i class="fa fa-tag"></i> springboot</a>
+          
+        </div>
+      
 
       
       
@@ -375,8 +381,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2017/10/18/servlet使用/" rel="next" title="servlet使用">
-                <i class="fa fa-chevron-left"></i> servlet使用
+              <a href="/2018/01/12/java各种bean的含义/" rel="next" title="java各种bean的含义">
+                <i class="fa fa-chevron-left"></i> java各种bean的含义
               </a>
             
           </div>
@@ -384,10 +390,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2017/10/19/RabbitMQ之AMQP/" rel="prev" title="RabbitMQ之AMQP">
-                RabbitMQ之AMQP <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -520,7 +522,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#消息队列介质"><span class="nav-number">1.</span> <span class="nav-text">消息队列介质</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#消息处理触发机制"><span class="nav-number">2.</span> <span class="nav-text">消息处理触发机制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#常见的消息队列介质的应用"><span class="nav-number">3.</span> <span class="nav-text">常见的消息队列介质的应用</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#在PHP中使用rabbitMQ"><span class="nav-number">3.1.</span> <span class="nav-text">在PHP中使用rabbitMQ</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#JPA"><span class="nav-number">1.1.</span> <span class="nav-text">JPA</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#spring-data-jpa"><span class="nav-number">1.2.</span> <span class="nav-text">spring data jpa</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#基本查询"><span class="nav-number">2.</span> <span class="nav-text">基本查询</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#预先生成的方法"><span class="nav-number">2.1.</span> <span class="nav-text">预先生成的方法</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">3.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
             
 
           </div>
