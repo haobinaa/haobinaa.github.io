@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="IO," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="FileChannelJava NIO中的FileChannel是一个连接到文件的通道。可以通过文件通道读写文件。 FileChannel无法设置为非阻塞模式，它总是运行在阻塞模式下。 打开FileChannel在使用FileChannel之前，必须先打开它。但是，我们无法直接打开一个FileChannel，需要通过使用一个InputStream、OutputStream或RandomAccess">
+<meta name="keywords" content="IO">
+<meta property="og:type" content="article">
+<meta property="og:title" content="NIO_Channel">
+<meta property="og:url" content="http://yoursite.com/2018/01/29/NIO-Channel/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="FileChannelJava NIO中的FileChannel是一个连接到文件的通道。可以通过文件通道读写文件。 FileChannel无法设置为非阻塞模式，它总是运行在阻塞模式下。 打开FileChannel在使用FileChannel之前，必须先打开它。但是，我们无法直接打开一个FileChannel，需要通过使用一个InputStream、OutputStream或RandomAccess">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2018-01-28T14:05:16.078Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="NIO_Channel">
+<meta name="twitter:description" content="FileChannelJava NIO中的FileChannel是一个连接到文件的通道。可以通过文件通道读写文件。 FileChannel无法设置为非阻塞模式，它总是运行在阻塞模式下。 打开FileChannel在使用FileChannel之前，必须先打开它。但是，我们无法直接打开一个FileChannel，需要通过使用一个InputStream、OutputStream或RandomAccess">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/01/29/NIO-Channel/"/>
+
+
+
+
+
+  <title>NIO_Channel | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/01/29/NIO-Channel/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">NIO_Channel</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-01-29T20:06:35+08:00">
+                2018-01-29
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IO/" itemprop="url" rel="index">
+                    <span itemprop="name">IO</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="FileChannel"><a href="#FileChannel" class="headerlink" title="FileChannel"></a>FileChannel</h3><p>Java NIO中的FileChannel是一个连接到文件的通道。可以通过文件通道读写文件。</p>
+<p>FileChannel无法设置为非阻塞模式，它总是运行在阻塞模式下。</p>
+<h4 id="打开FileChannel"><a href="#打开FileChannel" class="headerlink" title="打开FileChannel"></a>打开FileChannel</h4><p>在使用FileChannel之前，必须先打开它。但是，我们无法直接打开一个FileChannel，需要通过使用一个InputStream、OutputStream或RandomAccessFile来获取一个FileChannel实例。下面是通过RandomAccessFile打开FileChannel的示例：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">RandomAccessFile aFile = new RandomAccessFile(&quot;data/nio-data.txt&quot;, &quot;rw&quot;);</div><div class="line">FileChannel inChannel = aFile.getChannel();</div></pre></td></tr></table></figure></p>
+<h4 id="从FileChannel读取数据"><a href="#从FileChannel读取数据" class="headerlink" title="从FileChannel读取数据"></a>从FileChannel读取数据</h4><p>调用多个read()方法之一从FileChannel中读取数据。如：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">ByteBuffer buf = ByteBuffer.allocate(48);</div><div class="line">int bytesRead = inChannel.read(buf);</div></pre></td></tr></table></figure></p>
+<p>首先，分配一个Buffer。从FileChannel中读取的数据将被读到Buffer中。</p>
+<p>然后，调用FileChannel.read()方法。该方法将数据从FileChannel读取到Buffer中。read()方法返回的int值表示了有多少字节被读到了Buffer中。如果返回-1，表示到了文件末尾。</p>
+<h4 id="向FileChannel写数据"><a href="#向FileChannel写数据" class="headerlink" title="向FileChannel写数据"></a>向FileChannel写数据</h4><p>使用FileChannel.write()方法向FileChannel写数据，该方法的参数是一个Buffer。如：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">String newData = &quot;New String to write to file...&quot; + System.currentTimeMillis();</div><div class="line">ByteBuffer buf = ByteBuffer.allocate(48);</div><div class="line">buf.clear();</div><div class="line">buf.put(newData.getBytes());</div><div class="line">buf.flip(); </div><div class="line">while(buf.hasRemaining()) &#123;</div><div class="line">    channel.write(buf);</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>注意FileChannel.write()是在while循环中调用的。因为无法保证write()方法一次能向FileChannel写入多少字节，因此需要重复调用write()方法，直到Buffer中已经没有尚未写入通道的字节。</p>
+<h4 id="关闭FileChannel"><a href="#关闭FileChannel" class="headerlink" title="关闭FileChannel"></a>关闭FileChannel</h4><p>使用完FileChannel后要将其关闭:<code>channel.close();</code></p>
+<h4 id="FileChannel的position方法"><a href="#FileChannel的position方法" class="headerlink" title="FileChannel的position方法"></a>FileChannel的position方法</h4><p>有时可能需要在FileChannel的某个特定位置进行数据的读/写操作。可以通过调用position()方法获取FileChannel的当前位置。</p>
+<p>也可以通过调用position(long pos)方法设置FileChannel的当前位置。</p>
+<p>如果将位置设置在文件结束符之后，然后试图从文件通道中读取数据，读方法将返回-1 —— 文件结束标志。</p>
+<p>如果将位置设置在文件结束符之后，然后向通道中写数据，文件将撑大到当前位置并写入数据。这可能导致“文件空洞”，磁盘上物理文件中写入的数据间有空隙。</p>
+<h4 id="FileChannel的size方法"><a href="#FileChannel的size方法" class="headerlink" title="FileChannel的size方法"></a>FileChannel的size方法</h4><p>FileChannel实例的size()方法将返回该实例所关联文件的大小</p>
+<h4 id="FileChannel的truncate方法"><a href="#FileChannel的truncate方法" class="headerlink" title="FileChannel的truncate方法"></a>FileChannel的truncate方法</h4><p>可以使用FileChannel.truncate()方法截取一个文件。截取文件时，文件将中指定长度后面的部分将被删除。如：<code>channel.truncate(1024);</code>，截取前1024个字节</p>
+<h4 id="FileChannel的force方法"><a href="#FileChannel的force方法" class="headerlink" title="FileChannel的force方法"></a>FileChannel的force方法</h4><p>FileChannel.force()方法将通道里尚未写入磁盘的数据强制写到磁盘上。出于性能方面的考虑，操作系统会将数据缓存在内存中，所以无法保证写入到FileChannel里的数据一定会即时写到磁盘上。要保证这一点，需要调用force()方法。</p>
+<p>force()方法有一个boolean类型的参数，指明是否同时将文件元数据（权限信息等）写到磁盘上。</p>
+<p>下面的例子同时将文件数据和元数据强制写到磁盘上：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">channel.force(true);</div></pre></td></tr></table></figure></p>
+<h3 id="SocketChannel"><a href="#SocketChannel" class="headerlink" title="SocketChannel"></a>SocketChannel</h3><p>Java NIO中的SocketChannel是一个连接到TCP网络套接字的通道。可以通过以下2种方式创建SocketChannel：</p>
+<ol>
+<li>打开一个SocketChannel并连接到互联网上的某台服务器。</li>
+<li>一个新连接到达ServerSocketChannel时，会创建一个SocketChannel。</li>
+</ol>
+<h4 id="打开-SocketChannel"><a href="#打开-SocketChannel" class="headerlink" title="打开 SocketChannel"></a>打开 SocketChannel</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">SocketChannel socketChannel = SocketChannel.open();</div><div class="line">socketChannel.connect(new InetSocketAddress(&quot;http://192.168.1.12&quot;, 80))</div></pre></td></tr></table></figure>
+<h4 id="关闭SocketChannel"><a href="#关闭SocketChannel" class="headerlink" title="关闭SocketChannel"></a>关闭SocketChannel</h4><p>当用完SocketChannel之后调用SocketChannel.close()关闭SocketChannel：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">socketChannel.close()</div></pre></td></tr></table></figure></p>
+<h4 id="从-SocketChannel-读取数据"><a href="#从-SocketChannel-读取数据" class="headerlink" title="从 SocketChannel 读取数据"></a>从 SocketChannel 读取数据</h4><p>要从SocketChannel中读取数据，调用一个read()的方法之一。例如：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">ByteBuffer buf = ByteBuffer.allocate(48);</div><div class="line">int bytesRead = socketChannel.read(buf);</div></pre></td></tr></table></figure></p>
+<p>首先，分配一个Buffer。从SocketChannel读取到的数据将会放到这个Buffer中。</p>
+<p>然后，调用SocketChannel.read()。该方法将数据从SocketChannel 读到Buffer中。read()方法返回的int值表示读了多少字节进Buffer里。如果返回的是-1，表示已经读到了流的末尾（连接关闭了）。</p>
+<h4 id="写入-SocketChannel"><a href="#写入-SocketChannel" class="headerlink" title="写入 SocketChannel"></a>写入 SocketChannel</h4><p>写数据到SocketChannel用的是SocketChannel.write()方法，该方法以一个Buffer作为参数。示例如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">String newData = &quot;New String to write to file...&quot; + System.currentTimeMillis();</div><div class="line">ByteBuffer buf = ByteBuffer.allocate(48);</div><div class="line">buf.clear();</div><div class="line">buf.put(newData.getBytes());</div><div class="line">buf.flip();</div><div class="line">while(buf.hasRemaining()) &#123;</div><div class="line">    channel.write(buf);</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>注意SocketChannel.write()方法的调用是在一个while循环中的。Write()方法无法保证能写多少字节到SocketChannel。所以，我们重复调用write()直到Buffer没有要写的字节为止。</p>
+<h4 id="非阻塞模式"><a href="#非阻塞模式" class="headerlink" title="非阻塞模式"></a>非阻塞模式</h4><p>可以设置 SocketChannel 为非阻塞模式（non-blocking mode）.设置之后，就可以在异步模式下调用connect(), read() 和write()了。</p>
+<h5 id="connect"><a href="#connect" class="headerlink" title="connect()"></a>connect()</h5><p>如果SocketChannel在非阻塞模式下，此时调用connect()，该方法可能在连接建立之前就返回了。为了确定连接是否建立，可以调用finishConnect()的方法。像这样：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">socketChannel.configureBlocking(false);</div><div class="line">socketChannel.connect(new InetSocketAddress(&quot;http://jenkov.com&quot;, 80));</div><div class="line">while(! socketChannel.finishConnect() )&#123;</div><div class="line">    //wait, or do something else...</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<h5 id="write"><a href="#write" class="headerlink" title="write()"></a>write()</h5><p>非阻塞模式下，write()方法在尚未写出任何内容时可能就返回了。所以需要在循环中调用write()。</p>
+<h5 id="read"><a href="#read" class="headerlink" title="read()"></a>read()</h5><p>非阻塞模式下,read()方法在尚未读取到任何数据时可能就返回了。所以需要关注它的int返回值，它会告诉你读取了多少字节</p>
+<h5 id="非阻塞模式与选择器"><a href="#非阻塞模式与选择器" class="headerlink" title="非阻塞模式与选择器"></a>非阻塞模式与选择器</h5><p>非阻塞模式与选择器搭配会工作的更好，通过将一或多个SocketChannel注册到Selector，可以询问选择器哪个通道已经准备好了读取，写入等</p>
+<h3 id="ServerSocketChannel"><a href="#ServerSocketChannel" class="headerlink" title="ServerSocketChannel"></a>ServerSocketChannel</h3><p>Java NIO中的 ServerSocketChannel 是一个可以监听新进来的TCP连接的通道, 就像标准IO中的ServerSocket一样。ServerSocketChannel类在 java.nio.channels包中</p>
+<p>eg:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();</div><div class="line">serverSocketChannel.socket().bind(new InetSocketAddress(9999));</div><div class="line">while(true)&#123;</div><div class="line">    SocketChannel socketChannel =</div><div class="line">    serverSocketChannel.accept();</div><div class="line">    //do something with socketChannel...</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<h4 id="打开-ServerSocketChannel"><a href="#打开-ServerSocketChannel" class="headerlink" title="打开 ServerSocketChannel"></a>打开 ServerSocketChannel</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();</div></pre></td></tr></table></figure>
+<h4 id="关闭-ServerSocketChannel"><a href="#关闭-ServerSocketChannel" class="headerlink" title="关闭 ServerSocketChannel"></a>关闭 ServerSocketChannel</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">serverSocketChannel.close();</div></pre></td></tr></table></figure>
+<h4 id="监听新进来的连接"><a href="#监听新进来的连接" class="headerlink" title="监听新进来的连接"></a>监听新进来的连接</h4><p>通过 ServerSocketChannel.accept() 方法监听新进来的连接。当 accept()方法返回的时候,它返回一个包含新进来的连接的 SocketChannel。因此, accept()方法会一直阻塞到有新连接到达。</p>
+<p>通常不会仅仅只监听一个连接,在while循环中调用 accept()方法. 如下面的例子：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">while(true)&#123;</div><div class="line">    SocketChannel socketChannel = serverSocketChannel.accept();</div><div class="line">    //do something with socketChannel...</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<h4 id="非阻塞模式-1"><a href="#非阻塞模式-1" class="headerlink" title="非阻塞模式"></a>非阻塞模式</h4><p>ServerSocketChannel可以设置成非阻塞模式。在非阻塞模式下，accept() 方法会立刻返回，如果还没有新进来的连接,返回的将是null。 因此，需要检查返回的SocketChannel是否是null.如：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();</div><div class="line">serverSocketChannel.socket().bind(new InetSocketAddress(9999));</div><div class="line">serverSocketChannel.configureBlocking(false);</div><div class="line">while(true)&#123;</div><div class="line">    SocketChannel socketChannel =</div><div class="line">            serverSocketChannel.accept();</div><div class="line">    if(socketChannel != null)&#123;</div><div class="line">        //do something with socketChannel...</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/IO/" rel="tag"><i class="fa fa-tag"></i> IO</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/01/28/NIO通道与Selector/" rel="next" title="NIO通道与Selector">
+                <i class="fa fa-chevron-left"></i> NIO通道与Selector
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">一息尚存，则吾志不移</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">59</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">13</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">16</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#FileChannel"><span class="nav-number">1.</span> <span class="nav-text">FileChannel</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#打开FileChannel"><span class="nav-number">1.1.</span> <span class="nav-text">打开FileChannel</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#从FileChannel读取数据"><span class="nav-number">1.2.</span> <span class="nav-text">从FileChannel读取数据</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#向FileChannel写数据"><span class="nav-number">1.3.</span> <span class="nav-text">向FileChannel写数据</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#关闭FileChannel"><span class="nav-number">1.4.</span> <span class="nav-text">关闭FileChannel</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#FileChannel的position方法"><span class="nav-number">1.5.</span> <span class="nav-text">FileChannel的position方法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#FileChannel的size方法"><span class="nav-number">1.6.</span> <span class="nav-text">FileChannel的size方法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#FileChannel的truncate方法"><span class="nav-number">1.7.</span> <span class="nav-text">FileChannel的truncate方法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#FileChannel的force方法"><span class="nav-number">1.8.</span> <span class="nav-text">FileChannel的force方法</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SocketChannel"><span class="nav-number">2.</span> <span class="nav-text">SocketChannel</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#打开-SocketChannel"><span class="nav-number">2.1.</span> <span class="nav-text">打开 SocketChannel</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#关闭SocketChannel"><span class="nav-number">2.2.</span> <span class="nav-text">关闭SocketChannel</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#从-SocketChannel-读取数据"><span class="nav-number">2.3.</span> <span class="nav-text">从 SocketChannel 读取数据</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#写入-SocketChannel"><span class="nav-number">2.4.</span> <span class="nav-text">写入 SocketChannel</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#非阻塞模式"><span class="nav-number">2.5.</span> <span class="nav-text">非阻塞模式</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#connect"><span class="nav-number">2.5.1.</span> <span class="nav-text">connect()</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#write"><span class="nav-number">2.5.2.</span> <span class="nav-text">write()</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#read"><span class="nav-number">2.5.3.</span> <span class="nav-text">read()</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#非阻塞模式与选择器"><span class="nav-number">2.5.4.</span> <span class="nav-text">非阻塞模式与选择器</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ServerSocketChannel"><span class="nav-number">3.</span> <span class="nav-text">ServerSocketChannel</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#打开-ServerSocketChannel"><span class="nav-number">3.1.</span> <span class="nav-text">打开 ServerSocketChannel</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#关闭-ServerSocketChannel"><span class="nav-number">3.2.</span> <span class="nav-text">关闭 ServerSocketChannel</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#监听新进来的连接"><span class="nav-number">3.3.</span> <span class="nav-text">监听新进来的连接</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#非阻塞模式-1"><span class="nav-number">3.4.</span> <span class="nav-text">非阻塞模式</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
