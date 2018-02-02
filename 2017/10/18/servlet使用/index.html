@@ -69,20 +69,21 @@
 
 
 
-<meta name="description" content="之前web方面一直是用PHP，对apace/nginx + php-fpm + php 的开发模式比较熟悉，从今年八月开始使用了java来开发系统，最开始看了Spring和Spring MVC，现在又用了Spring boot，确实PHP有很多需要向java学习的地方。java运行webserver的方式也与PHP不同，PHP是靠Apache或者Nginx等webserver来监听请求，通过cgi">
+<meta name="description" content="概述前言我们一般是建立一个java类，继承servlet，然后利用doGet和doPost方法来接收get和post请求，然后在web.xml里面配置一个&amp;lt;servlet&amp;gt;标签，包含了&amp;lt;servlet-name&amp;gt;和&amp;lt;servlet-class&amp;gt;，&amp;lt;servlet-mapping&amp;gt;包含了&amp;lt;servlet-name&amp;gt;和&amp;lt;url-patt">
 <meta name="keywords" content="java">
 <meta property="og:type" content="article">
 <meta property="og:title" content="servlet使用">
 <meta property="og:url" content="http://yoursite.com/2017/10/18/servlet使用/index.html">
 <meta property="og:site_name" content="Do Or Die">
-<meta property="og:description" content="之前web方面一直是用PHP，对apace/nginx + php-fpm + php 的开发模式比较熟悉，从今年八月开始使用了java来开发系统，最开始看了Spring和Spring MVC，现在又用了Spring boot，确实PHP有很多需要向java学习的地方。java运行webserver的方式也与PHP不同，PHP是靠Apache或者Nginx等webserver来监听请求，通过cgi">
+<meta property="og:description" content="概述前言我们一般是建立一个java类，继承servlet，然后利用doGet和doPost方法来接收get和post请求，然后在web.xml里面配置一个&amp;lt;servlet&amp;gt;标签，包含了&amp;lt;servlet-name&amp;gt;和&amp;lt;servlet-class&amp;gt;，&amp;lt;servlet-mapping&amp;gt;包含了&amp;lt;servlet-name&amp;gt;和&amp;lt;url-patt">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="https://camo.githubusercontent.com/4add5ddf8c0da7d49f0167902fab4c81f56ee167/687474703a2f2f3778706836642e636f6d312e7a302e676c622e636c6f7564646e2e636f6d2f6a6176617765625f736572766c65742d6c6966656379636c652e706e67">
-<meta property="og:updated_time" content="2017-11-27T06:09:24.098Z">
+<meta property="og:image" content="https://www.ibm.com/developerworks/cn/java/j-lo-servlet/image002.jpg">
+<meta property="og:image" content="https://www.ibm.com/developerworks/cn/java/j-lo-servlet/image003.jpg">
+<meta property="og:updated_time" content="2018-02-02T07:38:49.124Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="servlet使用">
-<meta name="twitter:description" content="之前web方面一直是用PHP，对apace/nginx + php-fpm + php 的开发模式比较熟悉，从今年八月开始使用了java来开发系统，最开始看了Spring和Spring MVC，现在又用了Spring boot，确实PHP有很多需要向java学习的地方。java运行webserver的方式也与PHP不同，PHP是靠Apache或者Nginx等webserver来监听请求，通过cgi">
-<meta name="twitter:image" content="https://camo.githubusercontent.com/4add5ddf8c0da7d49f0167902fab4c81f56ee167/687474703a2f2f3778706836642e636f6d312e7a302e676c622e636c6f7564646e2e636f6d2f6a6176617765625f736572766c65742d6c6966656379636c652e706e67">
+<meta name="twitter:description" content="概述前言我们一般是建立一个java类，继承servlet，然后利用doGet和doPost方法来接收get和post请求，然后在web.xml里面配置一个&amp;lt;servlet&amp;gt;标签，包含了&amp;lt;servlet-name&amp;gt;和&amp;lt;servlet-class&amp;gt;，&amp;lt;servlet-mapping&amp;gt;包含了&amp;lt;servlet-name&amp;gt;和&amp;lt;url-patt">
+<meta name="twitter:image" content="https://www.ibm.com/developerworks/cn/java/j-lo-servlet/image002.jpg">
 
 
 
@@ -344,33 +345,52 @@
       
 
       
-        <p>之前web方面一直是用PHP，对apace/nginx + php-fpm + php 的开发模式比较熟悉，从今年八月开始使用了java来开发系统，最开始看了Spring和Spring MVC，现在又用了Spring boot，确实PHP有很多需要向java学习的地方。java运行webserver的方式也与PHP不同，PHP是靠Apache或者Nginx等webserver来监听请求，通过cgi协议将http请求转发给解释器，java是完全靠自己实现了一套机制，用Tomcat等容器包裹住一个个javaweb应用。再次总结一下javaweb的基础，servlet</p>
-<h3 id="servlet生命周期和调用过程"><a href="#servlet生命周期和调用过程" class="headerlink" title="servlet生命周期和调用过程"></a>servlet生命周期和调用过程</h3><p><img src="https://camo.githubusercontent.com/4add5ddf8c0da7d49f0167902fab4c81f56ee167/687474703a2f2f3778706836642e636f6d312e7a302e676c622e636c6f7564646e2e636f6d2f6a6176617765625f736572766c65742d6c6966656379636c652e706e67" alt=""></p>
-<h3 id="使用细节"><a href="#使用细节" class="headerlink" title="使用细节"></a>使用细节</h3><p>我们一般是建立一个java类，继承servlet，然后利用doGet和doPost方法来接收get和post请求，然后在web.xml里面配置一个<code>&lt;servlet&gt;</code>标签，包含了<code>&lt;servlet-name&gt;</code>和<code>&lt;servlet-class&gt;</code>，<code>&lt;servlet-mapping&gt;</code>包含了<code>&lt;servlet-name&gt;</code>和<code>&lt;url-pattern&gt;</code>。其中一个<code>&lt;servlet&gt;</code>可以对应多个<code>&lt;servlet-mapping&gt;</code>，并且<code>&lt;servlet-mapping&gt;</code>中的<code>&lt;url-pattern&gt;</code>可以使用通配符，例如*.扩展名</p>
+        <h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><h4 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h4><p>我们一般是建立一个java类，继承servlet，然后利用doGet和doPost方法来接收get和post请求，然后在web.xml里面配置一个<code>&lt;servlet&gt;</code>标签，包含了<code>&lt;servlet-name&gt;</code>和<code>&lt;servlet-class&gt;</code>，<code>&lt;servlet-mapping&gt;</code>包含了<code>&lt;servlet-name&gt;</code>和<code>&lt;url-pattern&gt;</code>。其中一个<code>&lt;servlet&gt;</code>可以对应多个<code>&lt;servlet-mapping&gt;</code>，并且<code>&lt;servlet-mapping&gt;</code>中的<code>&lt;url-pattern&gt;</code>可以使用通配符，例如*.扩展名</p>
 <p>在网上看到一个url映射的例子：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">现有如下映射关系：</div><div class="line">Servlet1 -&gt; /abc/*</div><div class="line">Servlet2 -&gt; /*</div><div class="line">Servlet3 -&gt; /abc</div><div class="line">Servlet4 -&gt; *.do</div><div class="line"></div><div class="line">1.当URL为/abc/a.html时，同时匹配了/abc/*和/*，此时将调用Servlet1</div><div class="line">2.当URL为/abc时，同时匹配了/abc 和 /abc/*， 此时将调用Servlet3</div><div class="line">3.当URL为/abc/*.do时，同时匹配了 /abc/* 和 *.do， 此时调用 Servlet1</div><div class="line">4.当URL为/a.do时， 同时匹配了/* 和  *.do，此时调用 Servlet2</div><div class="line">5.当URL为/xxx/yyy/a.do， 同时匹配了/*和 *.do此时调用Servlet2</div></pre></td></tr></table></figure></p>
-<ul>
-<li>对象： servlet由servlet引擎调用，不能独立运行。客户端多次请求，服务器只创建一个servlet实例，之后驻留内存中继续服务直至web容器退出才销毁它。</li>
-<li>请求: 服务器针对客户端的每一次请求都会创建新的request和response对象(它们的生命周期很短)，传给service方法</li>
-<li>加载: servlet实例的创建和init方法的调用是在第一次请求时，而非服务器启动时，除非在<servlet>标签配置<load-on-start-up>,数字越小优先级越高</load-on-start-up></servlet></li>
-<li>缺省:映射路径为正斜杠/，则为当前web应用的缺省servlet,不匹配的都交给缺省</li>
-<li>线程安全: 访问同一资源会引发线程安全问题; SingleThreadModel标记接口(已弃用)</li>
-<li>ServletConfig: 在<servlet>标签配置<init-param>，通过getServletConfig方法获得配置。可配置输出字符集，读哪个配置文件等等。</init-param></servlet></li>
-<li>ServletContext: 代表当前web应用，含有一些web应用全局性方法，实现web资源共享、servlet转发等。通过ServletConfig.getServletContext方法获得，在<context-param>标签配置。</context-param></li>
-</ul>
-<h3 id="ServletContext对象"><a href="#ServletContext对象" class="headerlink" title="ServletContext对象"></a>ServletContext对象</h3><p>描述：在一个web应用中，所有的servlet会共享一个ServletContext对象，实现数据共享。<br>作用：</p>
-<ul>
-<li>获取web应用初始化参数</li>
-<li>实现servlet转发</li>
-<li>利用ServletContext对象读取资源<ul>
-<li>获取文件路径</li>
-<li>读取文件的三种方式</li>
-<li>.propertites文件（配置文件一般有xml和properties，Springboot中还有yml文件）</li>
-</ul>
+<h4 id="Servlet容器"><a href="#Servlet容器" class="headerlink" title="Servlet容器"></a>Servlet容器</h4><p>Servlet是J2EE体系中很重要的一部分，不同于LNMP的架构，Servlet是依赖于Servlet容器的，常用的有jetty和Tomcat，这里以Tomcat为例</p>
+<p>Tomcat中，Context 容器是直接管理 Servlet 在容器中的包装类 Wrapper，所以 Context 容器如何运行将直接影响 Servlet 的工作方式。 Tomcat的容器模型如下：</p>
+<p><img src="https://www.ibm.com/developerworks/cn/java/j-lo-servlet/image002.jpg" alt=""></p>
+<p>可以看到管理Servlet的容器是ConText容器，一个context容器对应一web工程，其实这点在Tomcat的配置文件中也能发现：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">&lt;Context path=&quot;/projectOne &quot; docBase=&quot;D:\projects\projectOne&quot;</div><div class="line">reloadable=&quot;true&quot; /&gt;</div></pre></td></tr></table></figure></p>
+<h3 id="Servlet容器的启动过程"><a href="#Servlet容器的启动过程" class="headerlink" title="Servlet容器的启动过程"></a>Servlet容器的启动过程</h3><p>Tomcat支持嵌入式功能，通过<code>org.apache.catalina.startup.Tomcat</code>启动类来创建实例对象调用start方法就可以启动Tomcat，并且可以通过这个对象来增加或修改Tomcat的参数如<code>Context</code>、<code>Servlet</code>等。</p>
+<ol>
+<li>给Tomcat增加一个web工程<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">Tomcat tomcat = getTomcatInstance(); </div><div class="line">File appDir = new File(getBuildDirectory(), &quot;webapps/examples&quot;); </div><div class="line">tomcat.addWebapp(null, &quot;/examples&quot;, appDir.getAbsolutePath()); </div><div class="line">tomcat.start(); </div><div class="line">ByteChunk res = getUrl(&quot;http://localhost:&quot; + getPort() + </div><div class="line">              &quot;/examples/servlets/servlet/HelloWorldExample&quot;);</div></pre></td></tr></table></figure>
 </li>
+</ol>
+<p>2.上面的addWebapp如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div></pre></td><td class="code"><pre><div class="line">public Context addWebapp(Host host, String url, String path) &#123; </div><div class="line">       silence(url); </div><div class="line">       // 创建context容器</div><div class="line">       Context ctx = new StandardContext(); </div><div class="line">       // 设置url和物理路径</div><div class="line">       ctx.setPath(url); </div><div class="line">       ctx.setDocBase(path); </div><div class="line">       </div><div class="line">       if (defaultRealm == null) &#123; </div><div class="line">           initSimpleAuth(); </div><div class="line">       &#125; </div><div class="line">       ctx.setRealm(defaultRealm); </div><div class="line">       ctx.addLifecycleListener(new DefaultWebXmlListener()); </div><div class="line">       // context配置解析器</div><div class="line">       ContextConfig ctxCfg = new ContextConfig(); </div><div class="line">       // 生命周期监听器(基于观察者模式)</div><div class="line">       ctx.addLifecycleListener(ctxCfg); </div><div class="line">       ctxCfg.setDefaultWebXml(&quot;org/apache/catalin/startup/NO_DEFAULT_XML&quot;); </div><div class="line">       </div><div class="line">       if (host == null) &#123; </div><div class="line">           getHost().addChild(ctx); </div><div class="line">       &#125; else &#123; </div><div class="line">           host.addChild(ctx); </div><div class="line">       &#125; </div><div class="line">       return ctx; </div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<h4 id="StandardContext启动过程"><a href="#StandardContext启动过程" class="headerlink" title="StandardContext启动过程"></a>StandardContext启动过程</h4><p>Tomcat主要类启动的时序图：<br><img src="https://www.ibm.com/developerworks/cn/java/j-lo-servlet/image003.jpg" alt=""></p>
+<p>ContextConfig继承了LifecycleListener，set到StandardContext容器中，负责 Web 应用的配置解析工作，ContextConfig的init方法完成以下工作：</p>
+<ol>
+<li>创建用于解析 xml 配置文件的 contextDigester 对象</li>
+<li>读取context.xml配置文件，如果存在就解析它</li>
+<li>读取host配置文件，如果存在就解析它</li>
+<li>读取context自身配置文件，如果存在解析它</li>
+<li>设置context的DocBase</li>
+</ol>
+<p>init完成后，context容器会执行startInternal方法：</p>
+<ol>
+<li>创建读取资源文件的对象</li>
+<li>创建 ClassLoader 对象</li>
+<li>设置应用的工作目录</li>
+<li>启动相关的辅助类如：logger、realm、resources 等</li>
+<li>修改启动状态，通知感兴趣的观察者（Web 应用的配置）</li>
+<li>子容器的初始化</li>
+<li>获取 ServletContext 并设置必要的参数</li>
+<li>初始化“load on startup”的 Servlet</li>
+</ol>
+<h4 id="Web应用的初始化"><a href="#Web应用的初始化" class="headerlink" title="Web应用的初始化"></a>Web应用的初始化</h4><p>Web 应用的初始化工作是在 ContextConfig 的 configureStart 方法中实现的，应用的初始化主要是要解析 web.xml 文件，这个文件描述了一个 Web 应用的关键信息，也是一个 Web 应用的入口</p>
+<p>web.xml的搜寻顺序：</p>
+<ol>
+<li>globalWebXml：engine工作目录下<code>conf/web.xml</code></li>
+<li>hostWebXml: <code>System.getProperty(&quot;catalina.base&quot;)/conf/${EngineName}/${HostName}/web.xml.default</code></li>
+<li>应用文件配置的web.xml:<code>examples/WEB-INF/web.xml</code></li>
+</ol>
+<p>web.xml文件中的各项配置会被解析成相应的属性保存到<code>WebXml对象</code>中，接下来会把WebXml对象中的属性设置到Context中，设置Servlet对象、filter、listener等，在<code>WebXml</code>的<code>configureContext</code>方法中，解析Servlet的代码片段,创建Wrapper实例：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div></pre></td><td class="code"><pre><div class="line">for (ServletDef servlet : servlets.values()) &#123; </div><div class="line">           Wrapper wrapper = context.createWrapper(); </div><div class="line">           String jspFile = servlet.getJspFile(); </div><div class="line">           if (jspFile != null) &#123; </div><div class="line">               wrapper.setJspFile(jspFile); </div><div class="line">           &#125; </div><div class="line">           if (servlet.getLoadOnStartup() != null) &#123; </div><div class="line">               wrapper.setLoadOnStartup(servlet.getLoadOnStartup().intValue()); </div><div class="line">           &#125; </div><div class="line">           if (servlet.getEnabled() != null) &#123; </div><div class="line">               wrapper.setEnabled(servlet.getEnabled().booleanValue()); </div><div class="line">           &#125; </div><div class="line">           wrapper.setName(servlet.getServletName()); </div><div class="line">           Map&lt;String,String&gt; params = servlet.getParameterMap(); </div><div class="line">           for (Entry&lt;String, String&gt; entry : params.entrySet()) &#123; </div><div class="line">               wrapper.addInitParameter(entry.getKey(), entry.getValue()); </div><div class="line">           &#125; </div><div class="line">           wrapper.setRunAs(servlet.getRunAs()); </div><div class="line">           Set&lt;SecurityRoleRef&gt; roleRefs = servlet.getSecurityRoleRefs(); </div><div class="line">           for (SecurityRoleRef roleRef : roleRefs) &#123; </div><div class="line">               wrapper.addSecurityReference( </div><div class="line">                       roleRef.getName(), roleRef.getLink()); </div><div class="line">           &#125; </div><div class="line">           wrapper.setServletClass(servlet.getServletClass()); </div><div class="line">           MultipartDef multipartdef = servlet.getMultipartDef(); </div><div class="line">           if (multipartdef != null) &#123; </div><div class="line">               if (multipartdef.getMaxFileSize() != null &amp;&amp; </div><div class="line">                       multipartdef.getMaxRequestSize()!= null &amp;&amp; </div><div class="line">                       multipartdef.getFileSizeThreshold() != null) &#123; </div><div class="line">                   wrapper.setMultipartConfigElement(new </div><div class="line">MultipartConfigElement( </div><div class="line">                           multipartdef.getLocation(), </div><div class="line">                           Long.parseLong(multipartdef.getMaxFileSize()), </div><div class="line">                           Long.parseLong(multipartdef.getMaxRequestSize()), </div><div class="line">                           Integer.parseInt( </div><div class="line">                                   multipartdef.getFileSizeThreshold()))); </div><div class="line">               &#125; else &#123; </div><div class="line">                   wrapper.setMultipartConfigElement(new </div><div class="line">MultipartConfigElement( </div><div class="line">                           multipartdef.getLocation())); </div><div class="line">               &#125; </div><div class="line">           &#125; </div><div class="line">           if (servlet.getAsyncSupported() != null) &#123; </div><div class="line">               wrapper.setAsyncSupported( </div><div class="line">                       servlet.getAsyncSupported().booleanValue()); </div><div class="line">           &#125; </div><div class="line">           context.addChild(wrapper); </div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>这段代码清楚的描述了如何将 Servlet 包装成 Context 容器中的 StandardWrapper，这里有个疑问，为什么要将 Servlet 包装成 StandardWrapper 而不直接是 Servlet 对象。这里 StandardWrapper 是 Tomcat 容器中的一部分，它具有容器的特征，而 Servlet 为了一个独立的 web 开发标准，不应该强耦合在 Tomcat 中</p>
+<p>除了将 Servlet 包装成 StandardWrapper 并作为子容器添加到 Context 中，其它的所有 web.xml 属性都被解析到 Context 中，所以说 Context 容器才是真正运行 Servlet 的 Servlet 容器。一个 Web 应用对应一个 Context 容器，容器的配置属性由应用的 web.xml 指定，这样我们就能理解 web.xml 到底起到什么作用了</p>
+<h4 id="创建Servlet实例"><a href="#创建Servlet实例" class="headerlink" title="创建Servlet实例"></a>创建Servlet实例</h4><p>前面已经完成了 Servlet 的解析工作，并且被包装成 StandardWrapper 添加在 Context 容器中，但并没有被实例化</p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="https://www.ibm.com/developerworks/cn/java/j-lo-servlet/" target="_blank" rel="external">许令波-Servlet工作原理</a></li>
 </ul>
-<p>1.通过<code>ServleContext</code>的<code>getResourceAsStream</code>方法读取properties文件，类似：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">InputStream in = this.getServletContext.getResourceAsStream(&quot;/config/config.properties&quot;);</div><div class="line">Properties properties = new Properties();</div><div class="line">properties.load(in);</div></pre></td></tr></table></figure></p>
-<p>2.通过<code>servletContext</code>的<code>getRealPath</code>方法得到资源的绝对路径，在通过FileInputStream读取</p>
-<p>3.通过类装载器去读，<code>ClassLoader</code>的<code>getResourceAsStream</code>(如果读取资源文件的程序不是servlet)，文件不能太大。只装载一次，所以如要读到更新后的数据，通过类装载的方式得到资源文件的位置，再通过传统方式读取资源文件的数据（用<code>getResource</code>得到path，再用<code>FileInputStream</code>）</p>
 
       
     </div>
@@ -546,7 +566,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#servlet生命周期和调用过程"><span class="nav-number">1.</span> <span class="nav-text">servlet生命周期和调用过程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用细节"><span class="nav-number">2.</span> <span class="nav-text">使用细节</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ServletContext对象"><span class="nav-number">3.</span> <span class="nav-text">ServletContext对象</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#前言"><span class="nav-number">1.1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Servlet容器"><span class="nav-number">1.2.</span> <span class="nav-text">Servlet容器</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Servlet容器的启动过程"><span class="nav-number">2.</span> <span class="nav-text">Servlet容器的启动过程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#StandardContext启动过程"><span class="nav-number">2.1.</span> <span class="nav-text">StandardContext启动过程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Web应用的初始化"><span class="nav-number">2.2.</span> <span class="nav-text">Web应用的初始化</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#创建Servlet实例"><span class="nav-number">2.3.</span> <span class="nav-text">创建Servlet实例</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">3.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
             
 
           </div>
