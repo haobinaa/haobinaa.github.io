@@ -78,7 +78,8 @@
 <meta property="og:description" content="架构的演变单体式架构没有模块的划分，用一个项目就涵盖了所有逻辑，也是我们最开始写的程序，易于测试和部署发布。 单体应用非常简单，但这也是他致命的缺点，随着业务的不断增加，复杂度越来越高，项目中的代码越来越不可控，就造成了很多问题：  代码量过多，结构过于复杂 可靠性低下：所有代码都运行在同一进程中，模块中任何一个bug，比如内存泄露都可能弄垮整个进程 技术更新困难： 技术选型在一开始就定下来了 启">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://yoursite.com/images/microservice.png">
-<meta property="og:updated_time" content="2018-02-04T13:25:28.091Z">
+<meta property="og:image" content="http://yoursite.com/images/API-Gateway.png.jpg">
+<meta property="og:updated_time" content="2018-02-04T14:35:08.102Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="微服务">
 <meta name="twitter:description" content="架构的演变单体式架构没有模块的划分，用一个项目就涵盖了所有逻辑，也是我们最开始写的程序，易于测试和部署发布。 单体应用非常简单，但这也是他致命的缺点，随着业务的不断增加，复杂度越来越高，项目中的代码越来越不可控，就造成了很多问题：  代码量过多，结构过于复杂 可靠性低下：所有代码都运行在同一进程中，模块中任何一个bug，比如内存泄露都可能弄垮整个进程 技术更新困难： 技术选型在一开始就定下来了 启">
@@ -393,6 +394,39 @@
 <h5 id="7-基础设计自动化"><a href="#7-基础设计自动化" class="headerlink" title="7.基础设计自动化"></a>7.基础设计自动化</h5><p>基础设施自动化技术在过去几年中得到了长足的发展：云计算，特别是AWS的发展，减少了构建、发布、运维微服务的复杂性。</p>
 <p>微服务架构中的每一个服务所依赖的基础设施自动化和之前的单体式应用并无不同，只是更加依赖，尤其是更多的自动化测试，以保证各个服务的可靠性。</p>
 <h3 id="微服务设计"><a href="#微服务设计" class="headerlink" title="微服务设计"></a>微服务设计</h3><p><img src="/images/microservice.png" alt=""></p>
+<h4 id="API网关"><a href="#API网关" class="headerlink" title="API网关"></a>API网关</h4><p>我们将微服务划分成了几个隔离的服务，服务之间基于轻量级的通信机制来进行数据交换， 但是这对客户端来说，如果同时需要A、B两个服务的数据，就需要知道A、B两个服务的地址，如果更新了服务的地址，同样就要更新客户端的地址</p>
+<p>显然我们需要一种解决方案，让客户端和服务端解耦， 引入一个中间件把客户端发来的消息转发给指定后台，承担起微服务入口的功能，我们称之为API网关。</p>
+<p><img src="/images/API-Gateway.png.jpg" alt=""></p>
+<p>API网关的主要功能：</p>
+<ul>
+<li>负载均衡： 反向路由，将外部请求转换为内部访问</li>
+<li>安全认证： 将恶意的访问档在网关之外</li>
+<li>限流熔断： 如果有突发流量，进行限流熔断(服务降级：降低非主流业务功能减轻系统压力； 熔断：当流量过大，启动熔断机制，拒绝服务或者引流，避免系统瘫痪)</li>
+<li>日志监控： 保存日志和分析日志</li>
+</ul>
+<h4 id="服务发现"><a href="#服务发现" class="headerlink" title="服务发现"></a>服务发现</h4><p>1.传统LB模式</p>
+<p>DNS -&gt; LB(load balance) -&gt; service provider</p>
+<p>域名通过DNS解析，通过负载均衡器找到后台的服务</p>
+<p>2.进程内LB模式</p>
+<p>service provider -&gt;(register)  service registry -&gt; customer(内置LB) -&gt; service provider</p>
+<p>后台服务在服务注册表中注册，客户端有个内置的LB，指向对应的服务提供方</p>
+<p>3.主机独立LB模式</p>
+<p>service provider -&gt;(register)   service registry  -&gt;<br>customer(在同一个主机中，LB存在于一个独立的进程中) -&gt; service provider</p>
+<p>相比于第二种，单独的LB跟客户端关联没那么紧密，不需要为每种语言都配置一个LB </p>
+<h4 id="数据存储"><a href="#数据存储" class="headerlink" title="数据存储"></a>数据存储</h4><p>在传统单体式项目中，一个应用中的各个模块共用一个数据库，它能很好地保证事务一致性。而在微服务架构中，如果共用一个数据库则会有高耦合度的问题，比如一个服务想要修改一个表的结构，那么它在修改的时候要极其小心，应该这个表也可能是其他服务正在使用的，所以我们让每个服务管理对应的数据库。</p>
+<p>在分解数据库的时候，有很多问题：事务一致性、外键关系、静态数据处理、共享数据和共享表的处理等等。</p>
+<p>build microservice提供的解决方案：</p>
+<ul>
+<li>外键关系：把这个约束转移至代码中，在需要的时候通过 API 去其他服务请求数据</li>
+<li>静态数据：<ul>
+<li>方法1：每个服务复制一份该表的内容</li>
+<li>方法2：将这些共享的静态数据放入静态配置文件或代码之中；（推荐）</li>
+<li>方法3： 将这些静态数据放入一个单独的服务，如果数据量和相关的规则复杂就可以使用这个方法</li>
+</ul>
+</li>
+<li>共享数据：我们可以将共享的部分提取出来，新建一个服务管理这些数据，其他服务访问这个新服务来获取数据</li>
+<li>共享表：把表按照需求拆分</li>
+</ul>
 
       
     </div>
@@ -564,7 +598,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#架构的演变"><span class="nav-number">1.</span> <span class="nav-text">架构的演变</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#单体式架构"><span class="nav-number">1.1.</span> <span class="nav-text">单体式架构</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#SOA"><span class="nav-number">1.2.</span> <span class="nav-text">SOA</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#微服务架构"><span class="nav-number">2.</span> <span class="nav-text">微服务架构</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#微服务的特点"><span class="nav-number">2.1.</span> <span class="nav-text">微服务的特点</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#微服务的利弊"><span class="nav-number">2.2.</span> <span class="nav-text">微服务的利弊</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#微服务的特性"><span class="nav-number">2.3.</span> <span class="nav-text">微服务的特性</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-组件化"><span class="nav-number">2.3.1.</span> <span class="nav-text">1.组件化</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-团队组织"><span class="nav-number">2.3.2.</span> <span class="nav-text">2.团队组织</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-通讯机制"><span class="nav-number">2.3.3.</span> <span class="nav-text">3.通讯机制</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-组件分治"><span class="nav-number">2.3.4.</span> <span class="nav-text">4.组件分治</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#5-数据管理分治"><span class="nav-number">2.3.5.</span> <span class="nav-text">5.数据管理分治</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#6-容错设计"><span class="nav-number">2.3.6.</span> <span class="nav-text">6.容错设计</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#7-基础设计自动化"><span class="nav-number">2.3.7.</span> <span class="nav-text">7.基础设计自动化</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#微服务设计"><span class="nav-number">3.</span> <span class="nav-text">微服务设计</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#架构的演变"><span class="nav-number">1.</span> <span class="nav-text">架构的演变</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#单体式架构"><span class="nav-number">1.1.</span> <span class="nav-text">单体式架构</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#SOA"><span class="nav-number">1.2.</span> <span class="nav-text">SOA</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#微服务架构"><span class="nav-number">2.</span> <span class="nav-text">微服务架构</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#微服务的特点"><span class="nav-number">2.1.</span> <span class="nav-text">微服务的特点</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#微服务的利弊"><span class="nav-number">2.2.</span> <span class="nav-text">微服务的利弊</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#微服务的特性"><span class="nav-number">2.3.</span> <span class="nav-text">微服务的特性</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-组件化"><span class="nav-number">2.3.1.</span> <span class="nav-text">1.组件化</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-团队组织"><span class="nav-number">2.3.2.</span> <span class="nav-text">2.团队组织</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-通讯机制"><span class="nav-number">2.3.3.</span> <span class="nav-text">3.通讯机制</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-组件分治"><span class="nav-number">2.3.4.</span> <span class="nav-text">4.组件分治</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#5-数据管理分治"><span class="nav-number">2.3.5.</span> <span class="nav-text">5.数据管理分治</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#6-容错设计"><span class="nav-number">2.3.6.</span> <span class="nav-text">6.容错设计</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#7-基础设计自动化"><span class="nav-number">2.3.7.</span> <span class="nav-text">7.基础设计自动化</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#微服务设计"><span class="nav-number">3.</span> <span class="nav-text">微服务设计</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#API网关"><span class="nav-number">3.1.</span> <span class="nav-text">API网关</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#服务发现"><span class="nav-number">3.2.</span> <span class="nav-text">服务发现</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#数据存储"><span class="nav-number">3.3.</span> <span class="nav-text">数据存储</span></a></li></ol></li></ol></div>
             
 
           </div>
