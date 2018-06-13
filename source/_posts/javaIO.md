@@ -1,0 +1,459 @@
+---
+title: javaIO流
+date: 2017-11-15 23:03:03
+tags: javaIO
+categories: javaSE
+---
+
+### 概述
+
+#### java流类图结构
+![](http://ojpgmz933.bkt.clouddn.com/17-11-11/66017095.jpg)
+
+#### java流的概念
+
+流是一组有顺序的，有起点和终点的字节集合，是对数据传输的总称或抽象。即数据在两设备间的传输称为流，流的本质是数据传输，根据数据传输特性将流抽象为各种类，方便更直观的进行数据操作。
+
+根据处理数据类型的不同分为字符流和字节流
+
+根据数据流入不同分为输入流和输出流
+
+
+### File类
+java.io.File: 文件和目录路径名的抽象表示形式，和平台无关
+
+File能新建、删除、重命名文件和目录，但是不能访问文件内容本身，如果需要访问文件本身，需要使用输入/输出流
+
+### 字符流与字节流
+#### 字节流
+
+Java 中的字节流处理的最基本单位为单个字节，它通常用来处理二进制数据。Java 中最基本的两个字节流类是 `InputStream` 和 `OutputStream`，它们分别代表了组基本的输入字节流和输出字节流。`InputStream` 类与 `OutputStream` 类均为抽象类，我们在实际使用中通常使用 Java 类库中提供的它们的一系列子类。
+
+
+以`InputStream`为例，有一个从字节流中读取字节的方法:   
+`public abstract int read() throws IOException;`这一方法的功能是从字节流中读取一个字节，若到了末尾则返回-1，否则返回读入的字节
+
+一次读一个字节效率很低(每读一次就会进行一次磁盘io)，inputStream重载了read方法，可以一次读一个字节数组，源码如下:   
+``` 
+public int read(byte b[]) throws IOException {
+    return read(b, 0, b.length);
+}
+public int read(byte b[], int off, int len) throws IOException {
+    if (b == null) {
+        throw new NullPointerException();
+    } else if (off < 0 || len < 0 || len > b.length - off) {
+        throw new IndexOutOfBoundsException();
+    } else if (len == 0) {
+        return 0;
+    }
+
+    int c = read();
+    if (c == -1) {
+        return -1;
+    }
+    b[off] = (byte)c;
+
+    int i = 1;
+    try {
+        for (; i < len ; i++) {
+            c = read();
+            if (c == -1) {
+                break;
+            }
+            b[off + i] = (byte)c;
+        }
+    } catch (IOException ee) {
+    }
+    return i;
+}
+```
+我们可以看到read(byte[])也是通过循环调用read来实现一次读入一个字节数组，因此本质上来说这个方法也没有使用内存缓存区。要提高读取的效率，应该使用`BufferedInputStream`
+
+#### 字符流
+##### Unicode编码集
+谈到Unicode首先要说ASCLL码，ASCII 是用来表示英文字符的一种编码规范。每个ASCII字符占用1 个字节，因此，ASCII 编码可以表示的最大字符数是255（00H—FFH）。这对于英文而言，是没有问题的，一般只什么用到前128个(00H--7FH,最高位为0)。而最高位为1 的另128 个字符（80H—FFH）被称为“扩展ASCII”，一般用来存放英文的制表符、部分音标字符等等的一些其它符号。
+
+但是对于中文等比较复杂的语言，255个字符显然不够用，所以后来采用Unicode来解决这个问题，它占用两个字节（0000H—FFFFH）,容纳65536 个字符，这完全可以容纳全世界所有语言文字的编码。在Unicode 里，所有的字符都按一个字符来处理， 它们都有一个唯一的Unicode码。
+
+
+
+##### 字符流原理
+Java中的字符流处理的最基本的单元是Unicode码元（大小2字节），它通常用来处理文本数据。所谓Unicode码元，也就是一个Unicode代码单元，范围是0x0000~0xFFFF。在以上范围内的每个数字都与一个字符相对应，Java中的String类型默认就把字符以Unicode规则编码而后存储在内存中。然而与存储在内存中不同，存储在磁盘上的数据通常有着各种各样的编码方式。使用不同的编码方式，相同的字符会有不同的二进制表示。字符流的工作方式是：
+- 输出字符流：把要写入文件的字符序列（实际上是Unicode码元序列）转为指定编码方式下的字节序列，然后再写入到文件中
+- 输入字符流：把要读取的字节序列按指定编码方式解码为相应字符序列（实际上是Unicode码元序列）从而可以存在内存中
+
+例如:
+``` 
+public class FileWriterDemo {
+    public static void main(String[] args) {
+        FileWriter fileWriter = null;
+        try {
+            try {
+                fileWriter = new FileWriter("demo.txt");
+                fileWriter.write("demo");
+            } finally {
+                fileWriter.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+用FileWriter像demo.txt写入了`demo`这四个字符，如果用十六机制编辑器打开文件可以看到`64 65 6D 6F`，我们并没有在代码中指定编码方式，实际上，在我们没有指定时使用的是操作系统的默认字符编码方式来对我们要写入的字符进行编码。
+
+ 由于字符流在输出前实际上是要完成Unicode码元序列到相应编码方式的字节序列的转换，所以它会使用内存缓冲区来存放转换后得到的字节序列，等待都转换完毕再一同写入磁盘文件中
+ 
+ 
+ #### 字符流和字节流的区别
+ - 字节流操作的基本单元为字节；字符流操作的基本单元为Unicode码元
+ - 字节流默认不使用缓冲区；字符流使用缓冲区(转换编码)
+ - 字节流通常用于处理二进制数据，实际上它可以处理任意类型的数据，但它不支持直接写入或读取Unicode码元；字符流通常处理文本数据，它支持写入及读取Unicode码元
+
+#### 字符流和字节流的选择
+- 字符流操作对象：
+    - 纯文本
+    - 需要查指定编码表，默认是（GBK）
+- 字节流操作的对象
+    - 图像，音频等文件
+    - 无需指定编码表
+    
+选择合适的流：
+1. 先明确源头和目的：源头使用的是输入流，InputStream或者Reader。目的使用的是输出流，OutputStream或者Writer
+2. 确定操作的对象是那些：纯文本用字符流，否则用字节流
+3. 当明确后，再确定使用哪一个具体的对象：内存，硬盘（比如操作文件的话用FileWriter/FileReader,或者FileInputStream/FileOutputStream），控制台（System）
+
+#### 字符流和字节流的转换
+##### 字符到字节
+
+可以从字符流中获取char[]数组，转换为String，然后调用String的API函数getBytes() 获取到byte[]，然后就可以通过ByteArrayInputStream、ByteArrayOutputStream来实现到字节流的转换。
+
+函数:`new String(byte[] data, String encoding);`,通常与`String.getBytes(String encoding)`一起使用
+
+用法：`String str = new String(formMsg.getBytes("ISO-8859-1"),"utf-8");`
+
+##### 字节流到字符流
+如下，是一个字节流上传文件到 hadoop hdfs 的工具方法。此处为了避免中文乱码的，将字节流指定编码转换为字符流，然后再用 getBytes("UTF-8") 方法获取相应编码的字节，实现字节流输出。
+``` 
+/**
+ * 文件流上传文件
+ *
+ * @param iStream 输入流
+ * @param pathStr HDFS(Hadoop分布式文件系统) 路径  'test/out/' 最后要有 /
+ * @param fileName 文件名
+ * @return
+ */
+public static boolean upLoadFileToHdfs(InputStream iStream, String pathStr, String fileName) {
+    //FileSystem fs = FileSystem.get(conf);
+    Path path = new Path(pathStr + fileName);
+    //FSDataOutputStream outputStream = fs.create(path);
+    FileSystem fs = null;
+    FSDataOutputStream outputStream = null;
+    //InputStreamReader是字节流和字符流之间的桥梁，转化时需要指定字符集，否则按照系统字符集转换
+    InputStreamReader reader = null;
+    BufferedReader br = null;
+    try {
+        reader = new InputStreamReader(iStream,"UTF-8");
+        //创建缓冲字符输入流
+        br = new BufferedReader(reader);
+        fs = FileSystem.get(conf);
+        outputStream = fs.create(path);
+        String line;
+        while ((line = br.readLine()) != null) {
+            outputStream.write(line.getBytes("UTF-8"));
+            outputStream.write("\r\n".getBytes("UTF-8"));
+        }
+        //IOUtils.copyBytes(, outputStream, 4096);
+        return true;
+    } catch (IOException e) {
+        e.printStackTrace();
+    } finally {
+        try {
+            outputStream.hsync();
+            outputStream.close();
+            br.close();
+            reader.close();
+            iStream.close();
+            fs.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    return false;
+}
+```
+
+
+### 缓存流
+缓冲流是处理流的一种, 它依赖于原始的输入输出流, 它令输入输出流具有1个缓冲区, 显著减少与外部设备的IO次数, 而且提供一些额外的方法。
+
+可见, 缓冲流最大的特点就是具有1个缓冲区，而我们使用缓冲流无非两个目的:
+1. 减少IO次数(提升performance)
+2. 使用一些缓冲流的额外的方法。
+
+`BufferedInputStream`和`BufferedOutputStream`这两个类分别是`FilterInputStream`和`FilterOutputStream`的子类，作为装饰器子类，使用它们可以防止每次读取/发送数据时进行实际的写操作，代表着使用缓冲区,因为他们实现了缓存功能，所有使用`BufferedOutputStream`写完数据后，需要用`flush()`或者`close()`强行将缓存区内容数据写出，否则可能无法写出数据。与之相似还`BufferedReader`和`BufferedWriter`两个类
+
+
+利用缓存区复制文件：
+``` 
+ public static void copyFile( File oldFile , File newFile){
+        InputStream inputStream = null ;
+        BufferedInputStream bufferedInputStream = null ;
+
+        OutputStream outputStream = null ;
+        BufferedOutputStream bufferedOutputStream = null ;
+
+        try {
+            inputStream = new FileInputStream( oldFile ) ;
+            bufferedInputStream = new BufferedInputStream( inputStream ) ;
+
+            outputStream = new FileOutputStream( newFile ) ;
+            bufferedOutputStream = new BufferedOutputStream( outputStream ) ;
+
+            byte[] b=new byte[1024];   //代表一次最多读取1KB的内容
+
+            int length = 0 ; //代表实际读取的字节数
+            while( (length = bufferedInputStream.read( b ) )!= -1 ){
+                //length 代表实际读取的字节数
+                bufferedOutputStream.write(b, 0, length );
+            }
+            //缓冲区的内容写入到文件
+            bufferedOutputStream.flush();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }catch (IOException e) {
+            e.printStackTrace();
+        }finally {
+
+            if( bufferedOutputStream != null ){
+                try {
+                    bufferedOutputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            if( bufferedInputStream != null){
+                try {
+                    bufferedInputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            
+            if( inputStream != null ){
+                try {
+                    inputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            
+            if ( outputStream != null ) {
+                try {
+                    outputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+        }
+    }
+}
+```
+
+### 对象序列化流
+
+#### 什么java对象序列化
+Java平台允许我们在内存中创建可复用的Java对象，但一般情况下，只有当JVM处于运行时，这些对象才可能存在，即，这些对象的生命周期不会比JVM的生命周期更长。但在现实应用中，就可能要求在JVM停止运行之后能够保存(持久化)指定的对象，并在将来重新读取被保存的对象。Java对象序列化就能够帮助我们实现该功能。
+
+ 使用Java对象序列化，在保存对象时，会把其状态保存为一组字节，在未来，再将这些字节组装成对象。必须注意地是，对象序列化保存的是对象的"状态"，即它的成员变量。由此可知，对象序列化不会关注类中的静态变量。
+ 
+  除了在持久化对象时会用到对象序列化之外，当使用RMI(远程方法调用)，或在网络中传递对象时，都会用到对象序列化。Java序列化API为处理对象序列化提供了一个标准机制，该API简单易用，在本文的后续章节中将会陆续讲到。
+
+
+#### 序列化示例
+- 若某个类实现了 Serializable 接口，该类的对象就是可序列化的：
+    - 创建一个 ObjectOutputStream
+    - 调用 ObjectOutputStream 对象的 writeObject(对象) 方法输出可序列化对象。注意写出一次，操作flush()
+- 反序列化
+    - 创建一个 ObjectInputStream
+    - 调用 readObject() 方法读取流中的对象
+    
+    
+```
+// 定义user对象 
+public class User implements Serializable{
+    private String name;
+    private int age;
+    private Date birthday;
+    private transient String gender;
+    private static final long serialVersionUID = -6849794470754667710L;
+
+    ......getter and setter
+}
+
+// 序列化和反序列化
+public class SerializableDemo {
+
+    public static void main(String[] args) {
+        //Initializes The Object
+        User user = new User();
+        user.setName("hollis");
+        user.setGender("male");
+        user.setAge(23);
+        user.setBirthday(new Date());
+
+        //Write Obj to File
+        ObjectOutputStream oos = null;
+        try {
+            oos = new ObjectOutputStream(new FileOutputStream("tempFile"));
+            oos.writeObject(user);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            IOUtils.closeQuietly(oos);
+        }
+
+        //Read Obj from File
+        File file = new File("tempFile");
+        ObjectInputStream ois = null;
+        try {
+            ois = new ObjectInputStream(new FileInputStream(file));
+            User newUser = (User) ois.readObject();
+            System.out.println(newUser);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } finally {
+            IOUtils.closeQuietly(ois);
+            try {
+                FileUtils.forceDelete(file);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
+}
+``` 
+
+#### 序列化和反序列化知识
+1. 在Java中，只要一个类实现了java.io.Serializable接口，那么它就可以被序列化。
+
+2. 通过ObjectOutputStream和ObjectInputStream对对象进行序列化及反序列化
+
+3. 虚拟机是否允许反序列化，不仅取决于类路径和功能代码是否一致，一个非常重要的一点是两个类的序列化 ID 是否一致（就是 private static final long serialVersionUID）
+
+4. 序列化并不保存静态变量。
+
+5. 要想将父类对象也序列化，就需要让父类也实现Serializable 接口。
+
+6. Transient 关键字的作用是控制变量的序列化，在变量声明前加上该关键字，可以阻止该变量被序列化到文件中，在被反序列化后，transient 变量的值被设为初始值，如 int 型的是 0，对象型的是 null。
+
+7. 服务器端给客户端发送序列化对象数据，对象中有一些数据是敏感的，比如密码字符串等，希望对该密码字段在序列化时，进行加密，而客户端如果拥有解密的密钥，只有在客户端进行反序列化时，才可以对密码进行读取，这样可以一定程度保证序列化对象的数据安全。
+
+#### ArrayList的序列化
+ArrayList源码：
+``` 
+public class ArrayList<E> extends AbstractList<E>
+implements List<E>, RandomAccess, Cloneable, java.io.Serializable
+{
+    private static final long serialVersionUID = 8683452581122892189L;
+    transient Object[] elementData;
+    private int size;
+}
+```
+ArrayList实现了java.io.Serializable接口，那么我们就可以对它进行序列化及反序列化。因为elementData是transient的，所以我们认为这个成员变量不会被序列化而保留下来。我们写一个Demo，验证一下我们的想法：
+``` 
+public static void main(String[] args) throws IOException, ClassNotFoundException {
+        List<String> stringList = new ArrayList<String>();
+        stringList.add("hello");
+        stringList.add("world");
+        System.out.println("init StringList" + stringList);
+        ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream("stringlist"));
+        objectOutputStream.writeObject(stringList);
+
+        IOUtils.close(objectOutputStream);
+        File file = new File("stringlist");
+        ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(file));
+        List<String> newStringList = (List<String>)objectInputStream.readObject();
+        IOUtils.close(objectInputStream);
+        if(file.exists()){
+            file.delete();
+        }
+        System.out.println("new StringList" + newStringList);
+    }
+```
+了解ArrayList的人都知道，ArrayList底层是通过数组实现的。那么数组elementData其实就是用来保存列表中的元素的。通过该属性的声明方式我们知道，他是无法通过序列化持久化下来的。那么为什么以上的结果却通过序列化和反序列化把List中的元素保留下来了呢
+
+在ArrayList中定义了来个方法： `writeObject()`和`readObject()`
+结论是：
+>在序列化过程中，如果被序列化的类中定义了writeObject 和 readObject 方法，虚拟机会试图调用对象类里的 writeObject 和 readObject 方法，进行用户自定义的序列化和反序列化。    
+ 如果没有这样的方法，则默认调用是 ObjectOutputStream 的 defaultWriteObject 方法以及 ObjectInputStream 的 defaultReadObject 方法。    
+ 用户自定义的 writeObject 和 readObject 方法可以允许用户控制序列化的过程，比如可以在序列化的过程中动态改变序列化的数值。
+ 
+ 这两个方法的具体实现：
+ ``` 
+ // readObject
+ private void readObject(java.io.ObjectInputStream s)
+         throws java.io.IOException, ClassNotFoundException {
+         elementData = EMPTY_ELEMENTDATA;
+ 
+         // Read in size, and any hidden stuff
+         s.defaultReadObject();
+ 
+         // Read in capacity
+         s.readInt(); // ignored
+ 
+         if (size > 0) {
+             // be like clone(), allocate array based upon size not capacity
+             ensureCapacityInternal(size);
+ 
+             Object[] a = elementData;
+             // Read in all elements in the proper order.
+             for (int i=0; i<size; i++) {
+                 a[i] = s.readObject();
+             }
+         }
+}
+
+// writeObject
+private void writeObject(java.io.ObjectOutputStream s)
+        throws java.io.IOException{
+        // Write out element count, and any hidden stuff
+        int expectedModCount = modCount;
+        s.defaultWriteObject();
+
+        // Write out size as capacity for behavioural compatibility with clone()
+        s.writeInt(size);
+
+        // Write out all elements in the proper order.
+        for (int i=0; i<size; i++) {
+            s.writeObject(elementData[i]);
+        }
+
+        if (modCount != expectedModCount) {
+            throw new ConcurrentModificationException();
+        }
+}
+ ```
+ 
+ ArrayList使用transient的原因:
+ 
+ ArrayList实际上是动态数组，每次在放满以后自动增长设定的长度值，如果数组自动增长长度设为100，而实际只放了一个元素，那就会序列化99个null元素。为了保证在序列化的时候不会将这么多null同时进行序列化，ArrayList把元素数组设置为transient
+ 
+ 结论：
+ 
+ 我们可以通过在被序列化的类中增加writeObject 和 readObject方法来自定义序列化
+
+参考资料：  
+- [IBM java I/O模型及优化建议](https://www.ibm.com/developerworks/cn/java/j-lo-io-optimize/index.html)
+- [java I/O流](http://blog.csdn.net/zhaoyanjun6/article/details/54292148)
+- [java I/O操作](https://www.cnblogs.com/baixl/p/4170599.html)
+- [java流总结](http://skye.fun/2017/11/11/JAVA%20IO%20%E6%B5%81%E8%AF%BB%E5%86%99%E6%80%BB%E7%BB%93/#more)
+- [字节流和字符流](http://www.cnblogs.com/absfree/p/5415092.html)
+- [Unicode字符集编码方式](https://www.cnblogs.com/benbenalin/p/6921553.html)
+- [理解java对象序列化](http://www.blogjava.net/jiangshachina/archive/2012/02/13/369898.html)
+- [深入分析java序列化](http://www.hollischuang.com/archives/1140)
