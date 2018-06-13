@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="mybatis," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="查询user表:  id  username …….. oder表： id   user_id number(订单编号) oder_detail表: id    orders_id   items_id    items_num items表： id  name price ……. 一对一查询实现用户表和订单表的查询，查询出某用户的订单信息  resultType方式  mapper.xml123">
+<meta name="keywords" content="mybatis">
+<meta property="og:type" content="article">
+<meta property="og:title" content="mybatis使用(查询使用)">
+<meta property="og:url" content="http://yoursite.com/2017/12/14/mybatis使用总结三/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="查询user表:  id  username …….. oder表： id   user_id number(订单编号) oder_detail表: id    orders_id   items_id    items_num items表： id  name price ……. 一对一查询实现用户表和订单表的查询，查询出某用户的订单信息  resultType方式  mapper.xml123">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2018-06-13T15:12:35.850Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="mybatis使用(查询使用)">
+<meta name="twitter:description" content="查询user表:  id  username …….. oder表： id   user_id number(订单编号) oder_detail表: id    orders_id   items_id    items_num items表： id  name price ……. 一对一查询实现用户表和订单表的查询，查询出某用户的订单信息  resultType方式  mapper.xml123">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/12/14/mybatis使用总结三/"/>
+
+
+
+
+
+  <title>mybatis使用(查询使用) | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/12/14/mybatis使用总结三/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">mybatis使用(查询使用)</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-12-14T17:13:44+08:00">
+                2017-12-14
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/spring/" itemprop="url" rel="index">
+                    <span itemprop="name">spring</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="查询"><a href="#查询" class="headerlink" title="查询"></a>查询</h3><p>user表:  id  username ……..</p>
+<p>oder表： id   user_id number(订单编号)</p>
+<p>oder_detail表: id    orders_id   items_id    items_num</p>
+<p>items表： id  name price …….</p>
+<h4 id="一对一查询"><a href="#一对一查询" class="headerlink" title="一对一查询"></a>一对一查询</h4><p>实现用户表和订单表的查询，查询出某用户的订单信息</p>
+<ul>
+<li>resultType方式</li>
+</ul>
+<p>mapper.xml<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">&lt;select id=&quot;findOrdersUser&quot;  resultType=&quot;com.iot.mybatis.po.OrdersCustom&quot;&gt;</span><br><span class="line">  SELECT</span><br><span class="line">      orders.*,</span><br><span class="line">      user.username,</span><br><span class="line">      user.sex,</span><br><span class="line">      user.address</span><br><span class="line">    FROM</span><br><span class="line">      orders,</span><br><span class="line">      user</span><br><span class="line">    WHERE orders.user_id = user.id</span><br><span class="line">&lt;/select&gt;</span><br></pre></td></tr></table></figure></p>
+<p>mapper.java<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">public List&lt;OrdersCustom&gt; findOrdersUser()throws Exception;</span><br></pre></td></tr></table></figure></p>
+<ul>
+<li>resultMap实现<br>使用resultMap将查询结果中的订单信息映射到Orders对象中，在orders类中添加User属性，将关联查询出来的用户信息映射到orders对象中的user属性中。</li>
+</ul>
+<p>mapper.xml<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line">&lt;!-- 订单查询关联用户的resultMap</span><br><span class="line">将整个查询的结果映射到com.iot.mybatis.po.Orders中</span><br><span class="line"> --&gt;</span><br><span class="line">&lt;resultMap type=&quot;com.iot.mybatis.po.Orders&quot; id=&quot;OrdersUserResultMap&quot;&gt;</span><br><span class="line">    &lt;!-- id：指定查询列中的唯一标识，订单信息的中的唯 一标识，如果有多个列组成唯一标识，配置多个id</span><br><span class="line">        column：订单信息的唯一标识列</span><br><span class="line">        property：订单信息的唯一标识列所映射到Orders中哪个属性</span><br><span class="line">      --&gt;</span><br><span class="line">    &lt;id column=&quot;id&quot; property=&quot;id&quot;/&gt;</span><br><span class="line">    &lt;result column=&quot;user_id&quot; property=&quot;userId&quot;/&gt;</span><br><span class="line">    &lt;result column=&quot;number&quot; property=&quot;number&quot;/&gt;</span><br><span class="line">    &lt;result column=&quot;createtime&quot; property=&quot;createtime&quot;/&gt;</span><br><span class="line">    &lt;result column=&quot;note&quot; property=&quot;note&quot;/&gt;</span><br><span class="line"></span><br><span class="line">    &lt;!-- 配置映射的关联的用户信息 --&gt;</span><br><span class="line">    &lt;!-- association：用于映射关联查询单个对象的信息</span><br><span class="line">    property：要将关联查询的用户信息映射到Orders中哪个属性</span><br><span class="line">     --&gt;</span><br><span class="line">    &lt;association property=&quot;user&quot;  javaType=&quot;com.iot.mybatis.po.User&quot;&gt;</span><br><span class="line">        &lt;!-- id：关联查询用户的唯 一标识</span><br><span class="line">        column：指定唯 一标识用户信息的列</span><br><span class="line">        javaType：映射到user的哪个属性</span><br><span class="line">         --&gt;</span><br><span class="line">        &lt;id column=&quot;user_id&quot; property=&quot;id&quot;/&gt;</span><br><span class="line">        &lt;result column=&quot;username&quot; property=&quot;username&quot;/&gt;</span><br><span class="line">        &lt;result column=&quot;sex&quot; property=&quot;sex&quot;/&gt;</span><br><span class="line">        &lt;result column=&quot;address&quot; property=&quot;address&quot;/&gt;</span><br><span class="line">    &lt;/association&gt;</span><br><span class="line">&lt;/resultMap&gt;</span><br><span class="line"></span><br><span class="line">statement定义：</span><br><span class="line">&lt;select id=&quot;findOrdersUserResultMap&quot; resultMap=&quot;OrdersUserResultMap&quot;&gt;</span><br><span class="line">    SELECT</span><br><span class="line">    orders.*,</span><br><span class="line">    user.username,</span><br><span class="line">    user.sex,</span><br><span class="line">    user.address</span><br><span class="line">    FROM</span><br><span class="line">    orders,</span><br><span class="line">    user</span><br><span class="line">    WHERE orders.user_id = user.id</span><br><span class="line">&lt;/select&gt;</span><br></pre></td></tr></table></figure></p>
+<p>mapper.java<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">public List&lt;Orders&gt; findOrdersUserResultMap()throws Exception;</span><br></pre></td></tr></table></figure></p>
+<h4 id="一对多查询"><a href="#一对多查询" class="headerlink" title="一对多查询"></a>一对多查询</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">SELECT </span><br><span class="line">  orders.*,</span><br><span class="line">  user.username,</span><br><span class="line">  user.sex,</span><br><span class="line">  user.address,</span><br><span class="line">  orderdetail.id as orderdetail_id,</span><br><span class="line">  orderdetail.items_id,</span><br><span class="line">  orderdetail.items_num,</span><br><span class="line">  orderdetail.orders_id</span><br><span class="line">FROM</span><br><span class="line">  orders,</span><br><span class="line">  user,</span><br><span class="line">  orderdetail</span><br><span class="line">WHERE orders.user_id = user.id AND orderdetail.orders_id=orders.id</span><br></pre></td></tr></table></figure>
+<p>由于一个订单对应多个商品，那么订单的信息就是重复的，可以在<code>order.java</code>中添加<code>List&lt;OrderDetail&gt; orderDetail</code>属性，订单信息映射到order中，订单详情映射到orderDetail属性当中</p>
+<p>使用resultMap来实现这个功能：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line">// 查询映射</span><br><span class="line">&lt;select id=&quot;findOrdersAndOrderDetailResultMap&quot; resultMap=&quot;OrdersAndOrderDetailResultMap&quot;&gt;</span><br><span class="line">   SELECT</span><br><span class="line">      orders.*,</span><br><span class="line">      user.username,</span><br><span class="line">      user.sex,</span><br><span class="line">      user.address,</span><br><span class="line">      orderdetail.id orderdetail_id,</span><br><span class="line">      orderdetail.items_id,</span><br><span class="line">      orderdetail.items_num,</span><br><span class="line">      orderdetail.orders_id</span><br><span class="line">    FROM</span><br><span class="line">      orders,</span><br><span class="line">      user,</span><br><span class="line">      orderdetail</span><br><span class="line">    WHERE orders.user_id = user.id AND orderdetail.orders_id=orders.id</span><br><span class="line">&lt;/select&gt;</span><br><span class="line"></span><br><span class="line">// resultMap映射</span><br><span class="line">&lt;resultMap type=&quot;com.iot.mybatis.po.Orders&quot; id=&quot;OrdersAndOrderDetailResultMap&quot; extends=&quot;OrdersUserResultMap&quot;&gt;</span><br><span class="line">    &lt;!-- 订单信息 --&gt;</span><br><span class="line">    &lt;!-- 用户信息 --&gt;</span><br><span class="line">    &lt;!-- 使用extends继承，不用在中配置订单信息和用户信息的映射 --&gt;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    &lt;!-- 订单明细信息</span><br><span class="line">    一个订单关联查询出了多条明细，要使用collection进行映射</span><br><span class="line">    collection：对关联查询到多条记录映射到集合对象中</span><br><span class="line">    property：将关联查询到多条记录映射到com.iot.mybatis.po.Orders哪个属性</span><br><span class="line">    ofType：指定映射到list集合属性中pojo的类型</span><br><span class="line">     --&gt;</span><br><span class="line">    &lt;collection property=&quot;orderdetails&quot; ofType=&quot;com.iot.mybatis.po.Orderdetail&quot;&gt;</span><br><span class="line">        &lt;!-- id：订单明细唯 一标识</span><br><span class="line">        property:要将订单明细的唯 一标识 映射到com.iot.mybatis.po.Orderdetail的哪个属性</span><br><span class="line">          --&gt;</span><br><span class="line">        &lt;id column=&quot;orderdetail_id&quot; property=&quot;id&quot;/&gt;</span><br><span class="line">        &lt;result column=&quot;items_id&quot; property=&quot;itemsId&quot;/&gt;</span><br><span class="line">        &lt;result column=&quot;items_num&quot; property=&quot;itemsNum&quot;/&gt;</span><br><span class="line">        &lt;result column=&quot;orders_id&quot; property=&quot;ordersId&quot;/&gt;</span><br><span class="line">    &lt;/collection&gt;</span><br><span class="line">&lt;/resultMap&gt;</span><br><span class="line">``` </span><br><span class="line">#### 多对多查询</span><br><span class="line">在查询用户以及购买商品的信息，是多对多的关系</span><br><span class="line">``` </span><br><span class="line">SELECT </span><br><span class="line">  orders.*,</span><br><span class="line">  user.username,</span><br><span class="line">  user.sex,</span><br><span class="line">  user.address,</span><br><span class="line">  orderdetail.id orderdetail_id,</span><br><span class="line">  orderdetail.items_id,</span><br><span class="line">  orderdetail.items_num,</span><br><span class="line">  orderdetail.orders_id,</span><br><span class="line">  items.name items_name,</span><br><span class="line">  items.detail items_detail,</span><br><span class="line">  items.price items_price</span><br><span class="line">FROM</span><br><span class="line">  orders,</span><br><span class="line">  user,</span><br><span class="line">  orderdetail,</span><br><span class="line">  items</span><br><span class="line">WHERE orders.user_id = user.id AND orderdetail.orders_id=orders.id AND orderdetail.items_id = items.id</span><br></pre></td></tr></table></figure>
+<p>将查询结果映射到User类</p>
+<p>User类中添加<code>List&lt;Order&gt; orderList</code>来保存用户的订单信息</p>
+<p>添加<code>List&lt;OrderDetail&gt; orderDetail</code>来保存订单明细</p>
+<p>在OrderDetail类中添加<code>Items</code>属性，保存订单明细所对应的商品</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line">&lt;select id=&quot;findUserAndItemsResultMap&quot; resultMap=&quot;UserAndItemsResultMap&quot;&gt;</span><br><span class="line">   SELECT</span><br><span class="line">      orders.*,</span><br><span class="line">      user.username,</span><br><span class="line">      user.sex,</span><br><span class="line">      user.address,</span><br><span class="line">      orderdetail.id orderdetail_id,</span><br><span class="line">      orderdetail.items_id,</span><br><span class="line">      orderdetail.items_num,</span><br><span class="line">      orderdetail.orders_id,</span><br><span class="line">      items.name items_name,</span><br><span class="line">      items.detail items_detail,</span><br><span class="line">      items.price items_price</span><br><span class="line">    FROM</span><br><span class="line">      orders,</span><br><span class="line">      user,</span><br><span class="line">      orderdetail,</span><br><span class="line">      items</span><br><span class="line">    WHERE orders.user_id = user.id AND orderdetail.orders_id=orders.id AND orderdetail.items_id = items.id</span><br><span class="line">&lt;/select&gt;</span><br><span class="line"></span><br><span class="line">&lt;resultMap type=&quot;com.iot.mybatis.po.User&quot; id=&quot;UserAndItemsResultMap&quot;&gt;</span><br><span class="line">    &lt;!-- 用户信息 --&gt;</span><br><span class="line">    &lt;id column=&quot;user_id&quot; property=&quot;id&quot;/&gt;</span><br><span class="line">    &lt;result column=&quot;username&quot; property=&quot;username&quot;/&gt;</span><br><span class="line">    &lt;result column=&quot;sex&quot; property=&quot;sex&quot;/&gt;</span><br><span class="line">    &lt;result column=&quot;address&quot; property=&quot;address&quot;/&gt;</span><br><span class="line"></span><br><span class="line">    &lt;!-- 订单信息</span><br><span class="line">    一个用户对应多个订单，使用collection映射</span><br><span class="line">     --&gt;</span><br><span class="line">    &lt;collection property=&quot;ordersList&quot; ofType=&quot;com.iot.mybatis.po.Orders&quot;&gt;</span><br><span class="line">        &lt;id column=&quot;id&quot; property=&quot;id&quot;/&gt;</span><br><span class="line">        &lt;result column=&quot;user_id&quot; property=&quot;userId&quot;/&gt;</span><br><span class="line">        &lt;result column=&quot;number&quot; property=&quot;number&quot;/&gt;</span><br><span class="line">        &lt;result column=&quot;createtime&quot; property=&quot;createtime&quot;/&gt;</span><br><span class="line">        &lt;result column=&quot;note&quot; property=&quot;note&quot;/&gt;</span><br><span class="line"></span><br><span class="line">        &lt;!-- 订单明细</span><br><span class="line">         一个订单包括 多个明细</span><br><span class="line">         --&gt;</span><br><span class="line">        &lt;collection property=&quot;orderdetails&quot; ofType=&quot;com.iot.mybatis.po.Orderdetail&quot;&gt;</span><br><span class="line">            &lt;id column=&quot;orderdetail_id&quot; property=&quot;id&quot;/&gt;</span><br><span class="line">            &lt;result column=&quot;items_id&quot; property=&quot;itemsId&quot;/&gt;</span><br><span class="line">            &lt;result column=&quot;items_num&quot; property=&quot;itemsNum&quot;/&gt;</span><br><span class="line">            &lt;result column=&quot;orders_id&quot; property=&quot;ordersId&quot;/&gt;</span><br><span class="line"></span><br><span class="line">            &lt;!-- 商品信息</span><br><span class="line">             一个订单明细对应一个商品</span><br><span class="line">             --&gt;</span><br><span class="line">            &lt;association property=&quot;items&quot; javaType=&quot;com.iot.mybatis.po.Items&quot;&gt;</span><br><span class="line">                &lt;id column=&quot;items_id&quot; property=&quot;id&quot;/&gt;</span><br><span class="line">                &lt;result column=&quot;items_name&quot; property=&quot;name&quot;/&gt;</span><br><span class="line">                &lt;result column=&quot;items_detail&quot; property=&quot;detail&quot;/&gt;</span><br><span class="line">                &lt;result column=&quot;items_price&quot; property=&quot;price&quot;/&gt;</span><br><span class="line">            &lt;/association&gt;</span><br><span class="line"></span><br><span class="line">        &lt;/collection&gt;</span><br><span class="line"></span><br><span class="line">    &lt;/collection&gt;</span><br><span class="line">&lt;/resultMap&gt;</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/mybatis/" rel="tag"><i class="fa fa-tag"></i> mybatis</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/12/13/mysql连接查询/" rel="next" title="mysql连接查询">
+                <i class="fa fa-chevron-left"></i> mysql连接查询
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/12/15/java遍历集合/" rel="prev" title="java增强循环">
+                java增强循环 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">一息尚存，则吾志不移</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">65</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">18</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#查询"><span class="nav-number">1.</span> <span class="nav-text">查询</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#一对一查询"><span class="nav-number">1.1.</span> <span class="nav-text">一对一查询</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#一对多查询"><span class="nav-number">1.2.</span> <span class="nav-text">一对多查询</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="rabbitMQ," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="AMQP关键性概念和流程 broker： 消息队列服务器实体 Exchange： 消息交换机，指定消息按照什么规则到哪个队列 Queue： 消息队列载体， 每个消息会被投放到一个或多个队列 Binding： 绑定，将Exchange和Queue按某种规则绑定起来 Routing Key： 路由关键字，Exchange按照这个关键字进行消息投递 vhost： 虚拟主机，一个broker可以开多个vh">
+<meta name="keywords" content="rabbitMQ">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RabbitMQ之AMQP">
+<meta property="og:url" content="http://yoursite.com/2017/10/19/RabbitMQ之AMQP/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="AMQP关键性概念和流程 broker： 消息队列服务器实体 Exchange： 消息交换机，指定消息按照什么规则到哪个队列 Queue： 消息队列载体， 每个消息会被投放到一个或多个队列 Binding： 绑定，将Exchange和Queue按某种规则绑定起来 Routing Key： 路由关键字，Exchange按照这个关键字进行消息投递 vhost： 虚拟主机，一个broker可以开多个vh">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://www.huangxiaobai.com/wp-content/uploads/2017/01/3178521620-57fba2b850ccc_articlex.png">
+<meta property="og:image" content="http://www.huangxiaobai.com/wp-content/uploads/2017/01/2741285098-57fba2ca6e2da_articlex.png">
+<meta property="og:image" content="http://www.huangxiaobai.com/wp-content/uploads/2017/01/4144211224-57fba2d656e45_articlex.png">
+<meta property="og:updated_time" content="2018-06-13T15:12:35.838Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="RabbitMQ之AMQP">
+<meta name="twitter:description" content="AMQP关键性概念和流程 broker： 消息队列服务器实体 Exchange： 消息交换机，指定消息按照什么规则到哪个队列 Queue： 消息队列载体， 每个消息会被投放到一个或多个队列 Binding： 绑定，将Exchange和Queue按某种规则绑定起来 Routing Key： 路由关键字，Exchange按照这个关键字进行消息投递 vhost： 虚拟主机，一个broker可以开多个vh">
+<meta name="twitter:image" content="http://www.huangxiaobai.com/wp-content/uploads/2017/01/3178521620-57fba2b850ccc_articlex.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/10/19/RabbitMQ之AMQP/"/>
+
+
+
+
+
+  <title>RabbitMQ之AMQP | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/10/19/RabbitMQ之AMQP/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">RabbitMQ之AMQP</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-10-19T19:15:41+08:00">
+                2017-10-19
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/RabbitMQ/" itemprop="url" rel="index">
+                    <span itemprop="name">RabbitMQ</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="AMQP关键性概念和流程"><a href="#AMQP关键性概念和流程" class="headerlink" title="AMQP关键性概念和流程"></a>AMQP关键性概念和流程</h3><ul>
+<li>broker： 消息队列服务器实体</li>
+<li>Exchange： 消息交换机，指定消息按照什么规则到哪个队列</li>
+<li>Queue： 消息队列载体， 每个消息会被投放到一个或多个队列</li>
+<li>Binding： 绑定，将Exchange和Queue按某种规则绑定起来</li>
+<li>Routing Key： 路由关键字，Exchange按照这个关键字进行消息投递</li>
+<li>vhost： 虚拟主机，一个broker可以开多个vhost，用作不同用户的权限分离</li>
+<li>producer：生产者，消息的投递程序</li>
+<li>consumer： 消费者， 消息的接受程序</li>
+<li>channel： 消息通道， 在客户端的每个连接都可以建立多个channel，每个channel代表一个会话任务</li>
+</ul>
+<p>AMQP消息模型如图所示：<br><img src="http://www.huangxiaobai.com/wp-content/uploads/2017/01/3178521620-57fba2b850ccc_articlex.png" alt="AMQP消息模型"><br>我们可以知道，消息的发送步骤：  </p>
+<ol>
+<li>消息生产者将消息发布（publish）到exchange中</li>
+<li>exchange根据队列的绑定关系（routes）将消息发布到不同的queue总</li>
+<li>AMQP根据订阅规则将消息发送给消费者或消费者自行根据需要从消息队列中获取消息</li>
+</ol>
+<p>消息队列的完整使用流程如下：  </p>
+<ol>
+<li>客户端连接到消息队列服务器，打开一个channel</li>
+<li>客户端声明一个queue，并设置相关属性</li>
+<li>客户端使用routing key， 并设置相关属性</li>
+<li>客户端使用routing key，在exchange和queue之间建立绑定关系</li>
+<li>客户端投递消息到exchange</li>
+</ol>
+<p>以上步骤exchange、queue、routingkey三个决定了从exchange到queue的唯一线路<br>6.当exchange接受到消息后，就根据消息的key和已经设置好的binding，进行消息路由，把消息投递到队列里面。</p>
+<h3 id="Exchange"><a href="#Exchange" class="headerlink" title="Exchange"></a>Exchange</h3><p>Exchange的任务主要是接受消息并将消息路由到0个或多个queue中，而路由的算法受到exchange类型和绑定（binding）的关系影响，AMQP提供了以下Exchange类型：</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>默认预定义的名字</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Direct Exchange</td>
+<td>空字符串和 amq.direct</td>
+</tr>
+<tr>
+<td>Fanout Exchange</td>
+<td>amq.fanout</td>
+</tr>
+<tr>
+<td>Topic Exchange</td>
+<td>amp.topic</td>
+</tr>
+<tr>
+<td>Headers Exchange</td>
+<td>amq.match(RabbitMQ中还有amq.headers)</td>
+</tr>
+</tbody>
+</table>
+<p>每个Exchange有以下属性：</p>
+<ul>
+<li>Name和Exchange的name</li>
+<li>Durability，是否为持久的Exchange，当为真时，broker重启后也会保留此Exchange</li>
+<li>Auto-delete， 当为真时，如果所有绑定的queue都不在使用时，此exchange会自动删除</li>
+</ul>
+<p>默认的exchange是由broker预创建的匿名（即名字是空字符）的direct exchange，对于简单的程序，默认的exchange有一个实用的属性：如果没有显式地绑定 Exchnge, 那么创建的每个 queue 都会自动绑定到这个默认的 exchagne 中, 并且此时这个 queue 的 route key 就是这个queue 的名字.</p>
+<h3 id="direct-Exchange"><a href="#direct-Exchange" class="headerlink" title="direct Exchange"></a>direct Exchange</h3><p><img src="http://www.huangxiaobai.com/wp-content/uploads/2017/01/2741285098-57fba2ca6e2da_articlex.png" alt=""><br>direct Exchange根据routing key把消息发送到不同的queue. direct exchange 适合用于消息的单播发送. direct exchange 的工作流程如下:</p>
+<ul>
+<li>一个 queue 使用 K 作为 route key 绑定到 direct exchange 中</li>
+<li>当direct exchange 收到一个 route key 为 R 的消息时, 如果 R == K, 则此 exchange 会将此消息路由到此 queue 中</li>
+</ul>
+<h3 id="fanout-Exchange"><a href="#fanout-Exchange" class="headerlink" title="fanout Exchange"></a>fanout Exchange</h3><p>一个 fanout exchange 会将消息分发给所有绑定到此 exchange 的 queue 中, 而不会考虑 queue 的 route key. 即如果有 N 个 Queue 绑定到一个 fanout exchange 时, 那么当此 exchange 收到消息时, 会将此消息分发到这 N 个 queue 中. 由于此性质, fanout exchange 也常用消息的广播<br><img src="http://www.huangxiaobai.com/wp-content/uploads/2017/01/4144211224-57fba2d656e45_articlex.png" alt=""></p>
+<h3 id="topic-Exchange"><a href="#topic-Exchange" class="headerlink" title="topic Exchange"></a>topic Exchange</h3><p>topic exchange 会根据 route key 将消息分发到与此消息的 route key 相匹配的并且绑定到此 exchagne 中的 queue 中(如果有多个 queue 使用了相同的 route key 绑定到此 exchange, 那么这些 queue 都会收到消息). 根据此性质, topic exchange 经常用于实现 publish/subscribe 模型, 即消息的多播模型.</p>
+<h3 id="header-exchange"><a href="#header-exchange" class="headerlink" title="header exchange"></a>header exchange</h3><p>header exchange 不使用 route key 作为路由的依据, 而是使用消息头属性来路由消息.</p>
+<h3 id="queue-队列"><a href="#queue-队列" class="headerlink" title="queue 队列"></a>queue 队列</h3><p>AMQP 中的 队列 的概念和其他消息队列中 队列 的概念类似, 它有如下几个重要的概念:</p>
+<ul>
+<li>Name, 名字</li>
+<li>Durable, 是否是持久的. 当为真时, 即使 broker 重启时, 此 queue 也不会被删除.</li>
+<li>Exclusive, 是否是独占的, 当为真时, 表示此 queue 只能有一个消费者, 并且当此消费者的连接断开时, 此 queue 会被删除.</li>
+<li>Auto-delete, 当为真时, 此 队列 会在最后一个消费者取消订阅时被删除.<br>在使用一个队列时, 需要先进行声明. 如果我们声明的队列不存在, 那么 broker 就会自动创建它. 不过如果此队列已经存在时, 我们就需要注意了, 若我们声明的队列的属性和已存在的队列的属性一致, 则不会有任何的问题, 但是如果先后两次声明的队列的属性不一致, 则会有 PRECONDITION_FAILED 错误(错误码为406).</li>
+</ul>
+<p>队列名：AMQP 的队列名不能以 “amq.” 开头, 因为这样的队列名是 AMQP broker 内部所使用的. 当我们使用了这样的队列名时, 那么会有一个 ACCESS_REFUSED 错误(错误码为 403)</p>
+<p>持久队列：持久队列会被持久化到磁盘中, 因此即使 broker 重启了, 持久队列也依然存在.不过需要注意的是, 不要将持久队列和消息的持久化混淆. 当 broker 重启时, 持久队列会自动重新声明, 然而只有队列中的持久化消息(persistent message)才会被恢复.</p>
+<p>队列绑定：队列的绑定关系是 exchagne 用于消息路由的规则, 即一个 exchange 能够将消息路由到某个队列的前提是此队列已经绑定到这个 exchange 中了. 当队列绑定到一个 exchange 中时, 我们还可以设置一个额外的参数, 即 route key, 这个 key 会被 direct exchange 和 topic exchange 作为额外的路由信息而使用, 换句话说, route key 扮演着过滤器的角色.当一个消息没有被路由到任意的队列时(例如此 exchange 没有任何的 queue 绑定着), 那么此时会根据消息的属性来决定是将此消息丢弃还是返回给生产者.</p>
+<h3 id="消费者"><a href="#消费者" class="headerlink" title="消费者"></a>消费者</h3><p>消费者支持两种消费分发模式：</p>
+<ul>
+<li>push 模式, 即 broker 主动推送消息给消费者</li>
+<li>pull 模式, 即消费者主动从 broker 中拉取消息</li>
+</ul>
+<p>在 push 模式时, 应用程序需要告知 broker 它对哪些消息感兴趣, 即也就是我们所说的订阅一个消息主题. 每个消费者都有一个惟一的标识符, 即consumer tag, 我们可以用这个 tag 来取消一个消费者对某个主题的订阅(unsubscribe).</p>
+<h3 id="消息ACK"><a href="#消息ACK" class="headerlink" title="消息ACK"></a>消息ACK</h3><p>AMQP有两种ACK模式：</p>
+<ul>
+<li>手动ACK</li>
+<li>自动ACK</li>
+</ul>
+<p>在自动 ACK 模式下, 当 broker 发送消息成功后, 会立即将此消息从消息队列中删除, 而不会等待消费者的 ACK 回复. 而在手动 ACK 模式下, 当 broker 发送消息给消费者时, 不会立即将此消息删除, 而是需要等待消费者的 ACK 回复后才会删除消息. 因此在手动 ACK 模式下, 当消费者收到消息并处理完成后, 需要向 broker 显示地发送 ACK 指令.在手动 ACK 模式下, 如果消费者因为意外的 crash 而没有发送 ACK 给 broker, 那么此时 broker 会将此消息转发给其他的消费者(如果此时没有消费者了, 那么 broker 会缓存此消息, 直到有新的消费者注册).</p>
+<h3 id="拒绝消息"><a href="#拒绝消息" class="headerlink" title="拒绝消息"></a>拒绝消息</h3><p>当一个消费者处理消息失败或此时不能处理消息时, 那么可以给 broker 发送一个拒绝消息的指令, 并且可以要求 broker 丢弃或重新分发此消息.不过需要注意的是, 如果此时只有一个消费者, 那么当此消费者拒收消息并要求 broker 重新分发此消息时, 那么就会造成了此消息不断地分发和拒收, 形成了死循环.</p>
+<h3 id="预取消息"><a href="#预取消息" class="headerlink" title="预取消息"></a>预取消息</h3><p>通过预取消息机制, 消费者可以一次性批量取出消息, 然后在处理后对这些批量消息进行统一的 ACK 回复, 这样可以提高消息的吞吐量.不过, 需要注意的时, RabbitMQ 仅支持 channel 级别的预取消息的数量配置, 不支持基于连接的预取消息数量配置</p>
+<h3 id="通道-Channel"><a href="#通道-Channel" class="headerlink" title="通道(Channel)"></a>通道(Channel)</h3><p>AMQP 不推荐一个应用程序发起多个对 broker 的连接, 因为这样会消耗系统资源并且也不利于防火墙的配置. 但是如果应用程序确实需要有多个不互相干扰的连接来进行不同的操作时该怎么办呢? 为了解决这个问题, AMQP 引入了 Channel 的 概念. 在 AMQP 0-9-1 中, 一个与 broker 的连接是被多个 Channel 复用的, 因此我们可以将 channel 理解为: 一个共享同一个 TCP 连接的轻量级的连接.</p>
+<p>基于同一个 TCP 连接的两个不同的 channel 直接是不会有任何的干扰的(在逻辑上可以等效地理解为两个独立的连接), 因此客户端和 broker 之间交互时, 需要附带上 channel id.通常来说, 在一个多线程消费消息的模型中, 每个线程单独打开一个 channel 是一个推荐的做法, 而最好不要在各个线程中共享一个 channel.</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/rabbitMQ/" rel="tag"><i class="fa fa-tag"></i> rabbitMQ</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/10/18/消息队列/" rel="next" title="消息队列">
+                <i class="fa fa-chevron-left"></i> 消息队列
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/10/22/PHP使用RabbitMQ之安装使用/" rel="prev" title="PHP使用RabbitMQ之安装使用">
+                PHP使用RabbitMQ之安装使用 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">一息尚存，则吾志不移</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">65</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">18</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#AMQP关键性概念和流程"><span class="nav-number">1.</span> <span class="nav-text">AMQP关键性概念和流程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Exchange"><span class="nav-number">2.</span> <span class="nav-text">Exchange</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#direct-Exchange"><span class="nav-number">3.</span> <span class="nav-text">direct Exchange</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#fanout-Exchange"><span class="nav-number">4.</span> <span class="nav-text">fanout Exchange</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#topic-Exchange"><span class="nav-number">5.</span> <span class="nav-text">topic Exchange</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#header-exchange"><span class="nav-number">6.</span> <span class="nav-text">header exchange</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#queue-队列"><span class="nav-number">7.</span> <span class="nav-text">queue 队列</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#消费者"><span class="nav-number">8.</span> <span class="nav-text">消费者</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#消息ACK"><span class="nav-number">9.</span> <span class="nav-text">消息ACK</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#拒绝消息"><span class="nav-number">10.</span> <span class="nav-text">拒绝消息</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#预取消息"><span class="nav-number">11.</span> <span class="nav-text">预取消息</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#通道-Channel"><span class="nav-number">12.</span> <span class="nav-text">通道(Channel)</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="mysql," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="概述MySQL各存储引擎使用了三种类型（级别）的锁定机制：表级锁定，行级锁定和页级锁定 表级锁定(table-level)颗粒度最大的锁定机制，该锁定机制实现非常简单，带来的系统负面影响最小，所以获取和释放锁的速度很快。由于表级锁一次会将整个表锁定，所以可以很好的避免困扰我们的死锁问题。 当然，锁定颗粒度大所带来最大的负面影响就是出现锁定资源争用的概率也会最高，致使并大度大打折扣。使用表级锁定的主">
+<meta name="keywords" content="mysql">
+<meta property="og:type" content="article">
+<meta property="og:title" content="mysql锁">
+<meta property="og:url" content="http://yoursite.com/2017/12/03/mysql锁/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="概述MySQL各存储引擎使用了三种类型（级别）的锁定机制：表级锁定，行级锁定和页级锁定 表级锁定(table-level)颗粒度最大的锁定机制，该锁定机制实现非常简单，带来的系统负面影响最小，所以获取和释放锁的速度很快。由于表级锁一次会将整个表锁定，所以可以很好的避免困扰我们的死锁问题。 当然，锁定颗粒度大所带来最大的负面影响就是出现锁定资源争用的概率也会最高，致使并大度大打折扣。使用表级锁定的主">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2018-06-13T15:12:35.855Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="mysql锁">
+<meta name="twitter:description" content="概述MySQL各存储引擎使用了三种类型（级别）的锁定机制：表级锁定，行级锁定和页级锁定 表级锁定(table-level)颗粒度最大的锁定机制，该锁定机制实现非常简单，带来的系统负面影响最小，所以获取和释放锁的速度很快。由于表级锁一次会将整个表锁定，所以可以很好的避免困扰我们的死锁问题。 当然，锁定颗粒度大所带来最大的负面影响就是出现锁定资源争用的概率也会最高，致使并大度大打折扣。使用表级锁定的主">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/12/03/mysql锁/"/>
+
+
+
+
+
+  <title>mysql锁 | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/12/03/mysql锁/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">mysql锁</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-12-03T21:54:48+08:00">
+                2017-12-03
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mysql/" itemprop="url" rel="index">
+                    <span itemprop="name">mysql</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><p>MySQL各存储引擎使用了三种类型（级别）的锁定机制：表级锁定，行级锁定和页级锁定</p>
+<h4 id="表级锁定-table-level"><a href="#表级锁定-table-level" class="headerlink" title="表级锁定(table-level)"></a>表级锁定(table-level)</h4><p>颗粒度最大的锁定机制，该锁定机制实现非常简单，带来的系统负面影响最小，所以获取和释放锁的速度很快。由于表级锁一次会将整个表锁定，所以可以很好的避免困扰我们的死锁问题。</p>
+<p>当然，锁定颗粒度大所带来最大的负面影响就是出现锁定资源争用的概率也会最高，致使并大度大打折扣。<br>使用表级锁定的主要是MyISAM，MEMORY，CSV等一些非事务性存储引擎</p>
+<h4 id="行级锁定-row-level"><a href="#行级锁定-row-level" class="headerlink" title="行级锁定(row-level)"></a>行级锁定(row-level)</h4><p>锁定颗粒度最小的，锁定资源争用的概率也最小，能够给予应用程序尽可能大的并发处理能力而提高一些需要高并发应用系统的整体性能。</p>
+<p>虽然能够在并发处理能力上面有较大的优势，但是行级锁定也因此带来了不少弊端。由于锁定资源的颗粒度很小，所以每次获取锁和释放锁需要做的事情也更多，带来的消耗自然也就更大了。此外，行级锁定也最容易发生死锁。</p>
+<p>使用行级锁定的主要是Innodb存储引擎</p>
+<h4 id="页级锁定"><a href="#页级锁定" class="headerlink" title="页级锁定"></a>页级锁定</h4><p>页级锁定是MySQL中比较独特的一种锁定级别，在其他数据库管理软件中也并不是太常见。页级锁定的特点是锁定颗粒度介于行级锁定与表级锁之间，所以获取锁定所需要的资源开销，以及所能提供的并发处理能力也同样是介于上面二者之间。另外，页级锁定和行级锁定一样，会发生死锁</p>
+<h4 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h4><ul>
+<li>表级锁：开销小，加锁快；不会出现死锁；锁定粒度大，发生锁冲突的概率最高，并发度最低</li>
+<li>行级锁：开销大，加锁慢；会出现死锁；锁定粒度最小，发生锁冲突的概率最低，并发度也最高</li>
+<li>页面锁：开销和加锁时间界于表锁和行锁之间；会出现死锁；锁定粒度界于表锁和行锁之间，并发度一般</li>
+</ul>
+<h3 id="表级锁定"><a href="#表级锁定" class="headerlink" title="表级锁定"></a>表级锁定</h3><p>MyISAM存储引擎使用的锁定机制完全是MySQL表级锁定</p>
+<h4 id="MySQL表级锁模式"><a href="#MySQL表级锁模式" class="headerlink" title="MySQL表级锁模式"></a>MySQL表级锁模式</h4><ul>
+<li>共享读锁：不会阻塞其他用户对同一表的读请求，但会阻塞对同一表的写请求</li>
+<li>共享写锁：阻塞其他用户对同一表的读和写操作</li>
+</ul>
+<h4 id="如果加表锁"><a href="#如果加表锁" class="headerlink" title="如果加表锁"></a>如果加表锁</h4><p>MyISAM在执行查询语句（SELECT）前，会自动给涉及的所有表加读锁，在执行更新操作（UPDATE、DELETE、INSERT等）前，会自动给涉及的表加写锁，这个过程并不需要用户干预，因此，用户一般不需要直接用LOCK TABLE命令给MyISAM表显式加锁</p>
+<h4 id="MyIsam表锁优化"><a href="#MyIsam表锁优化" class="headerlink" title="MyIsam表锁优化"></a>MyIsam表锁优化</h4><p>表级锁定实现成本小，本身消耗的资源是最小的，但是锁的粒度比较大，产生的竞争也是最大的，会很大程度影响并发能力，优化myisam引擎时，关键就是提升其并发能力。由于锁的粒度是不能改变的，只能让锁的时间尽可能变短，然后让操作尽可能的并发 </p>
+<p>1.查询表级锁争用情况<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"> show status like &apos;table_lock%&apos;;</span><br><span class="line">+-----------------------+-------+</span><br><span class="line">| Variable_name         | Value |</span><br><span class="line">+-----------------------+-------+</span><br><span class="line">| Table_locks_immediate | 127   |</span><br><span class="line">| Table_locks_waited    | 0     |</span><br><span class="line">+-----------------------+-------+</span><br></pre></td></tr></table></figure></p>
+<ul>
+<li>Table_locks_immediate：产生表级锁定的次数</li>
+<li>Table_locks_waited：出现表级锁定争用而发生等待的次数</li>
+</ul>
+<p>2.缩短锁定时间</p>
+<p>主要是缩短query的时间：</p>
+<ul>
+<li>减少大的复杂的query，拆分成小的query</li>
+<li>建立高效的索引，让数据检索更迅速</li>
+</ul>
+<p>3.分离并行能力<br>myisam的表锁是相互阻塞的表锁，看起来是一个串行的，但是MyIsam存储引擎提供了一个特性：ConcurrentInsert(并行插入)。concurrent_insert有三个值：</p>
+<ul>
+<li>0： 不允许并发插入</li>
+<li>1： 如果MyISAM表中没有空洞（即表的中间没有被删除的行），MyISAM允许在一个进程读表的同时，另一个进程从表尾插入记录。这也是MySQL的默认设置</li>
+<li>2： 无论MyISAM表中有没有空洞，都允许在表尾并发插入记录</li>
+</ul>
+<p>4.合理利用读写优先级<br>默认情况下，写锁的优先级是大于读锁的。一个进程请求读锁，另一个进程同时请求同一个表的写锁，写进程会先获得锁。</p>
+<h3 id="行级锁定"><a href="#行级锁定" class="headerlink" title="行级锁定"></a>行级锁定</h3><p>行级锁定是Innodb实现的</p>
+<h4 id="Innodb锁定模式以及实现机制"><a href="#Innodb锁定模式以及实现机制" class="headerlink" title="Innodb锁定模式以及实现机制"></a>Innodb锁定模式以及实现机制</h4><p>Innodb行级锁分为共享锁和排他锁，为了让行级锁定和表级锁定共存，innodb也使用了意向锁(表级锁定)的概念，也就有了意向共享锁和意向排他锁这两种</p>
+<p>当一个事务需要给自己需要的某个资源加锁的时候，如果遇到一个共享锁正锁定着自己需要的资源的时候，自己可以再加一个共享锁，不过不能加排他锁。如果遇到自己需要锁定的资源已经被一个排他锁占有之后，则只能等待该锁定释放资源之后自己才能获取锁定资源并添加自己的锁定。</p>
+<p>意向锁的作用就是当一个事务在需要获取资源锁定的时候，如果遇到自己需要的资源已经被排他锁占用的时候，该事务可以需要锁定行的表上面添加一个合适的意向锁。如果自己需要一个共享锁，那么就在表上面添加一个意向共享锁。而如果自己需要的是某行（或者某些行）上面添加一个排他锁的话，则先在表上面添加一个意向排他锁。意向共享锁可以同时并存多个，但是意向排他锁同时只能有一个存在。</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th style="text-align:left">共享锁(S)</th>
+<th style="text-align:left">排他锁(X)</th>
+<th style="text-align:left">意向共享锁(IS)</th>
+<th style="text-align:left">意向排他锁(IX)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>共享锁(s)</td>
+<td style="text-align:left">兼容</td>
+<td style="text-align:left">冲突</td>
+<td style="text-align:left">兼容</td>
+<td style="text-align:left">冲突</td>
+</tr>
+<tr>
+<td>排他锁(X)</td>
+<td style="text-align:left">冲突</td>
+<td style="text-align:left">冲突</td>
+<td style="text-align:left">冲突</td>
+<td style="text-align:left">冲突</td>
+</tr>
+<tr>
+<td>意向共享锁(IS)</td>
+<td style="text-align:left">兼容</td>
+<td style="text-align:left">冲突</td>
+<td style="text-align:left">兼容</td>
+<td style="text-align:left">兼容</td>
+</tr>
+<tr>
+<td>意向排他锁(IX)</td>
+<td style="text-align:left">冲突</td>
+<td style="text-align:left">冲突</td>
+<td style="text-align:left">兼容</td>
+<td style="text-align:left">兼容</td>
+</tr>
+</tbody>
+</table>
+<p>如果一个事务请求的锁模式与当前的锁兼容，InnoDB就将请求的锁授予该事务；反之，如果两者不兼容，该事务就要等待锁释放</p>
+<p>意向锁是InnoDB自动加的，不需用户干预。对于UPDATE、DELETE和INSERT语句，InnoDB会自动给涉及数据集加排他锁（X)；对于普通SELECT语句，InnoDB不会加任何锁；</p>
+<p>事务可以通过以下语句给记录集加锁：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">共享锁（S）：SELECT * FROM table_name WHERE ... LOCK IN SHARE MODE</span><br><span class="line">排他锁（X)：SELECT * FROM table_name WHERE ... FOR UPDATE</span><br></pre></td></tr></table></figure></p>
+<h4 id="Innodb行锁的实现"><a href="#Innodb行锁的实现" class="headerlink" title="Innodb行锁的实现"></a>Innodb行锁的实现</h4><p>InnoDB行锁是通过给索引上的索引项加锁来实现的，只有通过索引条件检索数据，InnoDB才使用行级锁，否则，InnoDB将使用表锁</p>
+<ul>
+<li>在不通过索引条件查询的时候，InnoDB确实使用的是表锁，而不是行锁</li>
+<li>由于MySQL的行锁是针对索引加的锁，不是针对记录加的锁，所以虽然是访问不同行的记录，但是如果是使用相同的索引键，是会出现锁冲突的</li>
+<li>当表有多个索引的时候，不同的事务可以使用不同的索引锁定不同的行，另外，不论是使用主键索引、唯一索引或普通索引，InnoDB都会使用行锁来对数据加锁</li>
+<li>便在条件中使用了索引字段，但是否使用索引来检索数据是由MySQL通过判断不同执行计划的代价来决定的，如果MySQL认为全表扫描效率更高，比如对一些很小的表，它就不会使用索引，这种情况下InnoDB将使用表锁，而不是行锁。因此，在分析锁冲突时，别忘了检查SQL的执行计划，以确认是否真正使用了索引</li>
+</ul>
+<h4 id="间隙锁-next-key"><a href="#间隙锁-next-key" class="headerlink" title="间隙锁(next-key)"></a>间隙锁(next-key)</h4><p>当我们用范围条件而不是相等条件检索数据，并请求共享或排他锁时，InnoDB会给符合条件的已有数据记录的索引项加锁；</p>
+<p>对于键值在条件范围内但并不存在的记录，叫做“间隙（GAP)”，InnoDB也会对这个“间隙”加锁，这种锁机制就是所谓的间隙锁（Next-Key锁）。例如：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">emp表中只有101条记录，其empid的值分别是 1,2,...,100,101:</span><br><span class="line">select * from emp where empid &gt; 100 for update;</span><br><span class="line"></span><br><span class="line">这是一个范围条件的检索，InnoDB不仅会对符合条件的empid值为101的记录加锁，也会对empid大于101（这些记录并不存在）的“间隙”加锁</span><br></pre></td></tr></table></figure></p>
+<p>间隙锁的目的是：</p>
+<ul>
+<li>防止幻读：以满足相关隔离级别的要求。对于上面的例子，要是不使用间隙锁，如果其他事务插入了empid大于100的任何记录，那么本事务如果再次执行上述语句，就会发生幻读</li>
+<li>满足恢复和复制的需要：在使用范围条件检索并锁定记录时，即使某些不存在的键值也会被无辜的锁定，而造成在锁定的时候无法插入锁定键值范围内的任何数据。在某些场景下这可能会对性能造成很大的危害。除了间隙锁给InnoDB带来性能的负面影响之外，通过索引实现锁定的方式还存在其他几个较大的性能隐患：<ul>
+<li>当Query无法利用索引的时候，InnoDB会放弃使用行级别锁定而改用表级别的锁定，造成并发性能的降低</li>
+<li>当Query使用的索引并不包含所有过滤条件的时候，数据检索使用到的索引键所只想的数据可能有部分并不属于该Query的结果集的行列，但是也会被锁定，因为间隙锁锁定的是一个范围，而不是具体的索引键；</li>
+<li>当Query在使用索引定位数据的时候，如果使用的索引键一样但访问的数据行不同的时候（索引只是过滤条件的一部分），一样会被锁定</li>
+</ul>
+</li>
+</ul>
+<h4 id="死锁"><a href="#死锁" class="headerlink" title="死锁"></a>死锁</h4><p>在myisam引擎是deadlock free的，因为myisam一次获得所需的全部锁，要么全部满足，要么等待，所以是不会有死锁。</p>
+<p>在innodb中，锁是逐步获得的，当两个事物都需要获得对方的排他锁才能完成事物时，就会循环等待，造成死锁。</p>
+<p>在InnoDB的事务管理和锁定机制中，有专门检测死锁的机制，会在系统中产生死锁之后的很短时间内就检测到该死锁的存在。当InnoDB检测到系统中产生了死锁之后，InnoDB会通过相应的判断来选这产生死锁的两个事务中较小的事务来回滚，而让另外一个较大的事务成功完成。Innodb是根据事物回滚的记录大小来判断的，也就是事物改变的记录越多，在死锁中就越不会被回滚掉。</p>
+<p>但是当产生死锁的场景中涉及到不止InnoDB存储引擎的时候，InnoDB是没办法检测到该死锁的，这时候就只能通过锁定超时限制参数InnoDB_lock_wait_timeout来解决。</p>
+<h5 id="避免死锁的方法"><a href="#避免死锁的方法" class="headerlink" title="避免死锁的方法"></a>避免死锁的方法</h5><ul>
+<li>在应用中，如果不同的程序会并发存取多个表，应尽量约定以相同的顺序来访问表，这样可以大大降低产生死锁的机会</li>
+<li>在程序以批量方式处理数据的时候，如果事先对数据排序，保证每个线程按固定的顺序来处理记录，也可以大大降低出现死锁的可能</li>
+<li>在事务中，如果要更新记录，应该直接申请足够级别的锁，即排他锁，而不应先申请共享锁，更新时再申请排他锁，因为当用户申请排他锁时，其他事务可能又已经获得了相同记录的共享锁，从而造成锁冲突，甚至死锁</li>
+<li>在REPEATABLE-READ隔离级别下，如果两个线程同时对相同条件记录用SELECT…FOR UPDATE加排他锁，在没有符合该条件记录情况下，两个线程都会加锁成功。程序发现记录尚不存在，就试图插入一条新记录，如果两个线程都这么做，就会出现死锁。这种情况下，将隔离级别改成READ COMMITTED，就可避免问题。</li>
+<li>当隔离级别为READ COMMITTED时，如果两个线程都先执行SELECT…FOR UPDATE，判断是否存在符合条件的记录，如果没有，就插入记录。此时，只有一个线程能插入成功，另一个线程会出现锁等待，当第1个线程提交后，第2个线程会因主键重出错，但虽然这个线程出错了，却会获得一个排他锁。这时如果有第3个线程又来申请排他锁，也会出现死锁。对于这种情况，可以直接做插入操作，然后再捕获主键重异常，或者在遇到主键重错误时，总是执行ROLLBACK释放获得的排他锁</li>
+</ul>
+<h4 id="innodb使用表锁的情况"><a href="#innodb使用表锁的情况" class="headerlink" title="innodb使用表锁的情况"></a>innodb使用表锁的情况</h4><p>innodb大部分情况应该使用行级锁，以下这些情况也可以考虑使用表级锁：</p>
+<ul>
+<li>事务需要更新大部分或全部数据，表又比较大，如果使用默认的行锁，不仅这个事务执行效率低，而且可能造成其他事务长时间锁等待和锁冲突，这种情况下可以考虑使用表锁来提高该事务的执行速度</li>
+<li>事务涉及多个表，比较复杂，很可能引起死锁，造成大量事务回滚。这种情况也可以考虑一次性锁定事务涉及的表，从而避免死锁、减少数据库因事务回滚带来的开销</li>
+</ul>
+<p>如果以上的情况太多，应该考虑myisam表了。</p>
+<p>在innodb中使用表锁：</p>
+<ul>
+<li>使用LOCK TABLES虽然可以给InnoDB加表级锁，但必须说明的是，表锁不是由InnoDB存储引擎层管理的，而是由其上一层──MySQL Server负责的，仅当autocommit=0、InnoDB_table_locks=1（默认设置）时，InnoDB层才能知道MySQL加的表锁，MySQL Server也才能感知InnoDB加的行锁，这种情况下，InnoDB才能自动识别涉及表级锁的死锁，否则，InnoDB将无法自动检测并处理这种死锁</li>
+<li>在用 LOCK TABLES对InnoDB表加锁时要注意，要将AUTOCOMMIT设为0，否则MySQL不会给表加锁；事务结束前，不要用UNLOCK TABLES释放表锁，因为UNLOCK TABLES会隐含地提交事务；COMMIT或ROLLBACK并不能释放用LOCK TABLES加的表级锁，必须用UNLOCK TABLES释放表锁。 例如：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">写t1并从t2读</span><br><span class="line">SET AUTOCOMMIT=0;</span><br><span class="line">LOCK TABLES t1 WRITE, t2 READ, ...;</span><br><span class="line">[do something with tables t1 and t2 here];</span><br><span class="line">COMMIT;</span><br><span class="line">UNLOCK TABLES;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h4 id="innodb锁的优化和注意点"><a href="#innodb锁的优化和注意点" class="headerlink" title="innodb锁的优化和注意点"></a>innodb锁的优化和注意点</h4><p>innoDB存储引擎由于实现了行级锁定，虽然在锁定机制的实现方面所带来的性能损耗可能比表级锁定会要更高一些，但是在整体并发处理能力方面要远远优于MyISAM的表级锁定的。当系统并发量较高的时候，InnoDB的整体性能和MyISAM相比就会有比较明显的优势了。但是，InnoDB的行级锁定同样也有其脆弱的一面，当我们使用不当的时候，可能会让InnoDB的整体性能表现不仅不能比MyISAM高，甚至可能会更差</p>
+<ol>
+<li>使用行级锁定：<ul>
+<li>尽可能让所有的数据检索都通过索引来完成，从而避免InnoDB因为无法通过索引键加锁而升级为表级锁定</li>
+<li>合理设计索引，让InnoDB在索引键上面加锁的时候尽可能准确，尽可能的缩小锁定范围，避免造成不必要的锁定而影响其他Query的执行</li>
+<li>尽可能减少基于范围的数据检索过滤条件，避免因为间隙锁带来的负面影响而锁定了不该锁定的记录</li>
+<li>尽量控制事务的大小，减少锁定的资源量和锁定时间长度</li>
+<li>在业务环境允许的情况下，尽量使用较低级别的事务隔离，以减少MySQL因为实现事务隔离级别所带来的附加成本<h5 id="innodb减少死锁"><a href="#innodb减少死锁" class="headerlink" title="innodb减少死锁"></a>innodb减少死锁</h5></li>
+</ul>
+</li>
+</ol>
+<ul>
+<li>类似业务模块中，尽可能按照相同的访问顺序来访问，防止产生死锁</li>
+<li>在同一个事务中，尽可能做到一次锁定所需要的所有资源，减少死锁产生概率</li>
+<li>对于非常容易产生死锁的业务部分，可以尝试使用升级锁定颗粒度，通过表级锁定来减少死锁产生的概率</li>
+</ul>
+<h5 id="innodb行锁争夺情况"><a href="#innodb行锁争夺情况" class="headerlink" title="innodb行锁争夺情况"></a>innodb行锁争夺情况</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">show status like &apos;InnoDB_row_lock%&apos;;</span><br><span class="line">+-------------------------------+-------+</span><br><span class="line">| Variable_name                 | Value |</span><br><span class="line">+-------------------------------+-------+</span><br><span class="line">| Innodb_row_lock_current_waits | 0     |</span><br><span class="line">| Innodb_row_lock_time          | 0     |</span><br><span class="line">| Innodb_row_lock_time_avg      | 0     |</span><br><span class="line">| Innodb_row_lock_time_max      | 0     |</span><br><span class="line">| Innodb_row_lock_waits         | 0     |</span><br><span class="line">+-------------------------------+-------+</span><br></pre></td></tr></table></figure>
+<ul>
+<li>InnoDB_row_lock_current_waits：当前正在等待锁定的数量；</li>
+<li>InnoDB_row_lock_time：从系统启动到现在锁定总时间长度；</li>
+<li>InnoDB_row_lock_time_avg：每次等待所花平均时间；</li>
+<li>InnoDB_row_lock_time_max：从系统启动到现在等待最常的一次所花的时间；</li>
+<li>InnoDB_row_lock_waits：系统启动后到现在总共等待的次数；</li>
+</ul>
+<p>对于这5个状态变量，比较重要的主要是InnoDB_row_lock_time_avg（等待平均时长），InnoDB_row_lock_waits（等待总次数）以及InnoDB_row_lock_time（等待总时长）这三项。尤其是当等待次数很高，而且每次等待时长也不小的时候，我们就需要分析系统中为什么会有如此多的等待，然后根据分析结果着手指定优化计划。</p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="http://www.cnblogs.com/luyucheng/p/6297752.html" target="_blank" rel="noopener">mysql锁详解</a></li>
+<li><a href="http://www.jianshu.com/p/163c96983ca9" target="_blank" rel="noopener">mysql优化笔记</a></li>
+<li><a href="http://www.cnblogs.com/ggjucheng/archive/2012/11/14/2770445.html" target="_blank" rel="noopener">mysql数据库锁定机制</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/mysql/" rel="tag"><i class="fa fa-tag"></i> mysql</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/12/02/mysql事务/" rel="next" title="mysql事务">
+                <i class="fa fa-chevron-left"></i> mysql事务
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/12/04/mysql索引/" rel="prev" title="mysql索引">
+                mysql索引 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">一息尚存，则吾志不移</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">65</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">18</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#表级锁定-table-level"><span class="nav-number">1.1.</span> <span class="nav-text">表级锁定(table-level)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#行级锁定-row-level"><span class="nav-number">1.2.</span> <span class="nav-text">行级锁定(row-level)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#页级锁定"><span class="nav-number">1.3.</span> <span class="nav-text">页级锁定</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#总结"><span class="nav-number">1.4.</span> <span class="nav-text">总结</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#表级锁定"><span class="nav-number">2.</span> <span class="nav-text">表级锁定</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#MySQL表级锁模式"><span class="nav-number">2.1.</span> <span class="nav-text">MySQL表级锁模式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#如果加表锁"><span class="nav-number">2.2.</span> <span class="nav-text">如果加表锁</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#MyIsam表锁优化"><span class="nav-number">2.3.</span> <span class="nav-text">MyIsam表锁优化</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#行级锁定"><span class="nav-number">3.</span> <span class="nav-text">行级锁定</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Innodb锁定模式以及实现机制"><span class="nav-number">3.1.</span> <span class="nav-text">Innodb锁定模式以及实现机制</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Innodb行锁的实现"><span class="nav-number">3.2.</span> <span class="nav-text">Innodb行锁的实现</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#间隙锁-next-key"><span class="nav-number">3.3.</span> <span class="nav-text">间隙锁(next-key)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#死锁"><span class="nav-number">3.4.</span> <span class="nav-text">死锁</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#避免死锁的方法"><span class="nav-number">3.4.1.</span> <span class="nav-text">避免死锁的方法</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#innodb使用表锁的情况"><span class="nav-number">3.5.</span> <span class="nav-text">innodb使用表锁的情况</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#innodb锁的优化和注意点"><span class="nav-number">3.6.</span> <span class="nav-text">innodb锁的优化和注意点</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#innodb减少死锁"><span class="nav-number">3.6.1.</span> <span class="nav-text">innodb减少死锁</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#innodb行锁争夺情况"><span class="nav-number">3.6.2.</span> <span class="nav-text">innodb行锁争夺情况</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">4.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

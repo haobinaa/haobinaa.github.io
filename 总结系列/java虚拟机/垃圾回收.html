@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="概述思考GC需要完成的3件事情：  哪些内存需要回收？ 什么时候回收？ 如何回收？  在java虚拟机当中：  程序计时器、虚拟机栈、本地方法栈：随线程而灭，栈帧随方法而进行出栈和入栈，每一个栈帧分配的内存在类结构确定就已知，因此这几个区域不需要考虑回收；  对于Java堆和方法区，只有程序运行期间才知道会创建哪些对象，内存的分配和回收都是动态的，垃圾收集器所关注的是这部分内存；   引用计数算法">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Do Or Die">
+<meta property="og:url" content="http://yoursite.com/总结系列/java虚拟机/垃圾回收.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="概述思考GC需要完成的3件事情：  哪些内存需要回收？ 什么时候回收？ 如何回收？  在java虚拟机当中：  程序计时器、虚拟机栈、本地方法栈：随线程而灭，栈帧随方法而进行出栈和入栈，每一个栈帧分配的内存在类结构确定就已知，因此这几个区域不需要考虑回收；  对于Java堆和方法区，只有程序运行期间才知道会创建哪些对象，内存的分配和回收都是动态的，垃圾收集器所关注的是这部分内存；   引用计数算法">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://oi46mo3on.bkt.clouddn.com/10_deep_in_jvm/gc_roots_reference_chain.png">
+<meta property="og:image" content="http://oi46mo3on.bkt.clouddn.com/10_deep_in_jvm/gc_for_hotspot.png">
+<meta property="og:image" content="http://oi46mo3on.bkt.clouddn.com/10_deep_in_jvm/gc_serial.png">
+<meta property="og:image" content="http://oi46mo3on.bkt.clouddn.com/10_deep_in_jvm/gc_parnew.png">
+<meta property="og:image" content="http://oi46mo3on.bkt.clouddn.com/10_deep_in_jvm/gc_serial_old.png">
+<meta property="og:image" content="http://oi46mo3on.bkt.clouddn.com/10_deep_in_jvm/gc_parallel_old.png">
+<meta property="og:image" content="http://oi46mo3on.bkt.clouddn.com/10_deep_in_jvm/gc_cms.png">
+<meta property="og:image" content="http://oi46mo3on.bkt.clouddn.com/10_deep_in_jvm/gc_g1.png">
+<meta property="og:updated_time" content="2018-06-13T15:12:35.872Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Do Or Die">
+<meta name="twitter:description" content="概述思考GC需要完成的3件事情：  哪些内存需要回收？ 什么时候回收？ 如何回收？  在java虚拟机当中：  程序计时器、虚拟机栈、本地方法栈：随线程而灭，栈帧随方法而进行出栈和入栈，每一个栈帧分配的内存在类结构确定就已知，因此这几个区域不需要考虑回收；  对于Java堆和方法区，只有程序运行期间才知道会创建哪些对象，内存的分配和回收都是动态的，垃圾收集器所关注的是这部分内存；   引用计数算法">
+<meta name="twitter:image" content="http://oi46mo3on.bkt.clouddn.com/10_deep_in_jvm/gc_roots_reference_chain.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/总结系列/java虚拟机/垃圾回收.html"/>
+
+
+
+
+
+  <title> | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+    
+    
+    <div class="post-block page">
+      <header class="post-header">
+
+	<h1 class="post-title" itemprop="name headline"></h1>
+
+
+
+</header>
+
+      
+      
+      
+      <div class="post-body">
+        
+        
+          <h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><p>思考GC需要完成的3件事情：</p>
+<ul>
+<li>哪些内存需要回收？</li>
+<li>什么时候回收？</li>
+<li>如何回收？</li>
+</ul>
+<p>在java虚拟机当中：</p>
+<ul>
+<li><p>程序计时器、虚拟机栈、本地方法栈：随线程而灭，栈帧随方法而进行出栈和入栈，每一个栈帧分配的内存在类结构确定就已知，因此这几个区域不需要考虑回收；</p>
+</li>
+<li><p>对于Java堆和方法区，只有程序运行期间才知道会创建哪些对象，内存的分配和回收都是动态的，垃圾收集器所关注的是这部分内存；</p>
+</li>
+</ul>
+<h4 id="引用计数算法"><a href="#引用计数算法" class="headerlink" title="引用计数算法"></a>引用计数算法</h4><p>给对象添加引用计数器，当有地方引用它时就加1，引用失效就减1，为0时就认为对象不再被使用可回收。该算法失效简单，判断高效，但并不被主流虚拟机采用，主要原因是它很难解决对象之间相互循环引用的问题</p>
+<h4 id="可达性分析算法"><a href="#可达性分析算法" class="headerlink" title="可达性分析算法"></a>可达性分析算法</h4><p>通过一系列的称为“GC Roots”的对象作为起点，从这些节点开始向下搜索，搜索所走过的路径称为引用链（Reference Chain），如果一个对象到GC Roots没有引用链相连，则该对象是不可用的</p>
+<p><img src="http://oi46mo3on.bkt.clouddn.com/10_deep_in_jvm/gc_roots_reference_chain.png" alt=""></p>
+<p>在java中，可以作为GC Roots的对象包括：</p>
+<ul>
+<li>虚拟机栈（栈帧中的本地变量表）中引用的对象</li>
+<li>方法区中类静态属性引用的对象</li>
+<li>方法区中常量引用的对象</li>
+<li>本地方法栈中JNI（即一般说的Native方法）引用的对象</li>
+</ul>
+<h4 id="java引用"><a href="#java引用" class="headerlink" title="java引用"></a>java引用</h4><ul>
+<li><p>强引用<br>只要存在，就不会对强引用的对象进行垃圾回收</p>
+</li>
+<li><p>软引用</p>
+</li>
+</ul>
+<p>如果一个对象只具有软引用，则内存空间足够，垃圾回收器就不会回收它；如果内存空间不足了，就会回收这些对象的内存。只要垃圾回收器没有回收它，该对象就可以被程序使用。软引用可用来实现内存敏感的高速缓存。 JDK提供SoftReference来实现</p>
+<ul>
+<li>弱引用</li>
+</ul>
+<p>弱引用与软引用的区别在于：只具有弱引用的对象拥有更短暂的生命周期。在垃圾回收器线程扫描它所管辖的内存区域的过程中，一旦发现了只具有弱引用的对象，不管当前内存空间足够与否，都会回收它的内存。不过，由于垃圾回收器是一个优先级很低的线程，因此不一定会很快发现那些只具有弱引用的对象。 JDK通过WeakReference来实现</p>
+<ul>
+<li>虚引用</li>
+</ul>
+<h4 id="查看对象生存还是死亡"><a href="#查看对象生存还是死亡" class="headerlink" title="查看对象生存还是死亡"></a>查看对象生存还是死亡</h4><p>要真正宣告一个对象死亡，至少要经历两次标记过程：如果对象在进行可达性分析后发现没有与GC Roots相连接的引用链，那它将会被第一次标记并且进行一次筛选，筛选的条件是此对象是否有必要执行finalize方法（如没有重写finalize方法或者已经被调用过则认为没有必要执行）；如果有必要执行则将该对象放置在F-Queue队列中，并在稍后由一个由虚拟机自己建立的、低优先级的Finalizer线程去执行它；稍后GC将对F-Queue中的对象进行第二次标记，如果对象还是没有被引用，则会被回收。</p>
+<p>但是作者不建议通过finalize方法“拯救”对象，因为它运行代价高、不确定性大、无法保证各个对象的调用顺序。</p>
+<h4 id="回收方法区"><a href="#回收方法区" class="headerlink" title="回收方法区"></a>回收方法区</h4><p>永久代的垃圾收集主要回收两部分内容：废弃常量和无用的类。</p>
+<p>一个无用的类需要满足以下三个条件：</p>
+<ul>
+<li>该类的所有实例都已经被回收</li>
+<li>加载该类的ClassLoader已经被回收</li>
+<li>该类对象的java.lang.Class对象没有在任何地方被引用，无法在任何地方通过反射访问该类的方法</li>
+</ul>
+<p>在大量使用反射、动态代理、CGLib等ByteCode框架、动态生成JSP以及OSGI这类频繁自定义ClassLoader的场景都需要虚拟机具备类卸载的功能（HotSpot提供-Xnoclassgc参数控制），以保证永久代不会溢出。</p>
+<h3 id="垃圾收集算法"><a href="#垃圾收集算法" class="headerlink" title="垃圾收集算法"></a>垃圾收集算法</h3><ul>
+<li><p>标记-清除算法：首先标记出所有需要回收的对象，然后统一回收所有被标记的对象；缺点是效率不高且容易产生大量不连续的内存碎片</p>
+</li>
+<li><p>复制算法： 将可用内存分为大小相等的两块，每次只使用其中一块；当这一块用完了，就将还活着的对象复制到另一块上，然后把已使用过的内存清理掉。在HotSpot里，考虑到大部分对象存活时间很短将内存分为Eden和两块Survivor，默认比例为8:1:1。代价是存在部分内存空间浪费，适合在新生代使用</p>
+</li>
+<li><p>标记-整理算法： 首先标记出所有需要回收的对象，然后让所有存活的对象都向一端移动，然后直接清理掉端边界以外的内存。适用于老年代</p>
+</li>
+<li><p>分代收集算法：一般把Java堆分新生代和老年代，在新生代用复制算法，在老年代用标记-清理或标记-整理算法，是现代虚拟机通常采用的算法</p>
+</li>
+</ul>
+<h3 id="HotSpot的算法"><a href="#HotSpot的算法" class="headerlink" title="HotSpot的算法"></a>HotSpot的算法</h3><h4 id="枚举根节点"><a href="#枚举根节点" class="headerlink" title="枚举根节点"></a>枚举根节点</h4><ul>
+<li>由于要确保在一致性的快照中进行可达性分析，从而导致GC进行时必须要停顿所有Java执行线程</li>
+<li>在HotSpot里通过一组OopMap数据结构来知道哪些地方存放着对象引用</li>
+</ul>
+<h4 id="安全点"><a href="#安全点" class="headerlink" title="安全点"></a>安全点</h4><ul>
+<li><p>HotSpot只在特定的位置记录了OopMap，这些位置称为安全点(SafePoint)</p>
+</li>
+<li><p>即程序执行时并非在所有地方都能停顿下来开始GC，只有到达安全点时才能暂停；<br>对于安全点基本上是以程序“是否具有让程序长时间执行的特征”（比如方法调用、循环跳转、异常跳转等）为标准进行选定的；</p>
+</li>
+<li><p>另外还需要考虑如果在GC时让所有线程都跑到最近的安全点上，有两种方案：抢先式中断和主动式中断（主流选择）；</p>
+</li>
+</ul>
+<h4 id="安全区域"><a href="#安全区域" class="headerlink" title="安全区域"></a>安全区域</h4><ul>
+<li><p>如果程序没有分配CPU时间（如线程处于Sleep或Blocked），此时就需要安全区域（Safe Region），其是指在一段代码片段之中，引用关系不会发生变化；</p>
+</li>
+<li><p>线程执行到安全区域时，首先标识自己已经进入了安全区域，这样JVM在GC时就不管这些线程了；</p>
+</li>
+</ul>
+<h3 id="垃圾收集器"><a href="#垃圾收集器" class="headerlink" title="垃圾收集器"></a>垃圾收集器</h3><p>垃圾收集算法是内存回收的方法论，垃圾收集器就是内存回收的具体实现</p>
+<p>在JDK7的虚拟机中如下：<br><img src="http://oi46mo3on.bkt.clouddn.com/10_deep_in_jvm/gc_for_hotspot.png" alt=""></p>
+<h4 id="Serial收集器"><a href="#Serial收集器" class="headerlink" title="Serial收集器"></a>Serial收集器</h4><p><img src="http://oi46mo3on.bkt.clouddn.com/10_deep_in_jvm/gc_serial.png" alt=""></p>
+<ul>
+<li><p>最基本、发展历史最悠久，在JDK 1.3之前是新生代收集的唯一选择；</p>
+</li>
+<li><p>是一个单线程（并非指一个收集线程，而是会暂停所有工作线程）的收集器，采用的是复制算法；</p>
+</li>
+<li><p>现在依然是虚拟机运行在Client模式下的默认新生代收集器，主要就是因为它简单而高效（没有线程交互的开销）；</p>
+</li>
+</ul>
+<h4 id="ParNew收集器"><a href="#ParNew收集器" class="headerlink" title="ParNew收集器"></a>ParNew收集器</h4><p><img src="http://oi46mo3on.bkt.clouddn.com/10_deep_in_jvm/gc_parnew.png" alt=""></p>
+<ul>
+<li><p>其实就是Serial收集器的多线程版本；</p>
+</li>
+<li><p>ParNew收集器在单CPU环境中绝对不会有比Serial收集器更好的效果；<br>是许多运行在Server模式下虚拟机首选的新生代收集器，重要原因就是除了Serial收集器外，只有它能与CMS收集器配合工作；</p>
+</li>
+<li><p>并行（Parallel）：指多条垃圾收集线程并行工作，但此时用户线程仍处于等待状态；</p>
+</li>
+<li><p>并发（Concurrent）：指用户线程与垃圾收集线程同时执行，用户线程在继续执行而垃圾收集程序运行在另外一个CPU上；</p>
+</li>
+</ul>
+<h4 id="Parallel-Scavenge收集器"><a href="#Parallel-Scavenge收集器" class="headerlink" title="Parallel Scavenge收集器"></a>Parallel Scavenge收集器</h4><ul>
+<li><p>新生代收集器，使用复制算法，并行的多线程收集器；</p>
+</li>
+<li><p>与其他收集器关注于尽可能缩短垃圾收集时用户线程停顿时间不同，它的目标是达到一个可控制的吞吐量；</p>
+</li>
+<li><p>高吞吐量可以高效率利用CPU时间，适合在后台运算而不需要太多交互的任务；</p>
+</li>
+<li><p>-XX:MaxGCPauseMillis参数可以设置最大停顿时间，而停顿时间缩短是以牺牲吞吐量和新生代空间来换取的；</p>
+</li>
+<li><p>另外它还支持GC自适应的调节策略；</p>
+</li>
+</ul>
+<h4 id="Serial-Old收集器"><a href="#Serial-Old收集器" class="headerlink" title="Serial Old收集器"></a>Serial Old收集器</h4><p><img src="http://oi46mo3on.bkt.clouddn.com/10_deep_in_jvm/gc_serial_old.png" alt=""></p>
+<ul>
+<li>是Serial收集器的老年代版本，同样是单线程，使用标记-整理算法</li>
+<li>主要是给Client模式下的虚拟机使用的</li>
+<li>在Server模式下主要是给JDK 1.5及之前配合Parallel Scavenge使用或作为CMS收集器的后备预案</li>
+</ul>
+<h4 id="Parallel-Old收集器"><a href="#Parallel-Old收集器" class="headerlink" title="Parallel Old收集器"></a>Parallel Old收集器</h4><p><img src="http://oi46mo3on.bkt.clouddn.com/10_deep_in_jvm/gc_parallel_old.png" alt=""></p>
+<ul>
+<li>是Parallel Scavenge的老年代版本，使用多线程和标记-整理算法</li>
+<li>是JDK 1.6中才开始提供的</li>
+</ul>
+<h4 id="CMS收集器"><a href="#CMS收集器" class="headerlink" title="CMS收集器"></a>CMS收集器</h4><p><img src="http://oi46mo3on.bkt.clouddn.com/10_deep_in_jvm/gc_cms.png" alt=""></p>
+<ul>
+<li><p>是一种以获取最短回收停顿时间为目标的收集器，特别适合互联网站或者B/S的服务端</p>
+</li>
+<li><p>它是基于标记-清除 算法实现的，主要包括4个步骤：初始标记（STW，只是初始标记一下GC Roots能直接关联到的对象，速度很快）、并发标记（非STW，执行GC RootsTracing，耗时比较长）、重新标记（STW，修正并发标记期间因用户程序继续导致变动的那一部分对象标记）和并发清除（非STW，耗时较长）</p>
+</li>
+<li><p>还有3个明显的缺点：CMS收集器对CPU非常敏感（占用部分线程及CPU资源，影响总吞吐量）、无法处理浮动垃圾（默认达到92%就触发垃圾回收）、大量内存碎片产生（可以通过参数启动压缩）</p>
+</li>
+</ul>
+<h4 id="G1收集器"><a href="#G1收集器" class="headerlink" title="G1收集器"></a>G1收集器</h4><p><img src="http://oi46mo3on.bkt.clouddn.com/10_deep_in_jvm/gc_g1.png" alt=""></p>
+<ul>
+<li><p>一款面向服务端应用的垃圾收集器，后续会替换掉CMS垃圾收集器</p>
+</li>
+<li><p>特点：并行与并发（充分利用多核多CPU缩短Stop-The-World时间）、分代收集（独立管理整个Java堆，但针对不同年龄的对象采取不同的策略）、空间整合（基于标记-整理）、可预测的停顿（将堆分为大小相等的独立区域，避免全区域的垃圾收集）</p>
+</li>
+<li><p>关于Region：新生代和老年代不再物理隔离，只是部分Region的集合；G1跟踪各个Region垃圾堆积的价值大小，在后台维护一个优先列表，根据允许的收集时间优先回收价值最大的Region；Region之间的对象引用以及其他收集器中的新生代与老年代之间的对象引用，采用Remembered Set来避免全堆扫描</p>
+</li>
+<li><p>分为几个步骤：初始标记（标记一下GC Roots能直接关联的对象并修改TAMS值，需要STW但耗时很短）、并发标记（从GC Root从堆中对象进行可达性分析找存活的对象，耗时较长但可以与用户线程并发执行）、最终标记（为了修正并发标记期间产生变动的那一部分标记记录，这一期间的变化记录在Remembered Set Log里，然后合并到Remembered Set里，该阶段需要STW但是可并行执行）、筛选回收（对各个Region回收价值排序，根据用户期望的GC停顿时间制定回收计划来回收）</p>
+</li>
+</ul>
+<h3 id="内存分配和回收策略"><a href="#内存分配和回收策略" class="headerlink" title="内存分配和回收策略"></a>内存分配和回收策略</h3><ul>
+<li><p>对象优先在新生代分配</p>
+</li>
+<li><p>大对象直接进入老年代</p>
+</li>
+<li><p>长期存活的对象将进入老年代</p>
+</li>
+<li><p>动态对象年龄判断：如果在Survivor空间中相同年龄所有对象大小总和大于Survivor空间的一半，大于或等于该年龄的对象直接进入老年代；</p>
+</li>
+<li><p>空间分配担保：发生Minor GC前，虚拟机会先检查老年代最大可用连续空间是否大于新生代所有对象总空间，如果不成立，虚拟机会查看HandlePromotionFailure设置值是否允许担保失败，如果允许继续检查老年代最大可用的连续空间是否大于历次晋升到老年代的平均大小，如果大于会尝试进行一次Minor GC；如果小于或者不允许冒险，会进行一次Full GC</p>
+</li>
+</ul>
+
+        
+      </div>
+      
+      
+      
+    </div>
+    
+    
+    
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">一息尚存，则吾志不移</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">65</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">18</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#引用计数算法"><span class="nav-number">1.1.</span> <span class="nav-text">引用计数算法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#可达性分析算法"><span class="nav-number">1.2.</span> <span class="nav-text">可达性分析算法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#java引用"><span class="nav-number">1.3.</span> <span class="nav-text">java引用</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#查看对象生存还是死亡"><span class="nav-number">1.4.</span> <span class="nav-text">查看对象生存还是死亡</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#回收方法区"><span class="nav-number">1.5.</span> <span class="nav-text">回收方法区</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#垃圾收集算法"><span class="nav-number">2.</span> <span class="nav-text">垃圾收集算法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#HotSpot的算法"><span class="nav-number">3.</span> <span class="nav-text">HotSpot的算法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#枚举根节点"><span class="nav-number">3.1.</span> <span class="nav-text">枚举根节点</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#安全点"><span class="nav-number">3.2.</span> <span class="nav-text">安全点</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#安全区域"><span class="nav-number">3.3.</span> <span class="nav-text">安全区域</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#垃圾收集器"><span class="nav-number">4.</span> <span class="nav-text">垃圾收集器</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Serial收集器"><span class="nav-number">4.1.</span> <span class="nav-text">Serial收集器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ParNew收集器"><span class="nav-number">4.2.</span> <span class="nav-text">ParNew收集器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Parallel-Scavenge收集器"><span class="nav-number">4.3.</span> <span class="nav-text">Parallel Scavenge收集器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Serial-Old收集器"><span class="nav-number">4.4.</span> <span class="nav-text">Serial Old收集器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Parallel-Old收集器"><span class="nav-number">4.5.</span> <span class="nav-text">Parallel Old收集器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#CMS收集器"><span class="nav-number">4.6.</span> <span class="nav-text">CMS收集器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#G1收集器"><span class="nav-number">4.7.</span> <span class="nav-text">G1收集器</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#内存分配和回收策略"><span class="nav-number">5.</span> <span class="nav-text">内存分配和回收策略</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

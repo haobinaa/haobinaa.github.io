@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="IO," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="概述java nio的核心有以下几部分组成：  channels buffers selectors  Channel和Buffer基本上，所有的 IO 在NIO 中都从一个Channel 开始。Channel 有点象流。 数据可以从Channel读到Buffer中，也可以从Buffer 写到Channel中 NIO中主要的channel：  FileChannel DatagramChannel">
+<meta name="keywords" content="IO">
+<meta property="og:type" content="article">
+<meta property="og:title" content="NIO简述">
+<meta property="og:url" content="http://yoursite.com/2018/01/27/NIO简述/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="概述java nio的核心有以下几部分组成：  channels buffers selectors  Channel和Buffer基本上，所有的 IO 在NIO 中都从一个Channel 开始。Channel 有点象流。 数据可以从Channel读到Buffer中，也可以从Buffer 写到Channel中 NIO中主要的channel：  FileChannel DatagramChannel">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://ifeve.com/wp-content/uploads/2013/06/overview-selectors.png">
+<meta property="og:image" content="http://ifeve.com/wp-content/uploads/2013/06/overview-channels-buffers.png">
+<meta property="og:image" content="http://ifeve.com/wp-content/uploads/2013/06/buffers-modes.png">
+<meta property="og:updated_time" content="2018-06-13T15:12:35.837Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="NIO简述">
+<meta name="twitter:description" content="概述java nio的核心有以下几部分组成：  channels buffers selectors  Channel和Buffer基本上，所有的 IO 在NIO 中都从一个Channel 开始。Channel 有点象流。 数据可以从Channel读到Buffer中，也可以从Buffer 写到Channel中 NIO中主要的channel：  FileChannel DatagramChannel">
+<meta name="twitter:image" content="http://ifeve.com/wp-content/uploads/2013/06/overview-selectors.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/01/27/NIO简述/"/>
+
+
+
+
+
+  <title>NIO简述 | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/01/27/NIO简述/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">NIO简述</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-01-27T18:45:31+08:00">
+                2018-01-27
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IO/" itemprop="url" rel="index">
+                    <span itemprop="name">IO</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><p>java nio的核心有以下几部分组成：</p>
+<ul>
+<li>channels</li>
+<li>buffers</li>
+<li>selectors</li>
+</ul>
+<h4 id="Channel和Buffer"><a href="#Channel和Buffer" class="headerlink" title="Channel和Buffer"></a>Channel和Buffer</h4><p>基本上，所有的 IO 在NIO 中都从一个Channel 开始。Channel 有点象流。 数据可以从Channel读到Buffer中，也可以从Buffer 写到Channel中</p>
+<p>NIO中主要的channel：</p>
+<ul>
+<li>FileChannel</li>
+<li>DatagramChannel</li>
+<li>SocketChannel</li>
+<li>SeverSocketChannel</li>
+</ul>
+<p>关键的Buffer实现：</p>
+<ul>
+<li>ByteBuffer</li>
+<li>CharBuffer</li>
+<li>DoubleBuffer</li>
+<li>FloatBuffer</li>
+<li>IntBuffer</li>
+<li>LongBuffer</li>
+<li>ShortBuffer</li>
+</ul>
+<h4 id="Selector"><a href="#Selector" class="headerlink" title="Selector"></a>Selector</h4><p>Selector允许单线程处理多个 Channel。如果你的应用打开了多个连接（通道），但每个连接的流量都很低，使用Selector就会很方便。例如，在一个聊天服务器中。</p>
+<p>这是在一个单线程中使用一个Selector处理3个Channel的图示：<br><img src="http://ifeve.com/wp-content/uploads/2013/06/overview-selectors.png" alt=""></p>
+<p>要使用Selector，得向Selector注册Channel，然后调用它的select()方法。这个方法会一直阻塞到某个注册的通道有事件就绪。一旦这个方法返回，线程就可以处理这些事件，事件的例子有如新连接进来，数据接收等</p>
+<h3 id="Channel"><a href="#Channel" class="headerlink" title="Channel"></a>Channel</h3><p>Java NIO的通道类似流，但又有些不同：</p>
+<p>既可以从通道中读取数据，又可以写数据到通道。但流的读写通常是单向的。</p>
+<ul>
+<li>通道可以异步地读写。</li>
+<li>通道中的数据总是要先读到一个Buffer，或者总是要从一个Buffer中写入。</li>
+<li>正如上面所说，从通道读取数据到缓冲区，从缓冲区写入数据到通道。</li>
+</ul>
+<p>如下图所示：<br><img src="http://ifeve.com/wp-content/uploads/2013/06/overview-channels-buffers.png" alt=""></p>
+<p>之前提到的channel的实现：</p>
+<ul>
+<li>FileChannel 从文件中读写数据</li>
+<li>DatagramChannel 能通过UDP读写网络中的数据</li>
+<li>SocketChannel 能通过TCP读写网络中的数据</li>
+<li>ServerSocketChannel可以监听新进来的TCP连接，像Web服务器那样。对每一个新进来的连接都会创建一个SocketChannel</li>
+</ul>
+<h4 id="基本的channel示例"><a href="#基本的channel示例" class="headerlink" title="基本的channel示例"></a>基本的channel示例</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">RandomAccessFile aFile = new RandomAccessFile(&quot;data/nio-data.txt&quot;, &quot;rw&quot;);</span><br><span class="line">FileChannel inChannel = aFile.getChannel();</span><br><span class="line">ByteBuffer buf = ByteBuffer.allocate(48);</span><br><span class="line">int bytesRead = inChannel.read(buf);</span><br><span class="line"></span><br><span class="line">while (bytesRead != -1) &#123;</span><br><span class="line"></span><br><span class="line">    System.out.println(&quot;Read &quot; + bytesRead);</span><br><span class="line"></span><br><span class="line">    buf.flip();</span><br><span class="line"></span><br><span class="line">    while (buf.hasRemaining()) &#123;</span><br><span class="line"></span><br><span class="line">        System.out.print((char) buf.get());</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    buf.clear();</span><br><span class="line"></span><br><span class="line">    bytesRead = inChannel.read(buf);</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">aFile.close();</span><br></pre></td></tr></table></figure>
+<p>注意 buf.flip() 的调用，首先读取数据到Buffer，然后反转Buffer,接着再从Buffer中读取数据</p>
+<h3 id="Buffer"><a href="#Buffer" class="headerlink" title="Buffer"></a>Buffer</h3><h4 id="Buffer的基本用法"><a href="#Buffer的基本用法" class="headerlink" title="Buffer的基本用法"></a>Buffer的基本用法</h4><p>Buffer遵循四个步骤：</p>
+<ol>
+<li>写数据到buffer</li>
+<li>调用filp()方法</li>
+<li>从Buffer中读数据</li>
+<li>调用clear方法或compact方法</li>
+</ol>
+<p>当向buffer写入数据时，buffer会记录下写了多少数据。一旦要读取数据，需要通过flip()方法将Buffer从写模式切换到读模式。在读模式下，可以读取之前写入到buffer的所有数据</p>
+<p>一旦读完了所有的数据，就需要清空缓冲区，让它可以再次被写入。有两种方式能清空缓冲区：调用clear()或compact()方法。clear()方法会清空整个缓冲区。compact()方法只会清除已经读过的数据。任何未读的数据都被移到缓冲区的起始处，新写入的数据将放到缓冲区未读数据的后面。</p>
+<p>例子：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">RandomAccessFile aFile = new RandomAccessFile(&quot;data/nio-data.txt&quot;, &quot;rw&quot;);</span><br><span class="line">FileChannel inChannel = aFile.getChannel();</span><br><span class="line">//create buffer with capacity of 48 bytes</span><br><span class="line">ByteBuffer buf = ByteBuffer.allocate(48);</span><br><span class="line">int bytesRead = inChannel.read(buf); //read into buffer.</span><br><span class="line">while (bytesRead != -1) &#123;</span><br><span class="line">    while (buf.hasRemaining()) &#123;</span><br><span class="line">        System.out.print((char) buf.get()); // read 1 byte at a time</span><br><span class="line">    &#125;</span><br><span class="line">    buf.clear(); //make buffer ready for writing</span><br><span class="line">    bytesRead = inChannel.read(buf);</span><br><span class="line">&#125;</span><br><span class="line">aFile.close();</span><br></pre></td></tr></table></figure></p>
+<h4 id="capacity-position-limit"><a href="#capacity-position-limit" class="headerlink" title="capacity, position, limit"></a>capacity, position, limit</h4><p>缓冲区本质上是一块可以写入数据，然后可以从中读取数据的内存。这块内存被包装成NIO Buffer对象，并提供了一组方法，用来方便的访问该块内存</p>
+<p>capacity、positon、limit在读写模式的说明：<br><img src="http://ifeve.com/wp-content/uploads/2013/06/buffers-modes.png" alt=""></p>
+<h5 id="capacity"><a href="#capacity" class="headerlink" title="capacity"></a>capacity</h5><p>缓存区容纳元素的最大数量， 在创建缓冲区的时候被设定，并且永远不能被改变。</p>
+<h5 id="limit"><a href="#limit" class="headerlink" title="limit"></a>limit</h5><p>在写模式下，Buffer的limit表示你最多能往Buffer里写多少数据。 写模式下，limit等于Buffer的capacity。</p>
+<p>当切换Buffer到读模式时， limit表示你最多能读到多少数据。因此，当切换Buffer到读模式时，limit会被设置成写模式下的position值。换句话说，你能读到之前写入的所有数据（limit被设置成已写数据的数量，这个值在写模式下就是position）</p>
+<h5 id="position"><a href="#position" class="headerlink" title="position"></a>position</h5><p>缓冲区下一个要被读或写的元素，位置会自动的由get或put更新</p>
+<p>当你写数据到Buffer中时，position表示当前的位置。初始的position值为0.当一个byte、long等数据写到Buffer后， position会向前移动到下一个可插入数据的Buffer单元。position最大可为capacity – 1.</p>
+<p>当读取数据时，也是从某个特定位置读。当将Buffer从写模式切换到读模式，position会被重置为0. 当从Buffer的position处读取数据时，position向前移动到下一个可读的位置。</p>
+<h4 id="buffer的类型"><a href="#buffer的类型" class="headerlink" title="buffer的类型"></a>buffer的类型</h4><p>NIO的buffer有以下Buffer类型：</p>
+<blockquote>
+<p>ByteBuffer、MappedByteBuffer、CharBuffer、DoubleBuffer、FloatBuffer<br>、IntBuffer、LongBuffer、ShortBuffer</p>
+</blockquote>
+<h4 id="buffer的分配"><a href="#buffer的分配" class="headerlink" title="buffer的分配"></a>buffer的分配</h4><p>要想获得一个Buffer对象首先要进行分配。 每一个Buffer类都有一个allocate方法。下面是一个分配48字节capacity的ByteBuffer的例子。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ByteBuffer buf = ByteBuffer.allocate(48);</span><br></pre></td></tr></table></figure></p>
+<h4 id="往buffer中写"><a href="#往buffer中写" class="headerlink" title="往buffer中写"></a>往buffer中写</h4><p>写数据到Buffer有两种方式：</p>
+<ul>
+<li><p>从channel到buffer</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">int bytesRead = inChannel.read(buf);</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>通过Buffer的put()方法写到buffer</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">buf.put(127)</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h4 id="flip方法"><a href="#flip方法" class="headerlink" title="flip方法"></a>flip方法</h4><p>flip方法将Buffer从写模式切换到读模式。调用flip()方法会将position设回0，并将limit设置成之前position的值。</p>
+<p>换句话说，position现在用于标记读的位置，limit表示之前写进了多少个byte、char等 —— 现在能读取多少个byte、char等。</p>
+<h4 id="从buffer中读"><a href="#从buffer中读" class="headerlink" title="从buffer中读"></a>从buffer中读</h4><p>从Buffer中读取数据有两种方式：</p>
+<ul>
+<li>从Buffer读取数据到Channel<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">int bytesWritten = inChannel.write(buf);</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>使用get()方法从Buffer中读取数据<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">byte aByte = buf.get();</span><br></pre></td></tr></table></figure></p>
+<h4 id="rewind方法"><a href="#rewind方法" class="headerlink" title="rewind方法"></a>rewind方法</h4><p>Buffer.rewind()将position设回0，所以你可以重读Buffer中的所有数据。limit保持不变，仍然表示能从Buffer中读取多少个元素（byte、char等）。</p>
+<h4 id="clear和compact"><a href="#clear和compact" class="headerlink" title="clear和compact"></a>clear和compact</h4><p>一旦读完Buffer中的数据，需要让Buffer准备好再次被写入。可以通过clear()或compact()方法来完成。</p>
+<p>如果调用的是clear()方法，position将被设回0，limit被设置成 capacity的值。换句话说，Buffer 被清空了。Buffer中的数据并未清除，只是这些标记告诉我们可以从哪里开始往Buffer里写数据。</p>
+<p>如果Buffer中有一些未读的数据，调用clear()方法，数据将“被遗忘”，意味着不再有任何标记会告诉你哪些数据被读过，哪些还没有。</p>
+<p>如果Buffer中仍有未读的数据，且后续还需要这些数据，但是此时想要先先写些数据，那么使用compact()方法。</p>
+<p>compact()方法将所有未读的数据拷贝到Buffer起始处。然后将position设到最后一个未读元素正后面。limit属性依然像clear()方法一样，设置成capacity。现在Buffer准备好写数据了，但是不会覆盖未读的数据。</p>
+<h4 id="mark方法与reset方法"><a href="#mark方法与reset方法" class="headerlink" title="mark方法与reset方法"></a>mark方法与reset方法</h4><p>通过调用Buffer.mark()方法，可以标记Buffer中的一个特定position。之后可以通过调用Buffer.reset()方法恢复到这个position。例如：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">// 在当前位置做个标记，通过buffer.get()已经将position移动了多次</span><br><span class="line">buffer.mark();</span><br><span class="line">// 将position移动到标记的位置</span><br><span class="line">buffer.reset();  //set position back to mark.</span><br></pre></td></tr></table></figure></p>
+<h4 id="equals-与compareTo-方法"><a href="#equals-与compareTo-方法" class="headerlink" title="equals()与compareTo()方法"></a>equals()与compareTo()方法</h4><p>可以使用equals()和compareTo()方法两个Buffer。</p>
+<h5 id="equals"><a href="#equals" class="headerlink" title="equals()"></a>equals()</h5><p>当满足下列条件时，表示两个Buffer相等：</p>
+<ol>
+<li>有相同的类型（byte、char、int等）。</li>
+<li>Buffer中剩余的byte、char等的个数相等。</li>
+<li>Buffer中所有剩余的byte、char等都相同。</li>
+</ol>
+<p>equals只是比较Buffer的一部分，不是每一个在它里面的元素都比较。实际上，它只比较Buffer中的剩余元素。</p>
+<h5 id="compareTo"><a href="#compareTo" class="headerlink" title="compareTo()"></a>compareTo()</h5><p>compareTo()方法比较两个Buffer的剩余元素(byte、char等)， 如果满足下列条件，则认为一个Buffer“小于”另一个Buffer：</p>
+<ol>
+<li>第一个不相等的元素小于另一个Buffer中对应的元素 。</li>
+<li>所有元素都相等，但第一个Buffer比另一个先耗尽(第一个Buffer的元素个数比另一个少)。</li>
+</ol>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="http://tutorials.jenkov.com/java-nio/index.html" target="_blank" rel="noopener">NIO教程-Jakob Jenkov</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/IO/" rel="tag"><i class="fa fa-tag"></i> IO</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/01/15/SpringBoot学习五/" rel="next" title="SpringBoot(JPA基础)">
+                <i class="fa fa-chevron-left"></i> SpringBoot(JPA基础)
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/01/28/NIO通道与Selector/" rel="prev" title="NIO通道与Selector">
+                NIO通道与Selector <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">一息尚存，则吾志不移</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">65</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">18</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Channel和Buffer"><span class="nav-number">1.1.</span> <span class="nav-text">Channel和Buffer</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Selector"><span class="nav-number">1.2.</span> <span class="nav-text">Selector</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Channel"><span class="nav-number">2.</span> <span class="nav-text">Channel</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#基本的channel示例"><span class="nav-number">2.1.</span> <span class="nav-text">基本的channel示例</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Buffer"><span class="nav-number">3.</span> <span class="nav-text">Buffer</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Buffer的基本用法"><span class="nav-number">3.1.</span> <span class="nav-text">Buffer的基本用法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#capacity-position-limit"><span class="nav-number">3.2.</span> <span class="nav-text">capacity, position, limit</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#capacity"><span class="nav-number">3.2.1.</span> <span class="nav-text">capacity</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#limit"><span class="nav-number">3.2.2.</span> <span class="nav-text">limit</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#position"><span class="nav-number">3.2.3.</span> <span class="nav-text">position</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#buffer的类型"><span class="nav-number">3.3.</span> <span class="nav-text">buffer的类型</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#buffer的分配"><span class="nav-number">3.4.</span> <span class="nav-text">buffer的分配</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#往buffer中写"><span class="nav-number">3.5.</span> <span class="nav-text">往buffer中写</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#flip方法"><span class="nav-number">3.6.</span> <span class="nav-text">flip方法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#从buffer中读"><span class="nav-number">3.7.</span> <span class="nav-text">从buffer中读</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#rewind方法"><span class="nav-number">3.8.</span> <span class="nav-text">rewind方法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#clear和compact"><span class="nav-number">3.9.</span> <span class="nav-text">clear和compact</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#mark方法与reset方法"><span class="nav-number">3.10.</span> <span class="nav-text">mark方法与reset方法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#equals-与compareTo-方法"><span class="nav-number">3.11.</span> <span class="nav-text">equals()与compareTo()方法</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#equals"><span class="nav-number">3.11.1.</span> <span class="nav-text">equals()</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#compareTo"><span class="nav-number">3.11.2.</span> <span class="nav-text">compareTo()</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">4.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
