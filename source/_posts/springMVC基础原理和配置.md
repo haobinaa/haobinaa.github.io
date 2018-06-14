@@ -1,5 +1,5 @@
 ---
-title: springMVC(入门配置)
+title: springMVC基础原理和配置
 date: 2017-12-06 17:45:07
 tags: springmvc
 categories: spring
@@ -39,7 +39,7 @@ spring mvc核心架构：
 
 11. 前端控制器向用户响应结果
 
-### 入门配置
+### 配置
 #### web.xml
 ``` 
 <servlet>
@@ -154,6 +154,109 @@ public class ItemsController {
      -->
     <context:component-scan base-package="com.iot.ssm.controller"></context:component-scan>
 ```
+
+### Controller配置
+
+#### springmvc.xml
+该文件配置处理器，适配器，视图解析器
+``` 
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+    http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.0.xsd
+    http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd">
+
+   <!-- 对于注解的Handler 可以单个配置
+    实际开发中加你使用组件扫描
+    -->
+    <!-- 可以扫描controller、service、...
+    这里让扫描controller，指定controller的包
+     -->
+    <context:component-scan base-package="com.iot.learnssm.firstssm.controller"></context:component-scan>
+
+
+    <!-- 使用mvc:annotation-driven代替上面两个注解映射器和注解适配的配置
+     mvc:annotation-driven默认加载很多的参数绑定方法，
+     比如json转换解析器默认加载了，如果使用mvc:annotation-driven则不用配置上面的RequestMappingHandlerMapping和RequestMappingHandlerAdapter
+     实际开发时使用mvc:annotation-driven
+     -->
+    <mvc:annotation-driven></mvc:annotation-driven>
+
+
+    <!-- 视图解析器
+    解析jsp,默认使用jstl,classpath下要有jstl的包
+    -->
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <!-- 配置jsp路径的前缀 -->
+        <property name="prefix" value="/WEB-INF/jsp/"/>
+        <!-- 配置jsp路径的后缀 -->
+        <property name="suffix" value=".jsp"/>
+    </bean>
+</beans>
+```
+
+#### web.xml
+servlet的web.xml配置,该文件配置：   
+- 前端控制器`DispatchServlet`的配置
+- 加载Spring容器、Spring监听器
+``` 
+<?xml version="1.0" encoding="utf-8" ?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+         id="WebApp_ID" version="3.0">
+    <display-name>firstssm</display-name>
+
+    <!-- 加载spring容器 -->
+    <context-param>
+        <param-name>contextConfigLocation</param-name>
+        <param-value>WEB-INF/classes/spring/applicationContext-*.xml</param-value>
+        <!--  <param-value>classpath:spring/applicationContext-*.xml</param-value>-->
+      </context-param>
+      <!-- 加载spring监听器 -->
+    <listener>
+      <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+    </listener>
+
+
+<!-- springmvc 前端控制器  -->
+    <servlet>
+        <servlet-name>springmvc</servlet-name>
+        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+        <!-- contextConfigLocation配置springmvc加载的配置文件(配置处理器映射器、适配器等等)
+          若不配置，默认加载WEB-INF/servlet名称-servlet(springmvc-servlet.xml)
+        -->
+        <init-param>
+            <param-name>contextConfigLocation</param-name>
+            <param-value>classpath:spring/springmvc.xml</param-value>
+        </init-param>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>springmvc</servlet-name>
+        <!--
+        第一种:*.action,访问以.action三结尾，由DispatcherServlet进行解析
+        第二种:/,所有访问的地址由DispatcherServlet进行解析，对静态文件的解析需要配置不让DispatcherServlet进行解析，
+                使用此种方式和实现RESTful风格的url
+        第三种:/*,这样配置不对，使用这种配置，最终要转发到一个jsp页面时，仍然会由DispatcherServlet解析jsp地址，
+                不能根据jsp页面找到handler，会报错
+        -->
+        <url-pattern>*.action</url-pattern>
+    </servlet-mapping>
+
+
+    <welcome-file-list>
+        <welcome-file>index.html</welcome-file>
+        <welcome-file>index.htm</welcome-file>
+        <welcome-file>index.jsp</welcome-file>
+        <welcome-file>default.html</welcome-file>
+        <welcome-file>default.htm</welcome-file>
+        <welcome-file>default.jsp</welcome-file>
+    </welcome-file-list>
+</web-app>
+```
+
 
 
 ### 参考资料
