@@ -1,8 +1,8 @@
 ---
 title: equals和hashcode
 date: 2017-11-22 17:05:40
-tags: java
-categories: JavaSE
+tags: javaSE
+categories: javaSE
 ---
 才学java的时候，打印某个对象是打印的一串莫名其妙的数字，后来知道这个是hashcode，就以为hashcode是对象的某个地址信息，直到看了一些文章才发现事实并非如此。
 ### euqlas

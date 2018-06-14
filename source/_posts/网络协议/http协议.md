@@ -1,9 +1,8 @@
 ---
 title: http协议
 date: 2017-12-29 09:53:25
-tags: 网络
-categories: http
----
+tags: http
+categories: 网络协议
 ###  概述
 超文本传输协议(http)是一个基于应用层的协议
 

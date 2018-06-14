@@ -2,7 +2,7 @@
 title: javaIO流
 date: 2017-11-15 23:03:03
 tags: JavaIO
-categories: JavaIO
+categories: IO
 ---
 
 ### 概述
