@@ -1,8 +1,8 @@
 ---
 title: springIOC(注解和java类配置bean)
 date: 2017-11-28 16:04:34
-tags:
-categories:
+tags: springframework
+categories: spring
 ---
 ### java注解配置bean
 

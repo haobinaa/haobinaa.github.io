@@ -86,7 +86,11 @@ idea设置热部署的步骤：
 ```
 
 ！！！注意：
-不要将App启动类放在`src/main/java`下，必须放在一个包中。且启动类默认扫描当前目录下的包和其子包
+不要将App启动类放在`src/main/java`下，必须放在一个包中。且启动类默认扫描当前目录下的包和其子包。
+
+如果放在`src/main/java`下，需要指定`ComponentScan`的basePackage，因为SpringBoot默认的basePackage是启动类的package，如果放在`src/mian/java
+`在，启动类的package为空，所以无法开始扫描
+
 
 ### 三、配置属性
 

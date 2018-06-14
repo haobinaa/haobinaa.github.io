@@ -1,7 +1,7 @@
 ---
 title: springIOC(bean和基本注入)
 date: 2017-11-28 09:29:37
-tags: spring
+tags: springframework
 categories: spring
 ---
 ### 注入方式
