@@ -1,7 +1,7 @@
 ---
 title: java多线程(基础)
 date: 2017-11-19 11:31:32
-tags: java多线程
+tags: java并发
 categories: java并发
 ---
 

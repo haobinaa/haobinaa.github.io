@@ -2,7 +2,7 @@
 title: mybatis使用(配置入门)
 date: 2017-12-08 17:39:56
 tags: mybatis
-categories: spring
+categories: orm
 ---
 ### 概览
 

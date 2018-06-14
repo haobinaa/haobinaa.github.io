@@ -1,7 +1,7 @@
 ---
 title: java动态代理的实现
 date: 2017-11-14 16:01:13
-tags: java
+tags: javaSE
 categories: javaSE
 ---
 java的动态代理机制的是需要Proxy类来实现的，我们来看一个简单的动态代理的实现,no bb, show the code:

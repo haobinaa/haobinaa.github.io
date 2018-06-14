@@ -2,7 +2,7 @@
 title: mybatis(缓存)
 date: 2017-12-19 17:19:46
 tags: mybatis
-categories: spring
+categories: orm
 ---
 ### 缓存
 数据库缓存可以减轻数据库压力，提高性能。mybatis提供一级缓存和二级缓存

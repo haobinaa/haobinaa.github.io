@@ -1,7 +1,7 @@
 ---
 title: servlet使用
 date: 2017-10-18 14:14:43
-tags: java
+tags: javaWeb
 categories: javaWeb
 ---
 

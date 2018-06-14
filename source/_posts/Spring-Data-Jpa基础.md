@@ -1,7 +1,7 @@
 ---
-title: SpringBoot(JPA基础)
+title: Spring-Data-Jpa基础用法
 date: 2018-01-15 22:58:54
-tags: springboot
+tags: spring-data
 categories: spring
 ---
 ### 概述

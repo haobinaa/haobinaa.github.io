@@ -1,5 +1,5 @@
 ---
-title: mysql基础类型
+title: mysql基础数据类型
 date: 2017-12-07 10:49:21
 tags: mysql
 categories: mysql

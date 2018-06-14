@@ -2,7 +2,7 @@
 title: mybatis映射文件(mapper xml文件)
 date: 2017-12-12 22:50:24
 tags: mybatis
-categories: spring
+categories: orm
 ---
 读了mybatis官方文档，总结mapper.xml使用规则
 

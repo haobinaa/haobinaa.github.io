@@ -2,7 +2,7 @@
 title: mybatis使用(查询使用)
 date: 2017-12-14 17:13:44
 tags: mybatis
-categories: spring
+categories: orm
 ---
 ### 查询   
 user表:  id  username ........

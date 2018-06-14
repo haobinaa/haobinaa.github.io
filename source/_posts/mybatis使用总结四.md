@@ -2,7 +2,7 @@
 title: mybatis使用(懒加载)
 date: 2017-12-18 16:06:56
 tags: mybatis
-categories: spring
+categories: orm
 ---
 ### 懒加载(lazy load)
 

@@ -1,8 +1,8 @@
 ---
 title: RabbitMQ之AMQP
 date: 2017-10-19 19:15:41
-tags: rabbitMQ
-categories: RabbitMQ
+tags: 消息中间件
+categories: 消息中间件
 ---
 
 ### AMQP关键性概念和流程

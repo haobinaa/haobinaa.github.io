@@ -1,8 +1,8 @@
 ---
 title: NIO_Channel
 date: 2018-01-29 20:06:35
-tags: IO
-categories: IO
+tags: JavaIO
+categories: JavaIO
 ---
 ### FileChannel
 

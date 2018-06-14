@@ -1,8 +1,8 @@
 ---
 title: NIO通道与Selector
 date: 2018-01-28 16:16:21
-tags: IO
-categories: IO
+tags: JavaIO
+categories: JavaIO
 ---
 
 ### Scatter/Gather

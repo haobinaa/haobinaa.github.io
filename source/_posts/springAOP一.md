@@ -1,7 +1,7 @@
 ---
 title: springAOP(动态代理)
 date: 2017-11-29 09:56:09
-tags: spring
+tags: springframework
 categories: spring
 ---
 ### JDK的动态代理

@@ -2,7 +2,7 @@
 title: shiro总结
 date: 2018-02-01 11:36:05
 tags: shiro
-categories: 安全验证
+categories: security
 ---
 ### 概述
 

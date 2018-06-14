@@ -1,8 +1,8 @@
 ---
 title: javaIO流
 date: 2017-11-15 23:03:03
-tags: javaIO
-categories: javaSE
+tags: JavaIO
+categories: JavaIO
 ---
 
 ### 概述

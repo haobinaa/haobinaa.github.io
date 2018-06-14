@@ -1,7 +1,7 @@
 ---
 title: java注解
 date: 2017-11-27 14:06:31
-tags: java
+tags: javaSE
 categories: javaSE
 ---
 ### 元注解

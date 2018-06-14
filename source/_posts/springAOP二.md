@@ -1,7 +1,7 @@
 ---
 title: springAOP(AOP)
 date: 2017-11-30 15:50:24
-tags: spring
+tags: springframework
 categories: spring
 ---
 

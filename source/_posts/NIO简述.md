@@ -1,8 +1,8 @@
 ---
 title: NIO简述
 date: 2018-01-27 18:45:31
-tags: IO
-categories: IO
+tags: JavaIO
+categories: JavaIO
 ---
 ### 概述
 java nio的核心有以下几部分组成：
