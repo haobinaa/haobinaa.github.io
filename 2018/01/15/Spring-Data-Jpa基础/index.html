@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="spring-data," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="概述JPAJPA(Java Persistence API)是Sun官方提出的Java持久化规范。它为Java开发人员提供了一种对象/关联映射工具来管理Java应用中的关系数据。他的出现主要是为了简化现有的持久化开发工作和整合ORM技术，结束现在Hibernate，TopLink，JDO等ORM框架各自为营的局面。值得注意的是，JPA是在充分吸收了现有Hibernate，TopLink，JDO等O">
+<meta name="keywords" content="spring-data">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spring-Data-Jpa基础用法">
+<meta property="og:url" content="http://yoursite.com/2018/01/15/Spring-Data-Jpa基础/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="概述JPAJPA(Java Persistence API)是Sun官方提出的Java持久化规范。它为Java开发人员提供了一种对象/关联映射工具来管理Java应用中的关系数据。他的出现主要是为了简化现有的持久化开发工作和整合ORM技术，结束现在Hibernate，TopLink，JDO等ORM框架各自为营的局面。值得注意的是，JPA是在充分吸收了现有Hibernate，TopLink，JDO等O">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://springforall.ufile.ucloud.com.cn/static/img/a0af26b59b775a77cf5d5702ce0597a21515160">
+<meta property="og:updated_time" content="2018-06-14T03:39:09.357Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Spring-Data-Jpa基础用法">
+<meta name="twitter:description" content="概述JPAJPA(Java Persistence API)是Sun官方提出的Java持久化规范。它为Java开发人员提供了一种对象/关联映射工具来管理Java应用中的关系数据。他的出现主要是为了简化现有的持久化开发工作和整合ORM技术，结束现在Hibernate，TopLink，JDO等ORM框架各自为营的局面。值得注意的是，JPA是在充分吸收了现有Hibernate，TopLink，JDO等O">
+<meta name="twitter:image" content="http://springforall.ufile.ucloud.com.cn/static/img/a0af26b59b775a77cf5d5702ce0597a21515160">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/01/15/Spring-Data-Jpa基础/"/>
+
+
+
+
+
+  <title>Spring-Data-Jpa基础用法 | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/01/15/Spring-Data-Jpa基础/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Spring-Data-Jpa基础用法</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-01-15T22:58:54+08:00">
+                2018-01-15
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/spring/" itemprop="url" rel="index">
+                    <span itemprop="name">spring</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><h4 id="JPA"><a href="#JPA" class="headerlink" title="JPA"></a>JPA</h4><p>JPA(Java Persistence API)是Sun官方提出的Java持久化规范。它为Java开发人员提供了一种对象/关联映射工具来管理Java应用中的关系数据。他的出现主要是为了简化现有的持久化开发工作和整合ORM技术，结束现在Hibernate，TopLink，JDO等ORM框架各自为营的局面。值得注意的是，JPA是在充分吸收了现有Hibernate，TopLink，JDO等ORM框架的基础上发展而来的，具有易于使用，伸缩性强等优点。从目前的开发社区的反应上看，JPA受到了极大的支持和赞扬，其中就包括了Spring与EJB3.0的开发团队</p>
+<p>注意:JPA是一套规范，不是一套产品，那么像Hibernate,TopLink,JDO他们是一套产品，如果说这些产品实现了这个JPA规范，那么我们就可以叫他们为JPA的实现产品。</p>
+<h4 id="spring-data-jpa"><a href="#spring-data-jpa" class="headerlink" title="spring data jpa"></a>spring data jpa</h4><p>Spring Data JPA 是 Spring 基于 ORM 框架、JPA 规范的基础上封装的一套JPA应用框架，可使开发者用极简的代码即可实现对数据的访问和操作。</p>
+<h3 id="基本查询"><a href="#基本查询" class="headerlink" title="基本查询"></a>基本查询</h3><h4 id="预先生成的方法"><a href="#预先生成的方法" class="headerlink" title="预先生成的方法"></a>预先生成的方法</h4><p>spring data jpa 默认预先生成了一些基本的CURD的方法，例如：增、删、改等等<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">public interface CustomerRepostory extends JpaRepository&lt;Customer, Long&gt; &#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>CustomerRepository继承了JpaRepository之后就拥有了CrudRepository、QueryByExampleExecutor、PagingAndSortingRepository的基本能力了，包括基本的增删改查都有了。</p>
+<p>示例：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">@RequestMapping(&quot;/add&quot;)</span><br><span class="line">public void add() &#123;</span><br><span class="line">    Customer customer = new Customer(&quot;bin&quot;, &quot;hao&quot;);</span><br><span class="line">    this.customerRepostory.save(customer);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">@RequestMapping(value = &quot;/all&quot;)</span><br><span class="line">public Object findAll() &#123;</span><br><span class="line">    return this.customerRepostory.findAll();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">@RequestMapping(value = &quot;/one&quot;)</span><br><span class="line">public Object findOne() &#123;</span><br><span class="line">    // id是long</span><br><span class="line">    return this.customerRepostory.findOne(1l);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">@RequestMapping(value = &quot;/delete&quot;)</span><br><span class="line">public void delete() &#123;</span><br><span class="line">    this.customerRepostory.delete(1l);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h4 id="自定义简单查询"><a href="#自定义简单查询" class="headerlink" title="自定义简单查询"></a>自定义简单查询</h4><p>自定义的简单查询就是根据方法名来自动生成SQL，主要的语法是findXXBy,readXXBy,queryXXBy,countXXBy, getXXBy后面跟属性名称：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">// 等于 `select * from user where user_name=$&#123;userName&#125;`</span><br><span class="line">User findByUserName(String userName);</span><br></pre></td></tr></table></figure></p>
+<p>也可以加一些关键字<code>And</code>、<code>Or</code><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">User findByUserNameOrEmail(String username, String email);</span><br></pre></td></tr></table></figure></p>
+<p>修改、删除、统计也是类似语法<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Long deleteById(Long id);</span><br><span class="line"></span><br><span class="line">Long countByUserName(String userName)</span><br></pre></td></tr></table></figure></p>
+<p>基本上SQL体系中的关键词都可以使用，例如：LIKE、 IgnoreCase、 OrderBy<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">List&lt;User&gt; findByEmailLike(String email);</span><br><span class="line"></span><br><span class="line">User findByUserNameIgnoreCase(String userName);</span><br><span class="line">    </span><br><span class="line">List&lt;User&gt; findByUserNameOrderByEmailDesc(String email);</span><br></pre></td></tr></table></figure></p>
+<p>具体的创建查询的命名如下：<br><img src="http://springforall.ufile.ucloud.com.cn/static/img/a0af26b59b775a77cf5d5702ce0597a21515160" alt=""></p>
+<h4 id="预定义查询-NamedQuery"><a href="#预定义查询-NamedQuery" class="headerlink" title="预定义查询(@NamedQuery)"></a>预定义查询(@NamedQuery)</h4><p>还可以自己预定义查询方法</p>
+<p>预定义查询有两种，一种是通过XML配置<named-query>或配置<code>@NamedQuery</code>，另一种是通过XML配置<named-native-query>或配置<code>@NamedNativeQuery</code>实现。这里演示annotation的方式</named-native-query></named-query></p>
+<p>1.修改实体(Entity)</p>
+<p>在<code>@Entity</code>下增加<code>@NamedQuery</code>定义，需要注意，这里的sql表达式里的表名要和当前的Entity一致，否则会找不到，报错！查询参数也要和实体进行对应起来，是firstName而不是first_name<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">@Entity</span><br><span class="line">@NamedQuery(name=&quot;Customer.findByFirstName&quot;,query = &quot;select c from Customer c where c.firstName = ?1&quot;)</span><br><span class="line">public class Customer &#123;</span><br></pre></td></tr></table></figure></p>
+<p>2.repository增加方法<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Customer findByFirstName(String bauer);</span><br></pre></td></tr></table></figure></p>
+<ol start="3">
+<li>使用</li>
+</ol>
+<p>这样就可以使用自定义的findByFirstName方法了</p>
+<h4 id="Query"><a href="#Query" class="headerlink" title="@Query"></a>@Query</h4><p>使用<code>@Quey</code>注解，使用注解有两种方式，一种是JPQL的SQL语言方式，一种是原生SQL的语言</p>
+<p>使用示例：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">@Query(&quot;select c from Customer c where c.firstName=?1&quot;)</span><br><span class="line"> Customer findByFirstName2(String bauer);</span><br><span class="line"></span><br><span class="line"> @Query(&quot;select c from Customer c where c.lastName=?1 order by c.id desc&quot;)</span><br><span class="line"> List&lt;Customer&gt; findByLastName2(String lastName);</span><br><span class="line"></span><br><span class="line"> /**</span><br><span class="line">  * 一个参数匹配两个字段</span><br><span class="line">  * 这里Param的值和=:后面的参数匹配，但不需要和方法名对应的参数值对应</span><br><span class="line">  */</span><br><span class="line"> @Query(&quot;select c from Customer c where c.firstName=:name or c.lastName=:name  order by c.id desc&quot;)</span><br><span class="line"> List&lt;Customer&gt; findByName(@Param(&quot;name&quot;) String name);</span><br><span class="line"></span><br><span class="line"> /**</span><br><span class="line">  * 这里的%只能放在占位的前面，后面不行</span><br><span class="line">  */</span><br><span class="line"> @Query(&quot;select c from Customer c where c.firstName like %?1&quot;)</span><br><span class="line"> List&lt;Customer&gt; findByName2(@Param(&quot;name&quot;) String name);</span><br><span class="line"></span><br><span class="line"> /**</span><br><span class="line">  * 开启nativeQuery=true，在value里可以用原生SQL语句完成查询</span><br><span class="line">  */</span><br><span class="line"> @Query(nativeQuery = true,value = &quot;select * from Customer c where c.first_name like concat(&apos;%&apos; ,?1,&apos;%&apos;) &quot;)</span><br><span class="line"> List&lt;Customer&gt; findByName3(String name);</span><br></pre></td></tr></table></figure></p>
+<p>？加数字表示占位符，？1代表在方法参数里的第一个参数，区别于其他的index，这里从1开始</p>
+<p>=:加上变量名，这里是与方法参数中有@Param的值匹配的，而不是与实际参数匹配的</p>
+<p>JPQL的语法中，表名的位置对应Entity的名称，字段对应Entity的属性,详细语法见相关文档</p>
+<p>要使用原生SQL需要在@Query注解中设置nativeQuery=true，然后value变更为原生SQL即可</p>
+<h3 id="使用sort进行排序"><a href="#使用sort进行排序" class="headerlink" title="使用sort进行排序"></a>使用sort进行排序</h3><p>1.在CustomerRepository内添加方法<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">@Query(&quot;select c from Customer c where c.firstName=:name or c.lastName=:name&quot;)</span><br><span class="line">List&lt;Customer&gt; findByName4(@Param(&quot;name&quot;) String name, Sort sort);</span><br></pre></td></tr></table></figure></p>
+<p>2.测试使用<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">//按照ID倒序排列</span><br><span class="line">       System.out.println(&quot;直接创建sort对象，通过排序方法和属性名&quot;);</span><br><span class="line">       Sort sort = new Sort(Sort.Direction.DESC,&quot;id&quot;);</span><br><span class="line">       List&lt;Customer&gt; result = this.customerRepostory.findByName4(&quot;san&quot;,sort);</span><br><span class="line">       for (Customer customer:result)&#123;</span><br><span class="line">           System.out.println(customer.toString());</span><br><span class="line">       &#125;</span><br><span class="line">       System.out.println(&quot;-------------------------------------------&quot;);</span><br><span class="line">       //按照ID倒序排列</span><br><span class="line">       System.out.println(&quot;通过Sort.Order对象创建sort对象&quot;);</span><br><span class="line">       Sort sortx = new Sort(new Sort.Order(Sort.Direction.DESC,&quot;id&quot;));</span><br><span class="line">       List&lt;Customer&gt; resultx = this.customerRepostory.findByName4(&quot;zhang&quot;,sort);</span><br><span class="line">       for (Customer customer:result)&#123;</span><br><span class="line">           System.out.println(customer.toString());</span><br><span class="line">       &#125;</span><br><span class="line">       System.out.println(&quot;-------------------------------------------&quot;);</span><br><span class="line">       System.out.println(&quot;通过排序方法和属性List创建sort对象&quot;);</span><br><span class="line">       List&lt;String&gt; sortProperties = new ArrayList&lt;String&gt;();</span><br><span class="line">       sortProperties.add(&quot;id&quot;);</span><br><span class="line">       sortProperties.add(&quot;firstName&quot;);</span><br><span class="line">       Sort sort2 = new Sort(Sort.Direction.DESC,sortProperties);</span><br><span class="line">       List&lt;Customer&gt; result2 = this.customerRepostory.findByName4(&quot;san&quot;,sort2);</span><br><span class="line">       for (Customer customer:result2)&#123;</span><br><span class="line">           System.out.println(customer.toString());</span><br><span class="line">       &#125;</span><br><span class="line">       System.out.println(&quot;-------------------------------------------&quot;);</span><br><span class="line"></span><br><span class="line">       System.out.println(&quot;通过创建Sort.Order对象的集合创建sort对象&quot;);</span><br><span class="line">       List&lt;Sort.Order&gt; orders = new ArrayList&lt;Sort.Order&gt;();</span><br><span class="line">       orders.add(new Sort.Order(Sort.Direction.DESC,&quot;id&quot;));</span><br><span class="line">       orders.add(new Sort.Order(Sort.Direction.ASC,&quot;firstName&quot;));</span><br><span class="line">       List&lt;Customer&gt; result3 = this.customerRepostory.findByName4(&quot;san&quot;,new Sort(orders));</span><br><span class="line">       for (Customer customer:result3)&#123;</span><br><span class="line">           System.out.println(customer.toString());</span><br><span class="line">       &#125;</span><br><span class="line">       System.out.println(&quot;-------------------------------------------&quot;);</span><br></pre></td></tr></table></figure></p>
+<p>这四种排序：</p>
+<p>1) 直接创建Sort对象，适合对单一属性做排序</p>
+<p>2) 通过Sort.Order对象创建Sort对象，适合对单一属性做排序</p>
+<p>3) 通过属性的List集合创建Sort对象，适合对多个属性，采取同一种排序方式的排序</p>
+<p>4) 通过Sort.Order对象的List集合创建Sort对象，适合所有情况，比较容易设置排序方式</p>
+<h3 id="Modifying-queries-更新"><a href="#Modifying-queries-更新" class="headerlink" title="Modifying queries(更新)"></a>Modifying queries(更新)</h3><p>1.新增repositoy方法<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * 根据lastName去更新firstName，返回结果是更改数据的行数</span><br><span class="line"> * 使用@Modifying注解的时候，一定要加上事务注解@Transactional</span><br><span class="line"> */</span><br><span class="line">@Modifying//更新查询</span><br><span class="line">@Transactional//开启事务</span><br><span class="line">@Query(&quot;update Customer c set c.firstName = ?1 where c.lastName = ?2&quot;)</span><br><span class="line">int setFixedFirstnameFor(String firstName, String lastName);</span><br></pre></td></tr></table></figure></p>
+<ol start="2">
+<li>调用repository</li>
+</ol>
+<p>这里返回的是受影响的行数</p>
+<h3 id="分页"><a href="#分页" class="headerlink" title="分页"></a>分页</h3><p>1.在repository定义分页查询<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">@QueryHints(value = &#123; @QueryHint(name = HINT_COMMENT, value = &quot;a query for pageable&quot;)&#125;)</span><br><span class="line">@Query(&quot;select c from Customer c where c.firstName=:name or c.lastName=:name&quot;)</span><br><span class="line">Page&lt;Customer&gt; findByName5(@Param(&quot;name&quot;) String name, Pageable pageable);</span><br></pre></td></tr></table></figure></p>
+<p>2.调用分页<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">//Pageable是接口，PageRequest是接口实现</span><br><span class="line">//PageRequest的对象构造函数有多个，page是页数，初始值是0，size是查询结果的条数，后两个参数参考Sort对象的构造方法</span><br><span class="line">Pageable pageable = new PageRequest(0,3, Sort.Direction.DESC,&quot;id&quot;);</span><br><span class="line">Page&lt;Customer&gt; page = this.customerRepostory.findByName5(&quot;san&quot;,pageable);</span><br><span class="line">//查询结果总行数</span><br><span class="line">System.out.println(page.getTotalElements());</span><br><span class="line">//按照当前分页大小，总页数</span><br><span class="line">System.out.println(page.getTotalPages());</span><br><span class="line">//按照当前页数、分页大小，查出的分页结果集合</span><br><span class="line">for (Customer customer: page.getContent()) &#123;</span><br><span class="line">    System.out.println(customer.toString());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h4 id="限制查询"><a href="#限制查询" class="headerlink" title="限制查询"></a>限制查询</h4><p>有时候我们只需要查询前N个元素，或者支取前一个实体。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">// 根据lastname升序，取第一 </span><br><span class="line">User findFirstByOrderByLastnameAsc();</span><br><span class="line"></span><br><span class="line">// 根据age降序，取第一个</span><br><span class="line">User findTopByOrderByAgeDesc();</span><br><span class="line"></span><br><span class="line">// 取前十条</span><br><span class="line">Page&lt;User&gt; queryFirst10ByLastname(String lastname, Pageable pageable);</span><br><span class="line"></span><br><span class="line">List&lt;User&gt; findFirst10ByLastname(String lastname, Sort sort);</span><br><span class="line"></span><br><span class="line">List&lt;User&gt; findTop10ByLastname(String lastname, Pageable pageable);</span><br></pre></td></tr></table></figure></p>
+<h3 id="投影"><a href="#投影" class="headerlink" title="投影"></a>投影</h3><p>在JPA的查询中，有一个不方便的地方，@Query注解，如果查询直接是Select C from Customer c,这时候，查询的返回对象就是Customer这个完整的对象，包含所有字段，对于我们的示例并没有什么问题，但是对于比较庞大的domain类，这个查询时就比较要命，并不是所有的字段都能用到，比较头疼。另外，如果定义select c.firstName as firstName,c.lastName as lastName from Customer c这个查询结果，返回的对象是Object类型，而且无法直接转换成Customer对象，这样用起来就不是很方便。<br>对于这种情况，JPA提供了一种声明方式来解决，即声明一个接口类，然后直接使用这个接口类接受返回的数据即可</p>
+<ol>
+<li>增加CustomerProjection接口<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">public interface CustomerProjection &#123;</span><br><span class="line">// 这里声明的方式是可以直接通过get+属性名，这是普通的，另外也可以通过@Value注解来实现指定字段</span><br><span class="line">// 除了指定字段也可以做聚合展示，比如有些地方需要展示客户的全名，这里定义的getFullName()方法及注解@Value即完成这一操作。</span><br><span class="line">// 需要注意这里的@Value中的target表达式写法及拼接方法。</span><br><span class="line">    @Value(&quot;#&#123;target.firstName + &apos; &apos; + target.lastName&#125;&quot;)</span><br><span class="line">    String getFullName();</span><br><span class="line"></span><br><span class="line">    String getFirstName();</span><br><span class="line"></span><br><span class="line">    String getLastName();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>2.增加CustomerRepository方法<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">@Query(&quot;SELECT c.firstName as firstName,c.lastName as lastName from Customer  c&quot;)</span><br><span class="line">Collection&lt;CustomerProjection&gt; findAllProjectedBy();</span><br></pre></td></tr></table></figure></p>
+<p>3.使用<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">public void findAllProjections()&#123;</span><br><span class="line">    Collection&lt;CustomerProjection&gt; projections = this.customerRepostory.findAllProjectedBy();</span><br><span class="line">    System.out.println(projections);</span><br><span class="line">    System.out.println(projections.size());</span><br><span class="line">    for (CustomerProjection projection:projections)&#123;</span><br><span class="line">        System.out.println(&quot;FullName:&quot;+projection.getFullName());</span><br><span class="line">        System.out.println(&quot;FirstName:&quot;+projection.getFirstName());</span><br><span class="line">        System.out.println(&quot;LastName:&quot;+projection.getLastName());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>注意：</p>
+<ol>
+<li><p>projection是一个声明式的接口</p>
+</li>
+<li><p>包含要导出属性的getter，firstName属性的getter写成getFirstName，这样Spring Data框架才能根据约定正确取得属性</p>
+</li>
+<li><p>在返回值中使用定义好的projection就会只返回projection定义的属性，不会返回所有</p>
+</li>
+</ol>
+<h3 id="多表查询"><a href="#多表查询" class="headerlink" title="多表查询"></a>多表查询</h3><p>多表查询在spring data jpa中有两种实现方式，第一种是利用hibernate的级联查询来实现，第二种是创建一个结果集的接口来接收连表查询后的结果，这里主要第二种方式</p>
+<p>1.定义一个结果集的接口类<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">public interface HotelSummary &#123;</span><br><span class="line"></span><br><span class="line">	City getCity();</span><br><span class="line"></span><br><span class="line">	String getName();</span><br><span class="line"></span><br><span class="line">	Double getAverageRating();</span><br><span class="line"></span><br><span class="line">	default Integer getAverageRatingRounded() &#123;</span><br><span class="line">		return getAverageRating() == null ? null : (int) Math.round(getAverageRating());</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>2.查询的方法返回类型为新创建的接口<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">@Query(&quot;select h.city as city, h.name as name, avg(r.rating) as averageRating &quot;</span><br><span class="line">		- &quot;from Hotel h left outer join h.reviews r where h.city = ?1 group by h&quot;)</span><br><span class="line">Page&lt;HotelSummary&gt; findByCity(City city, Pageable pageable);</span><br><span class="line"></span><br><span class="line">@Query(&quot;select h.name as name, avg(r.rating) as averageRating &quot;</span><br><span class="line">		- &quot;from Hotel h left outer join h.reviews r  group by h&quot;)</span><br><span class="line">Page&lt;HotelSummary&gt; findByCity(Pageable pageable);</span><br></pre></td></tr></table></figure></p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="http://www.spring4all.com/article/459" target="_blank" rel="noopener">jpa基本配置</a></li>
+<li><a href="http://www.ityouknow.com/springboot/2016/08/20/springboot(%E4%BA%94" target="_blank" rel="noopener">springboot JPA的使用</a>-spring-data-jpa%E7%9A%84%E4%BD%BF%E7%94%A8.html)</li>
+<li><a href="https://docs.spring.io/spring-data/jpa/docs/current/reference/html" target="_blank" rel="noopener">官方文档</a></li>
+<li><a href="http://www.blogjava.net/calmJava/archive/2011/04/01/347450.html" target="_blank" rel="noopener">jpql文档</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/spring-data/" rel="tag"><i class="fa fa-tag"></i> spring-data</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/01/09/SpringBoot日志与模板引擎/" rel="next" title="SpringBoot(日志和模板引擎)">
+                <i class="fa fa-chevron-left"></i> SpringBoot(日志和模板引擎)
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/01/27/NIO简述/" rel="prev" title="NIO简述">
+                NIO简述 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">一息尚存，则吾志不移</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">51</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">17</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">20</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#JPA"><span class="nav-number">1.1.</span> <span class="nav-text">JPA</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#spring-data-jpa"><span class="nav-number">1.2.</span> <span class="nav-text">spring data jpa</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#基本查询"><span class="nav-number">2.</span> <span class="nav-text">基本查询</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#预先生成的方法"><span class="nav-number">2.1.</span> <span class="nav-text">预先生成的方法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#自定义简单查询"><span class="nav-number">2.2.</span> <span class="nav-text">自定义简单查询</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#预定义查询-NamedQuery"><span class="nav-number">2.3.</span> <span class="nav-text">预定义查询(@NamedQuery)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Query"><span class="nav-number">2.4.</span> <span class="nav-text">@Query</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用sort进行排序"><span class="nav-number">3.</span> <span class="nav-text">使用sort进行排序</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Modifying-queries-更新"><span class="nav-number">4.</span> <span class="nav-text">Modifying queries(更新)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#分页"><span class="nav-number">5.</span> <span class="nav-text">分页</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#限制查询"><span class="nav-number">5.1.</span> <span class="nav-text">限制查询</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#投影"><span class="nav-number">6.</span> <span class="nav-text">投影</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#多表查询"><span class="nav-number">7.</span> <span class="nav-text">多表查询</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">8.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
