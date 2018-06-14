@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="微服务," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="架构的演变单体式架构没有模块的划分，用一个项目就涵盖了所有逻辑，也是我们最开始写的程序，易于测试和部署发布。 单体应用非常简单，但这也是他致命的缺点，随着业务的不断增加，复杂度越来越高，项目中的代码越来越不可控，就造成了很多问题：  代码量过多，结构过于复杂 可靠性低下：所有代码都运行在同一进程中，模块中任何一个bug，比如内存泄露都可能弄垮整个进程 技术更新困难： 技术选型在一开始就定下来了 启">
+<meta name="keywords" content="微服务">
+<meta property="og:type" content="article">
+<meta property="og:title" content="微服务介绍">
+<meta property="og:url" content="http://yoursite.com/2018/02/04/架构/微服务介绍/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="架构的演变单体式架构没有模块的划分，用一个项目就涵盖了所有逻辑，也是我们最开始写的程序，易于测试和部署发布。 单体应用非常简单，但这也是他致命的缺点，随着业务的不断增加，复杂度越来越高，项目中的代码越来越不可控，就造成了很多问题：  代码量过多，结构过于复杂 可靠性低下：所有代码都运行在同一进程中，模块中任何一个bug，比如内存泄露都可能弄垮整个进程 技术更新困难： 技术选型在一开始就定下来了 启">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/images/microservice.png">
+<meta property="og:image" content="http://yoursite.com/images/API-Gateway.png.jpg">
+<meta property="og:updated_time" content="2018-06-14T07:28:39.173Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="微服务介绍">
+<meta name="twitter:description" content="架构的演变单体式架构没有模块的划分，用一个项目就涵盖了所有逻辑，也是我们最开始写的程序，易于测试和部署发布。 单体应用非常简单，但这也是他致命的缺点，随着业务的不断增加，复杂度越来越高，项目中的代码越来越不可控，就造成了很多问题：  代码量过多，结构过于复杂 可靠性低下：所有代码都运行在同一进程中，模块中任何一个bug，比如内存泄露都可能弄垮整个进程 技术更新困难： 技术选型在一开始就定下来了 启">
+<meta name="twitter:image" content="http://yoursite.com/images/microservice.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/02/04/架构/微服务介绍/"/>
+
+
+
+
+
+  <title>微服务介绍 | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/02/04/架构/微服务介绍/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">微服务介绍</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-02-04T15:01:38+08:00">
+                2018-02-04
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/架构/" itemprop="url" rel="index">
+                    <span itemprop="name">架构</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="架构的演变"><a href="#架构的演变" class="headerlink" title="架构的演变"></a>架构的演变</h3><h4 id="单体式架构"><a href="#单体式架构" class="headerlink" title="单体式架构"></a>单体式架构</h4><p>没有模块的划分，用一个项目就涵盖了所有逻辑，也是我们最开始写的程序，易于测试和部署发布。</p>
+<p>单体应用非常简单，但这也是他致命的缺点，随着业务的不断增加，复杂度越来越高，项目中的代码越来越不可控，就造成了很多问题：</p>
+<ol>
+<li>代码量过多，结构过于复杂</li>
+<li>可靠性低下：所有代码都运行在同一进程中，模块中任何一个bug，比如内存泄露都可能弄垮整个进程</li>
+<li>技术更新困难： 技术选型在一开始就定下来了</li>
+<li>启动时间过长： 我们知道代码量越多，应用的启动时间就会随之变长。当应用程序规模超大的，启动时间成了巨大的问题</li>
+<li>难以持续部署： 现在， SaaS 应用的发展水平足以在单日内多次将修改推送到生产环境。然而要让复杂的单个应用达到此水平却极为棘手。想更新应用的单个部分，必须重新部署整个应用，漫长的启动时间更是雪上加霜。另外，由于不能完全预见修改的影响，你不得不提前进行大量人工测试。结果就是，持续部署变得不可能</li>
+<li>扩展变得艰难</li>
+</ol>
+<h4 id="SOA"><a href="#SOA" class="headerlink" title="SOA"></a>SOA</h4><p>SOA是一种架构的设计方法，是包含运行环境、编程模型、架构风格和相关方法论等在内的一整套新的分布式软件系统构造方法和环境，涵盖服务的整个生命周期：建模-开发-整合-部署-运行-管理</p>
+<p>在SOA架构风格中，服务是最核心的抽象手段，业务被划分（组件化）为一系列粗粒度的业务服务和业务流程。业务服务相对独立、自包含、可重用，由一个或者多个分布的系统所实现，而业务流程由服务组装而来</p>
+<p>SOA 并不代表一个特定的技术或者是特定的方案，它只是为设计人员提供指导。而现在最为人所知的 SOA 架构的风格的则是 ESB（即企业服务总线）</p>
+<h3 id="微服务架构"><a href="#微服务架构" class="headerlink" title="微服务架构"></a>微服务架构</h3><p>微服务就是用来解决之前架构上的问题而演化出来的</p>
+<h4 id="微服务的特点"><a href="#微服务的特点" class="headerlink" title="微服务的特点"></a>微服务的特点</h4><ul>
+<li>一组小的服务：微服务将业务拆出来，拆成一个个小的独立的服务</li>
+<li>独立的进程： 每个微服务都部署在独立的容器中，以进程的方式横向扩展微服务</li>
+<li>轻量级的通信协议： 如http，短小格式的通信格式</li>
+<li>基于业务能力</li>
+<li>独立部署： 每个服务的开发、迭代都可以独立部署，每个团队维护自己的服务</li>
+<li>没有集中式的管理： 每个服务可以采用不同的技术栈</li>
+</ul>
+<h4 id="微服务的利弊"><a href="#微服务的利弊" class="headerlink" title="微服务的利弊"></a>微服务的利弊</h4><p>微服务的优势：</p>
+<ol>
+<li>强模块化边界：更加模块化，边界很清晰</li>
+<li>可独立部署</li>
+<li>技术多样性</li>
+</ol>
+<p>微服务的缺陷：</p>
+<ol>
+<li>分布式复杂性</li>
+<li>最终一致性，如不同服务之间数据的一致性，相互关联的服务数据如何保持一致</li>
+<li>运维复杂性</li>
+<li>测试的复杂性： 集成测试就需要各个团队合作测试，复杂性增加</li>
+</ol>
+<h4 id="微服务的特性"><a href="#微服务的特性" class="headerlink" title="微服务的特性"></a>微服务的特性</h4><h5 id="1-组件化"><a href="#1-组件化" class="headerlink" title="1.组件化"></a>1.组件化</h5><p>微服务中有两种组件：服务(Service)和库(Library)，微服务选取服务作为一个独立的组件，一个组件即一个服务</p>
+<ul>
+<li>服务(Service):是一种通过轻量级通信机制（如 HTTP 请求等）来进行通信的进程外组件。可独立部署，并且接口更明确</li>
+<li>库(Library):是一种链接到项目里，并通过内存中的函数调用方式进行调用的组件。虽然通信成本低，但是一旦更改了一个库，整个应用就必须要重新部署</li>
+</ul>
+<h5 id="2-团队组织"><a href="#2-团队组织" class="headerlink" title="2.团队组织"></a>2.团队组织</h5><p>一个小型的团队更有助于一个服务的开发，因为小规模的团队成员之间的沟通成本小，更能专注于业务本身。所以将一个大的应用分割成每一个规模不大、独立的服务</p>
+<h5 id="3-通讯机制"><a href="#3-通讯机制" class="headerlink" title="3.通讯机制"></a>3.通讯机制</h5><p>微服务架构中的通信机制是以 明确的接口 和 轻量级通信机制 为基础的。因为现在网络的通常我们会选择 REST 风格的 HTTP 请求</p>
+<h5 id="4-组件分治"><a href="#4-组件分治" class="headerlink" title="4.组件分治"></a>4.组件分治</h5><p>因为各个组件由各个专属团队负责，而且采用通用的HTTP请求来进行通信，所以各组件之间所采用的技术就毫无关系了，可以使用不同的框架、不同的编程语言、甚至不同的存储方式（关系型数据库或者是NOSQL等），只要满足协议规定的接口即可。这就极大的提高了技术和管理自由度。</p>
+<h5 id="5-数据管理分治"><a href="#5-数据管理分治" class="headerlink" title="5.数据管理分治"></a>5.数据管理分治</h5><p>对于数据存储的管理，这里推荐的是各个服务管理其自有数据库，即去中心化管理数据。因为我们在使用领域模型驱动分解系统的时候，已经明确的界定了上下文边界，也就将数据模型划分到了各个组件之中</p>
+<h5 id="6-容错设计"><a href="#6-容错设计" class="headerlink" title="6.容错设计"></a>6.容错设计</h5><p>由于微服务的架构服务独立部署、独立运维的特征，各个服务随时出现故障，或者服务间在调用的过程中很容易出现错误或调用失败，导致相应的功能流程出现问题或者数据纰漏。所以容错设计就非常的重要了。</p>
+<p>为此我们需要监控到微服务架构中的元素和业务先关的指标，比如各种状态和操作的情况、业务相关的指标、当前系统的吞吐量和延迟情况等。</p>
+<h5 id="7-基础设计自动化"><a href="#7-基础设计自动化" class="headerlink" title="7.基础设计自动化"></a>7.基础设计自动化</h5><p>基础设施自动化技术在过去几年中得到了长足的发展：云计算，特别是AWS的发展，减少了构建、发布、运维微服务的复杂性。</p>
+<p>微服务架构中的每一个服务所依赖的基础设施自动化和之前的单体式应用并无不同，只是更加依赖，尤其是更多的自动化测试，以保证各个服务的可靠性。</p>
+<h3 id="微服务设计"><a href="#微服务设计" class="headerlink" title="微服务设计"></a>微服务设计</h3><p><img src="/images/microservice.png" alt=""></p>
+<h4 id="API网关"><a href="#API网关" class="headerlink" title="API网关"></a>API网关</h4><p>我们将微服务划分成了几个隔离的服务，服务之间基于轻量级的通信机制来进行数据交换， 但是这对客户端来说，如果同时需要A、B两个服务的数据，就需要知道A、B两个服务的地址，如果更新了服务的地址，同样就要更新客户端的地址</p>
+<p>显然我们需要一种解决方案，让客户端和服务端解耦， 引入一个中间件把客户端发来的消息转发给指定后台，承担起微服务入口的功能，我们称之为API网关。</p>
+<p><img src="/images/API-Gateway.png.jpg" alt=""></p>
+<p>API网关的主要功能：</p>
+<ul>
+<li>负载均衡： 反向路由，将外部请求转换为内部访问</li>
+<li>安全认证： 将恶意的访问档在网关之外</li>
+<li>限流熔断： 如果有突发流量，进行限流熔断(服务降级：降低非主流业务功能减轻系统压力； 熔断：当流量过大，启动熔断机制，拒绝服务或者引流，避免系统瘫痪)</li>
+<li>日志监控： 保存日志和分析日志</li>
+</ul>
+<h4 id="服务发现"><a href="#服务发现" class="headerlink" title="服务发现"></a>服务发现</h4><p>1.传统LB模式</p>
+<p>DNS -&gt; LB(load balance) -&gt; service provider</p>
+<p>域名通过DNS解析，通过负载均衡器找到后台的服务</p>
+<p>2.进程内LB模式</p>
+<p>service provider -&gt;(register)  service registry -&gt; customer(内置LB) -&gt; service provider</p>
+<p>后台服务在服务注册表中注册，客户端有个内置的LB，指向对应的服务提供方</p>
+<p>3.主机独立LB模式</p>
+<p>service provider -&gt;(register)   service registry  -&gt;<br>customer(在同一个主机中，LB存在于一个独立的进程中) -&gt; service provider</p>
+<p>相比于第二种，单独的LB跟客户端关联没那么紧密，不需要为每种语言都配置一个LB </p>
+<h4 id="数据存储"><a href="#数据存储" class="headerlink" title="数据存储"></a>数据存储</h4><p>在传统单体式项目中，一个应用中的各个模块共用一个数据库，它能很好地保证事务一致性。而在微服务架构中，如果共用一个数据库则会有高耦合度的问题，比如一个服务想要修改一个表的结构，那么它在修改的时候要极其小心，应该这个表也可能是其他服务正在使用的，所以我们让每个服务管理对应的数据库。</p>
+<p>在分解数据库的时候，有很多问题：事务一致性、外键关系、静态数据处理、共享数据和共享表的处理等等。</p>
+<p>build microservice提供的解决方案：</p>
+<ul>
+<li>外键关系：把这个约束转移至代码中，在需要的时候通过 API 去其他服务请求数据</li>
+<li>静态数据：<ul>
+<li>方法1：每个服务复制一份该表的内容</li>
+<li>方法2：将这些共享的静态数据放入静态配置文件或代码之中；（推荐）</li>
+<li>方法3： 将这些静态数据放入一个单独的服务，如果数据量和相关的规则复杂就可以使用这个方法</li>
+</ul>
+</li>
+<li>共享数据：我们可以将共享的部分提取出来，新建一个服务管理这些数据，其他服务访问这个新服务来获取数据</li>
+<li>共享表：把表按照需求拆分</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/微服务/" rel="tag"><i class="fa fa-tag"></i> 微服务</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/02/01/security/shiro总结/" rel="next" title="shiro总结">
+                <i class="fa fa-chevron-left"></i> shiro总结
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/03/16/spring/RestTemplate使用/" rel="prev" title="RestTemplate使用">
+                RestTemplate使用 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">一息尚存，则吾志不移</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">51</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">13</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">19</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#架构的演变"><span class="nav-number">1.</span> <span class="nav-text">架构的演变</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#单体式架构"><span class="nav-number">1.1.</span> <span class="nav-text">单体式架构</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#SOA"><span class="nav-number">1.2.</span> <span class="nav-text">SOA</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#微服务架构"><span class="nav-number">2.</span> <span class="nav-text">微服务架构</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#微服务的特点"><span class="nav-number">2.1.</span> <span class="nav-text">微服务的特点</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#微服务的利弊"><span class="nav-number">2.2.</span> <span class="nav-text">微服务的利弊</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#微服务的特性"><span class="nav-number">2.3.</span> <span class="nav-text">微服务的特性</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-组件化"><span class="nav-number">2.3.1.</span> <span class="nav-text">1.组件化</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-团队组织"><span class="nav-number">2.3.2.</span> <span class="nav-text">2.团队组织</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-通讯机制"><span class="nav-number">2.3.3.</span> <span class="nav-text">3.通讯机制</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-组件分治"><span class="nav-number">2.3.4.</span> <span class="nav-text">4.组件分治</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#5-数据管理分治"><span class="nav-number">2.3.5.</span> <span class="nav-text">5.数据管理分治</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#6-容错设计"><span class="nav-number">2.3.6.</span> <span class="nav-text">6.容错设计</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#7-基础设计自动化"><span class="nav-number">2.3.7.</span> <span class="nav-text">7.基础设计自动化</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#微服务设计"><span class="nav-number">3.</span> <span class="nav-text">微服务设计</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#API网关"><span class="nav-number">3.1.</span> <span class="nav-text">API网关</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#服务发现"><span class="nav-number">3.2.</span> <span class="nav-text">服务发现</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#数据存储"><span class="nav-number">3.3.</span> <span class="nav-text">数据存储</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
