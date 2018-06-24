@@ -82,7 +82,7 @@
 <meta property="og:image" content="http://yoursite.com/images/light_lock.png">
 <meta property="og:image" content="http://yoursite.com/images/after_cas.png">
 <meta property="og:image" content="http://yoursite.com/images/lock_transform.png">
-<meta property="og:updated_time" content="2018-06-23T16:16:42.349Z">
+<meta property="og:updated_time" content="2018-06-24T15:21:28.071Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="synchronize详解">
 <meta name="twitter:description" content="synchronized实现原理synchronized可以保证方法或者代码块在运行时，同一时刻只有一个方法可以进入到临界区，同时它还可以保证共享变量的内存可见性 Java中每一个对象都可以作为锁，这是synchronized实现同步的基础：  普通同步方法，锁是当前实例对象(synchronized method) 静态同步方法，锁是当前类的class对象(synchronize static">
@@ -381,8 +381,9 @@
 </li>
 <li><p>HashCode:保存从对象头拷贝过来的HashCode值（可能还包含GC age）。</p>
 </li>
+<li><p>Candidate:用来避免不必要的阻塞或等待线程唤醒，因为每一次只有一个线程能够成功拥有锁，如果每次前一个释放锁的线程唤醒所有正在阻塞或等待的线程，会引起不必要的上下文切换（从阻塞到就绪然后因为竞争锁失败又被阻塞）从而导致性能严重下降。Candidate只有两种可能的值0表示没有需要唤醒的线程1表示要唤醒一个继任线程来竞争锁。 </p>
+</li>
 </ul>
-<p>-Candidate:用来避免不必要的阻塞或等待线程唤醒，因为每一次只有一个线程能够成功拥有锁，如果每次前一个释放锁的线程唤醒所有正在阻塞或等待的线程，会引起不必要的上下文切换（从阻塞到就绪然后因为竞争锁失败又被阻塞）从而导致性能严重下降。Candidate只有两种可能的值0表示没有需要唤醒的线程1表示要唤醒一个继任线程来竞争锁。 </p>
 <h3 id="锁的升级、降级"><a href="#锁的升级、降级" class="headerlink" title="锁的升级、降级"></a>锁的升级、降级</h3><p>JVM提供了三种不同的 Monitor 实现，也就是常说的三种不同的锁：偏向锁（Biased Locking）、轻量级锁和重量级锁，大大改进了其性能。所谓锁的升级、降级，就是 JVM 优化 synchronized 运行的机制，当 JVM 检测到不同的竞争状况时，会自动切换到适合的锁实现，这种切换就是锁的升级、降级。</p>
 <h4 id="重量级锁"><a href="#重量级锁" class="headerlink" title="重量级锁"></a>重量级锁</h4><p>Synchronized是通过对象内部的一个叫做监视器锁（monitor）来实现的。但是监视器锁本质又是依赖于底层的操作系统的Mutex Lock<br>(互斥锁)来实现的。而操作系统实现线程之间的切换这就需要从用户态转换到核心态，这个成本非常高，状态之间的转换需要相对比较长的时间，这就是为什么Synchronized效率低的原因。因此，这种依赖于操作系统Mutex<br>Lock所实现的锁我们称之为“重量级锁”。</p>
 <h4 id="轻量级锁"><a href="#轻量级锁" class="headerlink" title="轻量级锁"></a>轻量级锁</h4><p>轻量级锁所适应的场景是线程交替执行同步块的情况，如果存在同一时间访问同一锁的情况，就会导致轻量级锁膨胀为重量级锁。</p>
@@ -397,10 +398,11 @@
 </li>
 <li><p>如果这个更新动作成功了，那么这个线程就拥有了该对象的锁，并且对象Mark Word的锁标志位设置为“00”，即表示此对象处于轻量级锁定状态，这时候线程堆栈与对象头的状态如图所示</p>
 </li>
-<li><p>如果这个更新操作失败了，虚拟机首先会检查对象的Mark Word是否指向当前线程的栈帧，如果是就说明当前线程已经拥有了这个对象的锁，那就可以直接进入同步块继续执行。否则说明多个线程竞争锁，轻量级锁就要膨胀为重量级锁，锁标志的状态值变为“10”，Mark Word中存储的就是指向重量级锁（互斥量）的指针，后面等待锁的线程也要进入阻塞状态。 而当前线程便尝试使用自旋来获取锁，自旋就是为了不让线程阻塞，而采用循环去获取锁的过程</p>
-</li>
 </ol>
 <p><img src="/images/after_cas.png" alt=""></p>
+<ol start="5">
+<li>如果这个更新操作失败了，虚拟机首先会检查对象的Mark Word是否指向当前线程的栈帧，如果是就说明当前线程已经拥有了这个对象的锁，那就可以直接进入同步块继续执行。否则说明多个线程竞争锁，轻量级锁就要膨胀为重量级锁，锁标志的状态值变为“10”，Mark Word中存储的就是指向重量级锁（互斥量）的指针，后面等待锁的线程也要进入阻塞状态。 而当前线程便尝试使用自旋来获取锁，自旋就是为了不让线程阻塞，而采用循环去获取锁的过程</li>
+</ol>
 <h5 id="轻量级锁解锁过程"><a href="#轻量级锁解锁过程" class="headerlink" title="轻量级锁解锁过程"></a>轻量级锁解锁过程</h5><ol>
 <li><p>通过CAS操作尝试把线程中复制的Displaced Mark Word对象替换当前的Mark Word。</p>
 </li>
@@ -460,8 +462,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2017/11/19/并发/java多线程一/" rel="next" title="java多线程(基础)">
-                <i class="fa fa-chevron-left"></i> java多线程(基础)
+              <a href="/2017/11/16/生活感悟/死磕java/" rel="next" title="死磕java">
+                <i class="fa fa-chevron-left"></i> 死磕java
               </a>
             
           </div>
@@ -470,8 +472,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2017/11/20/并发/java多线程二/" rel="prev" title="java多线程(状态切换)">
-                java多线程(状态切换) <i class="fa fa-chevron-right"></i>
+              <a href="/2017/11/19/并发/java多线程一/" rel="prev" title="java多线程(基础)">
+                java多线程(基础) <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
