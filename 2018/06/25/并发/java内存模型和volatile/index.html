@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="java内存模型java内存模型的主要目标Java 内存模型的主要目标是 定义程序中各个变量的访问规则，即在虚拟机中 将变量存储到内存 和 从内存中取出变量 这样的底层细节。此处的变量（Variables）与 Java 变成中所说的变量有所区别，它包括了实例变量、静态变量和构成数组对象的元素，但不包括局部变量与方法参数，因为后者是线程私有的，不会被共享，自然就不会存在竞争问题。 工作内存和主内存J">
+<meta property="og:type" content="article">
+<meta property="og:title" content="java内存模型和volatile">
+<meta property="og:url" content="http://yoursite.com/2018/06/25/并发/java内存模型和volatile/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="java内存模型java内存模型的主要目标Java 内存模型的主要目标是 定义程序中各个变量的访问规则，即在虚拟机中 将变量存储到内存 和 从内存中取出变量 这样的底层细节。此处的变量（Variables）与 Java 变成中所说的变量有所区别，它包括了实例变量、静态变量和构成数组对象的元素，但不包括局部变量与方法参数，因为后者是线程私有的，不会被共享，自然就不会存在竞争问题。 工作内存和主内存J">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/images/work_memory.png">
+<meta property="og:image" content="http://yoursite.com/images/swamp_memory.png">
+<meta property="og:updated_time" content="2018-06-25T15:09:13.290Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="java内存模型和volatile">
+<meta name="twitter:description" content="java内存模型java内存模型的主要目标Java 内存模型的主要目标是 定义程序中各个变量的访问规则，即在虚拟机中 将变量存储到内存 和 从内存中取出变量 这样的底层细节。此处的变量（Variables）与 Java 变成中所说的变量有所区别，它包括了实例变量、静态变量和构成数组对象的元素，但不包括局部变量与方法参数，因为后者是线程私有的，不会被共享，自然就不会存在竞争问题。 工作内存和主内存J">
+<meta name="twitter:image" content="http://yoursite.com/images/work_memory.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/06/25/并发/java内存模型和volatile/"/>
+
+
+
+
+
+  <title>java内存模型和volatile | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/06/25/并发/java内存模型和volatile/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">java内存模型和volatile</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-06-25T21:18:15+08:00">
+                2018-06-25
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/并发/" itemprop="url" rel="index">
+                    <span itemprop="name">并发</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="java内存模型"><a href="#java内存模型" class="headerlink" title="java内存模型"></a>java内存模型</h3><h4 id="java内存模型的主要目标"><a href="#java内存模型的主要目标" class="headerlink" title="java内存模型的主要目标"></a>java内存模型的主要目标</h4><p>Java 内存模型的主要目标是 定义程序中各个变量的访问规则，即在虚拟机中 将变量存储到内存 和 从内存中取出变量 这样的底层细节。此处的变量（Variables）与 Java 变成中所说的变量有所区别，它包括了实例变量、静态变量和构成数组对象的元素，但不包括局部变量与方法参数，因为后者是线程私有的，不会被共享，自然就不会存在竞争问题。</p>
+<h4 id="工作内存和主内存"><a href="#工作内存和主内存" class="headerlink" title="工作内存和主内存"></a>工作内存和主内存</h4><p>Java 内存模型规定了所有的变量都存储在主内存（Main Memory， 这里指的是虚拟机内存的一部分）中。每条线程还有自己的工作内存（Working Memory，可以与处理器高速缓存类比），线程的工作内存中保存了被该线程使用到的变量的主内存副本拷贝，线程对变量的所有操作（读取、赋值等）都必须在工作内存中进行，而不能直接读写主内存中的变量。</p>
+<p>不同的线程之间也无法直接访问对方工作内存中的变量，线程间变量值的传递均需要通过主内存来完成，线程、主内存、工作内存三者的交互关系如下图所示</p>
+<p><img src="/images/work_memory.png" alt=""></p>
+<p>这里说的主内存、工作内存和 Java 内存区域中的 Java 堆、栈、方法区等并不是同一个层次的内存划分，这两者基本是没有关系的，如果两者一定要勉强对应起来的话，那从变量、主内存、工作内存的定义来看，主内存主要对应于 Java 堆中的对象实例数据部分，而工作内存则对应于 Java 虚拟机栈中的部分区域</p>
+<h4 id="内存交互操作"><a href="#内存交互操作" class="headerlink" title="内存交互操作"></a>内存交互操作</h4><p>关于 主内存 和 工作内存 之间具体的交互协议，即一个变量如何从主内存拷贝到工作内存、如何从工作内存同步回主内存之类的实现细节，Java 内存模型中定义了一下 8 中操作来完成，虚拟机实现时必须保证下面提及的每一种操作都是原子的、不可再分的（对于 double 和 long 类型的变量来说，在某些平台上允许有例外，这个问题将在下文中说明）。</p>
+<ul>
+<li>lock（锁定）：作用于主内存的变量，它把一个变量标识为一条线程独占的状态</li>
+<li>unlock（解锁）：作用于主内存的变量，它把一个处于锁定状态的变量释放出来，释放后变量才可以被其他线程锁定。</li>
+<li>read（读取）：作用于主内存的变量，它把一个变量的值从主内存传输到工作内存中，以便随后的 load 动作使用</li>
+<li>load（载入）：作用于工作内存的变量，它把 read 操作从主内存得到的变量值保存到工作内存的变量副本中</li>
+<li>use（使用）：作用于工作内存的变量，它把工作内存中的一个变量的值传递给执行引擎（一般是基于操作数栈的执行引擎），每当虚拟机遇到一个需要使用到该变量的值的 字节码指令时将会执行这个操作</li>
+<li>assign（赋值）：作用于工作内存的变量，它把从执行引擎接收到的值赋值给工作内存的变量（存放在局部变量表中），每当虚拟机遇到一个给变量赋值的字节码指令时执行这个操作</li>
+<li>store（存储）：作用于工作内存的变量，它把工作内存中的变量传送到主内存中，以便随后的 write 操作使用</li>
+<li>write（写入）：作用于主内存的变量，它把 store 操作从工作内存中得到的变量的值方法主内存的变量中</li>
+</ul>
+<p>其中 read、load、use、assign、store 和 write 这 6 种操作的关系如下图所示：</p>
+<p><img src="/images/swamp_memory.png" alt=""></p>
+<p>java 内存模型规定了在执行上述 8 中基本操作时必须满足如下规则：</p>
+<ul>
+<li>不允许 read 和 load、store 和 write 操作之一单独出现，即不允许一个变量从主内存读取了但工作内存不接受，或者工作内存发起会回写了但主内存不接受的情况出现</li>
+<li>不允许一个现场丢弃它的最近的 assign 操作，即变量的值在工作内存改变了以后必须把该变化同步到主内存中。</li>
+<li>不允许一个线程无原因的（没有发生过任何 assing 操作）把数据从线程的工作内存同步回主内存中</li>
+<li>个新的变量只能在主内存中“诞生”，不允许在工作内存使用一个未被初始化（load 或 assing）的变量，换句话说，就是对一个变量实施 use、store 操作之前，必须先执行过 assign 和 load 操作</li>
+<li>一个变量在同一个时刻只允许一条线程对其进行 lock 操作，但 lock 操作可以被同一线程重复执行多次，多次执行 lock 之后，只有执行相同次的 unlock 操作，变量才会被解锁。</li>
+<li>如果对一个变量进行 lock 操作，那么将会清空工作内存中这个变量的值，在执行引擎使用这个变量前，需要重新执行 load 或 assign 操作初始化变量的值</li>
+<li>如果一个变量事先没有被 lock 操作锁定，那就不允许对它执行 unlock 操作，也不允许去 unlock 一个被其他线程锁定住的变量</li>
+<li>对一个变量执行 unlock 之前，必须先把此变量同步回主内存中（执行 store 以及 write 操作）</li>
+</ul>
+<h3 id="volatile"><a href="#volatile" class="headerlink" title="volatile"></a>volatile</h3><h4 id="重排序"><a href="#重排序" class="headerlink" title="重排序"></a>重排序</h4><p>在执行程序时，为了提供性能，处理器和编译器常常会对指令进行重排序，但是不能随意重排序，不是你想怎么排序就怎么排序，它需要满足以下两个条件：</p>
+<ol>
+<li>在单线程环境下不能改变程序运行的结果；</li>
+<li>存在数据依赖关系的不允许重排序</li>
+</ol>
+<h4 id="happens-before原则"><a href="#happens-before原则" class="headerlink" title="happens-before原则"></a>happens-before原则</h4><p>如果 Java 内存模型中所有的有序性都仅仅靠 volatile 和 synchronized 来完成，那么有一些操作将会变得很烦琐，但是我们在编写 Java 并发代码的时候并没有感觉到这一点，这是因为 Java 语言中有一个 “先行发生”（happens-before）的原则。这个原则非常重要，它是判断数据是否存在竞争、线程是否安全的主要依据，依靠这个原则，我们可以通过几条规则一揽子地解决并发环境下两个操作之间是否可能存在冲突的所有问题。</p>
+<p>下面是 Java 内存模型下一些“天然的”先行发生关系，这些先行发生关系无须任何同步器协助就已经存在，可以在编码<br>中直接使用。如果两个操作之间的关系不在此列，并且无法从下列规则推导出来的话，它们就没有顺序性保障，虚拟机可以对它们随意的进行重排序：</p>
+<ul>
+<li><p>程序次序规则：在一个线程内，按照程序代码顺序，书写在前面的操作先行发生于书写在后面的操作。准备的说，应该是控制流顺序而不是程序代码顺序，因为要考虑分支、循环等结构</p>
+</li>
+<li><p>管程锁定规则：一个 unlock 操作先行发生于后面对同一个锁的 lock 操作。这里必须强调的是同一个锁，而“后面”是指时间上的先后顺序。</p>
+</li>
+<li><p>volatile 变量规则：对一个 volatile 变量的写操作先行发生于后面对这个变量的读操作，这里的“后面”同样是指时间上的先后顺序</p>
+</li>
+<li><p>线程启动规则：Thread 对象的 start() 方法先行发生于此线程的每一个动作</p>
+</li>
+<li><p>线程终止规则：线程中的所有操作都先行于对此线程的终止检测，我们可以通过 Thread.join() 方法结束、Thead.isAlive() 的返回值等手段检测到线程已经终止执行</p>
+</li>
+<li><p>线程中断规则：对线程 interrupt() 方法的调用先行发生于被中断线程的代码检测到中断事件的发生，可以通过 Thread.interrupted() 方法检测到是否有中断发生</p>
+</li>
+<li><p>对象终结规则：一个对象的初始化完成（构造函数执行结束）先行于发生于它的 finalized() 方法的开始</p>
+</li>
+<li><p>传递性：如果操作 A 先行发生于操作 B，操作 B 先行发生于操作 C，那就可以得出操作 A 先行发生于操作 C 的结论</p>
+</li>
+</ul>
+<h4 id="volatile作用"><a href="#volatile作用" class="headerlink" title="volatile作用"></a>volatile作用</h4><p>当一个变量定义为 volatile 之后，它将具备两种特性：<strong>保证变量的可见性</strong> 和 <strong>禁止指令重排序优化</strong></p>
+<ul>
+<li><p>第一个是保证此变量对所有线程的可见性，这里的“可见性”是指当一条线程改变了这个变量的值，新值对于其他线程来说是 立即得知 的。而普通变量做不到这一点，普通变量的值在线程间传递均需要通过主内存来完成，例如，线程 A 修改了一个普通变量的值，然后向主内存进行回写，另外一个线程 B 在线程 A 回写完成了之后再从主内存进行读取操作，新变量才会对线程 B 可见</p>
+</li>
+<li><p>使用 volatile 变量的第二个语义是禁止指令重排序优化，普通的变量仅仅会保证在该方法的执行过程中所有依赖赋值结果的地方都能获取到正确的结果，而不能保证变量赋值操作的顺序与程序代码中的执行顺序一致</p>
+</li>
+</ul>
+<h4 id="volatile的内存语义"><a href="#volatile的内存语义" class="headerlink" title="volatile的内存语义"></a>volatile的内存语义</h4><ul>
+<li>当写一个volatile变量时，JMM会把该线程对应的本地内存中的共享变量值立即刷新到主内存中。</li>
+<li>当读一个volatile变量时，JMM会把该线程对应的本地内存设置为无效，直接从主内存中读取共享变量</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/06/21/jvm/类加载机制与对象的创建/" rel="next" title="类加载机制与对象的创建">
+                <i class="fa fa-chevron-left"></i> 类加载机制与对象的创建
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">一息尚存，则吾志不移</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">55</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">16</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">20</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#java内存模型"><span class="nav-number">1.</span> <span class="nav-text">java内存模型</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#java内存模型的主要目标"><span class="nav-number">1.1.</span> <span class="nav-text">java内存模型的主要目标</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#工作内存和主内存"><span class="nav-number">1.2.</span> <span class="nav-text">工作内存和主内存</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#内存交互操作"><span class="nav-number">1.3.</span> <span class="nav-text">内存交互操作</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#volatile"><span class="nav-number">2.</span> <span class="nav-text">volatile</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#重排序"><span class="nav-number">2.1.</span> <span class="nav-text">重排序</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#happens-before原则"><span class="nav-number">2.2.</span> <span class="nav-text">happens-before原则</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#volatile作用"><span class="nav-number">2.3.</span> <span class="nav-text">volatile作用</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#volatile的内存语义"><span class="nav-number">2.4.</span> <span class="nav-text">volatile的内存语义</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
