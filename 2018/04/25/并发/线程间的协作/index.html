@@ -72,12 +72,12 @@
 <meta name="description" content="线程的状态Java中线程中状态可分为五种：New（新建状态），Runnable（就绪状态），Running（运行状态），Blocked（阻塞状态），Dead（死亡状态）。 线程中各种状态的转换关系如下图:  wait/notify/notifyAll这三个方法都是Object上的方法 waitJDK中一共提供了三种wait方法：  wait()方法的作用是将当前运行的线程挂起（即让其进入阻塞状态）">
 <meta property="og:type" content="article">
 <meta property="og:title" content="线程间的协作">
-<meta property="og:url" content="http://yoursite.com/2018/06/25/并发/线程间的协作/index.html">
+<meta property="og:url" content="http://yoursite.com/2018/04/25/并发/线程间的协作/index.html">
 <meta property="og:site_name" content="Do Or Die">
 <meta property="og:description" content="线程的状态Java中线程中状态可分为五种：New（新建状态），Runnable（就绪状态），Running（运行状态），Blocked（阻塞状态），Dead（死亡状态）。 线程中各种状态的转换关系如下图:  wait/notify/notifyAll这三个方法都是Object上的方法 waitJDK中一共提供了三种wait方法：  wait()方法的作用是将当前运行的线程挂起（即让其进入阻塞状态）">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://yoursite.com/images/thread_status.png">
-<meta property="og:updated_time" content="2018-06-26T15:02:27.808Z">
+<meta property="og:updated_time" content="2018-06-26T15:44:54.671Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="线程间的协作">
 <meta name="twitter:description" content="线程的状态Java中线程中状态可分为五种：New（新建状态），Runnable（就绪状态），Running（运行状态），Blocked（阻塞状态），Dead（死亡状态）。 线程中各种状态的转换关系如下图:  wait/notify/notifyAll这三个方法都是Object上的方法 waitJDK中一共提供了三种wait方法：  wait()方法的作用是将当前运行的线程挂起（即让其进入阻塞状态）">
@@ -111,7 +111,7 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/2018/06/25/并发/线程间的协作/"/>
+  <link rel="canonical" href="http://yoursite.com/2018/04/25/并发/线程间的协作/"/>
 
 
 
@@ -254,7 +254,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/06/25/并发/线程间的协作/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/04/25/并发/线程间的协作/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Leo Hao">
@@ -283,8 +283,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-06-25T23:13:01+08:00">
-                2018-06-25
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-04-25T23:13:01+08:00">
+                2018-04-25
               </time>
             
 
@@ -364,13 +364,25 @@
 <h4 id="join"><a href="#join" class="headerlink" title="join"></a>join</h4><p>join方法的作用是父线程等待子线程执行完成后再执行，换句话说就是将异步执行的线程合并为同步的线程。</p>
 <p>join也有三种实现:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">void join()</span><br><span class="line">void join(long millis)</span><br><span class="line">void join(long millis, int nanos)</span><br></pre></td></tr></table></figure></p>
 <p>join的源码如下:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line">public final void join() throws InterruptedException &#123;</span><br><span class="line">        join(0);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"> public final synchronized void join(long millis)</span><br><span class="line">    throws InterruptedException &#123;</span><br><span class="line">        long base = System.currentTimeMillis();</span><br><span class="line">        long now = 0;</span><br><span class="line"></span><br><span class="line">        if (millis &lt; 0) &#123;</span><br><span class="line">            throw new IllegalArgumentException(&quot;timeout value is negative&quot;);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        if (millis == 0) &#123;</span><br><span class="line">            while (isAlive()) &#123;</span><br><span class="line">                wait(0);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            while (isAlive()) &#123;</span><br><span class="line">                long delay = millis - now;</span><br><span class="line">                if (delay &lt;= 0) &#123;</span><br><span class="line">                    break;</span><br><span class="line">                &#125;</span><br><span class="line">                wait(delay);</span><br><span class="line">                now = System.currentTimeMillis() - base;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">public final synchronized void join(long millis, int nanos)</span><br><span class="line">    throws InterruptedException &#123;</span><br><span class="line"></span><br><span class="line">        if (millis &lt; 0) &#123;</span><br><span class="line">            throw new IllegalArgumentException(&quot;timeout value is negative&quot;);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        if (nanos &lt; 0 || nanos &gt; 999999) &#123;</span><br><span class="line">            throw new IllegalArgumentException(</span><br><span class="line">                                &quot;nanosecond timeout value out of range&quot;);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        if (nanos &gt;= 500000 || (nanos != 0 &amp;&amp; millis == 0)) &#123;</span><br><span class="line">            millis++;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        join(millis);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
-<p>下join(long millis)方法的实现，可以看出join方法就是通过wait方法来将线程的阻塞，如果join的线程还在执行，则将当前线程阻塞起来，直到join的线程执行完成，当前线程才能执行。这里的join只调用了wait方法，却没有对应的notify方法，原因是Thread的start方法中做了相应的处理，所以当join的线程执行完成以后，会自动唤醒主线程继续往下执行。</p>
+<p>下join(long millis)方法的实现，可以看出join方法就是通过wait方法来将线程的阻塞，如果join的线程还在执行，则将当前线程阻塞起来，直到join的线程执行完成，当前线程才能执行。</p>
+<p>这里有几个注意点：</p>
+<ul>
+<li><p>join() 和 join(long millis, int nanos) 最后都调用了 join(long millis)</p>
+</li>
+<li><p>带参数的 join() 都是 synchronized method</p>
+</li>
+<li><p>join() 调用了 join(0)，从源码可以看到 join(0) 不断检查当前线程（join() 所属的线程实例，非调用线程）是否是 Active</p>
+</li>
+<li><p>join() 和 sleep() 一样，都可以被中断（被中断时，会抛出 InterrupptedException 异常）；不同的是，join() 内部调用了 wait()，会出让锁，而 sleep() 会一直保持锁</p>
 <h4 id="yield"><a href="#yield" class="headerlink" title="yield"></a>yield</h4><p>yield方法的作用是暂停当前线程，以便其他线程有机会执行，不过不能指定暂停的时间，并且也不能保证当前线程马上停止。yield方法只是将Running状态转变为Runnable状态</p>
+</li>
+</ul>
 <p>yield是一种线程让步，暂时让出时间片，但是下一次时间片同样有机会抢占</p>
 <h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>wait/notify/notifyAll方法的作用是实现线程间的协作，那为什么这三个方法不是位于Thread类中，而是位于Object类中？</p>
 <p>wait等待其实是对象monitor，由于Java中的每一个对象都有一个内置的monitor对象，自然所有的类都理应有wait/notify方法。</p>
 <h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
 <li><a href="https://my.oschina.net/zupengliu/blog/1820349" target="_blank" rel="noopener">java线程间的协作</a></li>
+<li><a href="https://www.cnblogs.com/huangzejun/p/7908898.html#p2" target="_blank" rel="noopener">java浅析Thread.join()</a></li>
 </ul>
 
       
@@ -396,8 +408,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2018/06/21/jvm/类加载机制与对象的创建/" rel="next" title="类加载机制与对象的创建">
-                <i class="fa fa-chevron-left"></i> 类加载机制与对象的创建
+              <a href="/2018/03/16/spring/RestTemplate使用/" rel="next" title="RestTemplate使用">
+                <i class="fa fa-chevron-left"></i> RestTemplate使用
               </a>
             
           </div>
@@ -405,6 +417,10 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/05/20/jvm/jvm内存结构/" rel="prev" title="jvm内存结构">
+                jvm内存结构 <i class="fa fa-chevron-right"></i>
+              </a>
             
           </div>
         </div>
@@ -480,7 +496,7 @@
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">51</span>
+                <span class="site-state-item-count">50</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -491,7 +507,7 @@
             
             <div class="site-state-item site-state-categories">
               <a href="/categories/index.html">
-                <span class="site-state-item-count">16</span>
+                <span class="site-state-item-count">15</span>
                 <span class="site-state-item-name">分类</span>
               </a>
             </div>
@@ -502,7 +518,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">19</span>
+                <span class="site-state-item-count">18</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
