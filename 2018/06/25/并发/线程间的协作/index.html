@@ -69,16 +69,19 @@
 
 
 
-<meta name="description" content="一息尚存，则吾志不移">
-<meta property="og:type" content="website">
-<meta property="og:title" content="Do Or Die">
-<meta property="og:url" content="http://yoursite.com/archives/2017/11/page/3/index.html">
+<meta name="description" content="线程的状态Java中线程中状态可分为五种：New（新建状态），Runnable（就绪状态），Running（运行状态），Blocked（阻塞状态），Dead（死亡状态）。 线程中各种状态的转换关系如下图:  wait/notify/notifyAllsleep/join/yield总结wait/notify/notifyAll方法的作用是实现线程间的协作，那为什么这三个方法不是位于Thread类中">
+<meta property="og:type" content="article">
+<meta property="og:title" content="线程间的协作">
+<meta property="og:url" content="http://yoursite.com/2018/06/25/并发/线程间的协作/index.html">
 <meta property="og:site_name" content="Do Or Die">
-<meta property="og:description" content="一息尚存，则吾志不移">
+<meta property="og:description" content="线程的状态Java中线程中状态可分为五种：New（新建状态），Runnable（就绪状态），Running（运行状态），Blocked（阻塞状态），Dead（死亡状态）。 线程中各种状态的转换关系如下图:  wait/notify/notifyAllsleep/join/yield总结wait/notify/notifyAll方法的作用是实现线程间的协作，那为什么这三个方法不是位于Thread类中">
 <meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/images/thread_status.png">
+<meta property="og:updated_time" content="2018-06-25T15:39:18.958Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Do Or Die">
-<meta name="twitter:description" content="一息尚存，则吾志不移">
+<meta name="twitter:title" content="线程间的协作">
+<meta name="twitter:description" content="线程的状态Java中线程中状态可分为五种：New（新建状态），Runnable（就绪状态），Running（运行状态），Blocked（阻塞状态），Dead（死亡状态）。 线程中各种状态的转换关系如下图:  wait/notify/notifyAllsleep/join/yield总结wait/notify/notifyAll方法的作用是实现线程间的协作，那为什么这三个方法不是位于Thread类中">
+<meta name="twitter:image" content="http://yoursite.com/images/thread_status.png">
 
 
 
@@ -108,13 +111,13 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/archives/2017/11/page/3/"/>
+  <link rel="canonical" href="http://yoursite.com/2018/06/25/并发/线程间的协作/"/>
 
 
 
 
 
-  <title>归档 | Do Or Die</title>
+  <title>线程间的协作 | Do Or Die</title>
   
 
 
@@ -133,7 +136,7 @@
     
   
 
-  <div class="container sidebar-position-left page-archive">
+  <div class="container sidebar-position-left page-post-detail">
     <div class="headband"></div>
 
     <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
@@ -237,77 +240,170 @@
           <div id="content" class="content">
             
 
+  <div id="posts" class="posts-expand">
+    
+
+  
+
   
   
   
-  <div class="post-block archive">
-    <div id="posts" class="posts-collapse">
-      <span class="archive-move-on"></span>
-
-      <span class="archive-page-counter">
-        
-        
-         
-          
-        好! 目前共计 55 篇日志。 继续努力。
-      </span>
-
-      
-
-        
-        
-        
-
-        
-          
-          <div class="collection-title">
-            <h1 class="archive-year" id="archive-year-2017">2017</h1>
-          </div>
-        
-        
-
-        
 
   <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/06/25/并发/线程间的协作/">
 
-      <h2 class="post-title">
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
         
-            <a class="post-title-link" href="/2017/11/06/javaSE/java的classpath理解/" itemprop="url">
-              
-                <span itemprop="name">java的classpath理解</span>
-              
-            </a>
         
-      </h2>
+          <h1 class="post-title" itemprop="name headline">线程间的协作</h1>
+        
 
-      <div class="post-meta">
-        <time class="post-time" itemprop="dateCreated"
-              datetime="2017-11-06T15:57:50+08:00"
-              content="2017-11-06" >
-          11-06
-        </time>
-      </div>
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-06-25T23:13:01+08:00">
+                2018-06-25
+              </time>
+            
 
-    </header>
-  </article>
+            
 
+            
+          </span>
 
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/并发/" itemprop="url" rel="index">
+                    <span itemprop="name">并发</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
 
       
+      
 
+      
+        <h3 id="线程的状态"><a href="#线程的状态" class="headerlink" title="线程的状态"></a>线程的状态</h3><p>Java中线程中状态可分为五种：New（新建状态），Runnable（就绪状态），Running（运行状态），Blocked（阻塞状态），Dead（死亡状态）。</p>
+<p>线程中各种状态的转换关系如下图:</p>
+<p><img src="/images/thread_status.png" alt=""></p>
+<h3 id="wait-notify-notifyAll"><a href="#wait-notify-notifyAll" class="headerlink" title="wait/notify/notifyAll"></a>wait/notify/notifyAll</h3><h3 id="sleep-join-yield"><a href="#sleep-join-yield" class="headerlink" title="sleep/join/yield"></a>sleep/join/yield</h3><h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>wait/notify/notifyAll方法的作用是实现线程间的协作，那为什么这三个方法不是位于Thread类中，而是位于Object类中？</p>
+<p>wait等待其实是对象monitor，由于Java中的每一个对象都有一个内置的monitor对象，自然所有的类都理应有wait/notify方法。</p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="https://my.oschina.net/zupengliu/blog/1820349" target="_blank" rel="noopener">java线程间的协作</a></li>
+</ul>
+
+      
     </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/06/25/并发/java内存模型和volatile/" rel="next" title="java内存模型和volatile">
+                <i class="fa fa-chevron-left"></i> java内存模型和volatile
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
   </div>
   
   
   
-
-  
-  <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/archives/2017/11/page/2/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/archives/2017/11/">1</a><a class="page-number" href="/archives/2017/11/page/2/">2</a><span class="page-number current">3</span>
-  </nav>
+  </article>
 
 
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
 
 
           </div>
@@ -315,6 +411,10 @@
 
 
           
+  <div class="comments" id="comments">
+    
+  </div>
+
 
         </div>
         
@@ -335,8 +435,17 @@
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
 
-      <section class="site-overview sidebar-panel sidebar-panel-active">
+      <section class="site-overview sidebar-panel">
         <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
           
             <p class="site-author-name" itemprop="name">Leo Hao</p>
@@ -350,7 +459,7 @@
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">55</span>
+                <span class="site-state-item-count">52</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -397,6 +506,22 @@
 
       </section>
 
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#线程的状态"><span class="nav-number">1.</span> <span class="nav-text">线程的状态</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#wait-notify-notifyAll"><span class="nav-number">2.</span> <span class="nav-text">wait/notify/notifyAll</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#sleep-join-yield"><span class="nav-number">3.</span> <span class="nav-text">sleep/join/yield</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">5.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
       
 
       
