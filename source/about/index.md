@@ -6,11 +6,13 @@ comment: false
 
 
 ## 郝斌(Leo Hao)
+
+一息尚存，则吾志不移
 ---
 #### 个人信息
 - github：https://github.com/haobinaa
-- coding.net: https://coding.net/u/haobin
-- 主研方向：PHP/Java
+
+- 主研方向：Java/PHP
 - 关注社区
     - [stackoverflow](https://stackoverflow.com)
     - [spring4all](http://www.spring4all.com/)
