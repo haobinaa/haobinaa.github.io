@@ -77,7 +77,7 @@
 <meta property="og:description" content="ReentrantLockReentrantLock是一个可重入的互斥锁定 Lock，它具有与使用 synchronized 方法和语句所访问的隐式监视器锁定相同的一些基本行为和语义，但功能更强大。ReentrantLock 将由最近成功获得锁定，并且还没有释放该锁定的线程所拥有。当锁定没有被另一个线程所拥有时，调用 lock 的线程将成功获取该锁定并返回。如果当前线程已经拥有该锁定，此方法将立即">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://yoursite.com/images/ReentrantLock.png">
-<meta property="og:updated_time" content="2018-06-28T03:18:20.341Z">
+<meta property="og:updated_time" content="2018-06-28T09:20:49.271Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="ReentrantLock和ReentrantReadWriteLock">
 <meta name="twitter:description" content="ReentrantLockReentrantLock是一个可重入的互斥锁定 Lock，它具有与使用 synchronized 方法和语句所访问的隐式监视器锁定相同的一些基本行为和语义，但功能更强大。ReentrantLock 将由最近成功获得锁定，并且还没有释放该锁定的线程所拥有。当锁定没有被另一个线程所拥有时，调用 lock 的线程将成功获取该锁定并返回。如果当前线程已经拥有该锁定，此方法将立即">
@@ -377,9 +377,24 @@
 </tr>
 </tbody>
 </table>
-<h4 id="unLock过程"><a href="#unLock过程" class="headerlink" title="unLock过程"></a>unLock过程</h4><h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<h4 id="unLock过程"><a href="#unLock过程" class="headerlink" title="unLock过程"></a>unLock过程</h4><p>在<code>ReentrantLock</code>中：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public void unlock() &#123;</span><br><span class="line">    sync.release(1);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>调用了AQS的<code>release</code><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">public final boolean release(int arg) &#123;</span><br><span class="line">    if (tryRelease(arg)) &#123;</span><br><span class="line">        Node h = head;</span><br><span class="line">        if (h != null &amp;&amp; h.waitStatus != 0)</span><br><span class="line">            unparkSuccessor(h);</span><br><span class="line">        return true;</span><br><span class="line">    &#125;</span><br><span class="line">    return false;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p> 其中在Sync内部类中<code>tryRelease</code>的实现:<br> <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">protected final boolean tryRelease(int releases) &#123;</span><br><span class="line">    int c = getState() - releases;</span><br><span class="line">    //持有锁的线程==当前线程</span><br><span class="line">    if (Thread.currentThread() != getExclusiveOwnerThread())</span><br><span class="line">        throw new IllegalMonitorStateException();</span><br><span class="line">    boolean free = false;</span><br><span class="line">    //重入锁全部释放</span><br><span class="line">    if (c == 0) &#123;</span><br><span class="line">        free = true;</span><br><span class="line">        //置空持有锁线程</span><br><span class="line">        setExclusiveOwnerThread(null);</span><br><span class="line">    &#125;</span><br><span class="line">    //state==0(此时持有锁,不用cas)</span><br><span class="line">    setState(c);</span><br><span class="line">    return free;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="ReentrantReadWriteLock"><a href="#ReentrantReadWriteLock" class="headerlink" title="ReentrantReadWriteLock"></a>ReentrantReadWriteLock</h3><p> 重入锁ReentrantLock是排他锁，排他锁在同一时刻仅有一个线程可以进行访问，但是在大多数场景下，大部分时间都是提供读服务，而写服务占有的时间较少。然而读服务不存在数据竞争问题，如果一个线程在读时禁止其他线程读势必会导致性能降低。所以就提供了读写锁</p>
+<h4 id="读写锁"><a href="#读写锁" class="headerlink" title="读写锁"></a>读写锁</h4><p> 读写锁维护着一对锁，一个读锁和一个写锁。通过分离读锁和写锁，使得并发性比一般的排他锁有了较大的提升：在同一时间可以允许多个读线程同时访问，但是在写线程访问时，所有读线程和写线程都会被阻塞。</p>
+<p> 读写锁的特性:</p>
+<ul>
+<li>公平性：支持公平性和非公平性， 吞吐量还是非公平优于公平</li>
+<li>重入性：该锁支持重入锁，以读写线程为例：读线程在获取读锁之后，能够再次读取读锁，而写线程在获取写锁之后可以同时再次获取读锁和写锁 。</li>
+<li><p>锁降级：遵循获取写锁、获取读锁在释放写锁的次序，写锁能够降级成为读锁</p>
+<p>读写锁接口<code>ReadWriteLock</code>：<br><code>`</code><br>public interface ReadWriteLock {<br>  Lock readLock();</p>
+<p>  Lock writeLock();<br>}</p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3></li>
+</ul>
+<ul>
 <li><a href="http://cmsblogs.com/?p=2210" target="_blank" rel="noopener">J.U.C重入锁：ReentrantLock</a></li>
 <li><a href="https://juejin.im/post/5ae1b4f0f265da0b7b359d7a" target="_blank" rel="noopener">ReentrantLock详解</a></li>
+<li><a href="https://blog.csdn.net/fuyuwei2015/article/details/72597192" target="_blank" rel="noopener">java多线程读写锁ReentrantReadWriteLock</a></li>
 </ul>
 
       
@@ -479,7 +494,7 @@
         <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
           
             <p class="site-author-name" itemprop="name">Leo Hao</p>
-            <p class="site-description motion-element" itemprop="description">一息尚存，则吾志不移</p>
+            <p class="site-description motion-element" itemprop="description">勿在浮沙筑高台</p>
         </div>
 
         <nav class="site-state motion-element">
@@ -546,7 +561,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#ReentrantLock"><span class="nav-number">1.</span> <span class="nav-text">ReentrantLock</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Lock定义"><span class="nav-number">1.1.</span> <span class="nav-text">Lock定义</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Lock过程"><span class="nav-number">1.2.</span> <span class="nav-text">Lock过程</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#公平锁-FairSync实现"><span class="nav-number">1.2.1.</span> <span class="nav-text">公平锁(FairSync实现)</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#非公平锁"><span class="nav-number">1.2.2.</span> <span class="nav-text">非公平锁</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#公平锁与非公平锁区别"><span class="nav-number">1.2.3.</span> <span class="nav-text">公平锁与非公平锁区别</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#unLock过程"><span class="nav-number">1.3.</span> <span class="nav-text">unLock过程</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">2.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#ReentrantLock"><span class="nav-number">1.</span> <span class="nav-text">ReentrantLock</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Lock定义"><span class="nav-number">1.1.</span> <span class="nav-text">Lock定义</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Lock过程"><span class="nav-number">1.2.</span> <span class="nav-text">Lock过程</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#公平锁-FairSync实现"><span class="nav-number">1.2.1.</span> <span class="nav-text">公平锁(FairSync实现)</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#非公平锁"><span class="nav-number">1.2.2.</span> <span class="nav-text">非公平锁</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#公平锁与非公平锁区别"><span class="nav-number">1.2.3.</span> <span class="nav-text">公平锁与非公平锁区别</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#unLock过程"><span class="nav-number">1.3.</span> <span class="nav-text">unLock过程</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ReentrantReadWriteLock"><span class="nav-number">2.</span> <span class="nav-text">ReentrantReadWriteLock</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#读写锁"><span class="nav-number">2.1.</span> <span class="nav-text">读写锁</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">3.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
             
 
           </div>
