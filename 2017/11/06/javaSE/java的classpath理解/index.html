@@ -69,18 +69,18 @@
 
 
 
-<meta name="description" content="在java中，经常遇到从classpath里面读取配置文件的东西，最开始以为classpath是某个目录，现在好好的理一下。  java项目中src路径下的文件在编译后会放到WEB-INF/clases路径下吧。默认的classpath是在这里。直接放到WEB-INF下的话，是不在classpath下的。用ClassPathXmlApplicationContext当然获取不到。    maven">
+<meta name="description" content="在java中，经常遇到从classpath里面读取配置文件的东西，最开始以为classpath是某个目录，现在好好的理一下。 classpath和classpath*classpath： 只会到你的class路径中查找找文件;classpath*：不仅包含class路径，还包括jar文件中(class路径)进行查找.    读取classpath下文件的方式通过ClassLoader来获取文件资源">
 <meta name="keywords" content="java">
 <meta property="og:type" content="article">
 <meta property="og:title" content="java的classpath理解">
 <meta property="og:url" content="http://yoursite.com/2017/11/06/javaSE/java的classpath理解/index.html">
 <meta property="og:site_name" content="Do Or Die">
-<meta property="og:description" content="在java中，经常遇到从classpath里面读取配置文件的东西，最开始以为classpath是某个目录，现在好好的理一下。  java项目中src路径下的文件在编译后会放到WEB-INF/clases路径下吧。默认的classpath是在这里。直接放到WEB-INF下的话，是不在classpath下的。用ClassPathXmlApplicationContext当然获取不到。    maven">
+<meta property="og:description" content="在java中，经常遇到从classpath里面读取配置文件的东西，最开始以为classpath是某个目录，现在好好的理一下。 classpath和classpath*classpath： 只会到你的class路径中查找找文件;classpath*：不仅包含class路径，还包括jar文件中(class路径)进行查找.    读取classpath下文件的方式通过ClassLoader来获取文件资源">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-06-13T15:12:35.849Z">
+<meta property="og:updated_time" content="2018-07-15T16:07:07.279Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="java的classpath理解">
-<meta name="twitter:description" content="在java中，经常遇到从classpath里面读取配置文件的东西，最开始以为classpath是某个目录，现在好好的理一下。  java项目中src路径下的文件在编译后会放到WEB-INF/clases路径下吧。默认的classpath是在这里。直接放到WEB-INF下的话，是不在classpath下的。用ClassPathXmlApplicationContext当然获取不到。    maven">
+<meta name="twitter:description" content="在java中，经常遇到从classpath里面读取配置文件的东西，最开始以为classpath是某个目录，现在好好的理一下。 classpath和classpath*classpath： 只会到你的class路径中查找找文件;classpath*：不仅包含class路径，还包括jar文件中(class路径)进行查找.    读取classpath下文件的方式通过ClassLoader来获取文件资源">
 
 
 
@@ -343,19 +343,11 @@
 
       
         <p>在java中，经常遇到从classpath里面读取配置文件的东西，最开始以为classpath是某个目录，现在好好的理一下。</p>
-<blockquote>
-<p>java项目中src路径下的文件在编译后会放到WEB-INF/clases路径下吧。默认的classpath是在这里。直接放到WEB-INF下的话，是不在classpath下的。用ClassPathXmlApplicationContext当然获取不到。 </p>
-</blockquote>
-<blockquote>
-<p>maven项目中resource目录就是默认的classpath<br>classPath即为java文件编译之后的class文件的编译目录一般为web-inf/classes，src下的xml在编译时也会复制到classPath下<br>ApplicationContext ctx = new ClassPathXmlApplicationContext(“xxxx.xml”);  //读取classPath下的spring.xml配置文件<br>ApplicationContext ctx = new FileSystemXmlApplicationContext(“WebRoot/WEB-INF/xxxx.xml”);   //读取WEB-INF 下的spring.xml文件  </p>
-</blockquote>
-<h3 id="classpath和classpath"><a href="#classpath和classpath" class="headerlink" title="classpath和classpath*"></a>classpath和classpath*</h3><p>classpath： 只会到你的class路径中查找找文件;<br>classpath*：不仅包含class路径，还包括jar文件中(class路径)进行查找.<br>java从classpath中获取资源的方法, ClassLoader提供的两个方法：</p>
-<ul>
-<li>public URL getResource(String name)</li>
-<li>public InputStream getResourceAsStream(String name)</li>
-</ul>
-<p>这里name是资源的类路径，它是相对与“/”根路径下的位置。getResource得到的是一个URL对象来定位资源，而getResourceAsStream取得该资源输入流的引用保证程序可以从正确的位置抽取数据。但是真正使用的不是ClassLoader的这两个方法，而是Class的getResource和getResourceAsStream方法，因为Class对象可以从你的类得到（如YourClass.class或 YourClass.getClass()），而ClassLoader则需要再调用一次YourClass.getClassLoader()方法，不过根据JDK文档的说法，Class对象的这两个方法其实是“委托”（delegate）给装载它的ClassLoader来做的，所以只需要使用 Class对象的这两个方法就可以了</p>
-<p>使用例子<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">1.this.getClass().getResource（&quot;&quot;） </span><br><span class="line">得到的是当前类class文件的URI目录。不包括自己！</span><br><span class="line">如：file：/D：/workspace/jbpmtest3/bin/com/test/</span><br><span class="line"></span><br><span class="line">2.this.getClass().getResource（&quot;/&quot;） </span><br><span class="line">得到的是当前的classpath的绝对URI路径 。</span><br><span class="line">如：file：/D：/workspace/jbpmtest3/bin/</span><br><span class="line"></span><br><span class="line">3.this.getClass() .getClassLoader().getResource（&quot;&quot;） </span><br><span class="line">得到的也是当前ClassPath的绝对URI路径 。</span><br><span class="line">如：file：/D：/workspace/jbpmtest3/bin/</span><br><span class="line"></span><br><span class="line">4.ClassLoader.getSystemResource（&quot;&quot;） </span><br><span class="line">得到的也是当前ClassPath的绝对URI路径 。</span><br><span class="line">如：file：/D：/workspace/jbpmtest3/bin/</span><br><span class="line"></span><br><span class="line">5.Thread.currentThread().getContextClassLoader ().getResource（&quot;&quot;） </span><br><span class="line">得到的也是当前ClassPath的绝对URI路径 。</span><br><span class="line">如：file：/D：/workspace/jbpmtest3/bin/</span><br><span class="line"></span><br><span class="line">6.ServletActionContext.getServletContext().getRealPath(“/”) </span><br><span class="line">Web应用程序 中，得到Web应用程序的根目录的绝对路径。这样，我们只需要提供相对于Web应用程序根目录的路径，就可以构建出定位资源的绝对路径。</span><br><span class="line">如：file：/D:/workspace/.metadata/.plugins/org.eclipse.wst.server.core/tmp0/wtpwebapps/WebProject</span><br></pre></td></tr></table></figure></p>
+<h3 id="classpath和classpath"><a href="#classpath和classpath" class="headerlink" title="classpath和classpath*"></a>classpath和classpath*</h3><p>classpath： 只会到你的class路径中查找找文件;<br>classpath*：不仅包含class路径，还包括jar文件中(class路径)进行查找.   </p>
+<h3 id="读取classpath下文件的方式"><a href="#读取classpath下文件的方式" class="headerlink" title="读取classpath下文件的方式"></a>读取classpath下文件的方式</h3><h4 id="通过ClassLoader来获取文件资源"><a href="#通过ClassLoader来获取文件资源" class="headerlink" title="通过ClassLoader来获取文件资源"></a>通过ClassLoader来获取文件资源</h4><h5 id="1-获取文件资源"><a href="#1-获取文件资源" class="headerlink" title="1.获取文件资源"></a>1.获取文件资源</h5><p>通过<code>classLoader</code>的<code>getResouce</code>获取文件资源：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">java.net.URL url = this.getClass().getClassLoader().getResource(&quot;spring-base.xml&quot;);</span><br><span class="line">String filePath = url.getFile();</span><br><span class="line">File file = new File(filePath);</span><br></pre></td></tr></table></figure></p>
+<h5 id="2-获取输入流"><a href="#2-获取输入流" class="headerlink" title="2.获取输入流"></a>2.获取输入流</h5><p>通过<code>classLoader</code>的<code>getResouceAsStream</code>获取文件资源：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">InputStream in = this.getClass().getClassLoader().getResouceAsStream(&quot;spring-base.xml&quot;);</span><br></pre></td></tr></table></figure></p>
+<h4 id="通过Spring来获取classpath下的文件"><a href="#通过Spring来获取classpath下的文件" class="headerlink" title="通过Spring来获取classpath下的文件"></a>通过Spring来获取classpath下的文件</h4><h5 id="1-ResourceUtils"><a href="#1-ResourceUtils" class="headerlink" title="1.ResourceUtils"></a>1.ResourceUtils</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">File file = ResouceUtils.getFile(&quot;spring-base.xml&quot;);</span><br></pre></td></tr></table></figure>
+<h5 id="2-ClassPathResouce"><a href="#2-ClassPathResouce" class="headerlink" title="2.ClassPathResouce"></a>2.ClassPathResouce</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">org.springframework.core.io.Resouce fileResouce = new ClassPathResource(&quot;spring-base.xml&quot;);</span><br><span class="line">// 获取文件</span><br><span class="line">File file = fileResouce.getFile();</span><br><span class="line">// 获取文件流</span><br><span class="line">InputStream in = fileResouce.getInputStream()</span><br></pre></td></tr></table></figure>
 
       
     </div>
@@ -474,7 +466,7 @@
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">52</span>
+                <span class="site-state-item-count">54</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -531,7 +523,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#classpath和classpath"><span class="nav-number">1.</span> <span class="nav-text">classpath和classpath*</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#classpath和classpath"><span class="nav-number">1.</span> <span class="nav-text">classpath和classpath*</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#读取classpath下文件的方式"><span class="nav-number">2.</span> <span class="nav-text">读取classpath下文件的方式</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#通过ClassLoader来获取文件资源"><span class="nav-number">2.1.</span> <span class="nav-text">通过ClassLoader来获取文件资源</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-获取文件资源"><span class="nav-number">2.1.1.</span> <span class="nav-text">1.获取文件资源</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-获取输入流"><span class="nav-number">2.1.2.</span> <span class="nav-text">2.获取输入流</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#通过Spring来获取classpath下的文件"><span class="nav-number">2.2.</span> <span class="nav-text">通过Spring来获取classpath下的文件</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-ResourceUtils"><span class="nav-number">2.2.1.</span> <span class="nav-text">1.ResourceUtils</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-ClassPathResouce"><span class="nav-number">2.2.2.</span> <span class="nav-text">2.ClassPathResouce</span></a></li></ol></li></ol></li></ol></div>
             
 
           </div>
