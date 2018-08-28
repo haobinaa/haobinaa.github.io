@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="JVM内存结构概览先来看一张图：  jvm主要分，堆、方法区、java栈、本地方法栈、程序计数器五个区域，其中方法区和堆区是线程共享的 堆区域堆内存是JVM中最大的一块由年轻代和老年代组成，而年轻代内存又被分成三部分，Eden空间、From Survivor空间、To Survivor空间,默认情况下年轻代按照8:1:1的比例来分配  各个区域的控制参数 -Xms设置堆的最小空间大小。 -Xmx设">
+<meta property="og:type" content="article">
+<meta property="og:title" content="jvm内存结构">
+<meta property="og:url" content="http://yoursite.com/2018/05/20/jvm/jvm内存结构/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="JVM内存结构概览先来看一张图：  jvm主要分，堆、方法区、java栈、本地方法栈、程序计数器五个区域，其中方法区和堆区是线程共享的 堆区域堆内存是JVM中最大的一块由年轻代和老年代组成，而年轻代内存又被分成三部分，Eden空间、From Survivor空间、To Survivor空间,默认情况下年轻代按照8:1:1的比例来分配  各个区域的控制参数 -Xms设置堆的最小空间大小。 -Xmx设">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/images/jvm_structure.png">
+<meta property="og:image" content="http://yoursite.com/images/heap.png">
+<meta property="og:updated_time" content="2018-06-21T14:38:13.094Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="jvm内存结构">
+<meta name="twitter:description" content="JVM内存结构概览先来看一张图：  jvm主要分，堆、方法区、java栈、本地方法栈、程序计数器五个区域，其中方法区和堆区是线程共享的 堆区域堆内存是JVM中最大的一块由年轻代和老年代组成，而年轻代内存又被分成三部分，Eden空间、From Survivor空间、To Survivor空间,默认情况下年轻代按照8:1:1的比例来分配  各个区域的控制参数 -Xms设置堆的最小空间大小。 -Xmx设">
+<meta name="twitter:image" content="http://yoursite.com/images/jvm_structure.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/05/20/jvm/jvm内存结构/"/>
+
+
+
+
+
+  <title>jvm内存结构 | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/05/20/jvm/jvm内存结构/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">jvm内存结构</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-05-20T22:37:28+08:00">
+                2018-05-20
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/jvm/" itemprop="url" rel="index">
+                    <span itemprop="name">jvm</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="JVM内存结构概览"><a href="#JVM内存结构概览" class="headerlink" title="JVM内存结构概览"></a>JVM内存结构概览</h3><p>先来看一张图：</p>
+<p><img src="/images/jvm_structure.png" alt=""></p>
+<p>jvm主要分，堆、方法区、java栈、本地方法栈、程序计数器五个区域，其中方法区和堆区是线程共享的</p>
+<h4 id="堆区域"><a href="#堆区域" class="headerlink" title="堆区域"></a>堆区域</h4><p>堆内存是JVM中最大的一块由年轻代和老年代组成，而年轻代内存又被分成三部分，Eden空间、From Survivor空间、To Survivor空间,默认情况下年轻代按照8:1:1的比例来分配</p>
+<p><img src="/images/heap.png" alt=""></p>
+<h5 id="各个区域的控制参数"><a href="#各个区域的控制参数" class="headerlink" title="各个区域的控制参数"></a>各个区域的控制参数</h5><ul>
+<li>-Xms设置堆的最小空间大小。</li>
+<li>-Xmx设置堆的最大空间大小。</li>
+<li>-XX:NewSize设置新生代最小空间大小</li>
+<li>-XX:MaxNewSize设置新生代最大空间大小。</li>
+<li>-XX:PermSize设置永久代最小空间大小。</li>
+<li>-XX:MaxPermSize设置永久代最大空间大小。</li>
+<li>-XX:MaxPermSize设置永久代最大空间大小。</li>
+</ul>
+<p>没有直接设置老年代的参数，但是可以设置堆空间大小和新生代空间大小两个参数来间接控制：老年代大小=堆空间大小-新生代空间大小</p>
+<h4 id="方法区"><a href="#方法区" class="headerlink" title="方法区"></a>方法区</h4><p>方法区有时被称为持久代（PermGen）</p>
+<p>方法区（Method Area）与Java堆一样，是各个线程共享的内存区域，它用于存储已被虚拟机加载的类信息、常量、静态变量、即时编译器编译后的代码等数据</p>
+<p>方法区还存储常量池(constant pool)， 用于存放编译期生成的各种字面量和符号引用</p>
+<h5 id="字面量"><a href="#字面量" class="headerlink" title="字面量"></a>字面量</h5><p>字面量相当于Java语言层面常量的概念，如文本字符串、final等常量</p>
+<h5 id="符号引用"><a href="#符号引用" class="headerlink" title="符号引用"></a>符号引用</h5><p>符号引用属于编译原理方面的概念，包括了如下三种类型的常量：</p>
+<ul>
+<li>类和接口的全限定名</li>
+<li>字段名称和描述符</li>
+<li>方法名称和描述符<h4 id="程序计数器"><a href="#程序计数器" class="headerlink" title="程序计数器"></a>程序计数器</h4></li>
+</ul>
+<p>程序计数器（Program Counter Register）是一块较小的内存空间，它的作用可以看做是当前线程所执行的字节码的行号指示器</p>
+<h4 id="JVM栈"><a href="#JVM栈" class="headerlink" title="JVM栈"></a>JVM栈</h4><p>与程序计数器一样，Java虚拟机栈（Java Virtual Machine Stacks）也是线程私有的，它的生命周期与线程相同。虚拟机栈描述的是Java方法执行的内存模型：每个方法被执行的时候都会同时创建一个栈帧（Stack Frame）用于存储局部变量表、操作栈、动态链接、方法出口等信息。每一个方法被调用直至执行完成的过程，就对应着一个栈帧在虚拟机栈中从入栈到出栈的过程</p>
+<p>局部变量表存放了编译期可知的各种基本数据类型（boolean、byte、char、short、int、float、long、double）、对象引用（reference类型，它不等同于对象本身，根据不同的虚拟机实现，它可能是一个指向对象起始地址的引用指针，也可能指向一个代表对象的句柄或者其他与此对象相关的位置）和returnAddress类型（指向了一条字节码指令的地址）</p>
+<p>其中64位长度的long和double类型的数据会占用2个局部变量空间（Slot），其余的数据类型只占用1个。局部变量表所需的内存空间在编译期间完成分配，当进入一个方法时，这个方法需要在帧中分配多大的局部变量空间是完全确定的，在方法运行期间不会改变局部变量表的大小</p>
+<h4 id="本地方法栈"><a href="#本地方法栈" class="headerlink" title="本地方法栈"></a>本地方法栈</h4><p>本地方法栈（Native Method Stacks）与虚拟机栈所发挥的作用是非常相似的，其区别不过是虚拟机栈为虚拟机执行Java方法（也就是字节码）服务，而本地方法栈则是为虚拟机使用到的Native方法服务</p>
+<h3 id="直接内存"><a href="#直接内存" class="headerlink" title="直接内存"></a>直接内存</h3><p>直接内存并不是虚拟机运行时数据区的一部分， 也不是虚拟规范中定义的内存区域， 但这部分内存也被频繁使用。</p>
+<p>NIO引入一种基于通道(Channel)和缓冲(buffer)的I/O方式， 他使用<code>Native函数库</code>直接分配堆外内存， 然后通过存在java堆中的<code>DirectByteBuffer对象</code>作为对这块内存的引用进行操作，<br>这样在一些场景中显著提升内存， 避免了在java堆和native堆中来回复制数据</p>
+<p>直接内存的分配不受java堆大小的限制， 但是配置虚拟机参数的时候要考虑到直接内存的存在， 不能让各个内存区域的总和大于物理机的内存， 从而导致动态扩展的时候出现OOM</p>
+<h3 id="常见OOM的原因"><a href="#常见OOM的原因" class="headerlink" title="常见OOM的原因"></a>常见OOM的原因</h3><h4 id="1-对象不能被分配在堆内存中，"><a href="#1-对象不能被分配在堆内存中，" class="headerlink" title="1.对象不能被分配在堆内存中，"></a>1.对象不能被分配在堆内存中，</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Exception in thread “main”: java.lang.OutOfMemoryError: Java heap space</span><br></pre></td></tr></table></figure>
+<p>内存泄露或者堆内存空间分配过小</p>
+<h4 id="2-类或方法不能加载到持久代"><a href="#2-类或方法不能加载到持久代" class="headerlink" title="2. 类或方法不能加载到持久代"></a>2. 类或方法不能加载到持久代</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Exception in thread “main”: java.lang.OutOfMemoryError: PermGen space</span><br></pre></td></tr></table></figure>
+<p>它可能出现在一个程序加载很多类的时候，比如引用了很多第三方的库；</p>
+<h4 id="3-创建的数组大于堆内存的空间"><a href="#3-创建的数组大于堆内存的空间" class="headerlink" title="3. 创建的数组大于堆内存的空间"></a>3. 创建的数组大于堆内存的空间</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Exception in thread “main”: java.lang.OutOfMemoryError: Requested array size exceeds VM limit</span><br></pre></td></tr></table></figure>
+<h4 id="4-分配本地分配失败"><a href="#4-分配本地分配失败" class="headerlink" title="4. 分配本地分配失败"></a>4. 分配本地分配失败</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Exception in thread “main”: java.lang.OutOfMemoryError: request &lt;size&gt; bytes for &lt;reason&gt;. Out of swap space?</span><br></pre></td></tr></table></figure>
+<p>或者</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Exception in thread “main”: java.lang.OutOfMemoryError: &lt;reason&gt; &lt;stack trace&gt;（Native method）</span><br></pre></td></tr></table></figure>
+<p>应该从本地方法、JNI或java虚拟机本身找原因</p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li>[深入理解java虚拟机]</li>
+<li><a href="http://www.ityouknow.com/jvm/2017/08/25/jvm-memory-structure.html" target="_blank" rel="noopener">纯洁的微笑博客</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/04/25/并发/线程间的协作/" rel="next" title="线程间的协作">
+                <i class="fa fa-chevron-left"></i> 线程间的协作
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/05/25/jvm/GC算法和垃圾收集器/" rel="prev" title="GC算法和垃圾收集器">
+                GC算法和垃圾收集器 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">勿在浮沙筑高台</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">54</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">18</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#JVM内存结构概览"><span class="nav-number">1.</span> <span class="nav-text">JVM内存结构概览</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#堆区域"><span class="nav-number">1.1.</span> <span class="nav-text">堆区域</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#各个区域的控制参数"><span class="nav-number">1.1.1.</span> <span class="nav-text">各个区域的控制参数</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#方法区"><span class="nav-number">1.2.</span> <span class="nav-text">方法区</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#字面量"><span class="nav-number">1.2.1.</span> <span class="nav-text">字面量</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#符号引用"><span class="nav-number">1.2.2.</span> <span class="nav-text">符号引用</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#程序计数器"><span class="nav-number">1.3.</span> <span class="nav-text">程序计数器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#JVM栈"><span class="nav-number">1.4.</span> <span class="nav-text">JVM栈</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#本地方法栈"><span class="nav-number">1.5.</span> <span class="nav-text">本地方法栈</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#直接内存"><span class="nav-number">2.</span> <span class="nav-text">直接内存</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#常见OOM的原因"><span class="nav-number">3.</span> <span class="nav-text">常见OOM的原因</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-对象不能被分配在堆内存中，"><span class="nav-number">3.1.</span> <span class="nav-text">1.对象不能被分配在堆内存中，</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-类或方法不能加载到持久代"><span class="nav-number">3.2.</span> <span class="nav-text">2. 类或方法不能加载到持久代</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-创建的数组大于堆内存的空间"><span class="nav-number">3.3.</span> <span class="nav-text">3. 创建的数组大于堆内存的空间</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-分配本地分配失败"><span class="nav-number">3.4.</span> <span class="nav-text">4. 分配本地分配失败</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">4.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

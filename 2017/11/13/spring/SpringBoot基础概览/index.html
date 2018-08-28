@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="springboot," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="一、启动SpringBoot1. pom依赖配置123456789101112&amp;lt;parent&amp;gt;    &amp;lt;groupId&amp;gt;org.springframework.boot&amp;lt;/groupId&amp;gt;    &amp;lt;artifactId&amp;gt;spring-boot-starter-parent&amp;lt;/artifactId&amp;gt;    &amp;lt;version&amp;gt;1.">
+<meta name="keywords" content="springboot">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SpringBoot一(基础概览)">
+<meta property="og:url" content="http://yoursite.com/2017/11/13/spring/SpringBoot基础概览/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="一、启动SpringBoot1. pom依赖配置123456789101112&amp;lt;parent&amp;gt;    &amp;lt;groupId&amp;gt;org.springframework.boot&amp;lt;/groupId&amp;gt;    &amp;lt;artifactId&amp;gt;spring-boot-starter-parent&amp;lt;/artifactId&amp;gt;    &amp;lt;version&amp;gt;1.">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2018-06-14T04:47:27.869Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="SpringBoot一(基础概览)">
+<meta name="twitter:description" content="一、启动SpringBoot1. pom依赖配置123456789101112&amp;lt;parent&amp;gt;    &amp;lt;groupId&amp;gt;org.springframework.boot&amp;lt;/groupId&amp;gt;    &amp;lt;artifactId&amp;gt;spring-boot-starter-parent&amp;lt;/artifactId&amp;gt;    &amp;lt;version&amp;gt;1.">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/11/13/spring/SpringBoot基础概览/"/>
+
+
+
+
+
+  <title>SpringBoot一(基础概览) | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/11/13/spring/SpringBoot基础概览/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">SpringBoot一(基础概览)</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-11-13T10:20:16+08:00">
+                2017-11-13
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/spring/" itemprop="url" rel="index">
+                    <span itemprop="name">spring</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="一、启动SpringBoot"><a href="#一、启动SpringBoot" class="headerlink" title="一、启动SpringBoot"></a>一、启动SpringBoot</h3><h4 id="1-pom依赖配置"><a href="#1-pom依赖配置" class="headerlink" title="1. pom依赖配置"></a>1. pom依赖配置</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">&lt;parent&gt;</span><br><span class="line">    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;spring-boot-starter-parent&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.4.0.RELEASE&lt;/version&gt;</span><br><span class="line">&lt;/parent&gt;</span><br><span class="line"></span><br><span class="line">&lt;dependencies&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">        &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;</span><br><span class="line">        &lt;artifactId&gt;spring-boot-starter-web&lt;/artifactId&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">&lt;/dependencies&gt;</span><br></pre></td></tr></table></figure>
+<h4 id="2-启动方法"><a href="#2-启动方法" class="headerlink" title="2.启动方法"></a>2.启动方法</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">@Controller</span><br><span class="line">@EnableAutoConfiguration</span><br><span class="line">public class SampleController &#123;</span><br><span class="line"></span><br><span class="line">    @RequestMapping(&quot;/&quot;)</span><br><span class="line">    @ResponseBody</span><br><span class="line">    String home() &#123;</span><br><span class="line">        return &quot;Hello World!&quot;;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">        SpringApplication.run(SampleController.class, args);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>关于@EnableAutoConfiguration和SpringApplication:  </p>
+<ul>
+<li>@EnableAutoConfiguration判断出这是一个web应用，创建对应的web环境</li>
+<li>SpringApplication则是用于main 方法启动Spring应用类。默认执行以下步骤：<ol>
+<li>创建一个合适的ApplicationContext实例</li>
+<li>注册一个CommandLinePropertySource， 以便将命令行参数作为Spring properties</li>
+<li>刷新application context, 加载所有的单例bean</li>
+<li>CommandLineRunner beans</li>
+</ol>
+</li>
+</ul>
+<p>然后点击run就可以在默认的Tomcat（或者其他容器如jetty）端口访问到项目了，配置的话需要在classpath下新建application.yml或者application.properties进行相应的配置。</p>
+<h3 id="二、使用SpringBoot"><a href="#二、使用SpringBoot" class="headerlink" title="二、使用SpringBoot"></a>二、使用SpringBoot</h3><h4 id="1-自动配置"><a href="#1-自动配置" class="headerlink" title="1. 自动配置"></a>1. 自动配置</h4><pre><code>- @Import和@ComponentScan类似
+- @EnableAutoConfiguration和@SpringBootApplication类似，但是只能使用一次
+</code></pre><h4 id="2-Developer-Tools热启动"><a href="#2-Developer-Tools热启动" class="headerlink" title="2.Developer Tools热启动"></a>2.Developer Tools热启动</h4><p>Spring Boot的开发工具<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;spring-boot-devtools&lt;/artifactId&gt;</span><br><span class="line">    &lt;optional&gt;true&lt;/optional&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure></p>
+<ul>
+<li>property default<br>一些Spring Boot支持的库使用了cache增进性能。但是cache，在开发过程中可能会是一个阻碍。例如你无法立即更新一个模板（thymeleaf的）。<br>cache设置通常在 application.properties 中。但是，比起手动设置这些，spring-boot-devtools模块会自动应用这些开发期的设置。</li>
+<li>自动重启<br>使用spring-boot-devtools模块的应用，当classpath中的文件有改变时，会自动重启。<br>idea设置热部署的步骤：<ol>
+<li>settings-&gt;build-&gt;compiler，勾选build project automatically</li>
+<li>ctrl + shift + alt + /, registry-&gt;compliler.automake.allow.when.app.running勾选上</li>
+<li>配置plugin，并重启<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&lt;plugin&gt;</span><br><span class="line">    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;spring-boot-maven-plugin&lt;/artifactId&gt;</span><br><span class="line">    &lt;configuration&gt;</span><br><span class="line">        &lt;fork&gt;true&lt;/fork&gt;//该配置必须</span><br><span class="line">    &lt;/configuration&gt;</span><br><span class="line">&lt;/plugin&gt;</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+</li>
+</ul>
+<p>！！！注意：<br>不要将App启动类放在<code>src/main/java</code>下，必须放在一个包中。且启动类默认扫描当前目录下的包和其子包。</p>
+<p>如果放在<code>src/main/java</code>下，需要指定<code>ComponentScan</code>的basePackage，因为SpringBoot默认的basePackage是启动类的package，如果放在<code>src/mian/java</code>在，启动类的package为空，所以无法开始扫描</p>
+<h3 id="三、配置属性"><a href="#三、配置属性" class="headerlink" title="三、配置属性"></a>三、配置属性</h3><h4 id="1-自定义属性"><a href="#1-自定义属性" class="headerlink" title="1.自定义属性"></a>1.自定义属性</h4><p>application.properties提供自定义属性的支持，这样我们就可以把一些常量配置在这里:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">com.haobin.name=&quot;haobin&quot;</span><br><span class="line">com.haobin.age=&quot;17&quot;</span><br></pre></td></tr></table></figure></p>
+<p>然后直接在要使用的地方通过注解@Value(value=”${config.name}”)就可以绑定到你想要的属性上面<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">@Value(&quot;$&#123;com.haobin.name&#125;&quot;)</span><br><span class="line">private  String name;</span><br><span class="line">@Value(&quot;$&#123;com.haobin.age&#125;&quot;)</span><br><span class="line">private  Integer age;</span><br></pre></td></tr></table></figure></p>
+<p>有时候属性太多了，一个个绑定到属性字段上太累，官方提倡绑定一个对象的bean，这里我们建一个ConfigBean.java类，顶部需要使用注解<code>@ConfigurationProperties(prefix = &quot;com.haobin&quot;)</code>来指明使用<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">@Component</span><br><span class="line">@ConfigurationProperties(prefix = &quot;com.dudu&quot;)</span><br><span class="line">public class ConfigBean &#123;</span><br><span class="line">    private String name;</span><br><span class="line">    private String age;</span><br><span class="line">    // .........getter 和 setter</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>在Controller引入bean<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">@RestController</span><br><span class="line">public class UserController &#123;</span><br><span class="line">    @Autowired</span><br><span class="line">    ConfigBean configBean;</span><br><span class="line"></span><br><span class="line">    @RequestMapping(&quot;/&quot;)</span><br><span class="line">    public String hexo()&#123;</span><br><span class="line">        return configBean.getName()+configBean.getAge();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h4 id="2-参数间引用"><a href="#2-参数间引用" class="headerlink" title="2.参数间引用"></a>2.参数间引用</h4><p>在application.properties中的各个参数之间也可以直接引用来使用，就像下面的设置：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">com.haobin.name = &quot;haobin&quot;</span><br><span class="line">com.haobin.age = &quot;17&quot;</span><br><span class="line">com.haobin.info=$&#123;com.haobin.name&#125;有$&#123;com.haobin.age&#125;</span><br></pre></td></tr></table></figure></p>
+<h4 id="3-Profile-多环境配置"><a href="#3-Profile-多环境配置" class="headerlink" title="3.Profile-多环境配置"></a>3.Profile-多环境配置</h4><p>开发环境配置：<code>application-dev.yml</code><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">server:</span><br><span class="line">  port: 8080</span><br><span class="line"></span><br><span class="line">manInfo:</span><br><span class="line">    age: 18</span><br><span class="line">    name: jason</span><br></pre></td></tr></table></figure></p>
+<p>生产环境配置：<code>application-prod.yml</code><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">server:</span><br><span class="line">  port: 8081</span><br><span class="line"></span><br><span class="line">manInfo:</span><br><span class="line">    age: 18</span><br><span class="line">    name: alun</span><br></pre></td></tr></table></figure></p>
+<p>选择使用哪个配置文件：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">spring:</span><br><span class="line">  profiles:</span><br><span class="line">    active: prod</span><br></pre></td></tr></table></figure></p>
+<h3 id="静态资源"><a href="#静态资源" class="headerlink" title="静态资源"></a>静态资源</h3><h4 id="1-默认的静态资源地址"><a href="#1-默认的静态资源地址" class="headerlink" title="1.默认的静态资源地址"></a>1.默认的静态资源地址</h4><ul>
+<li>classpath:/META-INF/resources</li>
+<li>classpath:/resources(classpath就代表了resources文件夹，也就是resources/resources)</li>
+<li>classpath:/static</li>
+<li>classpath:/public</li>
+</ul>
+<blockquote>
+<p>需要注意的是，如果是用Intellij IDEA开发，项目默认生成的Resources目录，不是上面说的“classpath:/resources/”，这个Resources目录是直接指向“classpath:/”的。Resources目录下新建一个“resources”文件夹，此时“resources”文件夹的路径才是“classpath:/resources/”。</p>
+</blockquote>
+<h5 id="2-自定义资源映射addResourceHandlers"><a href="#2-自定义资源映射addResourceHandlers" class="headerlink" title="2.自定义资源映射addResourceHandlers"></a>2.自定义资源映射addResourceHandlers</h5><p>我们想自定义静态资源映射目录的话，只需重写addResourceHandlers方法即可</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">@Configuration</span><br><span class="line">public class MyWebMvcConfigurerAdapter extends WebMvcConfigurerAdapter &#123;</span><br><span class="line">    /**</span><br><span class="line">     * 配置静态访问资源</span><br><span class="line">     * @param registry</span><br><span class="line">     */</span><br><span class="line">    @Override</span><br><span class="line">    public void addResourceHandlers(ResourceHandlerRegistry registry) &#123;</span><br><span class="line">        registry.addResourceHandler(&quot;/my/**&quot;).addResourceLocations(&quot;classpath:/my/&quot;);</span><br><span class="line">        super.addResourceHandlers(registry);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>通过addResourceHandler添加映射路径，然后通过addResourceLocations来指定路径。我们访问自定义my文件夹中的elephant.jpg 图片的地址为       <a href="http://localhost:8080/my/elephant.jpg" target="_blank" rel="noopener">http://localhost:8080/my/elephant.jpg</a></p>
+<p>如果想指定外部的目录也很简单，直接addResourceLocations指定即可:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">public void addResourceHandlers(ResourceHandlerRegistry registry) &#123;</span><br><span class="line">    registry.addResourceHandler(&quot;/my/**&quot;).addResourceLocations(&quot;file:E:/my/&quot;);</span><br><span class="line">    super.addResourceHandlers(registry);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>addResourceLocations指的是文件放置的目录，addResoureHandler指的是对外暴露的访问路径</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/springboot/" rel="tag"><i class="fa fa-tag"></i> springboot</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/11/11/javaSE/内部类总结/" rel="next" title="内部类总结">
+                <i class="fa fa-chevron-left"></i> 内部类总结
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/11/14/javaSE/java动态代理的实现/" rel="prev" title="java动态代理的实现">
+                java动态代理的实现 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">勿在浮沙筑高台</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">54</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">18</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#一、启动SpringBoot"><span class="nav-number">1.</span> <span class="nav-text">一、启动SpringBoot</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-pom依赖配置"><span class="nav-number">1.1.</span> <span class="nav-text">1. pom依赖配置</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-启动方法"><span class="nav-number">1.2.</span> <span class="nav-text">2.启动方法</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#二、使用SpringBoot"><span class="nav-number">2.</span> <span class="nav-text">二、使用SpringBoot</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-自动配置"><span class="nav-number">2.1.</span> <span class="nav-text">1. 自动配置</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-Developer-Tools热启动"><span class="nav-number">2.2.</span> <span class="nav-text">2.Developer Tools热启动</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#三、配置属性"><span class="nav-number">3.</span> <span class="nav-text">三、配置属性</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-自定义属性"><span class="nav-number">3.1.</span> <span class="nav-text">1.自定义属性</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-参数间引用"><span class="nav-number">3.2.</span> <span class="nav-text">2.参数间引用</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-Profile-多环境配置"><span class="nav-number">3.3.</span> <span class="nav-text">3.Profile-多环境配置</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#静态资源"><span class="nav-number">4.</span> <span class="nav-text">静态资源</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-默认的静态资源地址"><span class="nav-number">4.1.</span> <span class="nav-text">1.默认的静态资源地址</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#2-自定义资源映射addResourceHandlers"><span class="nav-number">4.1.1.</span> <span class="nav-text">2.自定义资源映射addResourceHandlers</span></a></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

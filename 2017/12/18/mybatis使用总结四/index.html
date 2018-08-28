@@ -77,7 +77,7 @@
 <meta property="og:site_name" content="Do Or Die">
 <meta property="og:description" content="懒加载(lazy load)在映射查询的时候需要联表，单表查询的速度显然是高于多表查询的，联表查询的时候就可以使用懒加载(lazy load)：先从单表查询，需要时才关联表查询。 例子：查询订单时需要关联订单用户的信息，如果先查询订单的信息，需要查询用户信息的时候才查询用户信息 association实现懒加载1.查询订单使用懒加载123&amp;lt;select id=&amp;quot;findOrders">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2017-12-18T09:20:08.859Z">
+<meta property="og:updated_time" content="2018-06-14T02:46:01.309Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="mybatis使用(懒加载)">
 <meta name="twitter:description" content="懒加载(lazy load)在映射查询的时候需要联表，单表查询的速度显然是高于多表查询的，联表查询的时候就可以使用懒加载(lazy load)：先从单表查询，需要时才关联表查询。 例子：查询订单时需要关联订单用户的信息，如果先查询订单的信息，需要查询用户信息的时候才查询用户信息 association实现懒加载1.查询订单使用懒加载123&amp;lt;select id=&amp;quot;findOrders">
@@ -305,8 +305,8 @@
               
               
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/spring/" itemprop="url" rel="index">
-                    <span itemprop="name">spring</span>
+                  <a href="/categories/orm/" itemprop="url" rel="index">
+                    <span itemprop="name">orm</span>
                   </a>
                 </span>
 
@@ -344,9 +344,9 @@
       
         <h3 id="懒加载-lazy-load"><a href="#懒加载-lazy-load" class="headerlink" title="懒加载(lazy load)"></a>懒加载(lazy load)</h3><p>在映射查询的时候需要联表，单表查询的速度显然是高于多表查询的，联表查询的时候就可以使用懒加载(lazy load)：先从单表查询，需要时才关联表查询。</p>
 <p>例子：查询订单时需要关联订单用户的信息，如果先查询订单的信息，需要查询用户信息的时候才查询用户信息</p>
-<h4 id="association实现懒加载"><a href="#association实现懒加载" class="headerlink" title="association实现懒加载"></a>association实现懒加载</h4><p>1.查询订单使用懒加载<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">&lt;select id=&quot;findOrdersUserLazyLoading&quot; resultMap=&quot;OrdersUserLazyLoadingResultMap&quot;&gt;</div><div class="line">    SELECT * FROM orders</div><div class="line">&lt;/select&gt;</div></pre></td></tr></table></figure></p>
-<p>2.查询用互信息的select<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">&lt;select id=&quot;findUserById&quot; parameterType=&quot;int&quot; resultType=&quot;com.iot.mybatis.po.User&quot;&gt;</div><div class="line">    SELECT * FROM  user  WHERE id=#&#123;value&#125;</div><div class="line">&lt;/select&gt;</div></pre></td></tr></table></figure></p>
-<p>3.配置resultMap，先执行<code>findOrdersUserLazyLoading</code>需要用户信息时在执行<code>findUserById</code><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div></pre></td><td class="code"><pre><div class="line">&lt;resultMap type=&quot;com.iot.mybatis.po.Orders&quot; id=&quot;OrdersUserLazyLoadingResultMap&quot;&gt;</div><div class="line">    &lt;!--对订单信息进行映射配置  --&gt;</div><div class="line">    &lt;id column=&quot;id&quot; property=&quot;id&quot;/&gt;</div><div class="line">    &lt;result column=&quot;user_id&quot; property=&quot;userId&quot;/&gt;</div><div class="line">    &lt;result column=&quot;number&quot; property=&quot;number&quot;/&gt;</div><div class="line">    &lt;result column=&quot;createtime&quot; property=&quot;createtime&quot;/&gt;</div><div class="line">    &lt;result column=&quot;note&quot; property=&quot;note&quot;/&gt;</div><div class="line">    &lt;!-- 实现对用户信息进行懒加载</div><div class="line">    select：指定懒加载需要执行的statement的id（是根据user_id查询用户信息的statement）</div><div class="line">    要使用userMapper.xml中findUserById完成根据用户id(user_id)用户信息的查</div><div class="line">    询，如果findUserById不在本mapper中需要前边加namespace</div><div class="line">    column：订单信息中关联用户信息查询的列，是user_id</div><div class="line">    关联查询的sql理解为：</div><div class="line">    SELECT orders.*,</div><div class="line">    (SELECT username FROM USER WHERE orders.user_id = user.id)username,</div><div class="line">    (SELECT sex FROM USER WHERE orders.user_id = user.id)sex</div><div class="line">     FROM orders</div><div class="line">     --&gt;</div><div class="line">    &lt;association property=&quot;user&quot;  javaType=&quot;com.iot.mybatis.po.User&quot;</div><div class="line">                 select=&quot;com.iot.mybatis.mapper.UserMapper.findUserById&quot;</div><div class="line">                 column=&quot;user_id&quot;&gt;</div><div class="line">     &lt;!-- 实现对用户信息进行懒加载 --&gt;</div><div class="line"></div><div class="line">    &lt;/association&gt;</div><div class="line"></div><div class="line">&lt;/resultMap&gt;</div></pre></td></tr></table></figure></p>
+<h4 id="association实现懒加载"><a href="#association实现懒加载" class="headerlink" title="association实现懒加载"></a>association实现懒加载</h4><p>1.查询订单使用懒加载<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;select id=&quot;findOrdersUserLazyLoading&quot; resultMap=&quot;OrdersUserLazyLoadingResultMap&quot;&gt;</span><br><span class="line">    SELECT * FROM orders</span><br><span class="line">&lt;/select&gt;</span><br></pre></td></tr></table></figure></p>
+<p>2.查询用互信息的select<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;select id=&quot;findUserById&quot; parameterType=&quot;int&quot; resultType=&quot;com.iot.mybatis.po.User&quot;&gt;</span><br><span class="line">    SELECT * FROM  user  WHERE id=#&#123;value&#125;</span><br><span class="line">&lt;/select&gt;</span><br></pre></td></tr></table></figure></p>
+<p>3.配置resultMap，先执行<code>findOrdersUserLazyLoading</code>需要用户信息时在执行<code>findUserById</code><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">&lt;resultMap type=&quot;com.iot.mybatis.po.Orders&quot; id=&quot;OrdersUserLazyLoadingResultMap&quot;&gt;</span><br><span class="line">    &lt;!--对订单信息进行映射配置  --&gt;</span><br><span class="line">    &lt;id column=&quot;id&quot; property=&quot;id&quot;/&gt;</span><br><span class="line">    &lt;result column=&quot;user_id&quot; property=&quot;userId&quot;/&gt;</span><br><span class="line">    &lt;result column=&quot;number&quot; property=&quot;number&quot;/&gt;</span><br><span class="line">    &lt;result column=&quot;createtime&quot; property=&quot;createtime&quot;/&gt;</span><br><span class="line">    &lt;result column=&quot;note&quot; property=&quot;note&quot;/&gt;</span><br><span class="line">    &lt;!-- 实现对用户信息进行懒加载</span><br><span class="line">    select：指定懒加载需要执行的statement的id（是根据user_id查询用户信息的statement）</span><br><span class="line">    要使用userMapper.xml中findUserById完成根据用户id(user_id)用户信息的查</span><br><span class="line">    询，如果findUserById不在本mapper中需要前边加namespace</span><br><span class="line">    column：订单信息中关联用户信息查询的列，是user_id</span><br><span class="line">    关联查询的sql理解为：</span><br><span class="line">    SELECT orders.*,</span><br><span class="line">    (SELECT username FROM USER WHERE orders.user_id = user.id)username,</span><br><span class="line">    (SELECT sex FROM USER WHERE orders.user_id = user.id)sex</span><br><span class="line">     FROM orders</span><br><span class="line">     --&gt;</span><br><span class="line">    &lt;association property=&quot;user&quot;  javaType=&quot;com.iot.mybatis.po.User&quot;</span><br><span class="line">                 select=&quot;com.iot.mybatis.mapper.UserMapper.findUserById&quot;</span><br><span class="line">                 column=&quot;user_id&quot;&gt;</span><br><span class="line">     &lt;!-- 实现对用户信息进行懒加载 --&gt;</span><br><span class="line"></span><br><span class="line">    &lt;/association&gt;</span><br><span class="line"></span><br><span class="line">&lt;/resultMap&gt;</span><br></pre></td></tr></table></figure></p>
 <p>可以看到与非懒加载的区别就是<code>association</code>标签中多了<code>select</code>和<code>column</code></p>
 <h3 id="调试和确认配置成功"><a href="#调试和确认配置成功" class="headerlink" title="调试和确认配置成功"></a>调试和确认配置成功</h3><h4 id="运行思路"><a href="#运行思路" class="headerlink" title="运行思路"></a>运行思路</h4><p>先分析一下以上resultMap的运行思路:  </p>
 <ol>
@@ -355,7 +355,7 @@
 <li>程序去遍历查询出来的List，在程序中调用getUser的时候，执行懒加载</li>
 <li>调用UserMapper中的findUserById</li>
 </ol>
-<p>代码如下:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">@Test</div><div class="line">public void testFindOrdersUserLazyLoading() throws Exception &#123;</div><div class="line">    SqlSession sqlSession = sqlSessionFactory.openSession();// 创建代理对象</div><div class="line">    OrdersMapperCustom ordersMapperCustom = sqlSession</div><div class="line">            .getMapper(OrdersMapperCustom.class);</div><div class="line">    // 查询订单信息（单表）</div><div class="line">    List&lt;Orders&gt; list = ordersMapperCustom.findOrdersUserLazyLoading();</div><div class="line"></div><div class="line">    // 遍历上边的订单列表</div><div class="line">    for (Orders orders : list) &#123;</div><div class="line">        // 执行getUser()去查询用户信息，这里实现按需加载</div><div class="line">        User user = orders.getUser();</div><div class="line">        System.out.println(user);</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>代码如下:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">@Test</span><br><span class="line">public void testFindOrdersUserLazyLoading() throws Exception &#123;</span><br><span class="line">    SqlSession sqlSession = sqlSessionFactory.openSession();// 创建代理对象</span><br><span class="line">    OrdersMapperCustom ordersMapperCustom = sqlSession</span><br><span class="line">            .getMapper(OrdersMapperCustom.class);</span><br><span class="line">    // 查询订单信息（单表）</span><br><span class="line">    List&lt;Orders&gt; list = ordersMapperCustom.findOrdersUserLazyLoading();</span><br><span class="line"></span><br><span class="line">    // 遍历上边的订单列表</span><br><span class="line">    for (Orders orders : list) &#123;</span><br><span class="line">        // 执行getUser()去查询用户信息，这里实现按需加载</span><br><span class="line">        User user = orders.getUser();</span><br><span class="line">        System.out.println(user);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <h4 id="懒加载配置"><a href="#懒加载配置" class="headerlink" title="懒加载配置"></a>懒加载配置</h4><table>
 <thead>
 <tr>
@@ -380,7 +380,7 @@
 </tr>
 </tbody>
 </table>
-<p>配置如下:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">&lt;settings&gt;</div><div class="line">    &lt;!-- 打开延迟加载 的开关 --&gt;</div><div class="line">    &lt;setting name=&quot;lazyLoadingEnabled&quot; value=&quot;true&quot;/&gt;</div><div class="line">    &lt;!-- 将积极加载改为消极加载即按需要加载 --&gt;</div><div class="line">    &lt;setting name=&quot;aggressiveLazyLoading&quot; value=&quot;false&quot;/&gt;</div><div class="line">&lt;/settings&gt;</div></pre></td></tr></table></figure></p>
+<p>配置如下:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&lt;settings&gt;</span><br><span class="line">    &lt;!-- 打开延迟加载 的开关 --&gt;</span><br><span class="line">    &lt;setting name=&quot;lazyLoadingEnabled&quot; value=&quot;true&quot;/&gt;</span><br><span class="line">    &lt;!-- 将积极加载改为消极加载即按需要加载 --&gt;</span><br><span class="line">    &lt;setting name=&quot;aggressiveLazyLoading&quot; value=&quot;false&quot;/&gt;</span><br><span class="line">&lt;/settings&gt;</span><br></pre></td></tr></table></figure></p>
 
       
     </div>
@@ -411,8 +411,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2017/12/15/java遍历集合/" rel="next" title="java增强循环">
-                <i class="fa fa-chevron-left"></i> java增强循环
+              <a href="/2017/12/14/mybatis使用总结三/" rel="next" title="mybatis使用(查询使用)">
+                <i class="fa fa-chevron-left"></i> mybatis使用(查询使用)
               </a>
             
           </div>
@@ -489,7 +489,7 @@
         <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
           
             <p class="site-author-name" itemprop="name">Leo Hao</p>
-            <p class="site-description motion-element" itemprop="description">一息尚存，则吾志不移</p>
+            <p class="site-description motion-element" itemprop="description">勿在浮沙筑高台</p>
         </div>
 
         <nav class="site-state motion-element">
@@ -499,7 +499,7 @@
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">64</span>
+                <span class="site-state-item-count">54</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
