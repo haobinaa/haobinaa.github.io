@@ -77,7 +77,7 @@
 <meta property="og:site_name" content="Do Or Die">
 <meta property="og:description" content="事务（Transaction）及其ACID属性 原子性(Atomicity)：事务是一个原子操作单元，其对数据的修改，要么全都执行，要么全都不执行 一致性(Consistent):在事务开始和完成时，数据都必须保持一致状态。这意味着所有相关的数据规则都必须应用于事务的修改，以保持数据的完整性；事务结束时，所有的内部数据结构（如B树索引或双向链表）也都必须是正确的 隔离性(Isolation):数据">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-06-13T15:12:35.852Z">
+<meta property="og:updated_time" content="2018-08-29T04:05:57.343Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="mysql事务">
 <meta name="twitter:description" content="事务（Transaction）及其ACID属性 原子性(Atomicity)：事务是一个原子操作单元，其对数据的修改，要么全都执行，要么全都不执行 一致性(Consistent):在事务开始和完成时，数据都必须保持一致状态。这意味着所有相关的数据规则都必须应用于事务的修改，以保持数据的完整性；事务结束时，所有的内部数据结构（如B树索引或双向链表）也都必须是正确的 隔离性(Isolation):数据">
@@ -349,7 +349,7 @@
 <li>持久性(Durable): 事务完成之后，它对于数据的修改是永久性的，即使出现系统故障也能够保持</li>
 </ol>
 <h3 id="并发事务带来的问题"><a href="#并发事务带来的问题" class="headerlink" title="并发事务带来的问题"></a>并发事务带来的问题</h3><h4 id="更新丢失-lost-update"><a href="#更新丢失-lost-update" class="headerlink" title="更新丢失(lost update)"></a>更新丢失(lost update)</h4><p>当两个或多个事务选择同一行，然后基于最初选定的值更新该行时，由于每个事务都不知道其他事务的存在，就会发生丢失更新问题－－最后的更新覆盖了由其他事务所做的更新。例如，两个编辑人员制作了同一文档的电子副本。每个编辑人员独立地更改其副本，然后保存更改后的副本，这样就覆盖了原始文档。最后保存其更改副本的编辑人员覆盖另一个编辑人员所做的更改。如果在一个编辑人员完成并提交事务之前，另一个编辑人员不能访问同一文件，则可避免此问题</p>
-<h4 id="脏读-dirty-read"><a href="#脏读-dirty-read" class="headerlink" title="脏读(dirty read)"></a>脏读(dirty read)</h4><p>一个事务正在对一条记录做修改，在这个事务完成并提交前，这条记录的数据就处于不一致状态；这时，另一个事务也来读取同一条记录，如果不加控制，第二个事务读取了这些“脏”数据，并据此做进一步的处理，就会产生未提交的数据依赖关系。这种现象被形象地叫做”脏读”</p>
+<h4 id="脏读-dirty-read"><a href="#脏读-dirty-read" class="headerlink" title="脏读(dirty read)"></a>脏读(dirty read)</h4><p>事务A正在对一条记录做修改，但未提交。这时，事务B也来读取同一条记录，如果不加控制，第二个事务读取了这些“脏”数据，并据此做进一步的处理，就会产生未提交的数据依赖关系。这种现象被形象地叫做”脏读”</p>
 <h4 id="不可重复读-Non-Repeatable-Read"><a href="#不可重复读-Non-Repeatable-Read" class="headerlink" title="不可重复读(Non-Repeatable Read)"></a>不可重复读(Non-Repeatable Read)</h4><p>是指在一个事务内，多次读同一数据。在这个事务还没有结束时，另外一个事务也访问该同一数据。那么，在第一个事务中的两次读数据之间，由于第二个事务的修改，那么第一个事务两次读到的的数据可能是不一样的</p>
 <h4 id="幻读-Phantom-Read"><a href="#幻读-Phantom-Read" class="headerlink" title="幻读(Phantom Read)"></a>幻读(Phantom Read)</h4><p>第一个事务对一个表中的数据进行了修改，这种修改涉及到表中的全部数据行。同时，第二个事务也修改这个表中的数据，这种修改是向表中插入一行新数据。那么，以后就会发生操作第一个事务的用户发现表中还有没有修改的数据行，就好象发生了幻觉一样</p>
 <h3 id="事务隔离级别"><a href="#事务隔离级别" class="headerlink" title="事务隔离级别"></a>事务隔离级别</h3><p>在上面讲到的并发事务处理带来的问题中，“更新丢失”通常是应该完全避免的。但防止更新丢失，并不能单靠数据库事务控制器来解决，需要应用程序对要更新的数据加必要的锁来解决，因此，防止更新丢失应该是应用的责任。</p>
@@ -535,7 +535,7 @@
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">54</span>
+                <span class="site-state-item-count">53</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
