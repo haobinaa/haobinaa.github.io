@@ -1,6 +1,6 @@
 ---
 title: NIO简述
-date: 2018-01-27 18:45:31
+date: 2018-03-27 18:45:31
 tags: JavaIO
 categories: IO
 ---
@@ -169,7 +169,7 @@ Selector（选择器）是一个特殊的组件，用于采集各个通道的状
 - Read：有数据可读
 - Write：可写入数据了
 
-#### selector的优势
+#### Selector的优势
 
 如果用阻塞I/O，需要多线程（浪费内存），如果用非阻塞I/O，需要不断重试（耗费CPU）。Selector的出现解决了这个问题，非阻塞模式下，通过Selector，我们的线程只为已就绪的通道工作，不用盲目的重试了。比如，当所有通道都没有数据到达时，也就没有Read事件发生，我们的线程会在select()方法处被挂起，从而让出了CPU资源。
 
@@ -194,6 +194,102 @@ SelectionKey key = channel.register(selector, SelectionKey.OP_READ);
 register()方法的第二个参数名叫“interest set”，也就是你所关心的事件集合。如果你关心多个事件，用一个“按位或运算符”分隔，比如
 ``` 
 SelectionKey.OP_READ | SelectionKey.OP_WRITE
+```
+
+#### Selector的基本使用流程
+1. 通过 Selector.open() 打开一个 Selector.
+2. 将 Channel 注册到 Selector 中, 并设置需要监听的事件(interest set)
+3. 不断重复:
+  - 调用 select() 方法
+  - 调用 selector.selectedKeys() 获取 selected keys
+  - 迭代每个 selected key:
+    - 从 selected key 中获取 对应的 Channel 和附加信息(如果有的话)
+    - 判断是哪些 IO 事件已经就绪了, 然后处理它们. 如果是 OP_ACCEPT 事件, 则调用 "SocketChannel clientChannel = ((ServerSocketChannel) key.channel()).accept()" 获取 SocketChannel, 并将它设置为 非阻塞的, 然后将这个 Channel 注册到 Selector 中.
+    - 根据需要更改 selected key 的监听事件.
+    - 将已经处理过的 key 从 selected keys 集合中删除.
+    
+#### 完整Selector示例
+
+当调用了 Selector.close()方法时, 我们其实是关闭了 Selector 本身并且将所有的 SelectionKey 失效, 但是并不会关闭 Channel.
+
+``` 
+public class NioEchoServer {
+    private static final int BUF_SIZE = 256;
+    private static final int TIMEOUT = 3000;
+
+    public static void main(String args[]) throws Exception {
+        // 打开服务端 Socket
+        ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
+
+        // 打开 Selector
+        Selector selector = Selector.open();
+
+        // 服务端 Socket 监听8080端口, 并配置为非阻塞模式
+        serverSocketChannel.socket().bind(new InetSocketAddress(8080));
+        serverSocketChannel.configureBlocking(false);
+
+        // 将 channel 注册到 selector 中.
+        // 通常我们都是先注册一个 OP_ACCEPT 事件, 然后在 OP_ACCEPT 到来时, 再将这个 Channel 的 OP_READ
+        // 注册到 Selector 中.
+        serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
+
+        while (true) {
+            // 通过调用 select 方法, 阻塞地等待 channel I/O 可操作
+            if (selector.select(TIMEOUT) == 0) {
+                System.out.print(".");
+                continue;
+            }
+
+            // 获取 I/O 操作就绪的 SelectionKey, 通过 SelectionKey 可以知道哪些 Channel 的哪类 I/O 操作已经就绪.
+            Iterator<SelectionKey> keyIterator = selector.selectedKeys().iterator();
+
+            while (keyIterator.hasNext()) {
+
+                SelectionKey key = keyIterator.next();
+
+                // 当获取一个 SelectionKey 后, 就要将它删除, 表示我们已经对这个 IO 事件进行了处理.
+                keyIterator.remove();
+
+                if (key.isAcceptable()) {
+                    // 当 OP_ACCEPT 事件到来时, 我们就有从 ServerSocketChannel 中获取一个 SocketChannel,
+                    // 代表客户端的连接
+                    // 注意, 在 OP_ACCEPT 事件中, 从 key.channel() 返回的 Channel 是 ServerSocketChannel.
+                    // 而在 OP_WRITE 和 OP_READ 中, 从 key.channel() 返回的是 SocketChannel.
+                    SocketChannel clientChannel = ((ServerSocketChannel) key.channel()).accept();
+                    clientChannel.configureBlocking(false);
+                    //在 OP_ACCEPT 到来时, 再将这个 Channel 的 OP_READ 注册到 Selector 中.
+                    // 注意, 这里我们如果没有设置 OP_READ 的话, 即 interest set 仍然是 OP_CONNECT 的话, 那么 select 方法会一直直接返回.
+                    clientChannel.register(key.selector(), OP_READ, ByteBuffer.allocate(BUF_SIZE));
+                }
+
+                if (key.isReadable()) {
+                    SocketChannel clientChannel = (SocketChannel) key.channel();
+                    ByteBuffer buf = (ByteBuffer) key.attachment();
+                    long bytesRead = clientChannel.read(buf);
+                    if (bytesRead == -1) {
+                        clientChannel.close();
+                    } else if (bytesRead > 0) {
+                        key.interestOps(OP_READ | SelectionKey.OP_WRITE);
+                        System.out.println("Get data length: " + bytesRead);
+                    }
+                }
+
+                if (key.isValid() && key.isWritable()) {
+                    ByteBuffer buf = (ByteBuffer) key.attachment();
+                    buf.flip();
+                    SocketChannel clientChannel = (SocketChannel) key.channel();
+
+                    clientChannel.write(buf);
+
+                    if (!buf.hasRemaining()) {
+                        key.interestOps(OP_READ);
+                    }
+                    buf.compact();
+                }
+            }
+        }
+    }
+}
 ```
 
 ###  SelectionKey
@@ -253,3 +349,4 @@ SelectionKey key = channel.register(selector, SelectionKey.OP_READ, theObject);
 ### 参考资料
 - [NIO教程-Jakob Jenkov](http://tutorials.jenkov.com/java-nio/index.html)
 - [NIO核心组件](https://www.jianshu.com/p/736bf3c78159)
+- [NIO 的前世今生](https://segmentfault.com/a/1190000006824196)
