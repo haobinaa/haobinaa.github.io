@@ -73,14 +73,14 @@
 <meta name="keywords" content="JavaIO">
 <meta property="og:type" content="article">
 <meta property="og:title" content="NIO简述">
-<meta property="og:url" content="http://yoursite.com/2018/01/27/IO/NIO简述/index.html">
+<meta property="og:url" content="http://yoursite.com/2018/03/27/IO/NIO简述/index.html">
 <meta property="og:site_name" content="Do Or Die">
 <meta property="og:description" content="概述java nio的核心有以下几部分组成：  channels buffers selectors  Channel A channel represents an open connection to an entity such as a hardware device, a file, a network socket, or aprogram component that is capa">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://ifeve.com/wp-content/uploads/2013/06/overview-channels-buffers.png">
 <meta property="og:image" content="http://ifeve.com/wp-content/uploads/2013/06/buffers-modes.png">
 <meta property="og:image" content="http://ifeve.com/wp-content/uploads/2013/06/overview-selectors.png">
-<meta property="og:updated_time" content="2018-08-29T13:00:27.093Z">
+<meta property="og:updated_time" content="2018-08-30T04:00:34.830Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="NIO简述">
 <meta name="twitter:description" content="概述java nio的核心有以下几部分组成：  channels buffers selectors  Channel A channel represents an open connection to an entity such as a hardware device, a file, a network socket, or aprogram component that is capa">
@@ -114,7 +114,7 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/2018/01/27/IO/NIO简述/"/>
+  <link rel="canonical" href="http://yoursite.com/2018/03/27/IO/NIO简述/"/>
 
 
 
@@ -257,7 +257,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/01/27/IO/NIO简述/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/27/IO/NIO简述/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Leo Hao">
@@ -286,8 +286,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-01-27T18:45:31+08:00">
-                2018-01-27
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-27T18:45:31+08:00">
+                2018-03-27
               </time>
             
 
@@ -413,7 +413,7 @@
 <li>Read：有数据可读</li>
 <li>Write：可写入数据了</li>
 </ul>
-<h4 id="selector的优势"><a href="#selector的优势" class="headerlink" title="selector的优势"></a>selector的优势</h4><p>如果用阻塞I/O，需要多线程（浪费内存），如果用非阻塞I/O，需要不断重试（耗费CPU）。Selector的出现解决了这个问题，非阻塞模式下，通过Selector，我们的线程只为已就绪的通道工作，不用盲目的重试了。比如，当所有通道都没有数据到达时，也就没有Read事件发生，我们的线程会在select()方法处被挂起，从而让出了CPU资源。</p>
+<h4 id="Selector的优势"><a href="#Selector的优势" class="headerlink" title="Selector的优势"></a>Selector的优势</h4><p>如果用阻塞I/O，需要多线程（浪费内存），如果用非阻塞I/O，需要不断重试（耗费CPU）。Selector的出现解决了这个问题，非阻塞模式下，通过Selector，我们的线程只为已就绪的通道工作，不用盲目的重试了。比如，当所有通道都没有数据到达时，也就没有Read事件发生，我们的线程会在select()方法处被挂起，从而让出了CPU资源。</p>
 <p>Selector允许单线程处理多个 Channel。如果你的应用打开了多个连接（通道），但每个连接的流量都很低，使用Selector就会很方便。</p>
 <p>这是在一个单线程中使用一个Selector处理3个Channel的图示：<br><img src="http://ifeve.com/wp-content/uploads/2013/06/overview-selectors.png" alt=""></p>
 <p>要使用Selector，得向Selector注册Channel，然后调用它的select()方法。这个方法会一直阻塞到某个注册的通道有事件就绪。一旦这个方法返回，线程就可以处理这些事件，事件的例子有如新连接进来，数据接收等</p>
@@ -422,6 +422,24 @@
 <p>注意：要将 Channel 注册到 Selector，首先需要将 Channel 设置为非阻塞模式，否则会抛异常。<br>FileChannel 是不能够使用选择器的, 因为 FileChannel 都是阻塞的<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Selector selector = Selector.open();</span><br><span class="line">channel.configureBlocking(false);</span><br><span class="line">SelectionKey key = channel.register(selector, SelectionKey.OP_READ);</span><br></pre></td></tr></table></figure></p>
 </blockquote>
 <p>register()方法的第二个参数名叫“interest set”，也就是你所关心的事件集合。如果你关心多个事件，用一个“按位或运算符”分隔，比如<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SelectionKey.OP_READ | SelectionKey.OP_WRITE</span><br></pre></td></tr></table></figure></p>
+<h4 id="Selector的基本使用流程"><a href="#Selector的基本使用流程" class="headerlink" title="Selector的基本使用流程"></a>Selector的基本使用流程</h4><ol>
+<li>通过 Selector.open() 打开一个 Selector.</li>
+<li>将 Channel 注册到 Selector 中, 并设置需要监听的事件(interest set)</li>
+<li>不断重复:<ul>
+<li>调用 select() 方法</li>
+<li>调用 selector.selectedKeys() 获取 selected keys</li>
+<li>迭代每个 selected key:<ul>
+<li>从 selected key 中获取 对应的 Channel 和附加信息(如果有的话)</li>
+<li>判断是哪些 IO 事件已经就绪了, 然后处理它们. 如果是 OP_ACCEPT 事件, 则调用 “SocketChannel clientChannel = ((ServerSocketChannel) key.channel()).accept()” 获取 SocketChannel, 并将它设置为 非阻塞的, 然后将这个 Channel 注册到 Selector 中.</li>
+<li>根据需要更改 selected key 的监听事件.</li>
+<li>将已经处理过的 key 从 selected keys 集合中删除.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<h4 id="完整Selector示例"><a href="#完整Selector示例" class="headerlink" title="完整Selector示例"></a>完整Selector示例</h4><p>当调用了 Selector.close()方法时, 我们其实是关闭了 Selector 本身并且将所有的 SelectionKey 失效, 但是并不会关闭 Channel.</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br></pre></td><td class="code"><pre><span class="line">public class NioEchoServer &#123;</span><br><span class="line">    private static final int BUF_SIZE = 256;</span><br><span class="line">    private static final int TIMEOUT = 3000;</span><br><span class="line"></span><br><span class="line">    public static void main(String args[]) throws Exception &#123;</span><br><span class="line">        // 打开服务端 Socket</span><br><span class="line">        ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();</span><br><span class="line"></span><br><span class="line">        // 打开 Selector</span><br><span class="line">        Selector selector = Selector.open();</span><br><span class="line"></span><br><span class="line">        // 服务端 Socket 监听8080端口, 并配置为非阻塞模式</span><br><span class="line">        serverSocketChannel.socket().bind(new InetSocketAddress(8080));</span><br><span class="line">        serverSocketChannel.configureBlocking(false);</span><br><span class="line"></span><br><span class="line">        // 将 channel 注册到 selector 中.</span><br><span class="line">        // 通常我们都是先注册一个 OP_ACCEPT 事件, 然后在 OP_ACCEPT 到来时, 再将这个 Channel 的 OP_READ</span><br><span class="line">        // 注册到 Selector 中.</span><br><span class="line">        serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);</span><br><span class="line"></span><br><span class="line">        while (true) &#123;</span><br><span class="line">            // 通过调用 select 方法, 阻塞地等待 channel I/O 可操作</span><br><span class="line">            if (selector.select(TIMEOUT) == 0) &#123;</span><br><span class="line">                System.out.print(&quot;.&quot;);</span><br><span class="line">                continue;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            // 获取 I/O 操作就绪的 SelectionKey, 通过 SelectionKey 可以知道哪些 Channel 的哪类 I/O 操作已经就绪.</span><br><span class="line">            Iterator&lt;SelectionKey&gt; keyIterator = selector.selectedKeys().iterator();</span><br><span class="line"></span><br><span class="line">            while (keyIterator.hasNext()) &#123;</span><br><span class="line"></span><br><span class="line">                SelectionKey key = keyIterator.next();</span><br><span class="line"></span><br><span class="line">                // 当获取一个 SelectionKey 后, 就要将它删除, 表示我们已经对这个 IO 事件进行了处理.</span><br><span class="line">                keyIterator.remove();</span><br><span class="line"></span><br><span class="line">                if (key.isAcceptable()) &#123;</span><br><span class="line">                    // 当 OP_ACCEPT 事件到来时, 我们就有从 ServerSocketChannel 中获取一个 SocketChannel,</span><br><span class="line">                    // 代表客户端的连接</span><br><span class="line">                    // 注意, 在 OP_ACCEPT 事件中, 从 key.channel() 返回的 Channel 是 ServerSocketChannel.</span><br><span class="line">                    // 而在 OP_WRITE 和 OP_READ 中, 从 key.channel() 返回的是 SocketChannel.</span><br><span class="line">                    SocketChannel clientChannel = ((ServerSocketChannel) key.channel()).accept();</span><br><span class="line">                    clientChannel.configureBlocking(false);</span><br><span class="line">                    //在 OP_ACCEPT 到来时, 再将这个 Channel 的 OP_READ 注册到 Selector 中.</span><br><span class="line">                    // 注意, 这里我们如果没有设置 OP_READ 的话, 即 interest set 仍然是 OP_CONNECT 的话, 那么 select 方法会一直直接返回.</span><br><span class="line">                    clientChannel.register(key.selector(), OP_READ, ByteBuffer.allocate(BUF_SIZE));</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                if (key.isReadable()) &#123;</span><br><span class="line">                    SocketChannel clientChannel = (SocketChannel) key.channel();</span><br><span class="line">                    ByteBuffer buf = (ByteBuffer) key.attachment();</span><br><span class="line">                    long bytesRead = clientChannel.read(buf);</span><br><span class="line">                    if (bytesRead == -1) &#123;</span><br><span class="line">                        clientChannel.close();</span><br><span class="line">                    &#125; else if (bytesRead &gt; 0) &#123;</span><br><span class="line">                        key.interestOps(OP_READ | SelectionKey.OP_WRITE);</span><br><span class="line">                        System.out.println(&quot;Get data length: &quot; + bytesRead);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                if (key.isValid() &amp;&amp; key.isWritable()) &#123;</span><br><span class="line">                    ByteBuffer buf = (ByteBuffer) key.attachment();</span><br><span class="line">                    buf.flip();</span><br><span class="line">                    SocketChannel clientChannel = (SocketChannel) key.channel();</span><br><span class="line"></span><br><span class="line">                    clientChannel.write(buf);</span><br><span class="line"></span><br><span class="line">                    if (!buf.hasRemaining()) &#123;</span><br><span class="line">                        key.interestOps(OP_READ);</span><br><span class="line">                    &#125;</span><br><span class="line">                    buf.compact();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <h3 id="SelectionKey"><a href="#SelectionKey" class="headerlink" title="SelectionKey"></a>SelectionKey</h3><ul>
 <li>register 注册一个 Channel 时, 会返回一个 SelectionKey 对象, 这个对象包含了如下内容:</li>
 <li>interest set, 即我们感兴趣的事件集, 即在调用 register 注册 channel 时所设置的 interest set.</li>
@@ -441,6 +459,7 @@
 <h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
 <li><a href="http://tutorials.jenkov.com/java-nio/index.html" target="_blank" rel="noopener">NIO教程-Jakob Jenkov</a></li>
 <li><a href="https://www.jianshu.com/p/736bf3c78159" target="_blank" rel="noopener">NIO核心组件</a></li>
+<li><a href="https://segmentfault.com/a/1190000006824196" target="_blank" rel="noopener">NIO 的前世今生</a></li>
 </ul>
 
       
@@ -472,8 +491,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2018/01/15/spring/Spring-Data-Jpa基础/" rel="next" title="Spring-Data-Jpa基础用法">
-                <i class="fa fa-chevron-left"></i> Spring-Data-Jpa基础用法
+              <a href="/2018/03/16/spring/RestTemplate使用/" rel="next" title="RestTemplate使用">
+                <i class="fa fa-chevron-left"></i> RestTemplate使用
               </a>
             
           </div>
@@ -482,8 +501,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2018/01/28/IO/NIO通道与Selector/" rel="prev" title="NIO Channel与Selector">
-                NIO Channel与Selector <i class="fa fa-chevron-right"></i>
+              <a href="/2018/03/28/并发/CAS解析/" rel="prev" title="CAS解析">
+                CAS解析 <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -617,7 +636,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Channel"><span class="nav-number">2.</span> <span class="nav-text">Channel</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#基本的channel示例"><span class="nav-number">2.1.</span> <span class="nav-text">基本的channel示例</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Buffer"><span class="nav-number">3.</span> <span class="nav-text">Buffer</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#capacity-position-limit"><span class="nav-number">3.1.</span> <span class="nav-text">capacity, position, limit</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#flip"><span class="nav-number">3.2.</span> <span class="nav-text">flip</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#rewind"><span class="nav-number">3.3.</span> <span class="nav-text">rewind</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#clear和compact"><span class="nav-number">3.4.</span> <span class="nav-text">clear和compact</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#mark方法与reset方法"><span class="nav-number">3.5.</span> <span class="nav-text">mark方法与reset方法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#示例"><span class="nav-number">3.6.</span> <span class="nav-text">示例</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Selector"><span class="nav-number">4.</span> <span class="nav-text">Selector</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#selector的优势"><span class="nav-number">4.1.</span> <span class="nav-text">selector的优势</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#使用方式"><span class="nav-number">4.2.</span> <span class="nav-text">使用方式</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SelectionKey"><span class="nav-number">5.</span> <span class="nav-text">SelectionKey</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#interest-set"><span class="nav-number">5.1.</span> <span class="nav-text">interest set</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ready-set"><span class="nav-number">5.2.</span> <span class="nav-text">ready set</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Channel-和-Selector"><span class="nav-number">5.3.</span> <span class="nav-text">Channel 和 Selector</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Attaching-Object"><span class="nav-number">5.4.</span> <span class="nav-text">Attaching Object</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">6.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Channel"><span class="nav-number">2.</span> <span class="nav-text">Channel</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#基本的channel示例"><span class="nav-number">2.1.</span> <span class="nav-text">基本的channel示例</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Buffer"><span class="nav-number">3.</span> <span class="nav-text">Buffer</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#capacity-position-limit"><span class="nav-number">3.1.</span> <span class="nav-text">capacity, position, limit</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#flip"><span class="nav-number">3.2.</span> <span class="nav-text">flip</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#rewind"><span class="nav-number">3.3.</span> <span class="nav-text">rewind</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#clear和compact"><span class="nav-number">3.4.</span> <span class="nav-text">clear和compact</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#mark方法与reset方法"><span class="nav-number">3.5.</span> <span class="nav-text">mark方法与reset方法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#示例"><span class="nav-number">3.6.</span> <span class="nav-text">示例</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Selector"><span class="nav-number">4.</span> <span class="nav-text">Selector</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Selector的优势"><span class="nav-number">4.1.</span> <span class="nav-text">Selector的优势</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#使用方式"><span class="nav-number">4.2.</span> <span class="nav-text">使用方式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Selector的基本使用流程"><span class="nav-number">4.3.</span> <span class="nav-text">Selector的基本使用流程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#完整Selector示例"><span class="nav-number">4.4.</span> <span class="nav-text">完整Selector示例</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SelectionKey"><span class="nav-number">5.</span> <span class="nav-text">SelectionKey</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#interest-set"><span class="nav-number">5.1.</span> <span class="nav-text">interest set</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ready-set"><span class="nav-number">5.2.</span> <span class="nav-text">ready set</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Channel-和-Selector"><span class="nav-number">5.3.</span> <span class="nav-text">Channel 和 Selector</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Attaching-Object"><span class="nav-number">5.4.</span> <span class="nav-text">Attaching Object</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">6.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
             
 
           </div>
