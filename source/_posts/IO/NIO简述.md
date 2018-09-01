@@ -350,3 +350,4 @@ SelectionKey key = channel.register(selector, SelectionKey.OP_READ, theObject);
 - [NIO教程-Jakob Jenkov](http://tutorials.jenkov.com/java-nio/index.html)
 - [NIO核心组件](https://www.jianshu.com/p/736bf3c78159)
 - [NIO 的前世今生](https://segmentfault.com/a/1190000006824196)
+- [SelectionKey源码分析](https://blog.csdn.net/u010412719/article/details/52863704)
