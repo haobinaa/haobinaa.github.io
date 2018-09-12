@@ -5,7 +5,7 @@ tags: 网络IO
 categories: IO
 ---
 ### IO数据传输过程
-![](https://images2017.cnblogs.com/blog/733013/201710/733013-20171003132425740-1897420439.png)
+![](http://odu0tqqax.bkt.clouddn.com/io_process.png)
 
 #### 程序读数据
 当某个程序或已存在的进程/线程(后文将不加区分的只认为是进程)需要某段数据时，它只能在用户空间中属于它自己的内存中访问、修改，这段内存暂且称之为app 
@@ -31,7 +31,7 @@ buffer，而是直接复制到send buffer。这就是零拷贝(zero copy)技术�
 #### Blocking IO(阻塞IO)
 也叫 **同步阻塞IO** ， 请求数据的进程需要一直阻塞等待读取完成才能返回，同时整个读取的动作也是要同步等待I/O操作的完成才返回。
 
-![](https://images2017.cnblogs.com/blog/733013/201710/733013-20171003153915708-1740495360.png)
+![](http://odu0tqqax.bkt.clouddn.com/block_io.png)
 
 
 #### Nonblocking IO(非阻塞IO)
@@ -39,7 +39,7 @@ buffer，而是直接复制到send buffer。这就是零拷贝(zero copy)技术�
 
 当数据没有准备好的时候，用户进程调用仍然是同步返回结果，只是如果I/O不可用，它会即时返回一个错误结果，然后用户进程不断轮训，那么对于整个用户进程而言，它是非阻塞的。
 
-![](https://images2017.cnblogs.com/blog/733013/201710/733013-20171003154856927-92203933.png)
+![](http://odu0tqqax.bkt.clouddn.com/non-block-io.png)
 
 #### IO Multiplexing （IO复用）
 
@@ -60,15 +60,24 @@ Linux通过socket睡眠队列来管理所有等待socket的某个事件的proces
 
 
 ##### Select
+``` 
+int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout);
+```
 
+当用户process调用select的时候，select会将需要监控的readfds集合拷贝到内核空间（假设监控的仅仅是socket可读），然后遍历自己监控的socket sk，挨个调用sk的poll逻辑以便检查该sk是否有可读事件，遍历完所有的sk后，如果没有任何一个sk可读，那么select会调用schedule_timeout进入schedule循环，使得process进入睡眠。如果在timeout时间内某个sk上有数据可读了，或者等待timeout了，则调用select的process会被唤醒，接下来select就是遍历监控的sk集合，挨个收集可读事件并返回给用户了
 
-
+select存在两个问题：
+1. 被监控的fds需要从用户空间拷贝到内核空间, 内核空间对fds集合大小做了限制，为1024
+2. 被监控的fds集合中，只要有一个有数据可读，整个socket集合就会被遍历一次调用sk的poll函数收集可读事件
+ ，需要挨个遍历每个socket来收集可读事件
+ 
+ ##### poll
 #### Signal-driven I/O （信号驱动IO）
 号驱动IO模型。当开启了信号驱动功能时，首先发起一个信号处理的系统调用，如sigaction()，这个系统调用会立即返回。但数据在准备好时，会发送SIGIO信号，进程收到这个信号就知道数据准备好了，于是发起操作数据的系统调用，如read()。
 
 在发起信号处理的系统调用后，进程不会被阻塞，但是在read()将数据从kernel buffer复制到app buffer时，进程是被阻塞的。如：
 
-![](https://images2017.cnblogs.com/blog/733013/201710/733013-20171003170515536-1404504188.png)
+![](http://odu0tqqax.bkt.clouddn.com/poll-io.png)
 
 ####  Asynchronous I/O (异步IO)
 
@@ -77,7 +86,7 @@ Linux通过socket睡眠队列来管理所有等待socket的某个事件的proces
 httpd从返回开始，直到数据复制到app buffer结束都不会被阻塞。当数据复制到app buffer结束，将发送一个信号通知httpd进程。
 
 如图：
-![](https://images2017.cnblogs.com/blog/733013/201710/733013-20171003171529536-693464967.png)
+![](http://odu0tqqax.bkt.clouddn.com/a-io.png)
 ### NIO分析
 
 #### 传统BIO模型
@@ -127,6 +136,80 @@ BIO模型最本质的问题在于，严重依赖于线程，但线程资源是�
 
 ### NIO模型
 
+在BIO模型中，之所以需要多线程，是因为在进行I/O操作的时候，一是没有办法知道到底能不能写、能不能读，只能"傻等"，即使通过各种估算，算出来操作系统没有能力进行读写，也没法在socket.read()和socket.write()
+函数中返回，这两个函数无法进行有效的中断。所以除了多开线程另起炉灶，没有好的办法利用CPU。NIO的读写函数可以立即返回，这就给了我们不开线程利用CPU的最好机会：如果一个连接不能读写（socket.read()返回0或者socket.write()返回0），我们可以把这件事记下来，记录的方式通常是在Selector上注册标记位，然后切换到其它就绪的连接（channel）继续进行读写。
+
+
+#### 事件模型
+我们可以通过注册感兴趣的事件，来通过**事件模型单线程处理所有I/O请求**
+
+Reactor模式：注册所有感兴趣的事件处理器，单线程轮询选择就绪事件，执行事件处理器， 示例如下：
+``` 
+   interface ChannelHandler{
+      void channelReadable(Channel channel);
+      void channelWritable(Channel channel);
+   }
+   class Channel{
+     Socket socket;
+     Event event;//读，写或者连接
+   }
+
+   //IO线程主循环:
+   class IoThread extends Thread{
+   public void run(){
+   Channel channel;
+   while(channel=Selector.select()){//选择就绪的事件和对应的连接
+      if(channel.event==accept){
+         registerNewChannelHandler(channel);//如果是新连接，则注册一个新的读写处理器
+      }
+      if(channel.event==write){
+         getChannelHandler(channel).channelWritable(channel);//如果可以写，则执行写事件
+      }
+      if(channel.event==read){
+          getChannelHandler(channel).channelReadable(channel);//如果可以读，则执行读事件
+      }
+    }
+   }
+   Map<Channel，ChannelHandler> handlerMap;//所有channel的对应事件处理器
+  }
+```
+
+#### 优化线程模型
+
+单线程处理I/O的效率确实非常高，没有线程切换，只是拼命的读、写、选择事件。但现在的服务器，一般都是多核处理器，如果能够利用多核心进行I/O，无疑对效率会有更大的提高。
+
+我们需要的线程类型：
+1. 事件分发器，单线程选择就绪的事件。
+2. I/O处理器，包括connect、read、write等，这种纯CPU操作，一般开启CPU核心个线程就可以。
+3. 业务线程，在处理完I/O后，业务一般还会有自己的业务逻辑，有的还会有其他的阻塞I/O，如DB操作，RPC等。只要有阻塞，就需要单独的线程。
+
+Java的Selector对于Linux系统来说，有一个致命限制：同一个channel的select不能被并发的调用。因此，如果有多个I/O线程，必须保证：一个socket只能属于一个IoThread，而一个IoThread可以管理多个socket。另外连接的处理和读写的处理通常可以选择分开，这样对于海量连接的注册和读写就可以分发。虽然read()和write()是比较高效无阻塞的函数，但毕竟会占用CPU，如果面对更高的并发则无能为力。
+
+![](http://odu0tqqax.bkt.clouddn.com/reactor.png)
+
+
+#### Proactor和Reactor
+
+ Reactor模式是基于同步I/O的，而Proactor模式是和异步I/O相关的。在Reactor模式中，事件分发器等待某个事件或者可应用或个操作的状态发生（比如文件描述符可读写，或者是socket可读写），事件分发器就把这个事件传给事先注册的事件处理函数或者回调函数，由后者来做实际的读写操作。
+ 
+ Proactor模式中，事件处理者（或者代由事件分发器发起）直接发起一个异步读写操作（相当于请求），而实际的工作是由操作系统来完成的。发起时，需要提供的参数包括用于存放读到数据的缓存区、读的数据大小或用于存放外发数据的缓存区，以及这个请求完后的回调函数等信息。事件分发器得知了这个请求，它默默等待这个请求的完成，然后转发完成事件给相应的事件处理者或者回调。举例来说，在Windows上事件处理者投递了一个异步IO操作（称为overlapped技术），事件分发器等IO Complete事件完成。这种异步模式的典型实现是基于操作系统底层异步API的，所以我们可称之为“系统级别”的或者“真正意义上”的异步，因为具体的读写是由操作系统代劳的。
+ 
+ 
+ ##### Reactor中读
+ - 注册读就绪事件和相应的事件处理器。
+ - 事件分发器等待事件
+ - 事件到来，激活分发器，分发器调用事件对应的处理器
+ - 事件处理器完成实际的读操作，处理读到的数据，注册新的事件，然后返还控制权
+ 
+ 
+ ##### Proactor中实现读
+ - 处理器发起异步读操作（注意：操作系统必须支持异步IO）。在这种情况下，处理器无视IO就绪事件，它关注的是完成事件。
+ - 事件分发器等待操作完成事件
+ - 在分发器等待过程中，操作系统利用并行的内核线程执行实际的读操作，并将结果数据存入用户自定义缓冲区，最后通知事件分发器读操作完成
+ - 事件分发器呼唤处理器
+ - 事件处理器处理用户自定义缓冲区中的数据，然后启动一个新的异步操作，并将控制权返回事件分发器
+   
+
 ### 参考资料
 - [java nio浅析](https://tech.meituan.com/nio.html)
 - [IO模型到netty](https://juejin.im/post/58bbaee6ac502e006b02f607)
@@ -135,3 +218,4 @@ BIO模型最本质的问题在于，严重依赖于线程，但线程资源是�
 - [Linux五种IO模型分析](https://www.cnblogs.com/f-ck-need-u/p/7624733.html)
 - [Linux IO模式及 select、poll、epoll详解](https://segmentfault.com/a/1190000003063859)
 - [大话Linux Select、poll、epoll](https://cloud.tencent.com/developer/article/1005481)
+- [IO模型到netty](https://juejin.im/post/58ea47cbda2f60005f070a70)
