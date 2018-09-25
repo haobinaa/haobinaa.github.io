@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="概述使用线程时， 我们一般使用new Thread的方式, 如下:1234567new Thread(new Runnable() &amp;#123;	@Override	public void run() &amp;#123;		// TODO Auto-generated method stub	&amp;#125;&amp;#125;).start(); 这种方式有一些弊端：  每次new Thread新建对象性能差。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="线程池使用总结">
+<meta property="og:url" content="http://yoursite.com/2018/09/15/线程池使用总结/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="概述使用线程时， 我们一般使用new Thread的方式, 如下:1234567new Thread(new Runnable() &amp;#123;	@Override	public void run() &amp;#123;		// TODO Auto-generated method stub	&amp;#125;&amp;#125;).start(); 这种方式有一些弊端：  每次new Thread新建对象性能差。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://odu0tqqax.bkt.clouddn.com/Executor.png">
+<meta property="og:updated_time" content="2018-09-17T09:55:54.319Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="线程池使用总结">
+<meta name="twitter:description" content="概述使用线程时， 我们一般使用new Thread的方式, 如下:1234567new Thread(new Runnable() &amp;#123;	@Override	public void run() &amp;#123;		// TODO Auto-generated method stub	&amp;#125;&amp;#125;).start(); 这种方式有一些弊端：  每次new Thread新建对象性能差。">
+<meta name="twitter:image" content="http://odu0tqqax.bkt.clouddn.com/Executor.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/09/15/线程池使用总结/"/>
+
+
+
+
+
+  <title>线程池使用总结 | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/09/15/线程池使用总结/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">线程池使用总结</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-09-15T14:12:02+08:00">
+                2018-09-15
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/并发/" itemprop="url" rel="index">
+                    <span itemprop="name">并发</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><p>使用线程时， 我们一般使用new Thread的方式, 如下:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">new Thread(new Runnable() &#123;</span><br><span class="line"></span><br><span class="line">	@Override</span><br><span class="line">	public void run() &#123;</span><br><span class="line">		// TODO Auto-generated method stub</span><br><span class="line">	&#125;</span><br><span class="line">&#125;).start();</span><br></pre></td></tr></table></figure></p>
+<p>这种方式有一些弊端：</p>
+<ul>
+<li>每次new Thread新建对象性能差。</li>
+<li>线程缺乏统一管理，可能无限制新建线程，相互之间竞争，及可能占用过多系统资源导致死机或oom</li>
+<li>缺乏更多功能，如定时执行、定期执行、线程中断</li>
+</ul>
+<p>java提供了四种线程池，相较之下有如下好处：</p>
+<ul>
+<li>重用存在的线程，减少对象创建、消亡的开销，性能佳</li>
+<li>可有效控制最大并发线程数，提高系统资源的使用率，同时避免过多资源竞争，避免堵塞</li>
+<li>提供定时执行、定期执行、单线程、并发数控制等功能</li>
+</ul>
+<h3 id="线程池实现架构"><a href="#线程池实现架构" class="headerlink" title="线程池实现架构"></a>线程池实现架构</h3><p><img src="http://odu0tqqax.bkt.clouddn.com/Executor.png" alt=""></p>
+<p>ThreadPoolExecutor实现了一般的线程池，而ScheduledThreadPoolExecutor继承了ThreadPoolExecutor的实现，然后增加了调度功能。</p>
+<h4 id="Executor"><a href="#Executor" class="headerlink" title="Executor"></a>Executor</h4><p>Executor，任务的执行者，线程池框架中几乎所有类都直接或者间接实现Executor接口，它是线程池框架的基础。Executor提供了一种将“任务提交”与“任务执行”分离开来的机制，它仅提供了一个Execute()方法用来执行已经提交的Runnable任务。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public interface Executor &#123;</span><br><span class="line">    void execute(Runnable command);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="ExecutorService"><a href="#ExecutorService" class="headerlink" title="ExecutorService"></a>ExecutorService</h4><p>ExecutorService提供了将任务提交给执行者的接口(submit方法)，让执行者执行任务(invokeAll, invokeAny方法)的接口等。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line">public interface ExecutorService extends Executor &#123;</span><br><span class="line"></span><br><span class="line">    /**</span><br><span class="line">     * 启动一次顺序关闭，执行以前提交的任务，但不接受新任务</span><br><span class="line">     */</span><br><span class="line">    void shutdown();</span><br><span class="line"></span><br><span class="line">    /**</span><br><span class="line">     * 试图停止所有正在执行的活动任务，暂停处理正在等待的任务，并返回等待执行的任务列表</span><br><span class="line">     */</span><br><span class="line">    List&lt;Runnable&gt; shutdownNow();</span><br><span class="line"></span><br><span class="line">    /**</span><br><span class="line">     * 如果此执行程序已关闭，则返回 true。</span><br><span class="line">     */</span><br><span class="line">    boolean isShutdown();</span><br><span class="line"></span><br><span class="line">    /**</span><br><span class="line">     * 如果关闭后所有任务都已完成，则返回 true</span><br><span class="line">     */</span><br><span class="line">    boolean isTerminated();</span><br><span class="line"></span><br><span class="line">    /**</span><br><span class="line">     * 请求关闭、发生超时或者当前线程中断，无论哪一个首先发生之后，都将导致阻塞，直到所有任务完成执行</span><br><span class="line">     */</span><br><span class="line">    boolean awaitTermination(long timeout, TimeUnit unit)</span><br><span class="line">        throws InterruptedException;</span><br><span class="line"></span><br><span class="line">    /**</span><br><span class="line">     * 提交一个返回值的任务用于执行，返回一个表示任务的未决结果的 Future</span><br><span class="line">     */</span><br><span class="line">    &lt;T&gt; Future&lt;T&gt; submit(Callable&lt;T&gt; task);</span><br><span class="line"></span><br><span class="line">    /**</span><br><span class="line">     * 提交一个 Runnable 任务用于执行，并返回一个表示该任务的 Future</span><br><span class="line">     */</span><br><span class="line">    &lt;T&gt; Future&lt;T&gt; submit(Runnable task, T result);</span><br><span class="line"></span><br><span class="line">    /**</span><br><span class="line">     * 提交一个 Runnable 任务用于执行，并返回一个表示该任务的 Future</span><br><span class="line">     */</span><br><span class="line">    Future&lt;?&gt; submit(Runnable task);</span><br><span class="line"></span><br><span class="line">    /**</span><br><span class="line">     * 执行给定的任务，当所有任务完成时，返回保持任务状态和结果的 Future 列表</span><br><span class="line">     */</span><br><span class="line">    &lt;T&gt; List&lt;Future&lt;T&gt;&gt; invokeAll(Collection&lt;? extends Callable&lt;T&gt;&gt; tasks)</span><br><span class="line">        throws InterruptedException;</span><br><span class="line"></span><br><span class="line">    /**</span><br><span class="line">     * 执行给定的任务，当所有任务完成或超时期满时（无论哪个首先发生），返回保持任务状态和结果的 Future 列表</span><br><span class="line">     */</span><br><span class="line">    &lt;T&gt; List&lt;Future&lt;T&gt;&gt; invokeAll(Collection&lt;? extends Callable&lt;T&gt;&gt; tasks,</span><br><span class="line">                                  long timeout, TimeUnit unit)</span><br><span class="line">        throws InterruptedException;</span><br><span class="line"></span><br><span class="line">    /**</span><br><span class="line">     * 执行给定的任务，如果某个任务已成功完成（也就是未抛出异常），则返回其结果</span><br><span class="line">     */</span><br><span class="line">    &lt;T&gt; T invokeAny(Collection&lt;? extends Callable&lt;T&gt;&gt; tasks)</span><br><span class="line">        throws InterruptedException, ExecutionException;</span><br><span class="line"></span><br><span class="line">    /**</span><br><span class="line">     * 执行给定的任务，如果在给定的超时期满前某个任务已成功完成（也就是未抛出异常），则返回其结果</span><br><span class="line">     */</span><br><span class="line">    &lt;T&gt; T invokeAny(Collection&lt;? extends Callable&lt;T&gt;&gt; tasks,</span><br><span class="line">                    long timeout, TimeUnit unit)</span><br><span class="line">        throws InterruptedException, ExecutionException, TimeoutException;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="AbstractExecutorService"><a href="#AbstractExecutorService" class="headerlink" title="AbstractExecutorService"></a>AbstractExecutorService</h4><p>为ExecutorService的默认实现，AbstractExecutorService除了实现ExecutorService接口外，还提供了newTaskFor()方法返回一个RunnableFuture，在运行的时候，它将调用底层可调用任务，作为 Future 任务，它将生成可调用的结果作为其结果，并为底层任务提供取消操作</p>
+<h4 id="ScheduledExecutorService"><a href="#ScheduledExecutorService" class="headerlink" title="ScheduledExecutorService"></a>ScheduledExecutorService</h4><p>继承ExecutorService，为一个“延迟”和“定期执行”的ExecutorService。他提供了一些如下几个方法安排任务在给定的延时执行或者周期性执行：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">// 创建并执行在给定延迟后启用的 ScheduledFuture。</span><br><span class="line">&lt;V&gt; ScheduledFuture&lt;V&gt; schedule(Callable&lt;V&gt; callable, long delay, TimeUnit unit)</span><br><span class="line"></span><br><span class="line">// 创建并执行在给定延迟后启用的一次性操作。</span><br><span class="line">ScheduledFuture&lt;?&gt; schedule(Runnable command, long delay, TimeUnit unit)</span><br><span class="line"></span><br><span class="line">// 创建并执行一个在给定初始延迟后首次启用的定期操作，后续操作具有给定的周期；</span><br><span class="line">//也就是将在 initialDelay 后开始执行，然后在 initialDelay+period 后执行，接着在 initialDelay + 2 * period 后执行，依此类推。</span><br><span class="line">ScheduledFuture&lt;?&gt; scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit)</span><br><span class="line"></span><br><span class="line">// 创建并执行一个在给定初始延迟后首次启用的定期操作，随后，在每一次执行终止和下一次执行开始之间都存在给定的延迟。</span><br><span class="line">ScheduledFuture&lt;?&gt; scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit)</span><br></pre></td></tr></table></figure>
+<h4 id="ThreadPoolExecutor"><a href="#ThreadPoolExecutor" class="headerlink" title="ThreadPoolExecutor"></a>ThreadPoolExecutor</h4><p><code>ThreadPoolExecutor</code>继承于抽象类<code>AbstractExecutorService</code></p>
+<p>关键的类成员：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">private final BlockingQueue&lt;Runnable&gt; workQueue;  // 任务队列，我们的任务会添加到该队列里面，线程将从该队列获取任务来执行</span><br><span class="line"></span><br><span class="line"> private final HashSet&lt;Worker&gt; workers = new HashSet&lt;Worker&gt;();//任务的执行值集合，来消费workQueue里面的任务</span><br><span class="line"></span><br><span class="line"> private volatile ThreadFactory threadFactory;//线程工厂</span><br><span class="line"></span><br><span class="line"> private volatile RejectedExecutionHandler handler;//拒绝策略，默认会抛出异异常，还要其他几种拒绝策略如下：</span><br><span class="line"></span><br><span class="line"> 1、CallerRunsPolicy：在调用者线程里面运行该任务</span><br><span class="line"> 2、DiscardPolicy：丢弃任务</span><br><span class="line"> 3、DiscardOldestPolicy：丢弃workQueue的头部任务</span><br><span class="line"></span><br><span class="line">private volatile int corePoolSize;//最下保活work数量</span><br><span class="line"></span><br><span class="line">private volatile int maximumPoolSize;//work上限</span><br></pre></td></tr></table></figure></p>
+<p>线程池通过submit来提交任务，具体流程</p>
+<h3 id="java提供的线程池"><a href="#java提供的线程池" class="headerlink" title="java提供的线程池"></a>java提供的线程池</h3><h4 id="FixedThreadPool"><a href="#FixedThreadPool" class="headerlink" title="FixedThreadPool"></a>FixedThreadPool</h4><p>创建一个定长线程池，可控制线程最大并发数，超出的线程会在队列中等待。</p>
+<h4 id="CachedThreadPool"><a href="#CachedThreadPool" class="headerlink" title="CachedThreadPool"></a>CachedThreadPool</h4><p>创建一个可缓存线程池，如果线程池长度超过处理需要，可灵活回收空闲线程，若无可回收，则新建线程。</p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="http://cmsblogs.com/?p=2444" target="_blank" rel="noopener">J.U.C之线程池</a></li>
+<li><a href="https://juejin.im/post/5a37944ef265da432b4aec03" target="_blank" rel="noopener">线程池使用总结</a></li>
+<li><a href="https://www.jianshu.com/p/117571856b28" target="_blank" rel="noopener">java线程池原理及分析</a></li>
+<li><a href="https://cloud.tencent.com/developer/article/1124439" target="_blank" rel="noopener">线程池源码分析-使用总结</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/09/05/Callable和Future/" rel="next" title="Callable和Future">
+                <i class="fa fa-chevron-left"></i> Callable和Future
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">勿在浮沙筑高台</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">49</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">18</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#线程池实现架构"><span class="nav-number">2.</span> <span class="nav-text">线程池实现架构</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Executor"><span class="nav-number">2.1.</span> <span class="nav-text">Executor</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ExecutorService"><span class="nav-number">2.2.</span> <span class="nav-text">ExecutorService</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AbstractExecutorService"><span class="nav-number">2.3.</span> <span class="nav-text">AbstractExecutorService</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ScheduledExecutorService"><span class="nav-number">2.4.</span> <span class="nav-text">ScheduledExecutorService</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ThreadPoolExecutor"><span class="nav-number">2.5.</span> <span class="nav-text">ThreadPoolExecutor</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#java提供的线程池"><span class="nav-number">3.</span> <span class="nav-text">java提供的线程池</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#FixedThreadPool"><span class="nav-number">3.1.</span> <span class="nav-text">FixedThreadPool</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#CachedThreadPool"><span class="nav-number">3.2.</span> <span class="nav-text">CachedThreadPool</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">4.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
