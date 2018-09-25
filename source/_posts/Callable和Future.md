@@ -1,6 +1,6 @@
 ---
 title: Callable和Future
-date: 2018-09-15 18:07:16
+date: 2018-09-05 18:07:16
 tags:
 categories: 并发
 ---
@@ -92,8 +92,135 @@ public FutureTask(Runnable runnable, V result) {
 这几个方法都返回一个Future对象，仔细查看发现，所有的方法最终都将runnable或者callable转变成一个RunnableFuture的对象，这个RunnableFutre的对象是一个同时继承了Runnable和Future
 的接口。然后调用executor(runnable)方法，最后返回一个RunnableFuture对象。
 
+#### submit原理
+FutureTask实现了RunnableFuture的接口，既然我们知道最终返回的是一个FutureTask对象ftask，而且我们可以通过ftask.get()可以的来得到execute(task)的返回值。
+
+Runnable的run()是没有返回值的，所以当es.submit()的参数只有一个Runnable对象的时候，通过ftask.get()得到的也是一个null值，当参数还有一个result的时候，就返回这个result；如果参数是一个Callable的对象的时候，Callable的call()是有返回值的，同时这个call()方法会在转换的Runable对象ftask的run()方法中被调用，然后将它的返回值赋值给一个全局变量，最后在ftask的get()方法中得到这个值。
+
+#### 将Runnable转为FutureTask的过程
+``` 
+protected <T> RunnableFuture<T> newTaskFor(Runnable runnable, T value) {
+        return new FutureTask<T>(runnable, value);
+}
 
 
+public FutureTask(Runnable runnable, V result) {
+    this.callable = Executors.callable(runnable, result);
+    this.state = NEW;       // ensure visibility of callable
+}
+// -------------- Executors.callable方法  
+public static <T> Callable<T> callable(Runnable task, T result) {
+      if (task == null)
+          throw new NullPointerException();
+      return new RunnableAdapter<T>(task, result);
+}
+
+// -------------- Executors内部类RunableAdapter
+static final class RunnableAdapter<T> implements Callable<T> {
+        final Runnable task;
+        final T result;
+        RunnableAdapter(Runnable task, T result) {
+            this.task = task;
+            this.result = result;
+        }
+        public T call() {
+            task.run();
+            return result;
+        }
+}
+
+```
+
+#### 将Callable转为FutureTask的过程
+``` 
+protected <T> RunnableFuture<T> newTaskFor(Callable<T> callable) {
+        return new FutureTask<T>(callable);
+}
+
+public FutureTask(Callable<V> callable) {
+    if (callable == null)
+        throw new NullPointerException();
+    this.callable = callable;
+    this.state = NEW;       // ensure visibility of callable
+}
+```
+
+#### execute(runnable)的执行过程
+ThreadPoolExecutor中executor(runnable) :
+``` 
+ public void execute(Runnable command) {
+        if (command == null)
+            throw new NullPointerException();
+        // ctl是一个AtomicInteger的变量，标识线程池的状态
+        int c = ctl.get();
+        if (workerCountOf(c) < corePoolSize) {
+            if (addWorker(command, true))
+                return;
+            c = ctl.get();
+        }
+        if (isRunning(c) && workQueue.offer(command)) {
+            int recheck = ctl.get();
+            if (! isRunning(recheck) && remove(command))
+                reject(command);
+            else if (workerCountOf(recheck) == 0)
+                addWorker(null, false);
+        }
+        else if (!addWorker(command, false))
+            reject(command);
+}
+```
+
+如上，过程为：
+1. 如果当前线程池的的线程小于核心线程的数量的时候，就会调用addWorker检查运行状态和正在运行的线程数量，通过返回false来防止错误地添加线程，然后执行当前任务。
+2. 否则当前线程池的的线程大于核心线程的数量的时候，我们仍然需要先判断是否需要添加一个新的线程来执行这个任务，因为可能已经存在的线程此刻任务执行完毕处于空闲状态，这个时候可以直接复用。否则创建一个新的线程来执行此任务。
+3. 如果不能再添加新的任务，就拒绝。执行execute(runnable)最终会回调runnable的run()方法，也就是FutureTask的对象ftask的run()方法，如下：
+``` 
+ public void run() {
+        if (state != NEW ||
+            !UNSAFE.compareAndSwapObject(this, runnerOffset,
+                                         null, Thread.currentThread()))
+            return;
+        try {
+            Callable<V> c = callable;
+            if (c != null && state == NEW) {
+                V result;
+                boolean ran;
+                try {
+                    result = c.call();
+                    ran = true;
+                } catch (Throwable ex) {
+                    result = null;
+                    ran = false;
+                    setException(ex);
+                }
+                if (ran)
+                    set(result);
+            }
+        } finally {
+            // runner must be non-null until state is settled to
+            // prevent concurrent calls to run()
+            runner = null;
+            // state must be re-read after nulling runner to prevent
+            // leaked interrupts
+            int s = state;
+            if (s >= INTERRUPTING)
+                handlePossibleCancellationInterrupt(s);
+        }
+ }
+
+```
+通过执行result = c.call()拿到返回值，然后set(result) ，因此get()方法获得的值正是这个result。
+
+可以看到之前execute中，对工作线程`worker`类的处理，类关系如下：
+
+![](http://odu0tqqax.bkt.clouddn.com/thread_worker.png)
+
+worker类的关键成员：
+``` 
+final Thread thread;  // Worker类的工作线程
+
+ Runnable firstTask; //我们提交的任务，可能被立刻执行，也可能被放到队列里面
+```
 
 ### 参考资料
 - [详解java中的Future、FutureTask原理及使用](https://blog.csdn.net/wei_lei/article/details/74262818)
