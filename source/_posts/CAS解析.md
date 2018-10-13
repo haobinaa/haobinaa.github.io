@@ -31,6 +31,7 @@ if(this.value == A){
 静态代码块：
 
   private static final Unsafe unsafe = Unsafe.getUnsafe();
+  // value在内存中的位置
   private static final long valueOffset;
 
   static {
@@ -39,8 +40,8 @@ if(this.value == A){
           valueOffset = unsafe.objectFieldOffset(AtomicInteger.class.getDeclaredField("value"));
       } catch (Exception ex) { throw new Error(ex); }
   }
-
-  private volatil,e int value;
+  // value的值，volatile保证可见性
+  private volatile int value;
   
 // 更新操作
 // 当内存中的value值等于expect值时，则将内存中的value值更新为update值，并返回true，否则返回false
@@ -53,8 +54,46 @@ if(this.value == A){
 - value当前值，使用volatile修饰，保证多线程环境下看见的是同一个
 
 
+
+例如`AtomicInteger`的`getAndIncrement`过程：
+``` 
+    public final int getAndIncrement() {
+        return unsafe.getAndAddInt(this, valueOffset, 1);
+        
+    }
+    
+    // 调用unsafe 的 getAndAddInt
+    public final int getAndAddInt(Object var1, long var2, int var4) {
+        int var5;
+        do {
+            var5 = this.getIntVolatile(var1, var2);
+        } while(!this.compareAndSwapInt(var1, var2, var5, var5 + var4));
+
+        return var5;
+    }
+```
+可以看到本质上是通过unsafe类的cas循环操作，当期望值与预期值相同的时候才操作成功，失败则继续，直至成功
+
 ### ABA问题
 
+ABA问题是指在CAS操作时，其他线程将变量值A改为了B，但是又被改回了A，等到本线程使用期望值A与当前变量进行比较时，发现变量A没有变，于是CAS就将A值进行了交换操作，但是实际上该值已经被其他线程改变过。
+
+ABA问题的解决思路是，每次变量更新的时候把变量的版本号加1，那么A-B-A就会变成A1-B2-A3，只要变量被某一线程修改过，改变量对应的版本号就会发生递增变化，从而解决了ABA问题。在JDK的java.util.concurrent.atomic包中提供了AtomicStampedReference来解决ABA问题，该类的compareAndSet是该类的核心方法，实现如下：
+``` 
+    public boolean compareAndSet(V   expectedReference,
+                                 V   newReference,
+                                 int expectedStamp,
+                                 int newStamp) {
+        Pair<V> current = pair;
+        return
+            expectedReference == current.reference &&
+            expectedStamp == current.stamp &&
+            ((newReference == current.reference &&
+              newStamp == current.stamp) ||
+             casPair(current, Pair.of(newReference, newStamp)));
+    }
+```
+该类检查了当前引用与当前标志是否与预期相同，如果全部相等，才会以原子方式将该引用和该标志的值设为新的更新值，这样CAS操作中的比较就不依赖于变量的值了
 
 ### 参考资料
 
