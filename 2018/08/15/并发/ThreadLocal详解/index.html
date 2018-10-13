@@ -72,14 +72,16 @@
 <meta name="description" content="概要ThreadLocal 用于提供线程局部变量，在多线程环境可以保证各个线程里的变量独立于其它线程里的变量。也就是说 ThreadLocal 可以为每个线程创建一个【单独的变量副本】，相当于线程的 private static 类型变量 ThreadLocal 的作用和同步机制有些相反：同步机制是为了保证多线程环境下数据的一致性；而 ThreadLocal 是保证了多线程环境下数据的独立性 Th">
 <meta property="og:type" content="article">
 <meta property="og:title" content="ThreadLocal详解">
-<meta property="og:url" content="http://yoursite.com/2018/08/15/ThreadLocal详解/index.html">
+<meta property="og:url" content="http://yoursite.com/2018/08/15/并发/ThreadLocal详解/index.html">
 <meta property="og:site_name" content="Do Or Die">
 <meta property="og:description" content="概要ThreadLocal 用于提供线程局部变量，在多线程环境可以保证各个线程里的变量独立于其它线程里的变量。也就是说 ThreadLocal 可以为每个线程创建一个【单独的变量副本】，相当于线程的 private static 类型变量 ThreadLocal 的作用和同步机制有些相反：同步机制是为了保证多线程环境下数据的一致性；而 ThreadLocal 是保证了多线程环境下数据的独立性 Th">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-10-08T12:35:36.637Z">
+<meta property="og:image" content="http://odu0tqqax.bkt.clouddn.com/threadlocal.png">
+<meta property="og:updated_time" content="2018-10-10T09:48:34.818Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="ThreadLocal详解">
 <meta name="twitter:description" content="概要ThreadLocal 用于提供线程局部变量，在多线程环境可以保证各个线程里的变量独立于其它线程里的变量。也就是说 ThreadLocal 可以为每个线程创建一个【单独的变量副本】，相当于线程的 private static 类型变量 ThreadLocal 的作用和同步机制有些相反：同步机制是为了保证多线程环境下数据的一致性；而 ThreadLocal 是保证了多线程环境下数据的独立性 Th">
+<meta name="twitter:image" content="http://odu0tqqax.bkt.clouddn.com/threadlocal.png">
 
 
 
@@ -109,7 +111,7 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/2018/08/15/ThreadLocal详解/"/>
+  <link rel="canonical" href="http://yoursite.com/2018/08/15/并发/ThreadLocal详解/"/>
 
 
 
@@ -252,7 +254,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/08/15/ThreadLocal详解/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/08/15/并发/ThreadLocal详解/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Leo Hao">
@@ -364,10 +366,33 @@
 <p>因为可能存在哈希冲突，key 对应的 Entry 的存储位置可能不在通过 key 计算出的索引位置上，也就是说索引位置上的 Entry 不一定是 key 对应的 Entry。所以需要调用 getEntryAfterMiss(ThreadLocal key, int i, Entry e) 方法获取。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">private Entry getEntryAfterMiss(ThreadLocal key, int i, Entry e) &#123;</span><br><span class="line">    Entry[] tab = table;</span><br><span class="line">    int len = tab.length;</span><br><span class="line"></span><br><span class="line">    // 索引位置上的 Entry 不为 null 进入循环，为 null 则返回 null</span><br><span class="line">    while (e != null) &#123;</span><br><span class="line">        ThreadLocal k = e.get();</span><br><span class="line">        // 如果 Entry 的 key 和指定的 key 相等，则返回该 Entry</span><br><span class="line">        if (k == key)</span><br><span class="line">            return e;</span><br><span class="line">        // 如果 Entry 的 key 为 null （key 已经被回收了），清除无效的 Entry</span><br><span class="line">        // 否则获取下一个位置的 Entry，循环判断</span><br><span class="line">        if (k == null)</span><br><span class="line">            expungeStaleEntry(i);</span><br><span class="line">        else</span><br><span class="line">            i = nextIndex(i, len);</span><br><span class="line">        e = tab[i];</span><br><span class="line">    &#125;</span><br><span class="line">    return null;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <h5 id="移除Entry"><a href="#移除Entry" class="headerlink" title="移除Entry"></a>移除Entry</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">private void remove(ThreadLocal key) &#123;</span><br><span class="line">    Entry[] tab = table;</span><br><span class="line">    int len = tab.length;</span><br><span class="line">    // 使用指定的 key 的 HashCode 计算索引位置</span><br><span class="line">    int i = key.threadLocalHashCode &amp; (len-1);</span><br><span class="line">    // 循环判断索引位置的 Entry 是否为 null</span><br><span class="line">    for (Entry e = tab[i];</span><br><span class="line">         e != null;</span><br><span class="line">         e = tab[i = nextIndex(i, len)]) &#123;</span><br><span class="line">        // 若 Entry 的 key 和指定的 key 相等，执行删除操作</span><br><span class="line">        if (e.get() == key) &#123;</span><br><span class="line">            // 清除 Entry 的 key 的引用</span><br><span class="line">            e.clear();</span><br><span class="line">            // 清除无效的 Entry</span><br><span class="line">            expungeStaleEntry(i);</span><br><span class="line">            return;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h4 id="内存泄露原因分析"><a href="#内存泄露原因分析" class="headerlink" title="内存泄露原因分析"></a>内存泄露原因分析</h4><p>在 ThreadLocalMap 的 set()，get() 和 remove() 方法中，都有清除无效 Entry 的操作，这样做是为了降低内存泄漏发生的可能。</p>
-<p>Entry 中的 key 使用了弱引用的方式，这样做是为了降低内存泄漏发生的概率，但不能完全避免内存泄漏。<br>这句话的意思好象是矛盾的，下面来分析一下。</p>
-<p>假设 Entry 的 key 没有使用弱引用的方式，而是使用了强引用：由于 ThreadLocalMap 的生命周期和当前线程一样长，那么当引用 ThreadLocal 的对象被回收后，由于 ThreadLocalMap 还持有 ThreadLocal 和对应 value 的强引用，ThreadLocal 和对应的 value 是不会被回收的，这就导致了内存泄漏。所以 Entry 以弱引用的方式避免了 ThreadLocal 没有被回收而导致的内存泄漏，但是此时 value 仍然是无法回收的，依然会导致内存泄漏。</p>
-<p>ThreadLocalMap 已经考虑到这种情况，并且有一些防护措施：在调用 ThreadLocal 的 get()，set() 和 remove() 的时候都会清除当前线程 ThreadLocalMap 中所有 key 为 null 的 value。这样可以降低内存泄漏发生的概率。所以我们在使用 ThreadLocal 的时候，每次用完 ThreadLocal 都调用 remove() 方法，清除数据，防止内存泄漏。</p>
+<h4 id="内存泄露原因分析"><a href="#内存泄露原因分析" class="headerlink" title="内存泄露原因分析"></a>内存泄露原因分析</h4><p><img src="http://odu0tqqax.bkt.clouddn.com/threadlocal.png" alt=""></p>
+<p>ThreadLocal的实现是这样的：每个Thread 维护一个 ThreadLocalMap 映射表，这个映射表的 key 是 ThreadLocal实例本身，value 是真正需要存储的 Object。</p>
+<p>也就是说 ThreadLocal 本身并不存储值，它只是作为一个 key 来让线程从 ThreadLocalMap 获取 value。值得注意的是图中的虚线，表示 ThreadLocalMap 是使用 ThreadLocal 的弱引用作为 Key 的，弱引用的对象在 GC 时会被回收。</p>
+<h5 id="为何会内存泄露"><a href="#为何会内存泄露" class="headerlink" title="为何会内存泄露"></a>为何会内存泄露</h5><p>每个thread中都存在一个map, map的类型是ThreadLocal.ThreadLocalMap. Map中的key为一个threadlocal实例. 这个Map的确使用了弱引用,不过弱引用只是针对key. 每个key都弱引用指向threadlocal. 当把threadlocal实例置为null以后,没有任何强引用指向threadlocal实例,所以threadlocal将会被gc回收. 但是,我们的value却不能回收,因为存在一条从current thread连接过来的强引用. 只有当前thread结束以后, current thread就不会存在栈中,强引用断开, Current Thread, Map, value将全部被GC回收。所以得出一个结论就是只要这个线程对象被gc回收，就不会出现内存泄露，但在threadLocal设为null和线程结束这段时间不会被回收的，就发生了我们认为的内存泄露。其实这是一个对概念理解的不一致，也没什么好争论的。最要命的是线程对象不被回收的情况，这就发生了真正意义上的内存泄露。比如使用线程池的时候，线程结束是不会销毁的，会再次使用的就可能出现内存泄露 。（在web应用中，每次http请求都是一个线程，tomcat容器配置使用线程池时会出现内存泄漏问题）</p>
+<p>ThreadLocalMap使用ThreadLocal的弱引用作为key，如果一个ThreadLocal没有外部强引用来引用它，那么系统 GC 的时候，这个ThreadLocal势必会被回收，这样一来，ThreadLocalMap中就会出现key为null的Entry，就没有办法访问这些key为null的Entry的value，如果当前线程再迟迟不结束的话，这些key为null的Entry的value就会一直存在一条强引用链：Thread Ref -&gt; Thread -&gt; ThreaLocalMap -&gt; Entry -&gt; value永远无法回收，造成内存泄漏。</p>
+<h5 id="ThreadLocalMap的设计"><a href="#ThreadLocalMap的设计" class="headerlink" title="ThreadLocalMap的设计"></a>ThreadLocalMap的设计</h5><p>ThreadLocalMap的设计中已经考虑到这种情况，也加上了一些防护措施：在ThreadLocal的get(),set(),remove()的时候都会清除线程ThreadLocalMap里所有key为null的value。</p>
+<p>但是这些被动的预防措施并不能保证不会内存泄漏：</p>
+<ul>
+<li>使用static的ThreadLocal，延长了ThreadLocal的生命周期，可能导致的内存泄漏</li>
+<li>分配使用了ThreadLocal又不再调用get(),set(),remove()方法，那么就会导致内存泄漏。</li>
+</ul>
+<h5 id="为什么使用弱引用"><a href="#为什么使用弱引用" class="headerlink" title="为什么使用弱引用"></a>为什么使用弱引用</h5><p>先来看看官方文档的说法：</p>
+<blockquote>
+<p>To help deal with very large and long-lived usages, the hash table entries use WeakReferences for keys.<br>  为了应对非常大和长时间的用途，哈希表使用弱引用的 key。</p>
+</blockquote>
+<p>下面我们分两种情况讨论：</p>
+<ul>
+<li>key 使用强引用：引用的ThreadLocal的对象被回收了，但是ThreadLocalMap还持有ThreadLocal的强引用，如果没有手动删除，ThreadLocal不会被回收，导致Entry内存泄漏。</li>
+<li>key 使用弱引用：引用的ThreadLocal的对象被回收了，由于ThreadLocalMap持有ThreadLocal的弱引用，即使没有手动删除，ThreadLocal也会被回收。value在下一次ThreadLocalMap调用set,get，remove的时候会被清除。</li>
+</ul>
+<p>比较两种情况，我们可以发现：由于ThreadLocalMap的生命周期跟Thread一样长，如果都没有手动删除对应key，都会导致内存泄漏，但是使用弱引用可以多一层保障：弱引用ThreadLocal不会内存泄漏，对应的value在下一次ThreadLocalMap调用set,get,remove的时候会被清除。</p>
+<p>因此，ThreadLocal内存泄漏的根源是：由于ThreadLocalMap的生命周期跟Thread一样长，如果没有手动删除对应key就会导致内存泄漏，而不是因为弱引用。</p>
+<h5 id="使用ThreadLocal"><a href="#使用ThreadLocal" class="headerlink" title="使用ThreadLocal"></a>使用ThreadLocal</h5><ol>
+<li>使用ThreadLocal，建议用static修饰 static ThreadLocal<httpheader> headerLocal = new ThreadLocal();</httpheader></li>
+<li>使用完ThreadLocal后，执行remove操作，避免出现内存溢出情况。</li>
+</ol>
+<p>在使用线程池的情况下，没有及时清理ThreadLocal，不仅是内存泄漏的问题，更严重的是可能导致业务逻辑出现问题。所以，使用ThreadLocal就跟加锁完要解锁一样，用完就清理。</p>
 <h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
 <li><a href="https://juejin.im/post/5965ef1ff265da6c40737292" target="_blank" rel="noopener">javaThreadLocal详解</a></li>
 <li><a href="https://juejin.im/post/5ba9a6665188255c791b0520" target="_blank" rel="noopener">ThreadLocal内存泄露问题</a></li>
@@ -542,7 +567,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#概要"><span class="nav-number">1.</span> <span class="nav-text">概要</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ThreadLocal源码分析"><span class="nav-number">2.</span> <span class="nav-text">ThreadLocal源码分析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#set-T-value-和get-方法"><span class="nav-number">2.1.</span> <span class="nav-text">set(T value)和get()方法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#remove"><span class="nav-number">2.2.</span> <span class="nav-text">remove()</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#当前线程的-ThreadLocalMap-getMap-t"><span class="nav-number">2.3.</span> <span class="nav-text">当前线程的 ThreadLocalMap(getMap(t))</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ThreadLocalMap"><span class="nav-number">2.4.</span> <span class="nav-text">ThreadLocalMap</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#构造方法"><span class="nav-number">2.4.1.</span> <span class="nav-text">构造方法</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#存储结构"><span class="nav-number">2.4.2.</span> <span class="nav-text">存储结构</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#保存键值对"><span class="nav-number">2.4.3.</span> <span class="nav-text">保存键值对</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#获取Entry"><span class="nav-number">2.4.4.</span> <span class="nav-text">获取Entry</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#移除Entry"><span class="nav-number">2.4.5.</span> <span class="nav-text">移除Entry</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#内存泄露原因分析"><span class="nav-number">2.5.</span> <span class="nav-text">内存泄露原因分析</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">3.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#概要"><span class="nav-number">1.</span> <span class="nav-text">概要</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ThreadLocal源码分析"><span class="nav-number">2.</span> <span class="nav-text">ThreadLocal源码分析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#set-T-value-和get-方法"><span class="nav-number">2.1.</span> <span class="nav-text">set(T value)和get()方法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#remove"><span class="nav-number">2.2.</span> <span class="nav-text">remove()</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#当前线程的-ThreadLocalMap-getMap-t"><span class="nav-number">2.3.</span> <span class="nav-text">当前线程的 ThreadLocalMap(getMap(t))</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ThreadLocalMap"><span class="nav-number">2.4.</span> <span class="nav-text">ThreadLocalMap</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#构造方法"><span class="nav-number">2.4.1.</span> <span class="nav-text">构造方法</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#存储结构"><span class="nav-number">2.4.2.</span> <span class="nav-text">存储结构</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#保存键值对"><span class="nav-number">2.4.3.</span> <span class="nav-text">保存键值对</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#获取Entry"><span class="nav-number">2.4.4.</span> <span class="nav-text">获取Entry</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#移除Entry"><span class="nav-number">2.4.5.</span> <span class="nav-text">移除Entry</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#内存泄露原因分析"><span class="nav-number">2.5.</span> <span class="nav-text">内存泄露原因分析</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#为何会内存泄露"><span class="nav-number">2.5.1.</span> <span class="nav-text">为何会内存泄露</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#ThreadLocalMap的设计"><span class="nav-number">2.5.2.</span> <span class="nav-text">ThreadLocalMap的设计</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#为什么使用弱引用"><span class="nav-number">2.5.3.</span> <span class="nav-text">为什么使用弱引用</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#使用ThreadLocal"><span class="nav-number">2.5.4.</span> <span class="nav-text">使用ThreadLocal</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">3.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
             
 
           </div>
