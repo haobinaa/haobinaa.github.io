@@ -69,19 +69,19 @@
 
 
 
-<meta name="description" content="java内存模型java内存模型的主要目标Java 内存模型的主要目标是 定义程序中各个变量的访问规则，即在虚拟机中 将变量存储到内存 和 从内存中取出变量 这样的底层细节。此处的变量（Variables）与 Java 变成中所说的变量有所区别，它包括了实例变量、静态变量和构成数组对象的元素，但不包括局部变量与方法参数，因为后者是线程私有的，不会被共享，自然就不会存在竞争问题。 工作内存和主内存J">
+<meta name="description" content="线程安全谈谈线程安全 对于Java并发编程，一般来说有以下的关注点：  线程安全性，正确性。 线程的活跃性(死锁，活锁) 性能  对于线程安全，本质上就是保证线程同步，实际上就是线程之间的通信问题。在操作系统中，线程通信有以下几种方式：  信号量 信号 管道  共享内存 消息队列 socket  java中线程通信java中线程通信主要使用共享内存的方式。共享内存的通信方式首先要关注的就是可见性和">
 <meta property="og:type" content="article">
 <meta property="og:title" content="java内存模型和volatile">
 <meta property="og:url" content="http://yoursite.com/2018/05/25/并发/java内存模型和volatile/index.html">
 <meta property="og:site_name" content="Do Or Die">
-<meta property="og:description" content="java内存模型java内存模型的主要目标Java 内存模型的主要目标是 定义程序中各个变量的访问规则，即在虚拟机中 将变量存储到内存 和 从内存中取出变量 这样的底层细节。此处的变量（Variables）与 Java 变成中所说的变量有所区别，它包括了实例变量、静态变量和构成数组对象的元素，但不包括局部变量与方法参数，因为后者是线程私有的，不会被共享，自然就不会存在竞争问题。 工作内存和主内存J">
+<meta property="og:description" content="线程安全谈谈线程安全 对于Java并发编程，一般来说有以下的关注点：  线程安全性，正确性。 线程的活跃性(死锁，活锁) 性能  对于线程安全，本质上就是保证线程同步，实际上就是线程之间的通信问题。在操作系统中，线程通信有以下几种方式：  信号量 信号 管道  共享内存 消息队列 socket  java中线程通信java中线程通信主要使用共享内存的方式。共享内存的通信方式首先要关注的就是可见性和">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://yoursite.com/images/work_memory.png">
 <meta property="og:image" content="http://yoursite.com/images/swamp_memory.png">
-<meta property="og:updated_time" content="2018-06-26T01:26:02.987Z">
+<meta property="og:updated_time" content="2018-10-13T09:48:59.246Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="java内存模型和volatile">
-<meta name="twitter:description" content="java内存模型java内存模型的主要目标Java 内存模型的主要目标是 定义程序中各个变量的访问规则，即在虚拟机中 将变量存储到内存 和 从内存中取出变量 这样的底层细节。此处的变量（Variables）与 Java 变成中所说的变量有所区别，它包括了实例变量、静态变量和构成数组对象的元素，但不包括局部变量与方法参数，因为后者是线程私有的，不会被共享，自然就不会存在竞争问题。 工作内存和主内存J">
+<meta name="twitter:description" content="线程安全谈谈线程安全 对于Java并发编程，一般来说有以下的关注点：  线程安全性，正确性。 线程的活跃性(死锁，活锁) 性能  对于线程安全，本质上就是保证线程同步，实际上就是线程之间的通信问题。在操作系统中，线程通信有以下几种方式：  信号量 信号 管道  共享内存 消息队列 socket  java中线程通信java中线程通信主要使用共享内存的方式。共享内存的通信方式首先要关注的就是可见性和">
 <meta name="twitter:image" content="http://yoursite.com/images/work_memory.png">
 
 
@@ -344,7 +344,27 @@
       
 
       
-        <h3 id="java内存模型"><a href="#java内存模型" class="headerlink" title="java内存模型"></a>java内存模型</h3><h4 id="java内存模型的主要目标"><a href="#java内存模型的主要目标" class="headerlink" title="java内存模型的主要目标"></a>java内存模型的主要目标</h4><p>Java 内存模型的主要目标是 定义程序中各个变量的访问规则，即在虚拟机中 将变量存储到内存 和 从内存中取出变量 这样的底层细节。此处的变量（Variables）与 Java 变成中所说的变量有所区别，它包括了实例变量、静态变量和构成数组对象的元素，但不包括局部变量与方法参数，因为后者是线程私有的，不会被共享，自然就不会存在竞争问题。</p>
+        <h3 id="线程安全"><a href="#线程安全" class="headerlink" title="线程安全"></a>线程安全</h3><p>谈谈线程安全</p>
+<p>对于Java并发编程，一般来说有以下的关注点：</p>
+<ol>
+<li>线程安全性，正确性。</li>
+<li>线程的活跃性(死锁，活锁)</li>
+<li>性能</li>
+</ol>
+<p>对于线程安全，本质上就是保证线程同步，实际上就是线程之间的通信问题。在操作系统中，线程通信有以下几种方式：</p>
+<ol>
+<li>信号量</li>
+<li>信号</li>
+<li>管道 </li>
+<li>共享内存</li>
+<li>消息队列</li>
+<li>socket</li>
+</ol>
+<h3 id="java中线程通信"><a href="#java中线程通信" class="headerlink" title="java中线程通信"></a>java中线程通信</h3><p>java中线程通信主要使用共享内存的方式。共享内存的通信方式首先要关注的就是可见性和有序性。而原子性操作一般都是必要的</p>
+<h4 id="原子性"><a href="#原子性" class="headerlink" title="原子性"></a>原子性</h4><p>原子性是指操作是不可分的。其表现在于对于共享变量的某些操作，应该是不可分的，必须连续完成。例如a++，对于共享变量a的操作，实际上会执行三个步骤，1.读取变量a的值  2.a的值+1  3.将值赋予变量a 。 这三个操作中任何一个操作过程中，a的值被人篡改，那么都会出现我们不希望出现的结果。所以我们必须保证这是原子性的。Java中的锁的机制解决了原子性的问题。</p>
+<h4 id="有序性"><a href="#有序性" class="headerlink" title="有序性"></a>有序性</h4><p>有序性涉及到指令重排序</p>
+<h4 id="可见性"><a href="#可见性" class="headerlink" title="可见性"></a>可见性</h4><p>可见性涉及到java的内存模型</p>
+<h3 id="java内存模型"><a href="#java内存模型" class="headerlink" title="java内存模型"></a>java内存模型</h3><h4 id="java内存模型的主要目标"><a href="#java内存模型的主要目标" class="headerlink" title="java内存模型的主要目标"></a>java内存模型的主要目标</h4><p>Java 内存模型的主要目标是 定义程序中各个变量的访问规则，即在虚拟机中 将变量存储到内存 和 从内存中取出变量 这样的底层细节。此处的变量（Variables）与 Java 变成中所说的变量有所区别，它包括了实例变量、静态变量和构成数组对象的元素，但不包括局部变量与方法参数，因为后者是线程私有的，不会被共享，自然就不会存在竞争问题。</p>
 <h4 id="工作内存和主内存"><a href="#工作内存和主内存" class="headerlink" title="工作内存和主内存"></a>工作内存和主内存</h4><p>Java 内存模型规定了所有的变量都存储在主内存（Main Memory， 这里指的是虚拟机内存的一部分）中。每条线程还有自己的工作内存（Working Memory，可以与处理器高速缓存类比），线程的工作内存中保存了被该线程使用到的变量的主内存副本拷贝，线程对变量的所有操作（读取、赋值等）都必须在工作内存中进行，而不能直接读写主内存中的变量。</p>
 <p>不同的线程之间也无法直接访问对方工作内存中的变量，线程间变量值的传递均需要通过主内存来完成，线程、主内存、工作内存三者的交互关系如下图所示</p>
 <p><img src="/images/work_memory.png" alt=""></p>
@@ -578,7 +598,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#java内存模型"><span class="nav-number">1.</span> <span class="nav-text">java内存模型</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#java内存模型的主要目标"><span class="nav-number">1.1.</span> <span class="nav-text">java内存模型的主要目标</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#工作内存和主内存"><span class="nav-number">1.2.</span> <span class="nav-text">工作内存和主内存</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#内存交互操作"><span class="nav-number">1.3.</span> <span class="nav-text">内存交互操作</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#volatile"><span class="nav-number">2.</span> <span class="nav-text">volatile</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#重排序"><span class="nav-number">2.1.</span> <span class="nav-text">重排序</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#happens-before原则"><span class="nav-number">2.2.</span> <span class="nav-text">happens-before原则</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#volatile作用"><span class="nav-number">2.3.</span> <span class="nav-text">volatile作用</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#volatile的内存语义"><span class="nav-number">2.4.</span> <span class="nav-text">volatile的内存语义</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#线程安全"><span class="nav-number">1.</span> <span class="nav-text">线程安全</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#java中线程通信"><span class="nav-number">2.</span> <span class="nav-text">java中线程通信</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#原子性"><span class="nav-number">2.1.</span> <span class="nav-text">原子性</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#有序性"><span class="nav-number">2.2.</span> <span class="nav-text">有序性</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#可见性"><span class="nav-number">2.3.</span> <span class="nav-text">可见性</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#java内存模型"><span class="nav-number">3.</span> <span class="nav-text">java内存模型</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#java内存模型的主要目标"><span class="nav-number">3.1.</span> <span class="nav-text">java内存模型的主要目标</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#工作内存和主内存"><span class="nav-number">3.2.</span> <span class="nav-text">工作内存和主内存</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#内存交互操作"><span class="nav-number">3.3.</span> <span class="nav-text">内存交互操作</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#volatile"><span class="nav-number">4.</span> <span class="nav-text">volatile</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#重排序"><span class="nav-number">4.1.</span> <span class="nav-text">重排序</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#happens-before原则"><span class="nav-number">4.2.</span> <span class="nav-text">happens-before原则</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#volatile作用"><span class="nav-number">4.3.</span> <span class="nav-text">volatile作用</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#volatile的内存语义"><span class="nav-number">4.4.</span> <span class="nav-text">volatile的内存语义</span></a></li></ol></li></ol></div>
             
 
           </div>
