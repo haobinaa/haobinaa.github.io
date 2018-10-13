@@ -69,19 +69,17 @@
 
 
 
-<meta name="description" content="CAS(Compare And Swap)概述 CAS 指的是现代 CPU 广泛支持的一种对内存中的共享数据进行操作的一种特殊指令。这个指令会对内存中的共享数据做原子的读写操作 CAS是JUC的基石，许多操作都是基于CAS实现的，如图所示： CAS个指令的操作过程：首先，CPU 会将内存中将要被更改的数据与期望的值做比较。然后，当这两个值相等时，CPU 才会将内存中的数值替换为新的值。否则便不做操">
+<meta name="description" content="CountDownLatchCountDownLatch也叫闭锁, 它允许一个或多个线程一直等待，直到其他线程的操作执行完后再执行。 使用示例CountDownLatch的构造函数接收一个int类型的参数作为计数器，如果你想等待N个点完成，这里就传入N。当调用CountDownLatch的countDown方法时，N就会减1，CountDownLatch的await方法会阻塞当前线程，直到N变成零">
 <meta property="og:type" content="article">
-<meta property="og:title" content="CAS解析">
-<meta property="og:url" content="http://yoursite.com/2018/09/28/CAS解析/index.html">
+<meta property="og:title" content="java并发工具类">
+<meta property="og:url" content="http://yoursite.com/2018/10/13/java并发工具类/index.html">
 <meta property="og:site_name" content="Do Or Die">
-<meta property="og:description" content="CAS(Compare And Swap)概述 CAS 指的是现代 CPU 广泛支持的一种对内存中的共享数据进行操作的一种特殊指令。这个指令会对内存中的共享数据做原子的读写操作 CAS是JUC的基石，许多操作都是基于CAS实现的，如图所示： CAS个指令的操作过程：首先，CPU 会将内存中将要被更改的数据与期望的值做比较。然后，当这两个值相等时，CPU 才会将内存中的数值替换为新的值。否则便不做操">
+<meta property="og:description" content="CountDownLatchCountDownLatch也叫闭锁, 它允许一个或多个线程一直等待，直到其他线程的操作执行完后再执行。 使用示例CountDownLatch的构造函数接收一个int类型的参数作为计数器，如果你想等待N个点完成，这里就传入N。当调用CountDownLatch的countDown方法时，N就会减1，CountDownLatch的await方法会阻塞当前线程，直到N变成零">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="http://odu0tqqax.bkt.clouddn.com/cas.png">
-<meta property="og:updated_time" content="2018-10-13T07:57:41.976Z">
+<meta property="og:updated_time" content="2018-10-13T12:12:47.305Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="CAS解析">
-<meta name="twitter:description" content="CAS(Compare And Swap)概述 CAS 指的是现代 CPU 广泛支持的一种对内存中的共享数据进行操作的一种特殊指令。这个指令会对内存中的共享数据做原子的读写操作 CAS是JUC的基石，许多操作都是基于CAS实现的，如图所示： CAS个指令的操作过程：首先，CPU 会将内存中将要被更改的数据与期望的值做比较。然后，当这两个值相等时，CPU 才会将内存中的数值替换为新的值。否则便不做操">
-<meta name="twitter:image" content="http://odu0tqqax.bkt.clouddn.com/cas.png">
+<meta name="twitter:title" content="java并发工具类">
+<meta name="twitter:description" content="CountDownLatchCountDownLatch也叫闭锁, 它允许一个或多个线程一直等待，直到其他线程的操作执行完后再执行。 使用示例CountDownLatch的构造函数接收一个int类型的参数作为计数器，如果你想等待N个点完成，这里就传入N。当调用CountDownLatch的countDown方法时，N就会减1，CountDownLatch的await方法会阻塞当前线程，直到N变成零">
 
 
 
@@ -111,13 +109,13 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/2018/09/28/CAS解析/"/>
+  <link rel="canonical" href="http://yoursite.com/2018/10/13/java并发工具类/"/>
 
 
 
 
 
-  <title>CAS解析 | Do Or Die</title>
+  <title>java并发工具类 | Do Or Die</title>
   
 
 
@@ -254,7 +252,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/09/28/CAS解析/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/10/13/java并发工具类/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Leo Hao">
@@ -271,7 +269,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">CAS解析</h1>
+          <h1 class="post-title" itemprop="name headline">java并发工具类</h1>
         
 
         <div class="post-meta">
@@ -283,8 +281,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-09-28T09:29:15+08:00">
-                2018-09-28
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-10-13T19:57:21+08:00">
+                2018-10-13
               </time>
             
 
@@ -343,21 +341,13 @@
       
 
       
-        <h3 id="CAS-Compare-And-Swap-概述"><a href="#CAS-Compare-And-Swap-概述" class="headerlink" title="CAS(Compare And Swap)概述"></a>CAS(Compare And Swap)概述</h3><p> CAS 指的是现代 CPU 广泛支持的一种对内存中的共享数据进行操作的一种特殊指令。这个指令会对内存中的共享数据做原子的读写操作</p>
-<p>CAS是JUC的基石，许多操作都是基于CAS实现的，如图所示：<br><img src="http://odu0tqqax.bkt.clouddn.com/cas.png" alt=""></p>
-<p>CAS个指令的操作过程：首先，CPU 会将内存中将要被更改的数据与期望的值做比较。然后，当这两个值相等时，CPU 才会将内存中的数值替换为新的值。否则便不做操作。最后，CPU 会将旧的数值返回。</p>
-<p>CAS有3个操作数，内存值V，旧的预期值A，要修改的新值B。当且仅当预期值A和内存值V相同时，将内存值V修改为B，否则返回V。这是一种乐观锁的思路，它相信在它修改之前，没有其它线程去修改它；(synchronized则是一种悲观锁策略)<br>其伪代码如下：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">if(this.value == A)&#123;</span><br><span class="line">	this.value = B</span><br><span class="line">	return true;</span><br><span class="line">&#125;else&#123;</span><br><span class="line">	return false;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h3 id="CAS分析"><a href="#CAS分析" class="headerlink" title="CAS分析"></a>CAS分析</h3><p>以<code>AtomicInteger</code>为例阐述CAS实现：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">静态代码块：</span><br><span class="line"></span><br><span class="line">  private static final Unsafe unsafe = Unsafe.getUnsafe();</span><br><span class="line">  private static final long valueOffset;</span><br><span class="line"></span><br><span class="line">  static &#123;</span><br><span class="line">      try &#123;</span><br><span class="line">       // 获取value属性在内存中的位置</span><br><span class="line">          valueOffset = unsafe.objectFieldOffset(AtomicInteger.class.getDeclaredField(&quot;value&quot;));</span><br><span class="line">      &#125; catch (Exception ex) &#123; throw new Error(ex); &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  private volatil,e int value;</span><br><span class="line">  </span><br><span class="line">// 更新操作</span><br><span class="line">// 当内存中的value值等于expect值时，则将内存中的value值更新为update值，并返回true，否则返回false</span><br><span class="line">    public final boolean compareAndSet(int expect, int update) &#123;</span><br><span class="line">        return unsafe.compareAndSwapInt(this, valueOffset, expect, update);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-<ul>
-<li>Unsafe是CAS的核心类，它提供了硬件级别的原子操作</li>
-<li>valueOffset为变量值在内存中的偏移地址，unsafe就是通过偏移地址来得到数据的原值的</li>
-<li>value当前值，使用volatile修饰，保证多线程环境下看见的是同一个</li>
-</ul>
-<h3 id="ABA问题"><a href="#ABA问题" class="headerlink" title="ABA问题"></a>ABA问题</h3><h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
-<li><a href="http://cmsblogs.com/?p=2235" target="_blank" rel="noopener">深入分析CAS</a></li>
-<li><a href="https://juejin.im/post/5a73cbbff265da4e807783f5" target="_blank" rel="noopener">CAS原理分析</a></li>
+        <h3 id="CountDownLatch"><a href="#CountDownLatch" class="headerlink" title="CountDownLatch"></a>CountDownLatch</h3><p>CountDownLatch也叫闭锁, 它允许一个或多个线程一直等待，直到其他线程的操作执行完后再执行。</p>
+<h4 id="使用示例"><a href="#使用示例" class="headerlink" title="使用示例"></a>使用示例</h4><p>CountDownLatch的构造函数接收一个int类型的参数作为计数器，如果你想等待<strong><em>N个点</em></strong>完成，这里就传入N。当调用CountDownLatch的countDown方法时，N就会减1，CountDownLatch的await方法会阻塞当前线程，直到N变成零。</p>
+<blockquote>
+<p>备注：由于CountDownLatch方法可以用在任何地方，这里说的N个点，可以是N个线程，也可以是1个线程里的N个执行步骤。用在多个线程时，只需要把CountDownLatch的引用传递到线程里即可。</p>
+</blockquote>
+<h4 id="实现原理"><a href="#实现原理" class="headerlink" title="实现原理"></a>实现原理</h4><h3 id="CyclicBarrier"><a href="#CyclicBarrier" class="headerlink" title="CyclicBarrier"></a>CyclicBarrier</h3><h4 id="使用示例-1"><a href="#使用示例-1" class="headerlink" title="使用示例"></a>使用示例</h4><h4 id="实现原理-1"><a href="#实现原理-1" class="headerlink" title="实现原理"></a>实现原理</h4><h3 id="Semaphore"><a href="#Semaphore" class="headerlink" title="Semaphore"></a>Semaphore</h3><h4 id="使用示例-2"><a href="#使用示例-2" class="headerlink" title="使用示例"></a>使用示例</h4><h4 id="实现原理-2"><a href="#实现原理-2" class="headerlink" title="实现原理"></a>实现原理</h4><h3 id="Exchanger"><a href="#Exchanger" class="headerlink" title="Exchanger"></a>Exchanger</h3><h4 id="使用示例-3"><a href="#使用示例-3" class="headerlink" title="使用示例"></a>使用示例</h4><h4 id="实现原理-3"><a href="#实现原理-3" class="headerlink" title="实现原理"></a>实现原理</h4><h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="https://juejin.im/post/5af3c17f51882567113b37d0" target="_blank" rel="noopener">java并发工具类-CountDownLatch</a></li>
 </ul>
 
       
@@ -383,8 +373,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2018/09/15/并发/线程池使用总结/" rel="next" title="线程池使用详解">
-                <i class="fa fa-chevron-left"></i> 线程池使用详解
+              <a href="/2018/09/28/并发/CAS解析/" rel="next" title="CAS解析">
+                <i class="fa fa-chevron-left"></i> CAS解析
               </a>
             
           </div>
@@ -467,7 +457,7 @@
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">49</span>
+                <span class="site-state-item-count">50</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -524,7 +514,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#CAS-Compare-And-Swap-概述"><span class="nav-number">1.</span> <span class="nav-text">CAS(Compare And Swap)概述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CAS分析"><span class="nav-number">2.</span> <span class="nav-text">CAS分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ABA问题"><span class="nav-number">3.</span> <span class="nav-text">ABA问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">4.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#CountDownLatch"><span class="nav-number">1.</span> <span class="nav-text">CountDownLatch</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#使用示例"><span class="nav-number">1.1.</span> <span class="nav-text">使用示例</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#实现原理"><span class="nav-number">1.2.</span> <span class="nav-text">实现原理</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CyclicBarrier"><span class="nav-number">2.</span> <span class="nav-text">CyclicBarrier</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#使用示例-1"><span class="nav-number">2.1.</span> <span class="nav-text">使用示例</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#实现原理-1"><span class="nav-number">2.2.</span> <span class="nav-text">实现原理</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Semaphore"><span class="nav-number">3.</span> <span class="nav-text">Semaphore</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#使用示例-2"><span class="nav-number">3.1.</span> <span class="nav-text">使用示例</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#实现原理-2"><span class="nav-number">3.2.</span> <span class="nav-text">实现原理</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Exchanger"><span class="nav-number">4.</span> <span class="nav-text">Exchanger</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#使用示例-3"><span class="nav-number">4.1.</span> <span class="nav-text">使用示例</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#实现原理-3"><span class="nav-number">4.2.</span> <span class="nav-text">实现原理</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">5.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
             
 
           </div>
