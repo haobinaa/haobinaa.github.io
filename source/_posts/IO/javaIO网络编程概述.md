@@ -5,7 +5,7 @@ tags: 网络IO
 categories: IO
 ---
 ### IO数据传输过程
-![](http://odu0tqqax.bkt.clouddn.com/io_process.png)
+![](/images/io_process.png)
 
 #### 程序读数据
 当某个程序或已存在的进程/线程(后文将不加区分的只认为是进程)需要某段数据时，它只能在用户空间中属于它自己的内存中访问、修改，这段内存暂且称之为app 
@@ -31,7 +31,7 @@ buffer，而是直接复制到send buffer。这就是零拷贝(zero copy)技术�
 #### Blocking IO(阻塞IO)
 也叫 **同步阻塞IO** ， 请求数据的进程需要一直阻塞等待读取完成才能返回，同时整个读取的动作也是要同步等待I/O操作的完成才返回。
 
-![](http://odu0tqqax.bkt.clouddn.com/block_io.png)
+![](/images/block_io.png)
 
 
 #### Nonblocking IO(非阻塞IO)
@@ -39,7 +39,7 @@ buffer，而是直接复制到send buffer。这就是零拷贝(zero copy)技术�
 
 当数据没有准备好的时候，用户进程调用仍然是同步返回结果，只是如果I/O不可用，它会即时返回一个错误结果，然后用户进程不断轮训，那么对于整个用户进程而言，它是非阻塞的。
 
-![](http://odu0tqqax.bkt.clouddn.com/non-block-io.png)
+![](/images/non-block-io.png)
 
 #### IO Multiplexing （IO复用）
 
@@ -77,7 +77,7 @@ select存在两个问题：
 
 在发起信号处理的系统调用后，进程不会被阻塞，但是在read()将数据从kernel buffer复制到app buffer时，进程是被阻塞的。如：
 
-![](http://odu0tqqax.bkt.clouddn.com/poll-io.png)
+![](/images/poll-io.png)
 
 ####  Asynchronous I/O (异步IO)
 
@@ -86,7 +86,7 @@ select存在两个问题：
 httpd从返回开始，直到数据复制到app buffer结束都不会被阻塞。当数据复制到app buffer结束，将发送一个信号通知httpd进程。
 
 如图：
-![](http://odu0tqqax.bkt.clouddn.com/a-io.png)
+![](/images/a-io.png)
 ### NIO分析
 
 #### 传统BIO模型
@@ -185,7 +185,7 @@ Reactor模式：注册所有感兴趣的事件处理器，单线程轮询选择�
 
 Java的Selector对于Linux系统来说，有一个致命限制：同一个channel的select不能被并发的调用。因此，如果有多个I/O线程，必须保证：一个socket只能属于一个IoThread，而一个IoThread可以管理多个socket。另外连接的处理和读写的处理通常可以选择分开，这样对于海量连接的注册和读写就可以分发。虽然read()和write()是比较高效无阻塞的函数，但毕竟会占用CPU，如果面对更高的并发则无能为力。
 
-![](http://odu0tqqax.bkt.clouddn.com/reactor.png)
+![](/images/reactor.png)
 
 
 #### Proactor和Reactor

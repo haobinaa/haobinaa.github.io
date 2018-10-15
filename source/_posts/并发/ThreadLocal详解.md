@@ -273,7 +273,7 @@ private void remove(ThreadLocal key) {
 ```
 
 #### 内存泄露原因分析
-![](http://odu0tqqax.bkt.clouddn.com/threadlocal.png)
+![](/images/threadlocal.png)
 
 ThreadLocal的实现是这样的：每个Thread 维护一个 ThreadLocalMap 映射表，这个映射表的 key 是 ThreadLocal实例本身，value 是真正需要存储的 Object。
 
