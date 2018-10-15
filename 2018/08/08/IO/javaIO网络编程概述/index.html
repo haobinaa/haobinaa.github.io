@@ -77,18 +77,18 @@
 <meta property="og:site_name" content="Do Or Die">
 <meta property="og:description" content="IO数据传输过程 程序读数据当某个程序或已存在的进程/线程(后文将不加区分的只认为是进程)需要某段数据时，它只能在用户空间中属于它自己的内存中访问、修改，这段内存暂且称之为appbuffer。假设需要的数据在磁盘上，那么进程首先得发起相关系统调用，通知内核去加载磁盘上的文件。但正常情况下，数据只能加载到内核的缓冲区，暂且称之为kernel buffer。数据加载到kernelbuffer之后，还需">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="http://odu0tqqax.bkt.clouddn.com/io_process.png">
+<meta property="og:image" content="http://yoursite.com/images/io_process.png">
 <meta property="og:image" content="https://tech.meituan.com/img/nio/nio2.jpg">
-<meta property="og:image" content="http://odu0tqqax.bkt.clouddn.com/block_io.png">
-<meta property="og:image" content="http://odu0tqqax.bkt.clouddn.com/non-block-io.png">
-<meta property="og:image" content="http://odu0tqqax.bkt.clouddn.com/poll-io.png">
-<meta property="og:image" content="http://odu0tqqax.bkt.clouddn.com/a-io.png">
-<meta property="og:image" content="http://odu0tqqax.bkt.clouddn.com/reactor.png">
-<meta property="og:updated_time" content="2018-09-12T10:16:11.264Z">
+<meta property="og:image" content="http://yoursite.com/images/block_io.png">
+<meta property="og:image" content="http://yoursite.com/images/non-block-io.png">
+<meta property="og:image" content="http://yoursite.com/images/poll-io.png">
+<meta property="og:image" content="http://yoursite.com/images/a-io.png">
+<meta property="og:image" content="http://yoursite.com/images/reactor.png">
+<meta property="og:updated_time" content="2018-10-15T12:14:18.786Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="javaIO网络编程参考">
 <meta name="twitter:description" content="IO数据传输过程 程序读数据当某个程序或已存在的进程/线程(后文将不加区分的只认为是进程)需要某段数据时，它只能在用户空间中属于它自己的内存中访问、修改，这段内存暂且称之为appbuffer。假设需要的数据在磁盘上，那么进程首先得发起相关系统调用，通知内核去加载磁盘上的文件。但正常情况下，数据只能加载到内核的缓冲区，暂且称之为kernel buffer。数据加载到kernelbuffer之后，还需">
-<meta name="twitter:image" content="http://odu0tqqax.bkt.clouddn.com/io_process.png">
+<meta name="twitter:image" content="http://yoursite.com/images/io_process.png">
 
 
 
@@ -350,7 +350,7 @@
       
 
       
-        <h3 id="IO数据传输过程"><a href="#IO数据传输过程" class="headerlink" title="IO数据传输过程"></a>IO数据传输过程</h3><p><img src="http://odu0tqqax.bkt.clouddn.com/io_process.png" alt=""></p>
+        <h3 id="IO数据传输过程"><a href="#IO数据传输过程" class="headerlink" title="IO数据传输过程"></a>IO数据传输过程</h3><p><img src="/images/io_process.png" alt=""></p>
 <h4 id="程序读数据"><a href="#程序读数据" class="headerlink" title="程序读数据"></a>程序读数据</h4><p>当某个程序或已存在的进程/线程(后文将不加区分的只认为是进程)需要某段数据时，它只能在用户空间中属于它自己的内存中访问、修改，这段内存暂且称之为app<br>buffer。假设需要的数据在磁盘上，那么进程首先得发起相关系统调用，通知内核去加载磁盘上的文件。但正常情况下，数据只能加载到内核的缓冲区，暂且称之为kernel buffer。数据加载到kernel<br>buffer之后，还需将数据复制到app buffer。到了这里，进程就可以对数据进行访问、修改了。</p>
 <h4 id="程序发送数据"><a href="#程序发送数据" class="headerlink" title="程序发送数据"></a>程序发送数据</h4><p>当我们的数据要通过TCP连接传送出去时，过程如下：TCP/IP协议栈维护着两个缓冲区：send buffer和recv buffer，它们合称为socket buffer。需要通过TCP连接传输出去的数据，需要先复制到send<br>buffer，再复制给网卡(NIC)通过网络传输出去。如果通过TCP连接接收到数据，数据首先通过网卡进入recv buffer，再被复制到用户空间的app buffer。</p>
 <h4 id="零拷贝"><a href="#零拷贝" class="headerlink" title="零拷贝"></a>零拷贝</h4><p>我们可以看到，网络数据从kernel buffer复制到app buffer再复制到send buffer， 这个过程中如果进程不需要修改数据，就直接发送给TCP连接的另一端，可以不用从kernel buffer复制到app<br>buffer，而是直接复制到send buffer。这就是零拷贝(zero copy)技术。</p>
@@ -359,10 +359,10 @@
 <p>下图是几种常见I/O模型的对比：</p>
 <p><img src="https://tech.meituan.com/img/nio/nio2.jpg" alt=""></p>
 <h4 id="Blocking-IO-阻塞IO"><a href="#Blocking-IO-阻塞IO" class="headerlink" title="Blocking IO(阻塞IO)"></a>Blocking IO(阻塞IO)</h4><p>也叫 <strong>同步阻塞IO</strong> ， 请求数据的进程需要一直阻塞等待读取完成才能返回，同时整个读取的动作也是要同步等待I/O操作的完成才返回。</p>
-<p><img src="http://odu0tqqax.bkt.clouddn.com/block_io.png" alt=""></p>
+<p><img src="/images/block_io.png" alt=""></p>
 <h4 id="Nonblocking-IO-非阻塞IO"><a href="#Nonblocking-IO-非阻塞IO" class="headerlink" title="Nonblocking IO(非阻塞IO)"></a>Nonblocking IO(非阻塞IO)</h4><p>备注，此NIO并非java的NIO(new io)</p>
 <p>当数据没有准备好的时候，用户进程调用仍然是同步返回结果，只是如果I/O不可用，它会即时返回一个错误结果，然后用户进程不断轮训，那么对于整个用户进程而言，它是非阻塞的。</p>
-<p><img src="http://odu0tqqax.bkt.clouddn.com/non-block-io.png" alt=""></p>
+<p><img src="/images/non-block-io.png" alt=""></p>
 <h4 id="IO-Multiplexing-（IO复用）"><a href="#IO-Multiplexing-（IO复用）" class="headerlink" title="IO Multiplexing （IO复用）"></a>IO Multiplexing （IO复用）</h4><h5 id="Linux的socket-事件wakeup-callback机制"><a href="#Linux的socket-事件wakeup-callback机制" class="headerlink" title="Linux的socket 事件wakeup callback机制"></a>Linux的socket 事件wakeup callback机制</h5><p>linux(2.6+)内核的事件wakeup callback机制是IO多路复用机制存在的本质。</p>
 <p>Linux通过socket睡眠队列来管理所有等待socket的某个事件的process，同时通过wakeup机制来异步唤醒整个睡眠队列上等待事件的process，通知process相关事件发生。通常情况，socket的事件发生的时候，其会顺序遍历socket睡眠队列上的每个process节点，调用每个process节点挂载的callback函数。在遍历的过程中，如果遇到某个节点是排他的，那么就终止遍历，总体上会涉及两大逻辑：（1）睡眠等待逻辑；（2）唤醒逻辑。</p>
 <p>(1)睡眠等待</p>
@@ -387,10 +387,10 @@
 </li>
 </ol>
 <p>在发起信号处理的系统调用后，进程不会被阻塞，但是在read()将数据从kernel buffer复制到app buffer时，进程是被阻塞的。如：</p>
-<p><img src="http://odu0tqqax.bkt.clouddn.com/poll-io.png" alt=""></p>
+<p><img src="/images/poll-io.png" alt=""></p>
 <h4 id="Asynchronous-I-O-异步IO"><a href="#Asynchronous-I-O-异步IO" class="headerlink" title="Asynchronous I/O (异步IO)"></a>Asynchronous I/O (异步IO)</h4><p>当设置为异步IO模型时，httpd首先发起异步系统调用(如aio_read()，aio_write()等)，并立即返回。这个异步系统调用告诉内核，不仅要准备好数据，还要把数据复制到app buffer中。</p>
 <p>httpd从返回开始，直到数据复制到app buffer结束都不会被阻塞。当数据复制到app buffer结束，将发送一个信号通知httpd进程。</p>
-<p>如图：<br><img src="http://odu0tqqax.bkt.clouddn.com/a-io.png" alt=""></p>
+<p>如图：<br><img src="/images/a-io.png" alt=""></p>
 <h3 id="NIO分析"><a href="#NIO分析" class="headerlink" title="NIO分析"></a>NIO分析</h3><h4 id="传统BIO模型"><a href="#传统BIO模型" class="headerlink" title="传统BIO模型"></a>传统BIO模型</h4><p>传统BIO编程模型实现如下:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line"> ExecutorService executor = Excutors.newFixedThreadPollExecutor(100);//线程池</span><br><span class="line"></span><br><span class="line"> ServerSocket serverSocket = new ServerSocket();</span><br><span class="line"> serverSocket.bind(8088);</span><br><span class="line"> while(!Thread.currentThread.isInturrupted())&#123;//主线程死循环等待新连接到来</span><br><span class="line"> Socket socket = serverSocket.accept();</span><br><span class="line"> executor.submit(new ConnectIOnHandler(socket));//为新的连接创建新的线程</span><br><span class="line"> &#125;</span><br><span class="line"></span><br><span class="line">class ConnectIOnHandler extends Thread&#123;</span><br><span class="line">    private Socket socket;</span><br><span class="line">    public ConnectIOnHandler(Socket socket)&#123;</span><br><span class="line">       this.socket = socket;</span><br><span class="line">    &#125;</span><br><span class="line">    public void run()&#123;</span><br><span class="line">      while(!Thread.currentThread.isInturrupted()&amp;&amp;!socket.isClosed())&#123;死循环处理读写事件</span><br><span class="line">          String someThing = socket.read()....//读取数据</span><br><span class="line">          if(someThing!=null)&#123;</span><br><span class="line">             ......//处理数据</span><br><span class="line">             socket.write()....//写数据</span><br><span class="line">          &#125;</span><br><span class="line"></span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>socket.accept()、socket.read()、socket.write()<br>三个主要函数都是同步阻塞的，当一个连接在处理I/O的时候，系统是阻塞的，如果是单线程的话必然就挂死在那里；但CPU是被释放出来的，开启多线程，就可以让CPU去处理更多的事情。</p>
 <p>这也是所有使用多线程的本质：</p>
@@ -417,7 +417,7 @@
 <li>业务线程，在处理完I/O后，业务一般还会有自己的业务逻辑，有的还会有其他的阻塞I/O，如DB操作，RPC等。只要有阻塞，就需要单独的线程。</li>
 </ol>
 <p>Java的Selector对于Linux系统来说，有一个致命限制：同一个channel的select不能被并发的调用。因此，如果有多个I/O线程，必须保证：一个socket只能属于一个IoThread，而一个IoThread可以管理多个socket。另外连接的处理和读写的处理通常可以选择分开，这样对于海量连接的注册和读写就可以分发。虽然read()和write()是比较高效无阻塞的函数，但毕竟会占用CPU，如果面对更高的并发则无能为力。</p>
-<p><img src="http://odu0tqqax.bkt.clouddn.com/reactor.png" alt=""></p>
+<p><img src="/images/reactor.png" alt=""></p>
 <h4 id="Proactor和Reactor"><a href="#Proactor和Reactor" class="headerlink" title="Proactor和Reactor"></a>Proactor和Reactor</h4><p> Reactor模式是基于同步I/O的，而Proactor模式是和异步I/O相关的。在Reactor模式中，事件分发器等待某个事件或者可应用或个操作的状态发生（比如文件描述符可读写，或者是socket可读写），事件分发器就把这个事件传给事先注册的事件处理函数或者回调函数，由后者来做实际的读写操作。</p>
 <p> Proactor模式中，事件处理者（或者代由事件分发器发起）直接发起一个异步读写操作（相当于请求），而实际的工作是由操作系统来完成的。发起时，需要提供的参数包括用于存放读到数据的缓存区、读的数据大小或用于存放外发数据的缓存区，以及这个请求完后的回调函数等信息。事件分发器得知了这个请求，它默默等待这个请求的完成，然后转发完成事件给相应的事件处理者或者回调。举例来说，在Windows上事件处理者投递了一个异步IO操作（称为overlapped技术），事件分发器等IO Complete事件完成。这种异步模式的典型实现是基于操作系统底层异步API的，所以我们可称之为“系统级别”的或者“真正意义上”的异步，因为具体的读写是由操作系统代劳的。</p>
 <h5 id="Reactor中读"><a href="#Reactor中读" class="headerlink" title="Reactor中读"></a>Reactor中读</h5><ul>
