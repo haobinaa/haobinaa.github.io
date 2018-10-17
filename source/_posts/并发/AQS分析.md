@@ -16,6 +16,9 @@ AQS通过内置的FIFO同步队列来完成资源获取线程的排队工作，�
 
 ### CLH同步队列
 
+![](/images/aqs_clh.png)
+
+
 AQS内部维护着一个CLH同步队列， 这是一个FIFO的双向队列， AQS依赖它来完成同步状态的管理，当前线程如果获取同步状态失败时，AQS则会将当前线程已经等待状态等信息构造成一个节点（Node）并将其加入到CLH同步队列，同时会阻塞当前线程，当同步状态释放时，会把首节点唤醒（公平锁），使其再次尝试获取同步状态。
 
 在CLH同步队列中，一个节点表示一个线程，它保存着线程的引用（thread）、状态（waitStatus）、前驱节点（prev）、后继节点（next），其定义如下：
@@ -26,14 +29,19 @@ AQS内部维护着一个CLH同步队列， 这是一个FIFO的双向队列， AQ
         // 独占模式节点
         static final Node EXCLUSIVE = null;
 
-        // 因为超时或者中断，节点会被设置为取消状态，被取消的节点时不会参与到竞争中的，他会一直保持取消状态不会转变为其他状态；
+        // 因为超时或者中断，节点会被设置为取消状态
+        // 被取消的节点时不会参与到竞争中的，他会一直保持取消状态不会转变为其他状态；
         static final int CANCELLED =  1;
         
-        // 后继节点的线程处于等待状态，而当前节点的线程如果释放了同步状态或者被取消，将会通知后继节点，使后继节点的线程得以运行
+        // 后继节点的线程处于等待状态
+        // 而当前节点的线程如果释放了同步状态或者被取消
+        // 将会通知后继节点，使后继节点的线程得以运行
         static final int SIGNAL    = -1;
         
         
-        // 节点在等待队列中，节点线程等待在Condition上，当其他线程对Condition调用了signal()后，改节点将会从等待队列中转移到同步队列中
+        // 节点在等待队列中，节点线程等待在Condition上
+        // 当其他线程对Condition调用了signal()后
+        // 该节点将会从等待队列中转移到同步队列中
         static final int CONDITION = -2;
         
         // 表示下一次共享式同步状态获取将会无条件地传播下去
@@ -50,17 +58,8 @@ AQS内部维护着一个CLH同步队列， 这是一个FIFO的双向队列， AQ
 
         // 获取同步状态的线程
         volatile Thread thread;
-
-        /**
-         * Link to next node waiting on condition, or the special
-         * value SHARED.  Because condition queues are accessed only
-         * when holding in exclusive mode, we just need a simple
-         * linked queue to hold nodes while they are waiting on
-         * conditions. They are then transferred to the queue to
-         * re-acquire. And because conditions can only be exclusive,
-         * we save a field by using special value to indicate shared
-         * mode.
-         */
+        
+        // 下一个节点
         Node nextWaiter;
 
         /**
@@ -94,6 +93,16 @@ AQS内部维护着一个CLH同步队列， 这是一个FIFO的双向队列， AQ
     }
 ```
 
+Node结点是对每一个访问同步代码的线程的封装，其包含了需要同步的线程本身以及线程的状态，如是否被阻塞，是否等待唤醒，是否已经被取消等。变量waitStatus则表示当前被封装成Node结点的等待状态，共有4种取值CANCELLED、SIGNAL、CONDITION、PROPAGATE
+
+- CANCELLED：值为1，在同步队列中等待的线程等待超时或被中断，需要从同步队列中取消
+该Node的结点，其结点的waitStatus为CANCELLED，即结束状态，进入该状态后的结点将不会再变化。
+- SIGNAL：值为-1，被标识为该等待唤醒状态的后继结点，当其前继结点的线程释放了同步锁或被取消，将会通知该后继结点的线程执行。说白了，就是处于唤醒状态，只要前继结点释放锁，就会通知标识为SIGNAL状态的后继结点的线程执行。
+- CONDITION：值为-2，与Condition相关，该标识的结点处于等待队列中，结点的线程等待在Condition上，当其他线程调用了Condition的signal()方法后，CONDITION状态的结点将从等待队列转移到同步队列中，等待获取同步锁。
+- PROPAGATE：值为-3，与共享模式相关，在共享模式中，该状态标识结点的线程处于可运行状态。
+- 0:值为0，代表初始化状态。
+
+
 CLH同步队列结构如下:
 
 ![](/images/clh.png)
@@ -124,11 +133,11 @@ addWaiter(Node node)先通过快速尝试设置尾节点，如果失败，则调
 
 ``` 
     private Node enq(final Node node) {
-    // 无限循环确保CAS成功
+    // 自旋确保CAS成功
         for (;;) {
             Node t = tail;
             // 初始化尾节点
-            if (t == null) { // Must initialize
+            if (t == null) { // 队列为空，创建一个空的标志结点作为head结点，并将tail也指向它。
                 if (compareAndSetHead(new Node()))
                     tail = head;
             } else {
@@ -487,7 +496,8 @@ LockSupport定义了一系列以park开头的方法来阻塞当前线程，unpar
 
 - park(Object blocker)方法的blocker参数，主要是用来标识当前线程在等待的对象，该对象主要用于问题排查和系统监控。
 
-- park方法和unpark(Thread thread)都是成对出现的，同时unpark必须要在park执行之后执行，当然并不是说没有不调用unpark线程就会一直阻塞，park有一个方法，它带了时间戳（parkNanos(long nanos)：为了线程调度禁用当前线程，最多等待指定的等待时间，除非许可可用）
+- park方法和unpark(Thread thread)都是成对出现的，同时unpark必须要在park执行之后执行，当然并不是说没有不调用unpark线程就会一直阻塞，park有一个方法，它带了时间戳（parkNanos
+(long nanos)：为了线程调度禁用当前线程，最多等待指定的等待时间，除非许可可用）
 
 - park和unpark都是通过UNSAFE（sun.misc.Unsafe UNSAFE）实现的：
 ``` 
@@ -501,3 +511,4 @@ public native void unpark(Object var1);
 - [java AQS的实现原理](https://www.jianshu.com/p/279baac48960)
 - [同步状态的获取和释放](http://cmsblogs.com/?p=2197)
 - [阻塞和唤醒线程](http://cmsblogs.com/?p=2205)
+- [java并发之AQS详解](https://www.cnblogs.com/waterystone/p/4920797.html)
