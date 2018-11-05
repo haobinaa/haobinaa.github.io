@@ -80,7 +80,7 @@
 <meta property="og:image" content="http://yoursite.com/images/threadpool_process.png">
 <meta property="og:image" content="http://yoursite.com/images/threadpool_handle_process.png">
 <meta property="og:image" content="http://yoursite.com/images/workerProcess.png">
-<meta property="og:updated_time" content="2018-10-15T12:17:14.463Z">
+<meta property="og:updated_time" content="2018-10-20T18:16:17.314Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="线程池使用详解">
 <meta name="twitter:description" content="概述使用线程时， 我们一般使用new Thread的方式, 如下:1234567new Thread(new Runnable() &amp;#123;	@Override	public void run() &amp;#123;		// TODO Auto-generated method stub	&amp;#125;&amp;#125;).start(); 这种方式有一些弊端：  每次new Thread新建对象性能差。">
@@ -359,6 +359,23 @@
 <li>可有效控制最大并发线程数，提高系统资源的使用率，同时避免过多资源竞争，避免堵塞</li>
 <li>提供定时执行、定期执行、单线程、并发数控制等功能</li>
 </ul>
+<h3 id="Callable和Future"><a href="#Callable和Future" class="headerlink" title="Callable和Future"></a>Callable和Future</h3><p>创建线程的2种方式，一种是直接继承Thread，另外一种就是实现Runnable接口。这2种方式的缺陷就是：在执行完任务之后无法获取执行结果。</p>
+<h4 id="Callable"><a href="#Callable" class="headerlink" title="Callable"></a>Callable</h4><p>Callable也是一个接口，在它里面也只声明了一个方法，只不过这个方法叫做call()：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public interface Callable&lt;V&gt; &#123;</span><br><span class="line">    V call() throws Exception;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>Callable一般情况下是配合ExecutorService来使用的，在ExecutorService接口中声明了若干个submit方法的重载版本：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;T&gt; Future&lt;T&gt; submit(Callable&lt;T&gt; task);</span><br><span class="line">&lt;T&gt; Future&lt;T&gt; submit(Runnable task, T result);</span><br><span class="line">Future&lt;?&gt; submit(Runnable task);</span><br></pre></td></tr></table></figure></p>
+<h4 id="Future"><a href="#Future" class="headerlink" title="Future"></a>Future</h4><p>Future就是对于具体的Runnable或者Callable任务的执行结果进行取消、查询是否完成、获取结果。必要时可以通过get方法获取执行结果，该方法会阻塞直到任务返回结果。</p>
+<p>Future也是一个接口，定义如下<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">public interface Future&lt;V&gt; &#123;</span><br><span class="line">    boolean cancel(boolean mayInterruptIfRunning);</span><br><span class="line">    boolean isCancelled();</span><br><span class="line">    boolean isDone();</span><br><span class="line">    V get() throws InterruptedException, ExecutionException;</span><br><span class="line">    V get(long timeout, TimeUnit unit)</span><br><span class="line">        throws InterruptedException, ExecutionException, TimeoutException;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>方法说明：</p>
+<ul>
+<li>cancel方法用来取消任务，如果取消任务成功则返回true，如果取消任务失败则返回false。参数mayInterruptIfRunning表示是否允许取消正在执行却没有执行完毕的任务，如果设置true，则表示可以取消正在执行过程中的任务。如果任务已经完成，则无论mayInterruptIfRunning为true还是false，此方法肯定返回false，即如果取消已经完成的任务会返回false；如果任务正在执行，若mayInterruptIfRunning设置为true，则返回true，若mayInterruptIfRunning设置为false，则返回false；如果任务还没有执行，则无论mayInterruptIfRunning为true还是false，肯定返回true</li>
+<li>isCancelled方法表示任务是否被取消成功，如果在任务正常完成前被取消成功，则返回 true</li>
+<li>isDone方法表示任务是否已经完成，若任务完成，则返回true</li>
+<li>get()方法用来获取执行结果，这个方法会产生阻塞，会一直等到任务执行完毕才返回</li>
+<li>get(long timeout, TimeUnit unit)用来获取执行结果，如果在指定时间内，还没获取到结果，就直接返回null</li>
+</ul>
+<h4 id="FutureTask"><a href="#FutureTask" class="headerlink" title="FutureTask"></a>FutureTask</h4><p>因为Future只是一个接口，所以是无法直接用来创建对象使用的，因此就有了FutureTask</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">public class FutureTask&lt;V&gt; implements RunnableFuture&lt;V&gt;</span><br><span class="line"></span><br><span class="line">public interface RunnableFuture&lt;V&gt; extends Runnable, Future&lt;V&gt; &#123;</span><br><span class="line">    void run();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看出RunnableFuture继承了Runnable接口和Future接口，而FutureTask实现了RunnableFuture接口。所以它既可以作为Runnable被线程执行，又可以作为Future得到Callable的返回值</p>
+<p>FutureTask提供了2个构造器：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">public FutureTask(Callable&lt;V&gt; callable) &#123;</span><br><span class="line">&#125;</span><br><span class="line">public FutureTask(Runnable runnable, V result) &#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <h3 id="线程池实现架构"><a href="#线程池实现架构" class="headerlink" title="线程池实现架构"></a>线程池实现架构</h3><p><img src="/images/Executor.png" alt=""></p>
 <p>ThreadPoolExecutor实现了一般的线程池，而ScheduledThreadPoolExecutor继承了ThreadPoolExecutor的实现，然后增加了调度功能。</p>
 <h4 id="Executor"><a href="#Executor" class="headerlink" title="Executor"></a>Executor</h4><p>Executor，任务的执行者，线程池框架中几乎所有类都直接或者间接实现Executor接口，它是线程池框架的基础。Executor提供了一种将“任务提交”与“任务执行”分离开来的机制，它仅提供了一个Execute()方法用来执行已经提交的Runnable任务。</p>
@@ -457,8 +474,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2018/09/05/并发/Callable和Future/" rel="next" title="Callable和Future">
-                <i class="fa fa-chevron-left"></i> Callable和Future
+              <a href="/2018/08/15/并发/ThreadLocal详解/" rel="next" title="ThreadLocal详解">
+                <i class="fa fa-chevron-left"></i> ThreadLocal详解
               </a>
             
           </div>
@@ -545,7 +562,7 @@
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">50</span>
+                <span class="site-state-item-count">46</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -556,7 +573,7 @@
             
             <div class="site-state-item site-state-categories">
               <a href="/categories/index.html">
-                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-count">13</span>
                 <span class="site-state-item-name">分类</span>
               </a>
             </div>
@@ -567,7 +584,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">18</span>
+                <span class="site-state-item-count">16</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
@@ -602,7 +619,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#线程池实现架构"><span class="nav-number">2.</span> <span class="nav-text">线程池实现架构</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Executor"><span class="nav-number">2.1.</span> <span class="nav-text">Executor</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ExecutorService"><span class="nav-number">2.2.</span> <span class="nav-text">ExecutorService</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AbstractExecutorService"><span class="nav-number">2.3.</span> <span class="nav-text">AbstractExecutorService</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ScheduledExecutorService"><span class="nav-number">2.4.</span> <span class="nav-text">ScheduledExecutorService</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ThreadPoolExecutor"><span class="nav-number">2.5.</span> <span class="nav-text">ThreadPoolExecutor</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#线程池实现原理"><span class="nav-number">2.5.1.</span> <span class="nav-text">线程池实现原理</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#线程池处理流程"><span class="nav-number">2.5.2.</span> <span class="nav-text">线程池处理流程</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#ctl变量"><span class="nav-number">2.5.3.</span> <span class="nav-text">ctl变量</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#关键的类成员："><span class="nav-number">2.5.4.</span> <span class="nav-text">关键的类成员：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#源码流程"><span class="nav-number">2.5.5.</span> <span class="nav-text">源码流程</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#线程池的使用"><span class="nav-number">3.</span> <span class="nav-text">线程池的使用</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#创建线程池"><span class="nav-number">3.1.</span> <span class="nav-text">创建线程池</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#java提供的线程池"><span class="nav-number">4.</span> <span class="nav-text">java提供的线程池</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#单线程池"><span class="nav-number">4.1.</span> <span class="nav-text">单线程池</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#固定线程池"><span class="nav-number">4.2.</span> <span class="nav-text">固定线程池</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">5.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Callable和Future"><span class="nav-number">2.</span> <span class="nav-text">Callable和Future</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Callable"><span class="nav-number">2.1.</span> <span class="nav-text">Callable</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Future"><span class="nav-number">2.2.</span> <span class="nav-text">Future</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#FutureTask"><span class="nav-number">2.3.</span> <span class="nav-text">FutureTask</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#线程池实现架构"><span class="nav-number">3.</span> <span class="nav-text">线程池实现架构</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Executor"><span class="nav-number">3.1.</span> <span class="nav-text">Executor</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ExecutorService"><span class="nav-number">3.2.</span> <span class="nav-text">ExecutorService</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AbstractExecutorService"><span class="nav-number">3.3.</span> <span class="nav-text">AbstractExecutorService</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ScheduledExecutorService"><span class="nav-number">3.4.</span> <span class="nav-text">ScheduledExecutorService</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ThreadPoolExecutor"><span class="nav-number">3.5.</span> <span class="nav-text">ThreadPoolExecutor</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#线程池实现原理"><span class="nav-number">3.5.1.</span> <span class="nav-text">线程池实现原理</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#线程池处理流程"><span class="nav-number">3.5.2.</span> <span class="nav-text">线程池处理流程</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#ctl变量"><span class="nav-number">3.5.3.</span> <span class="nav-text">ctl变量</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#关键的类成员："><span class="nav-number">3.5.4.</span> <span class="nav-text">关键的类成员：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#源码流程"><span class="nav-number">3.5.5.</span> <span class="nav-text">源码流程</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#线程池的使用"><span class="nav-number">4.</span> <span class="nav-text">线程池的使用</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#创建线程池"><span class="nav-number">4.1.</span> <span class="nav-text">创建线程池</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#java提供的线程池"><span class="nav-number">5.</span> <span class="nav-text">java提供的线程池</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#单线程池"><span class="nav-number">5.1.</span> <span class="nav-text">单线程池</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#固定线程池"><span class="nav-number">5.2.</span> <span class="nav-text">固定线程池</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">6.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
             
 
           </div>
