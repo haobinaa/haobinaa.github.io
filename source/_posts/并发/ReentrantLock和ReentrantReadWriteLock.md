@@ -39,7 +39,8 @@ public interface Lock {
 
 #### Lock过程
 
-ReentrantLock里面大部分的功能都是委托给Sync来实现的，同时Sync内部定义了lock()抽象方法由其子类去实现，默认实现了nonfairTryAcquire(int acquires)方法，可以看出它是非公平锁的默认实现方式。
+ReentrantLock里面大部分的功能都是委托给Sync来实现的，同时Sync内部定义了lock()抽象方法由其子类去实现，默认实现了nonfairTryAcquire(int acquires)
+方法，可以看出它默认是**非公平锁**的实现方式。
 ``` 
 public ReentrantLock() {
     sync = new NonfairSync();
@@ -91,7 +92,7 @@ protected final boolean tryAcquire(int acquires) {
     }
 }
 ```
-
+然后调用AQS的`acquireQueued(addWaiter(Node.EXCLUSIVE), arg)`加入同步队列
 ##### 非公平锁
 ``` 
 final void lock() {
@@ -177,6 +178,66 @@ public void unlock() {
      return free;
  }
  ```
+ 
+ #### lockInterruptibly过程
+ lockInterruptibly()与lock()过程基本相同,区别在于Thread.intterpt()的应对措施不同,这部分是由AQS实现的，源码对比如下：
+ ``` 
+ //lock()
+ final boolean acquireQueued(final Node node, int arg) {
+ 	boolean failed = true;
+ 	try {
+ 		//表示是否被打断
+ 		boolean interrupted = false;
+ 		for (;;) {
+ 			//获取node.pre节点
+ 			final Node p = node.predecessor();
+ 			if (p == head //当前节点是否是同步队列中的第二个节点
+ 			&& tryAcquire(arg)) {//获取锁,当前head指向当前节点
+ 				setHead(node);//head=head.next
+ 				p.next = null;//置空 
+ 				failed = false;
+ 				return interrupted;
+ 			}
+ 
+ 			if (shouldParkAfterFailedAcquire(p, node) && //是否空转(因为空转唤醒是个耗时操作,进入空转前判断pre节点状态.如果pre节点即将释放锁,则不进入空转)
+ 				parkAndCheckInterrupt())//利用unsafe.park()进行空转(阻塞)
+ 				interrupted = true;//如果Thread.interrupt()被调用,(不会真的被打断,会继续循环空转直到获取到锁)
+ 		}
+ 	} finally {
+ 		if (failed)//tryAcquire()过程出现异常导致获取锁失败,则移除当前节点
+ 			cancelAcquire(node);
+ 	}
+ }
+ 
+ 
+ // lockInterruptibly()
+ private void doAcquireInterruptibly(int arg)
+ 	throws InterruptedException {
+ 	final Node node = addWaiter(Node.EXCLUSIVE);
+ 	boolean failed = true;
+ 	try {
+ 		for (;;) {
+ 			final Node p = node.predecessor();
+ 			if (p == head && tryAcquire(arg)) {
+ 				setHead(node);
+ 				p.next = null; 
+ 				failed = false;
+ 				return;
+ 			}
+ 			if (shouldParkAfterFailedAcquire(p, node) &&
+ 				parkAndCheckInterrupt())//唯一区别当Thread.intterpt()打断时,直接抛出异常
+ 				throw new InterruptedException();
+ 		}
+ 	} finally {
+ 		if (failed)//然后移除当前节点
+ 			cancelAcquire(node);
+ 	}
+ }
+ 
+ ```
+ 
+ 
+ 
  
  ### ReentrantReadWriteLock
  

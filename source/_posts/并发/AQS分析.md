@@ -9,7 +9,9 @@ categories: 并发
 
 `AQS(AbstractQueuedSynchronizer)`即队列同步器， 它是构建锁或者其他同步组件的基础框架（如ReentrantLock、ReentrantReadWriteLock、Semaphore等），它是JUC并发包中的核心基础组件。
 
-在基于AQS构建的同步器中，只能在一个时刻发生阻塞，从而降低上下文切换的开销，提高了吞吐量。同时在设计AQS时充分考虑了可伸缩行，因此J.U.C中所有基于AQS构建的同步器均可以获得这个优势。
+AQS的主要使用方式是继承，子类通过继承同步器并实现它的抽象方法来管理同步状态。
+
+AQS使用一个int类型的成员变量state来表示同步状态，当state>0时表示已经获取了锁，当state = 0时表示释放了锁。它提供了三个方法（getState()、setState(int newState)、compareAndSetState(int expect,int update)）来对同步状态state进行操作，当然AQS可以确保对state的操作是安全的。
 
 AQS通过内置的FIFO同步队列来完成资源获取线程的排队工作，如果当前线程获取同步状态失败（锁）时，AQS则会将当前线程以及等待状态等信息构造成一个节点（Node）并将其加入同步队列，同时会阻塞当前线程，当同步状态释放时，则会把节点中的线程唤醒，使其再次尝试获取同步状态
 
@@ -93,7 +95,7 @@ AQS内部维护着一个CLH同步队列， 这是一个FIFO的双向队列， AQ
     }
 ```
 
-Node结点是对每一个访问同步代码的线程的封装，其包含了需要同步的线程本身以及线程的状态，如是否被阻塞，是否等待唤醒，是否已经被取消等。变量waitStatus则表示当前被封装成Node结点的等待状态，共有4种取值CANCELLED、SIGNAL、CONDITION、PROPAGATE
+Node结点是对每一个访问同步代码的线程的封装，其包含了需要同步的线程本身以及线程的状态，如是否被阻塞，是否等待唤醒，是否已经被取消等。变量waitStatus则表示当前被封装成Node结点的等待状态(与同步器的state是不同的)，共有4种取值CANCELLED、SIGNAL、CONDITION、PROPAGATE
 
 - CANCELLED(1)：在同步队列中等待的线程等待超时或被中断，需要从同步队列中取消
 该Node的结点，其结点的waitStatus为CANCELLED，即结束状态，进入该状态后的结点将不会再变化。
@@ -101,6 +103,7 @@ Node结点是对每一个访问同步代码的线程的封装，其包含了需�
 - CONDITION(-2)：与Condition相关，该标识的结点处于等待队列中，结点的线程等待在Condition上，当其他线程调用了Condition的signal()
 方法后，CONDITION状态的结点将从等待队列转移到同步队列中，等待获取同步锁。
 - PROPAGATE(-3)：与共享模式相关，在共享模式中，该状态标识结点的线程处于可运行状态。
+- 默认状态(0):表示当前节点在队列中，等待获取锁 
 
 
 CLH同步队列结构如下:
@@ -117,8 +120,9 @@ CLH同步队列结构如下:
         Node pred = tail;
         if (pred != null) {
             node.prev = pred;
-            // CAS添加尾节点
+            // CAS添加尾节点, 确保没有其他线程插入
             if (compareAndSetTail(pred, node)) {
+                // 尾节点的next指向自己?
                 pred.next = node;
                 return node;
             }
@@ -137,7 +141,8 @@ addWaiter(Node node)先通过快速尝试设置尾节点，如果失败，则调
         for (;;) {
             Node t = tail;
             // 初始化尾节点
-            if (t == null) { // 队列为空，创建一个空的标志结点作为head结点，并将tail也指向它。
+            if (t == null) { 
+            // 队列为空，初始化head和tail
                 if (compareAndSetHead(new Node()))
                     tail = head;
             } else {
@@ -180,7 +185,7 @@ AQS的设计模式采用的模板方法模式，子类通过继承的方式，�
 
 ##### acquireQueued
 
-通过tryAcquire()和addWaiter()，该线程获取资源失败，已经被放入等待队列尾部了。该线程进入等待状态休息，直到其他线程彻底释放资源后唤醒自己
+在把node插入队列末尾后,它并不立即挂起该节点中线程,因为在插入它的过程中,前面的线程可能已经执行完成,所以它会先进行自旋操作acquireQueued(node, arg),尝试让该线程重新获取锁!当条件满足获取到了锁则可以从自旋过程中退出，否则继续。
 
 ``` 
 final boolean acquireQueued(final Node node, int arg) {
@@ -579,3 +584,4 @@ LockSupport用来创建锁和其他同步类的基本线程阻塞原语。简而
 - [阻塞和唤醒线程](http://cmsblogs.com/?p=2205)
 - [java并发之AQS详解](https://www.cnblogs.com/waterystone/p/4920797.html)
 - [LockSupport详解](https://leokongwq.github.io/2017/01/13/java-LockSupport.html)
+- [java队列同步器AQS](https://blog.csdn.net/pange1991/article/details/80930394)
