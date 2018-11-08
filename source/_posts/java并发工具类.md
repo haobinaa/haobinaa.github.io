@@ -113,10 +113,32 @@ countDown流程和await类似，源码如下:
 
 ### CyclicBarrier
 
-CyclicBarrier的字面意思是循环屏障。允许一组线程达到一个屏障（或者同步点）时被阻塞，直到最后一个线程到达屏障时，屏障才会开门，所有被拦截的线程才会继续运行。
+CyclicBarrier的字面意思是循环屏障。让一组线程到达一个屏障（或者是同步点）的时候被阻塞，直到最后一个线程到达屏障，屏障才会打开，所有的线程继续往下执行。
 
 #### 使用示例
-
+``` 
+public class CyclicBarrierTest {
+    static CyclicBarrier c = new CyclicBarrier(2);
+    
+    public static void main(String[] args) throws Exception {
+        new Thread(new Runnable(){
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(3000);
+                    System.out.println(2);
+                    c.await();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+        System.out.println(1);
+        c.await();
+        System.out.println(3);
+    }
+}
+```
 #### 实现原理
 
 
@@ -135,3 +157,4 @@ CyclicBarrier的字面意思是循环屏障。允许一组线程达到一个屏�
 ### 参考资料
 - [java并发工具类-CountDownLatch](https://juejin.im/post/5af3c17f51882567113b37d0)
 - [死磕java并发-CountDownLatch](http://cmsblogs.com/?p=2253)
+- [java中的并发工具类](https://www.jianshu.com/p/3cdeda81c517)

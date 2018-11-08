@@ -1,6 +1,6 @@
 ---
 title: jvm内存结构
-date: 2018-05-20 22:37:28
+date: 2018-10-20 22:37:28
 tags:
 categories: jvm
 ---
@@ -14,15 +14,41 @@ jvm主要分，堆、方法区、java栈、本地方法栈、程序计数器五�
 
 #### 堆区域
 
-堆内存是JVM中最大的一块由年轻代和老年代组成，而年轻代内存又被分成三部分，Eden空间、From Survivor空间、To Survivor空间,默认情况下年轻代按照8:1:1的比例来分配
+堆内存是JVM中最大的一块由新生代和老年代组成，而新生代内存又被分成三部分，Eden空间、From Survivor空间、To Survivor空间,默认情况下
 
-![](/images/heap.png)
+新生代(young):老年代(old)=1:2
+
+在新生代中 eden:from:to = 8:1:1
+
+![](/images/heap-generation.png)
+
+
+##### 新生代
+
+新生代是大部分对象创建和销毁的区域，在通常的 Java 应用中，绝大部分对象生命周期都是很短暂的。其内部又分为 Eden 区， 作为对象初始化分配的区域， 两个survivor区域， 分别为from和to， 用来放置从Minor 
+GC中保留下来的对象。JVM会随意选取一个Survivor作为to区域，然后会在GC过程中，将Eden中存活下来的对象和from中的对象拷贝到to这个区域， 防止内存碎片化，进一步清理无用对象
+
+对Eden区域继续划分， Hotspot JVM还有一个概念叫Thread Local Allocation Buffer(TLAB), 
+这是JVM对每个线程分配的一个私有缓存区域，避免多线程同时分配的时候操作同一个地址时可能需要加锁等机制而影响分配速度。TLAB仍然分配在堆上，结构比较简单，start、end就是起止地址，top表示已经分配到那里了，top与end
+相遇的时候，代表该缓存已经满了，JVM会试图再从Eden中分配一块
+
+![](/images/TLAB.png)
+
+##### 老年代
+
+老年代放置长生命周期的对象，通常是从Survivor区域拷贝过来的对象。当然也有特殊情况，我们知道普通对象会被分配在TLAB上，如果对象较大，JVM会试图直接分配在Eden
+其他位置上，如果对象太大，无法在新生代找到足够长的连续空间，JVM会直接分配在老年代
+
+
+##### 永久代
+永久代是早期hotspot JVM方法区的实现方式，存储Java的元数据、常量池等， JDK8之后就不存在永久代了
 
 ##### 各个区域的控制参数
 
 -	-Xms设置堆的最小空间大小。
 -	-Xmx设置堆的最大空间大小。
-- -XX:NewSize设置新生代最小空间大小
+- -XX:NewSize设置新生代大小
+- -XX:NewRatio=value 设置老年代和新生代的比例，默认是2
 -	-XX:MaxNewSize设置新生代最大空间大小。
 - -XX:PermSize设置永久代最小空间大小。
 -	-XX:MaxPermSize设置永久代最大空间大小。
@@ -30,6 +56,13 @@ jvm主要分，堆、方法区、java栈、本地方法栈、程序计数器五�
 
 没有直接设置老年代的参数，但是可以设置堆空间大小和新生代空间大小两个参数来间接控制：老年代大小=堆空间大小-新生代空间大小
 
+在年代堆视角中，还标记出了virtual区域， 在 JVM 内部，如果 Xms 小于 Xmx，堆的大小并不会直接扩展到其上限， 当内存需求不断增长的时候， JVM会逐渐扩张新生代等区域的大小，所以Virtual区域代表的就是暂时不可用的空间
+
+#### 监控和诊断堆内存的工具
+
+- 图形化工具： JConsole
+- 命令行工具： jstat、 jmap
+- JMC(java mission control)
 #### 方法区
 
 方法区有时被称为持久代（PermGen）
@@ -47,6 +80,8 @@ jvm主要分，堆、方法区、java栈、本地方法栈、程序计数器五�
 - 类和接口的全限定名
 - 字段名称和描述符
 - 方法名称和描述符
+
+
 #### 程序计数器
 
 程序计数器（Program Counter Register）是一块较小的内存空间，它的作用可以看做是当前线程所执行的字节码的行号指示器
@@ -109,3 +144,4 @@ Exception in thread “main”: java.lang.OutOfMemoryError: <reason> <stack trac
 ### 参考资料
 - [深入理解java虚拟机]
 - [纯洁的微笑博客](http://www.ityouknow.com/jvm/2017/08/25/jvm-memory-structure.html)
+- [杨晓峰-如何监控java堆内和堆外的内存]
