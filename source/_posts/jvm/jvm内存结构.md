@@ -42,17 +42,16 @@ GC中保留下来的对象。JVM会随意选取一个Survivor作为to区域，�
 ##### 永久代
 永久代是早期hotspot JVM方法区的实现方式，存储Java的元数据、常量池等， JDK8之后就不存在永久代了
 
-##### 各个区域的控制参数
+##### 堆大小参数设置
 
--	-Xms设置堆的最小空间大小。
--	-Xmx设置堆的最大空间大小。
-- -XX:NewSize设置新生代大小
-- -XX:NewRatio=value 设置老年代和新生代的比例，默认是2
--	-XX:MaxNewSize设置新生代最大空间大小。
-- -XX:PermSize设置永久代最小空间大小。
--	-XX:MaxPermSize设置永久代最大空间大小。
--	-XX:MaxPermSize设置永久代最大空间大小。
-
+相关参数：
+>　　-Xmx Java Heap最大值，默认值为物理内存的1/4，最佳设值视物理内存大小及计算机内其他内存开销而定  
+ 　　-Xms Java Heap初始值，Server端JVM最好将-Xms和-Xmx设为相同值，开发测试机JVM可以保留默认值；  
+ 　　-Xmn Java Heap Young区大小，不熟悉最好保留默认值；  
+ 　　-Xss 每个线程的Stack大小，不熟悉最好保留默认值；  
+ 其默认空间(即-Xms)是物理内存的1/64，最大空间(-Xmx)是物理内存的1/4。如果内存剩余不到40％，JVM就会增大堆到Xmx设置的值，内存剩余超过70％，JVM就会减小堆到Xms设置的值。所以服务器的Xmx和Xms设置一般应该设置相同避免每次GC后都要调整虚拟机堆的大小。假设物理内存无限大，那么JVM内存的最大值跟操作系统有关，一般32位机是1.5g到3g之间，而64位的就不会有限制了
+ 
+ 
 没有直接设置老年代的参数，但是可以设置堆空间大小和新生代空间大小两个参数来间接控制：老年代大小=堆空间大小-新生代空间大小
 
 在年代堆视角中，还标记出了virtual区域， 在 JVM 内部，如果 Xms 小于 Xmx，堆的大小并不会直接扩展到其上限， 当内存需求不断增长的时候， JVM会逐渐扩张新生代等区域的大小，所以Virtual区域代表的就是暂时不可用的空间
@@ -93,6 +92,22 @@ class文件中有一项信息是常量池表（constant_pool table），用于�
 - 运行时常量池具备动态性，Java语言并没有要求常量一定只能编译期产生，运行期也可以将新常量放入池中。这个特性用的较多的便是String类的intern()方法
 
 当运行时常量池无法再申请到内存时，将抛出OutOfMemoryError异常
+
+##### 方法区的回收
+
+方法区中的垃圾回收主要是：废弃常量及无用类。
+
+判断常量是否废弃与判断堆中对象十分相似。例如，若常量池中存在字符串“abc”，而系统中并没有任何String对象的值为“abc”的，也就是没有任何对象引用它，那么它就可以被回收了。
+
+无用类的判定稍微复杂点，需要满足：
+1. 该类的所有对象实例已经被回收，也就是Java堆中不存在该类的任何实例
+2. 加载该类的ClassLoader已经被回收
+3. 该类的类对象Class没有在任何地方被引用，无法使用反射来访问该类的方法
+
+当方法区中的类满足以上条件时，就可以对无用类进行回收了，这里说的仅仅是“可以”，而并不是和对象一样，不使用了就必然会回收。是否对类进行回收，HotSpot虚拟机提供了各种配置，这里不多讲。
+
+在大量使用反射、动态代理、CGLIB等ByteCode框架、动态生成JSP以及OSGI这类频繁自定义ClassLoader的场景都需要虚拟机具备类卸载的功能，以保存永久代不会溢出。
+
 
 
 
@@ -139,37 +154,128 @@ NIO引入一种基于通道(Channel)和缓冲(buffer)的I/O方式， 他使用`N
 直接内存的分配不受java堆大小的限制， 但是配置虚拟机参数的时候要考虑到直接内存的存在， 不能让各个内存区域的总和大于物理机的内存， 从而导致动态扩展的时候出现OOM
 
 
-### 常见OOM的原因
+### 内存溢出
 
-#### 1.对象不能被分配在堆内存中，
+#### java堆溢出
+
+
+Java堆用于存储对象实例，只要不断地创建对象，并且保证GC Roots到对象之间有可达路径来避免垃圾回收机制清除这些对象，那么在对象数量到达最大堆的容量限制后就会产生内存溢出异常。
+
+`-XX:+HeapDumpOnOutOfMemoryError` 可以让虚拟机在出现内存溢出异常时Dump出当前的内存堆栈转储快照以便事后进行分析。
+
+例子：
 ``` 
-Exception in thread “main”: java.lang.OutOfMemoryError: Java heap space
+//VM Args: -Xms20m -Xmx20m -XX:+HeapDumpOnOutOfMemoryError
+//Java堆溢出异常测试
+public class HeapOOM {
+    static class OOMObject {}
+    public static void main(String[] args) {
+        List<OOMObject> list = new ArrayList<OOMObject>();
+        while (true) {
+            list.add(new OOMObject());
+        }
+    }
+}
 ```
-内存泄露或者堆内存空间分配过小
+将会抛出异常:`Exception in thread “main” java.lang.OutOfMemoryError: Java heap space`
+
+##### 内存溢出和内存泄露
+- 内存溢出：out of memory，是指程序在申请内存时，没有足够的内存空间供其使用，出现out of memory；比如申请了一个integer,但给它存了long才能存下的数，那就是内存溢出。
+
+- 内存泄露： memory leak，是指程序在申请内存后，无法释放已申请的内存空间，一次内存泄露危害可以忽略，但内存泄露堆积后果很严重，无论多少内存,迟早会被占光
+
+##### 内存泄露处理方式
+
+如果是内存泄露，可用Eclipse Memory Analyzer工具查看泄露对象到GC Roots的引用链。于是就能找到泄露对象是通过怎样的路径与GC Roots相关联并导致垃圾收集器无法自动回收他们的。掌握了泄露对象的类型信息及GC Roots引用链的信息，就可以比较准确地定位出泄露代码的位置。
+
+具体可以参考[分析内存泄露的一般办法](https://blog.csdn.net/ZYC88888/article/details/80487391)
+
+##### 内存溢出的处理方式
+如果内存不泄露，也就是说，就是内存中的对象确实都还必须都活着，则：
+1. 检查虚拟机的堆参数（-Xmx与-Xms），与机器物理内存对比看是否还可以调大。
+2. 从代码上检查是否存在某些对象生命周期过长、持有状态时间过长的情况，尝试减少程序运行期的内存消耗。
 
 
-#### 2. 类或方法不能加载到持久代
+#### 虚拟机和本地方法栈溢出
+
+由于在HotSpot虚拟机中并不区分虚拟机栈和本地方法栈，因此，对于HotSpot来说，虽然-Xoss参数（设置本地方法栈大小）存在，但实际上是无效的，栈容量只由-Xss参数设定。关于虚拟机栈和本地方法栈，在Java虚拟机规划中描述了两种异常：
+1. 如果线程请求的栈深度大于虚拟机所允许的最大尝试，将抛出抛出StackOverflowError异常
+2. 如果虚拟机在扩展栈时无法申请到足够的内存空间，则抛出OutOfMemoryError异常
+
+虽然分了两种情况，其实存在互相重叠的地方：当栈空间无法继续分配时，到底是内存太小，还是已使用的栈空间太大，其本质只是对同一件事情的两种描述而已。
+
+例子：
 ``` 
-Exception in thread “main”: java.lang.OutOfMemoryError: PermGen space
-```
-它可能出现在一个程序加载很多类的时候，比如引用了很多第三方的库；
+/**
+ * VM Args: -Xss128k
+ *
+ * 1.使用-Xss参数减少栈内存容量。结果：抛出StackOverflowError，
+ *   异常出现时输出的堆栈尝试相应缩小。
+ * 2.定义了大量的本地变量，增大此方法帧中本地变量表的长度。
+ *   结果：抛出StackOverflowError，异常出现时输出的堆栈尝试相应缩小。
+ */
+public class JavaVMStackSOF {
+    private int stackLength = 1;
+    public void stackLeak() {
+        stackLength++;
+        stackLeak();
+    }
+    public static void main(String[] args) throws Throwable {
+        JavaVMStackSOF oom = new JavaVMStackSOF();
+        try {
+            oom.stackLeak();
+        } catch (Throwable e){
+            System.out.println("stack length:" + oom.stackLength);
+            throw e;
+        }
+    }
+}
 
-#### 3. 创建的数组大于堆内存的空间
+
+
+#####################运行结果
+stack length:11411Exception in thread “main” java.lang.StackOverflowError
+at com.changwen.javabase.JVM.OutOfMemoryError.JavaVMStackSOF.stackLeak(JavaVMStackSOF.java:12)
+at com.changwen.javabase.JVM.OutOfMemoryError.JavaVMStackSOF.stackLeak(JavaVMStackSOF.java:13)
+at com.changwen.javabase.JVM.OutOfMemoryError.JavaVMStackSOF.stackLeak(JavaVMStackSOF.java:13)…….(最后程序还是会停止的）
+```
+
+在单线程下，无论是由于栈帧太大还是虚拟机容量太小，当内存无法分配时，虚拟机都是抛出StackOverflowError异常。
+　　如果测试时不限于单线程，通过不断地建立线程的方式倒是可以产生内存溢出异常。但是这样产生的内存溢出异常与栈空间是否足够大并不存在任何联系，准确地说，在这种情况下，为每个线程的栈分配的内存越大，反而越容易产生内存溢出异常。所以在多线程开发的应用时需要特别注意，如果出现StackOverflowError异常时有错误堆栈可以阅读，相对来说，比较容易找到错误问题所在。
+
+例子：
 ``` 
-Exception in thread “main”: java.lang.OutOfMemoryError: Requested array size exceeds VM limit
+/**
+ * VM Args: -Xss2M（这时候不妨设置大些）
+ *
+ * 如果要尝试运行上面这段代码，记得要先保存当前的工作。
+ * 由于在Windows平台的虚拟机中，Java的线程是映射到操作系统的内核线程上的，
+ * 因此上述代码执行时有较大的风险，可能会导致操作系统假死。
+ */
+public class JavaVMStackOOM {
+    private void dontStop() {
+        while(true){}
+    }
+    public void stackLeakByThread() {
+        while(true) {
+            Thread thread = new Thread(new Runnable() {
+                public void run() {
+                    dontStop();
+                }
+            });
+        }
+    }
+    public static void main(String[] args) {
+        JavaVMStackOOM oom = new JavaVMStackOOM();
+        oom.stackLeakByThread();
+    }
+}
 ```
+则，此时会`Exception in thread “main” java.lang.OutOfMemoryError: unable to create new native method`
 
-#### 4. 分配本地分配失败
-``` 
-Exception in thread “main”: java.lang.OutOfMemoryError: request <size> bytes for <reason>. Out of swap space?
-```
-或者
 
-``` 
-Exception in thread “main”: java.lang.OutOfMemoryError: <reason> <stack trace>（Native method）
-```
 
-应该从本地方法、JNI或java虚拟机本身找原因
+
 
 
 ### 参考资料
