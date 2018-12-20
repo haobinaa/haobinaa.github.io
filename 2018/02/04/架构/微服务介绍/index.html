@@ -79,7 +79,13 @@
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://yoursite.com/images/microservice.png">
 <meta property="og:image" content="http://yoursite.com/images/API-Gateway.png.jpg">
-<meta property="og:updated_time" content="2018-06-14T07:28:39.173Z">
+<meta property="og:image" content="http://yoursite.com/images/concentration_proxy.png">
+<meta property="og:image" content="http://yoursite.com/images/client_discover.png">
+<meta property="og:image" content="http://yoursite.com/images/independent_process.png">
+<meta property="og:image" content="http://yoursite.com/images/rest_api.png">
+<meta property="og:image" content="http://yoursite.com/images/api_gateway.png">
+<meta property="og:image" content="http://yoursite.com/images/message_proxy.png">
+<meta property="og:updated_time" content="2018-12-20T03:54:45.869Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="微服务介绍">
 <meta name="twitter:description" content="架构的演变单体式架构没有模块的划分，用一个项目就涵盖了所有逻辑，也是我们最开始写的程序，易于测试和部署发布。 单体应用非常简单，但这也是他致命的缺点，随着业务的不断增加，复杂度越来越高，项目中的代码越来越不可控，就造成了很多问题：  代码量过多，结构过于复杂 可靠性低下：所有代码都运行在同一进程中，模块中任何一个bug，比如内存泄露都可能弄垮整个进程 技术更新困难： 技术选型在一开始就定下来了 启">
@@ -405,14 +411,15 @@
 <li>日志监控： 保存日志和分析日志</li>
 </ul>
 <h4 id="服务发现"><a href="#服务发现" class="headerlink" title="服务发现"></a>服务发现</h4><p>1.传统LB模式</p>
-<p>DNS -&gt; LB(load balance) -&gt; service provider</p>
-<p>域名通过DNS解析，通过负载均衡器找到后台的服务</p>
-<p>2.进程内LB模式</p>
-<p>service provider -&gt;(register)  service registry -&gt; customer(内置LB) -&gt; service provider</p>
-<p>后台服务在服务注册表中注册，客户端有个内置的LB，指向对应的服务提供方</p>
+<p><img src="/images/concentration_proxy.png" alt=""><br>这是最简单和传统做法，在服务消费者和生产者之间，代理作为独立一层集中部署，由独立团队(一般是运维或框架)负责治理和运维。常用的集中式代理有硬件负载均衡器(如F5)，或者软件负载均衡器(如Nginx)，F5(4层负载)+Nginx(7层负载)这种软硬结合两层代理也是业内常见做法，兼顾配置的灵活性(Nginx比F5易于配置)。</p>
+<p>这种方式通常在DNS域名服务器的配合下实现服务发现，服务注册(建立服务域名和IP地址之间的映射关系)一般由运维人员在代理上手工配置，服务消费方仅依赖服务域名，这个域名指向代理，由代理解析目标地址并做负载均衡和调用。</p>
+<p>2.客户端嵌入式代理</p>
+<p><img src="/images/client_discover.png" alt=""><br>代理(包括服务发现和负载均衡逻辑)以客户库的形式嵌入在应用程序中。这种模式一般需要独立的服务注册中心组件配合，服务启动时自动注册到注册中心并定期报心跳，客户端代理则发现服务并做负载均衡。</p>
+<p>Netflix开源的Eureka(注册中心)[附录1]和Ribbon(客户端代理)[附录2]是这种模式的典型案例，国内阿里开源的Dubbo也是采用这种模式。</p>
 <p>3.主机独立LB模式</p>
-<p>service provider -&gt;(register)   service registry  -&gt;<br>customer(在同一个主机中，LB存在于一个独立的进程中) -&gt; service provider</p>
-<p>相比于第二种，单独的LB跟客户端关联没那么紧密，不需要为每种语言都配置一个LB </p>
+<p><img src="/images/independent_process.png" alt=""></p>
+<p>这种做法是上面两种模式的一个折中，代理既不是独立集中部署，也不嵌入在客户应用程序中，而是作为独立进程部署在每一个主机上，一个主机上的多个消费者应用可以共用这个代理，实现服务发现和负载均衡。</p>
+<p>现在比较流行的概念ServiceMesh， 本质上就是这种模式。</p>
 <h4 id="数据存储"><a href="#数据存储" class="headerlink" title="数据存储"></a>数据存储</h4><p>在传统单体式项目中，一个应用中的各个模块共用一个数据库，它能很好地保证事务一致性。而在微服务架构中，如果共用一个数据库则会有高耦合度的问题，比如一个服务想要修改一个表的结构，那么它在修改的时候要极其小心，应该这个表也可能是其他服务正在使用的，所以我们让每个服务管理对应的数据库。</p>
 <p>在分解数据库的时候，有很多问题：事务一致性、外键关系、静态数据处理、共享数据和共享表的处理等等。</p>
 <p>build microservice提供的解决方案：</p>
@@ -426,6 +433,34 @@
 </li>
 <li>共享数据：我们可以将共享的部分提取出来，新建一个服务管理这些数据，其他服务访问这个新服务来获取数据</li>
 <li>共享表：把表按照需求拆分</li>
+</ul>
+<h3 id="服务之间的通信"><a href="#服务之间的通信" class="headerlink" title="服务之间的通信"></a>服务之间的通信</h3><p>微服务架构下，应用的服务直接相互独立，需要有些机制支持微服务之间通信。</p>
+<p>SOA体系下，服务之间通过企业服务总线（Enterprise Service Bus）通信，许多业务逻辑在中间层（消息的路由、转换和组织）。微服务架构倾向于降低中心消息总线（类似于ESB）的依赖，将业务逻辑分布在每个具体的服务终端</p>
+<p>大部分微服务基于HTTP、JSON这样的标准协议，集成不同标准和格式变的不再重要。另外一个选择是采用轻量级的消息总线或者网关，有路由功能，没有复杂的业务逻辑。</p>
+<h4 id="点对点方式-直接调用服务"><a href="#点对点方式-直接调用服务" class="headerlink" title="点对点方式-直接调用服务"></a>点对点方式-直接调用服务</h4><p><img src="/images/rest_api.png" alt=""></p>
+<p>比较简单的微服务应用场景下，这种方式还可行，随着应用复杂度的提升，会变得越来越不可维护。</p>
+<ul>
+<li>非功能的需求， 比如用户的授权、限制、 监控， 需要在每个微服务中实现(或者是引入一个统一的jar包进行拦截)</li>
+<li>随着功能的演进，服务会变得越来越复杂， 调用的逻辑越来越乱</li>
+<li>不同的服务之间，客户端和服务直接没有控制功能（监控、跟踪、过滤）</li>
+<li>直接通信在大型系统设计中，一般是反面典型。</li>
+</ul>
+<h4 id="API-网关方式"><a href="#API-网关方式" class="headerlink" title="API-网关方式"></a>API-网关方式</h4><p>不同于点对点的方式， API网关方式的核心要点是，所有的客户端和消费端都通过统一的网关接入微服务，在网关层处理所有的非业务功能。通常，网关也是提供REST/HTTP的访问API。服务端通过API-GW注册和管理服务。</p>
+<p><img src="/images/api_gateway.png" alt=""></p>
+<p>所有的业务接口通过API网关暴露，是所有客户端接口的唯一入口。微服务之间的通信也通过API网关。</p>
+<p>采用网关方式有如下优势：</p>
+<ul>
+<li>有能力为微服务接口提供网关层次的抽象。比如：微服务的接口可以各种各样，在网关层，可以对外暴露统一的规范接口</li>
+<li>轻量的消息路由、格式转换</li>
+<li>统一控制安全、监控、限流等非业务功能</li>
+<li>每个微服务会变得更加轻量，非业务功能个都在网关层统一处理，微服务只需要关注业务逻辑</li>
+</ul>
+<h4 id="消息代理方式"><a href="#消息代理方式" class="headerlink" title="消息代理方式"></a>消息代理方式</h4><p>微服务也可以集成在异步的场景下，通过队列和订阅主题，实现消息的发布和订阅。一个微服务可以是消息的发布者，把消息通过异步的方式发送到队列或者订阅主题下。作为消费者的微服务可以从队列或者主题共获取消息。通过消息中间件把服务之间的直接调用解耦。</p>
+<p><img src="/images/message_proxy.png" alt=""></p>
+<p>通常异步的生产者/消费者模式，通过AMQP、MQTT等异步消息规范。</p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="https://segmentfault.com/a/1190000004634172" target="_blank" rel="noopener">微服务实战：从架构到发布（一）</a></li>
+<li><a href="https://segmentfault.com/a/1190000004655274" target="_blank" rel="noopener">微服务实战：从架构到发布（二）</a></li>
 </ul>
 
       
@@ -545,7 +580,7 @@
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">46</span>
+                <span class="site-state-item-count">44</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -602,7 +637,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#架构的演变"><span class="nav-number">1.</span> <span class="nav-text">架构的演变</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#单体式架构"><span class="nav-number">1.1.</span> <span class="nav-text">单体式架构</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#SOA"><span class="nav-number">1.2.</span> <span class="nav-text">SOA</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#微服务架构"><span class="nav-number">2.</span> <span class="nav-text">微服务架构</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#微服务的特点"><span class="nav-number">2.1.</span> <span class="nav-text">微服务的特点</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#微服务的利弊"><span class="nav-number">2.2.</span> <span class="nav-text">微服务的利弊</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#微服务的特性"><span class="nav-number">2.3.</span> <span class="nav-text">微服务的特性</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-组件化"><span class="nav-number">2.3.1.</span> <span class="nav-text">1.组件化</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-团队组织"><span class="nav-number">2.3.2.</span> <span class="nav-text">2.团队组织</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-通讯机制"><span class="nav-number">2.3.3.</span> <span class="nav-text">3.通讯机制</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-组件分治"><span class="nav-number">2.3.4.</span> <span class="nav-text">4.组件分治</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#5-数据管理分治"><span class="nav-number">2.3.5.</span> <span class="nav-text">5.数据管理分治</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#6-容错设计"><span class="nav-number">2.3.6.</span> <span class="nav-text">6.容错设计</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#7-基础设计自动化"><span class="nav-number">2.3.7.</span> <span class="nav-text">7.基础设计自动化</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#微服务设计"><span class="nav-number">3.</span> <span class="nav-text">微服务设计</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#API网关"><span class="nav-number">3.1.</span> <span class="nav-text">API网关</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#服务发现"><span class="nav-number">3.2.</span> <span class="nav-text">服务发现</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#数据存储"><span class="nav-number">3.3.</span> <span class="nav-text">数据存储</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#架构的演变"><span class="nav-number">1.</span> <span class="nav-text">架构的演变</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#单体式架构"><span class="nav-number">1.1.</span> <span class="nav-text">单体式架构</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#SOA"><span class="nav-number">1.2.</span> <span class="nav-text">SOA</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#微服务架构"><span class="nav-number">2.</span> <span class="nav-text">微服务架构</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#微服务的特点"><span class="nav-number">2.1.</span> <span class="nav-text">微服务的特点</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#微服务的利弊"><span class="nav-number">2.2.</span> <span class="nav-text">微服务的利弊</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#微服务的特性"><span class="nav-number">2.3.</span> <span class="nav-text">微服务的特性</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-组件化"><span class="nav-number">2.3.1.</span> <span class="nav-text">1.组件化</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-团队组织"><span class="nav-number">2.3.2.</span> <span class="nav-text">2.团队组织</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-通讯机制"><span class="nav-number">2.3.3.</span> <span class="nav-text">3.通讯机制</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-组件分治"><span class="nav-number">2.3.4.</span> <span class="nav-text">4.组件分治</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#5-数据管理分治"><span class="nav-number">2.3.5.</span> <span class="nav-text">5.数据管理分治</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#6-容错设计"><span class="nav-number">2.3.6.</span> <span class="nav-text">6.容错设计</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#7-基础设计自动化"><span class="nav-number">2.3.7.</span> <span class="nav-text">7.基础设计自动化</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#微服务设计"><span class="nav-number">3.</span> <span class="nav-text">微服务设计</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#API网关"><span class="nav-number">3.1.</span> <span class="nav-text">API网关</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#服务发现"><span class="nav-number">3.2.</span> <span class="nav-text">服务发现</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#数据存储"><span class="nav-number">3.3.</span> <span class="nav-text">数据存储</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#服务之间的通信"><span class="nav-number">4.</span> <span class="nav-text">服务之间的通信</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#点对点方式-直接调用服务"><span class="nav-number">4.1.</span> <span class="nav-text">点对点方式-直接调用服务</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#API-网关方式"><span class="nav-number">4.2.</span> <span class="nav-text">API-网关方式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#消息代理方式"><span class="nav-number">4.3.</span> <span class="nav-text">消息代理方式</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">5.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
             
 
           </div>
