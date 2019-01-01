@@ -85,7 +85,7 @@
 <meta property="og:image" content="http://yoursite.com/images/rest_api.png">
 <meta property="og:image" content="http://yoursite.com/images/api_gateway.png">
 <meta property="og:image" content="http://yoursite.com/images/message_proxy.png">
-<meta property="og:updated_time" content="2018-12-20T03:54:45.869Z">
+<meta property="og:updated_time" content="2018-12-20T07:01:38.469Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="微服务介绍">
 <meta name="twitter:description" content="架构的演变单体式架构没有模块的划分，用一个项目就涵盖了所有逻辑，也是我们最开始写的程序，易于测试和部署发布。 单体应用非常简单，但这也是他致命的缺点，随着业务的不断增加，复杂度越来越高，项目中的代码越来越不可控，就造成了很多问题：  代码量过多，结构过于复杂 可靠性低下：所有代码都运行在同一进程中，模块中任何一个bug，比如内存泄露都可能弄垮整个进程 技术更新困难： 技术选型在一开始就定下来了 启">
@@ -415,7 +415,7 @@
 <p>这种方式通常在DNS域名服务器的配合下实现服务发现，服务注册(建立服务域名和IP地址之间的映射关系)一般由运维人员在代理上手工配置，服务消费方仅依赖服务域名，这个域名指向代理，由代理解析目标地址并做负载均衡和调用。</p>
 <p>2.客户端嵌入式代理</p>
 <p><img src="/images/client_discover.png" alt=""><br>代理(包括服务发现和负载均衡逻辑)以客户库的形式嵌入在应用程序中。这种模式一般需要独立的服务注册中心组件配合，服务启动时自动注册到注册中心并定期报心跳，客户端代理则发现服务并做负载均衡。</p>
-<p>Netflix开源的Eureka(注册中心)[附录1]和Ribbon(客户端代理)[附录2]是这种模式的典型案例，国内阿里开源的Dubbo也是采用这种模式。</p>
+<p>Netflix开源的Eureka(注册中心)和Ribbon(客户端代理)是这种模式的典型案例，国内阿里开源的Dubbo也是采用这种模式。</p>
 <p>3.主机独立LB模式</p>
 <p><img src="/images/independent_process.png" alt=""></p>
 <p>这种做法是上面两种模式的一个折中，代理既不是独立集中部署，也不嵌入在客户应用程序中，而是作为独立进程部署在每一个主机上，一个主机上的多个消费者应用可以共用这个代理，实现服务发现和负载均衡。</p>
@@ -660,7 +660,7 @@
         <div class="copyright" >
   
   &copy; 
-  <span itemprop="copyrightYear">2018</span>
+  <span itemprop="copyrightYear">2019</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
