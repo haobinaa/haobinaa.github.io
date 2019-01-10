@@ -9,16 +9,7 @@ comment: false
 
 一息尚存，则吾志不移
 ---
-#### 个人信息
-- github：https://github.com/haobinaa
 
-- 主研方向：Java/Python/PHP
-- 关注社区
-    - [github](https://github.com/haobinaa)
-    - [stackoverflow](https://stackoverflow.com)
-    - [掘金](https://juejin.im/timeline)
-    - [sf](https://segmentfault.com)
-    - [码云GVP](https://gitee.com/gvp)
 
 
 #### 关于本博客
@@ -28,3 +19,21 @@ comment: false
  
  这个博客记录了一些我学习编程的历程， 想把平时零碎的知识点串起来，成为一个互相印证的体系。 里面的内容包含但不限于Java/服务化/架构/计算机基础。 万丈高楼平地起，勿在浮沙筑高台， 我坚信我会成为一名出色的架构师， 
  这里是时间的痕迹， 也是有力的证据。
+ 
+ 
+ #### 个人信息
+ 
+ - github：https://github.com/haobinaa
+ 
+ - 主研方向：Java/Python/PHP
+
+
+
+
+#### 长期维护学习笔记的repository
+
+使用博客+github笔记的方式记录下我自己的成长之路，愿多年之后，初心不改
+- [大学时期维护的PHP学习记录](https://github.com/haobinaa/php-learn)
+- [设计模式/常用算法/JDK源码/代码范式-长期维护](https://github.com/haobinaa/DataStructure-DesignPattern)
+- [Spring源码学习记录-查漏补缺](https://github.com/haobinaa/spring-resource)
+- [微服务架构使用: Dubbo/Spring Cloud/Istio(k8s)-长期维护](https://github.com/haobinaa/microservice)
