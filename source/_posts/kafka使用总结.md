@@ -1,5 +1,5 @@
 ---
-title: kafka使用总结
+title: kafka使用以及原理
 date: 2018-12-10 12:39:13
 tags: mq
 categories: 中间件
@@ -29,6 +29,8 @@ categories: 中间件
 
 #### Kafka概念
 
+
+![](/images/kafka/kafka_architech.jpg)
 - Broker
 
 Kafka集群包含一个或多个服务器，这种服务器被称为broker
@@ -158,7 +160,7 @@ kafka的一致性问题，与拜占庭将军的解决思路不一样。一条消
 
 当leader宕机了，怎样在follower中选举出新的leader。因为follower可能落后许多，所以必须确保选择“最新”的follower作为新的leader。一个基本的原则就是，如果leader不在了，新的leader必须拥有原来的leader commit的所有消息。这就需要作一个折衷，如果leader在标明一条消息被commit前等待更多的follower确认，那在它die之后就有更多的follower可以作为新的leader，但这也会造成吞吐率的下降。
 
-kafka并不是zk的类似raft算法(majority vote 少数服从多数)，而是采用的另外的方式。Kafka在Zookeeper中动态维护了一个ISR（in-sync replicas） set，这个set里的所有replica都跟上了leader，只有ISR里的成员才有被选为leader的可能。在这种模式下，对于f+1个replica，一个Kafka topic能在保证不丢失已经ommit的消息的前提下容忍f个replica的失败。在大多数使用场景中，这种模式是非常有利的。事实上，为了容忍f个replica的失败，majority vote和ISR在commit前需要等待的replica数量是一样的，但是ISR需要的总的replica的个数几乎是majority vote的一半。
+kafka并不是zk的类似raft算法(majority vote 少数服从多数)，而是采用的另外的方式。Kafka在Zookeeper中动态维护了一个ISR（in-sync replicas） set，这个set里的所有replica都跟上了leader，只有ISR里的成员才有被选为leader的可能。在这种模式下，对于f+1个replica，一个Kafka topic能在保证不丢失已经commit的消息的前提下容忍f个replica的失败。在大多数使用场景中，这种模式是非常有利的。事实上，为了容忍f个replica的失败，majority vote和ISR在commit前需要等待的replica数量是一样的，但是ISR需要的总的replica的个数几乎是majority vote的一半。
 
 在ISR中至少有一个follower时，Kafka可以确保已经commit的数据不丢失，但如果某一个partition的所有replica都挂了，就无法保证数据不丢失了。这种情况下有两种可行的方案：
 - 等待ISR中的任一个replica“活”过来，并且选它作为leader
@@ -166,10 +168,6 @@ kafka并不是zk的类似raft算法(majority vote 少数服从多数)，而是�
 
 这就需要在可用性和一致性当中作出一个简单的平衡。如果一定要等待ISR中的replica“活”过来，那不可用的时间就可能会相对较长。而且如果ISR中的所有replica都无法“活”过来了，或者数据都丢失了，这个partition将永远不可用。选择第一个“活”过来的replica作为leader，而这个replica不是ISR中的replica，那即使它并不保证已经包含了所有已commit的消息，它也会成为leader而作为consumer的数据源（前文有说明，所有读写都由leader完成）。Kafka0.8.*使用了第二种方式。根据Kafka的文档，在以后的版本中，Kafka支持用户通过配置选择这两种方式中的一种，从而根据不同的使用场景选择高可用性还是强一致性。
 
-Kafka集群需要管理成百上千个partition，Kafka通过round-robin的方式来平衡partition从而避免大量partition集中在了少数几个节点上。同时Kafka也需要平衡leader
-的分布，尽可能的让所有partition的leader均匀分布在不同broker上。另一方面，优化leadership election的过程也是很重要的，毕竟这段时间相应的partition处于不可用状态。一种简单的实现是暂停宕机的broker上的所有partition，并为之选举leader。实际上，Kafka选举一个broker作为controller，这个controller通过watch Zookeeper检测所有的broker failure，并负责为所有受影响的parition选举leader，再将相应的leader调整命令发送至受影响的broker，过程如下图所示:
-
-![](/images/kafka/controller.png)
 
 #### Consumer group
 
@@ -177,12 +175,141 @@ Kafka集群需要管理成百上千个partition，Kafka通过round-robin的方�
 
 Kafka保证保证同一个consumer group里只有一个consumer会消费一条消息,Kafka还允许不同consumer group同时消费同一条消息
 
-#### Consumer Rebalance
 
-#### 消息Deliver guarantee(消息保证)
+#### 消息Deliver guarantee(消息传输保证)
+
+Kafka确保消息在producer和consumer之间传输。有这么几种semantic(语义):
+- At most once 消息可能会丢，但绝不会重复传输
+- At least one 消息绝不会丢，但可能会重复传输
+- Exactly once 每条消息肯定会被传输一次且仅传输一次(这也是用户最希望的一种语义)
+
+##### producer to broker Deliver guarantee
+kafka在 `0.11.0`版本实现了 `Exactly once`.如果producer发送数据给broker后，遇到的网络问题而造成通信中断，那producer就无法判断该条消息是否已经commit。虽然Kafka无法确定网络故障期间发生了什么，但是producer可以生成一种类似于primary key的东西，发生故障时幂等性的retry多次，这样就做到了`Exactly one`。 同时Kafka还支持`At least once`和`At most once`
+
+##### broker to consumer Deliver guarantee
+
+consumer在从broker读取消息后，可以选择commit，该操作会在Zookeeper中存下该consumer在该partition下读取的消息的offset。该consumer下一次再读该partition
+时会从下一条开始读取。如未commit，下一次读取的开始位置会跟上一次commit之后的开始位置相同。当然可以将consumer设置为autocommit，即consumer一旦读到数据立即自动commit。如果只讨论这一读取消息的过程，那Kafka是确保了`Exactly once`。但实际上实际使用中consumer并非读取完数据就结束了，而是要进行进一步处理，而数据处理与commit的顺序在很大程度上决定了消息从broker和consumer的delivery guarantee semantic：
+- 读完消息先commit再处理消息。这种模式下，如果consumer在commit后还没来得及处理消息就crash了，下次重新开始工作后就无法读到刚刚已提交而未处理的消息，这就对应于`At most once`(保证不重复传送)
+- 读完消息先处理再commit。这种模式下，如果处理完了消息在commit之前consumer crash了，下次重新开始工作时还会处理刚刚未commit的消息，实际上该消息已经被处理过了。这就对应于`At least once`(保证消息不会丢失，这也是Kafka的默认处理方式)。
+在很多情况使用场景下，消息都有一个primary key，所以消息的处理往往具有幂等性，即多次处理这一条消息跟只处理一次是等效的，那就可以认为是Exactly once(通过幂等性来保证)。
+
+
+### Kafka 文件存储机制
+
+#### partition的存储结构
+
+Kafka 中消息是以 topic 进行分类的，生产者通过 topic 向 Kafka broker 发送消息，消费者通过 topic 读取数据。然而 topic 在物理层面又能以 partition 为分组，一个 topic 可以分成若干个 partition。事实上，partition 并不是最终的存储粒度，partition 还可以细分为 segment，一个 partition 物理上由多个 segment 组成。
+
+在物理结构上，partition是目录，比如单个broker上，创建一个topic，会在配置的`log.dirs`下生成partion数目个目录。如 topic 为 test， partition设置为2， 则会生成 test-0 和 test-1 两个目录。
+
+如果就以 partition 为最小存储单位，当 Kafka producer 不断发送消息，必然会引起 partition 文件的无限扩张，将对消息文件的维护以及已消费的消息的清理带来严重的影响，因此，需以 segment 为单位将 partition 进一步细分。每个 partition（目录）相当于一个巨型文件被平均分配到多个大小相等的 segment（段）数据文件中（每个 segment 文件中消息数量不一定相等）这种特性也方便 old segment 的删除，即方便已被消费的消息的清理，提高磁盘的利用率。
+
+#### segment工作原理
+
+segment 文件由两部分组成，分别为 “.index” 文件和 “.log” 文件，分别表示为 segment 索引文件和数据文件。这两个文件的命令规则为：partition 全局的第一个 segment 从 0 开始，后续每个 segment 文件名为上一个 segment 文件最后一条消息的 offset 值，数值大小为 64 位，20 位数字字符长度，没有数字用 0 填充，如下：
+``` 
+00000000000000000000.index
+00000000000000000000.log
+00000000000000170410.index
+00000000000000170410.log
+00000000000000239430.index
+00000000000000239430.log
+```
+
+以上面的 segment 文件为例，展示出 segment：00000000000000170410 的 “.index” 文件和 “.log” 文件的对应的关系，如下图：
+
+![](/images/kafka/segment.jpg)
+
+.index” 索引文件存储大量的元数据，“.log” 数据文件存储大量的消息，索引文件中的元数据指向对应数据文件中 message 的物理偏移地址。其中以 “.index” 索引文件中的元数据 [3, 348] 为例，在 “.log” 数据文件表示第 3 个消息，即在全局 partition 中表示 170410+3=170413 个消息，该消息的物理偏移地址为 348
+
+
+##### 从partition中通过offset查找message
+
+以上图为例，读取 offset=170418 的消息，首先查找 segment 文件，其中 00000000000000000000.index 为最开始的文件，第二个文件为 00000000000000170410.index（起始偏移为 170410+1=170411），而第三个文件为 00000000000000239430.index（起始偏移为 239430+1=239431），所以这个 offset=170418 就落到了第二个文件之中。其它后续文件可以依次类推，以其偏移量命名并排列这些文件，然后根据二分查找法就可以快速定位到具体文件位置。其次根据 00000000000000170410.index 文件中的 [8,1325] 定位到 00000000000000170410.log 文件中的 1325 的位置进行读取。
+
+### Kafka在ZK的存储形式
+
+在基于 Kafka 的分布式消息队列中，ZooKeeper 的作用有：broker 注册、topic 注册、producer 和 consumer 负载均衡、维护 partition 与 consumer 的关系、记录消息消费的进度以及 consumer 注册等。
+
+![](/images/kafka/kafka_zk.png)
+#### broker 在 ZooKeeper 中的注册
+
+- 为了记录 broker 的注册信息，在 ZooKeeper 上，专门创建了属于 Kafka 的一个节点，其路径为 /brokers
+- Kafka 的每个 broker 启动时，都会到 ZooKeeper 中进行注册，告诉 ZooKeeper 其 broker.id，在整个集群中，broker.id 应该全局唯一，并在 ZooKeeper 上创建其属于自己的节点，其节点路径为`/brokers/ids/{broker.id}`
+- 创建完节点后，Kafka 会将该 broker 的 broker.name 及端口号记录到该节点
+- 另外，该 broker 节点属性为临时节点，当 broker 会话失效时，ZooKeeper 会删除该节点，这样，我们就可以很方便的监控到broker 节点的变化，及时调整负载均衡等
+
+#### Topic 在 ZooKeeper 中的注册
+
+在 Kafka 中，所有 topic 与 broker 的对应关系都由 ZooKeeper 进行维护，在 ZooKeeper 中，建立专门的节点来记录这些信息，其节点路径为`/brokers/topics/{topic_name}` 
+
+为了保障数据的一致性，ZooKeeper 机制得以引入。基于 ZooKeeper，Kafka 为每一个 partition 找一个节点作为 leader，其余备份作为 follower, 两个topic 的 partition分布如下:
+![](/images/kafka/partition_leader_follower.jpg)
+
+基于上图的架构，当 producer push 的消息写入 partition（分区) 时，作为 leader 的 broker（Kafka 节点） 会将消息写入自己的分区，同时还会将此消息复制到各个 follower，实现同步。如果，某个follower 挂掉，leader 会再找一个替代并同步消息；如果 leader 挂了，follower 们会选举出一个新的 leader 替代，继续业务，这些都是由 ZooKeeper 完成的。
+
+#### consumer 在 ZooKeeper 中的注册
+
+当新的消费者组注册到 ZooKeeper 中时，ZooKeeper 会创建专用的节点来保存相关信息，其节点路径为`/consumers/{group_id}`，其节点下有三个子节点，分别为 `[ids, owners, offsets]`
+
+##### 注册新的 consumer
+
+当新的消费者注册到 Kafka 中时，会在`/consumers/{group_id}/ids`节点下创建临时子节点，并记录相关信息
+
+
+#### 记录消费进度 Offset
+
+在 consumer 对指定消息 partition 的消息进行消费的过程中，需要定时地将 partition 消息的消费进度 Offset 记录到 ZooKeeper上，以便在该 consumer 进行重启或者其它 consumer 重新接管该消息分区的消息消费权后，能够从之前的进度开始继续进行消息消费。Offset 在 ZooKeeper 中由一个专门节点进行记录，其节点路径为：
+``` 
+#节点内容就是Offset的值。
+/consumers/[group_id]/offsets/[topic]/[broker_id-partition_id]
+```
+
+#### 记录 Partition 与 Consumer 的关系
+
+在Kafka中，规定了每个 partition 只能被同组的一个消费者进行消费，因此，需要在 ZooKeeper 上记录下 partition 与 consumer 之间的关系，每个 consumer 一旦确定了对一个 partition 的消费权力，需要将其 consumer ID 写入到 ZooKeeper 对应消息分区的临时节点上，例如：
+``` 
+/consumers/[group_id]/owners/[topic]/[broker_id-partition_id]
+```
+
+其中，`[broker_id-partition_id]` 就是一个消息分区的标识，节点内容就是该消息分区 消费者的 consumer ID。
+
+### Producer-broker-consumer 过程
+
+#### 1.producer发布消息
+
+producer 采用 push 模式将消息发布到 broker，每条消息都被 append 到 patition 中，属于顺序写磁盘（顺序写磁盘效率比随机写内存要高，保障 kafka 吞吐率）。producer 发送消息到broker 时，会根据分区算法选择将其存储到哪一个 partition。
+
+##### 路由机制
+1. 指定了 patition，则直接使用
+2. 未指定 patition 但指定 key，通过对 key 进行 hash 选出一个 patition
+3. patition 和 key 都未指定，使用轮询选出一个 patition
+
+##### 写入流程
+1. producer 先从 ZooKeeper 的 "/brokers/.../state" 节点找到该 partition 的leader；
+2. producer 将消息发送给该 leader
+3. leader 将消息写入本地 log
+4. followers 从 leader pull 消息，写入本地 log 后 leader 发送 ACK
+5. leader 收到所有 ISR 中的 replica 的 ACK 后，增加 HW（high watermark，最后 commit 的 offset） 并向 producer 发送 ACK
+
+#### 2.Broker 存储消息
+
+物理上把 topic 分成一个或多个 patition，每个 patition 物理上对应一个文件夹（该文件夹存储该 patition 的所有消息和索引文件）
+
+#### 3. Consumer 消费消息
+
+high-level consumer API 提供了 consumer group 的语义，一个消息只能被 group 内的一个 consumer 所消费，且 consumer 消费消息时不关注 offset，最后一个 offset 由 ZooKeeper 保存（下次消费时，该group 中的consumer将从offset记录的位置开始消费）
+
+注意:
+- 如果消费线程大于 patition 数量，则有些线程将收不到消息
+- 如果 patition 数量大于消费线程数，则有些线程多收到多个 patition 的消息
+- 如果一个线程消费多个 patition，则无法保证你收到的消息的顺序，而一个 patition 内的消息是有序的
+
 
 ### 参考资料
 - [Kafka权威指南]
 - [Kafka深度解析](http://www.jasongj.com/2015/01/02/Kafka%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90/)
 - [Kafka文件存储机制](https://tech.meituan.com/kafka_fs_design_theory.html)
 - [Kafka存储机制和读写流程](https://my.oschina.net/u/3049601/blog/1826985)
+- [Kafka是如何实现 Exactly-once 语义的](https://www.jianshu.com/p/5d889a67dcd3)
