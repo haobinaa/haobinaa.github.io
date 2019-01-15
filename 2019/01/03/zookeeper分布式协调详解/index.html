@@ -69,18 +69,20 @@
 
 
 
-<meta name="description" content="勿在浮沙筑高台">
+<meta name="description" content="zookeeper概述 ZooKeeper是一种为分布式应用所设计的高可用、高性能且一致的开源协调服务，它提供了一项基本服务：分布式锁服务。由于ZooKeeper的开源特性，后来在分布式锁的基础上，摸索了出了其他的使用方法：配置维护、组服务、分布式消息队列、分布式通知/协调等  ZK基本概念Znode结构ZooKeeper的数据模型，在结构上和标准文件系统的非常相似，都是采用这种树形层次结构，Zo">
 <meta name="keywords" content="zk">
 <meta property="og:type" content="article">
 <meta property="og:title" content="zookeeper分布式协调详解">
 <meta property="og:url" content="http://yoursite.com/2019/01/03/zookeeper分布式协调详解/index.html">
 <meta property="og:site_name" content="Do Or Die">
-<meta property="og:description" content="勿在浮沙筑高台">
+<meta property="og:description" content="zookeeper概述 ZooKeeper是一种为分布式应用所设计的高可用、高性能且一致的开源协调服务，它提供了一项基本服务：分布式锁服务。由于ZooKeeper的开源特性，后来在分布式锁的基础上，摸索了出了其他的使用方法：配置维护、组服务、分布式消息队列、分布式通知/协调等  ZK基本概念Znode结构ZooKeeper的数据模型，在结构上和标准文件系统的非常相似，都是采用这种树形层次结构，Zo">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2019-01-03T13:46:34.249Z">
+<meta property="og:image" content="http://yoursite.com/images/zookeeper/znode.png">
+<meta property="og:updated_time" content="2019-01-15T03:38:02.561Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="zookeeper分布式协调详解">
-<meta name="twitter:description" content="勿在浮沙筑高台">
+<meta name="twitter:description" content="zookeeper概述 ZooKeeper是一种为分布式应用所设计的高可用、高性能且一致的开源协调服务，它提供了一项基本服务：分布式锁服务。由于ZooKeeper的开源特性，后来在分布式锁的基础上，摸索了出了其他的使用方法：配置维护、组服务、分布式消息队列、分布式通知/协调等  ZK基本概念Znode结构ZooKeeper的数据模型，在结构上和标准文件系统的非常相似，都是采用这种树形层次结构，Zo">
+<meta name="twitter:image" content="http://yoursite.com/images/zookeeper/znode.png">
 
 
 
@@ -342,7 +344,65 @@
       
 
       
-        
+        <h3 id="zookeeper概述"><a href="#zookeeper概述" class="headerlink" title="zookeeper概述"></a>zookeeper概述</h3><blockquote>
+<p>ZooKeeper是一种为分布式应用所设计的高可用、高性能且一致的开源协调服务，它提供了一项基本服务：分布式锁服务。由于ZooKeeper的开源特性，后来在分布式锁的基础上，摸索了出了其他的使用方法：配置维护、组服务、分布式消息队列、分布式通知/协调等</p>
+</blockquote>
+<h3 id="ZK基本概念"><a href="#ZK基本概念" class="headerlink" title="ZK基本概念"></a>ZK基本概念</h3><h4 id="Znode结构"><a href="#Znode结构" class="headerlink" title="Znode结构"></a>Znode结构</h4><p>ZooKeeper的数据模型，在结构上和标准文件系统的非常相似，都是采用这种树形层次结构，ZooKeeper树中的每个节点被称为:Znode。和文件系统的目录树一样，ZooKeeper树中的每个节点可以拥有子节点:</p>
+<p><img src="/images/zookeeper/znode.png" alt=""></p>
+<p>(1) Znode结构</p>
+<p>ZooKeeper命名空间中的Znode，兼具文件和目录两种特点。既像文件一样维护着数据、元信息、ACL、时间戳等数据结构，又像目录一样可以作为路径标识的一部分。图中的每个节点称为一个Znode。 每个Znode由3部分组成:</p>
+<ol>
+<li>stat：此为状态信息, 描述该Znode的版本, 权限等信息</li>
+<li>data：与该Znode关联的数据</li>
+<li>children：该Znode下的子节点</li>
+</ol>
+<p>(2) 数据访问</p>
+<p>ZooKeeper中的每个节点存储的数据要被原子性的操作。也就是说读操作将获取与节点相关的所有数据，写操作也将替换掉节点的所有数据。另外，每一个节点都拥有自己的ACL(访问控制列表)，这个列表规定了用户的权限，即限定了特定用户对目标节点可以执行的操作。</p>
+<p>(3) 节点类型</p>
+<p>ZooKeeper中的节点有两种，分别为临时节点和永久节点。节点的类型在创建时即被确定，并且不能改变。</p>
+<ul>
+<li>临时节点：该节点的生命周期依赖于创建它们的会话。一旦会话(Session)结束，临时节点将被自动删除，当然可以也可以手动删除。虽然每个临时的Znode都会绑定到一个客户端会话，但他们对所有的客户端还是可见的。另外，ZooKeeper的临时节点不允许拥有子节点</li>
+<li>永久节点：该节点的生命周期不依赖于会话，并且只有在客户端显示执行删除操作的时候，他们才能被删除</li>
+</ul>
+<p>创建Znode的时候，还可以选择在zookeeper的路径结尾添加一个递增的计数，这个计数对父节点来说是唯一的，称为<strong>顺序节点</strong></p>
+<p>(4) 节点观察(watch)</p>
+<p>客户端可以在节点上设置watch，我们称之为监视器。当节点状态发生改变时(Znode的增、删、改)将会触发watch所对应的操作。当watch被触发时，ZooKeeper将会向客户端发送且仅发送一条通知，因为watch只能被触发一次，这样可以减少网络流量。</p>
+<h4 id="Znode-Stat"><a href="#Znode-Stat" class="headerlink" title="Znode Stat"></a>Znode Stat</h4><p>Znode Stat存储的Znode的属性信息，主要包括:</p>
+<ol>
+<li>cZxid / mZxid：ZNode 创建 / 最后更新的 Zxid</li>
+<li>ctime / mtime：ZNode 创建 / 最后更新的时间（Unix 时间，毫秒）</li>
+<li>dataVersion ：ZNode 数据版本</li>
+<li>dataLength ：ZNode 存储的数据长度</li>
+<li>numChildren ：子级 ZNode 的数量</li>
+<li><p>其他关于 ACL、子级 ZNode 的信息</p>
+<p>Zxid：所有提交到 ZooKeeper 的事务，都会被标记唯一的 ZooKeeper Transaction Id</p>
+<h4 id="zookeeper-session"><a href="#zookeeper-session" class="headerlink" title="zookeeper session"></a>zookeeper session</h4><p>ZooKeeper 客户端对象创建时，Session 即进入 CONNECTING 状态，当客户端与服务端（集群的任意节点）完成连接，即进入 CONNECTED 状态。</p>
+<p>客户端主动关闭 Session 前，通过“心跳”维护 Session 有效性，若连接中断，ZooKeeper 客户端将尝试重新连接（再次进入 CONNECTING ）：</p>
+<ol>
+<li>若在“Session 超时时间”内，连接重新建立，Session 继续有效，再次进入 CONNECTED</li>
+<li>否则，服务端将标记 Session 过期（即使连接最终重新建立），进行清理（例如：临时 ZNode 删除），Session 最终进入 CLOSE 状态</li>
+</ol>
+<p>Session 是否过期，完全由 ZooKeeper 服务端维护。对于 ZooKeeper 客户端，仅当 Session 过期，才应当重新创建客户端对象</p>
+<h4 id="zookeeper-watch"><a href="#zookeeper-watch" class="headerlink" title="zookeeper watch"></a>zookeeper watch</h4><p>对于全部的“读”操作，ZooKeeper 允许客户端于 ZNode 设置 Watch，当 ZNode 变更时，Watch 将被触发并且通知到客户端（即 Watcher）。Watch 是 “一次性” 的，Watch 被触发时即被清除。</p>
+<p>Watch“异步地”通知到客户端，“通知内容”不包含 ZNode 变更后的数据，需要由客户端读取。</p>
+<h5 id="zookeeper-watch-事件类型"><a href="#zookeeper-watch-事件类型" class="headerlink" title="zookeeper watch 事件类型"></a>zookeeper watch 事件类型</h5></li>
+</ol>
+<p>ZNode 是否存在、获取 ZNode 数据、获取 ZNode 子级 ZNode 的方法分别为 exists()、getData()、getChildren()</p>
+<ol>
+<li>exists操作上的watch，在被监视的Znode创建、删除或数据更新时被触发</li>
+<li>getData操作上的watch，在被监视的Znode删除或数据更新时被触发。在被创建时不能被触发，因为只有Znode一定存在，getData操作才会成功</li>
+<li>getChildren操作上的watch，在被监视的Znode的子节点创建或删除，或是这个Znode自身被删除时被触发。可以通过查看watch事件类型来区分是Znode，还是他的子节点被删除：NodeDelete表示Znode被删除，NodeDeletedChanged表示子节点被删除</li>
+</ol>
+<p>对于单一的 Watch 对象（例如，回调函数），由单一变更引起的事件，Watch 对象将被调用仅仅被调用一次，即使由多个“读”进行了 Watch 设置</p>
+<h4 id="zookeeper-ACL"><a href="#zookeeper-ACL" class="headerlink" title="zookeeper ACL"></a>zookeeper ACL</h4><p>ZooKeeper 通过 ACL 控制 ZNode 的访问权限（默认情况，ZNode 无访问权限控制），权限维度包括：</p>
+<ul>
+<li>CREATE：创建 ZNode</li>
+<li>READ：获取 ZNode 数据及其子级 ZNode</li>
+<li>WRITE：ZNode 数据写入</li>
+<li>DELETE：删除 ZNode</li>
+<li>ADMIN：权限设置</li>
+</ul>
+<h3 id="zookeeper机制"><a href="#zookeeper机制" class="headerlink" title="zookeeper机制"></a>zookeeper机制</h3>
       
     </div>
     
@@ -372,7 +432,7 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2018/12/10/kafka使用总结/" rel="next" title="kafka使用以及原理">
+              <a href="/2018/12/10/中间件/kafka使用总结/" rel="next" title="kafka使用以及原理">
                 <i class="fa fa-chevron-left"></i> kafka使用以及原理
               </a>
             
@@ -432,8 +492,17 @@
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
 
-      <section class="site-overview sidebar-panel sidebar-panel-active">
+      <section class="site-overview sidebar-panel">
         <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
           
             <p class="site-author-name" itemprop="name">Leo Hao</p>
@@ -494,6 +563,22 @@
 
       </section>
 
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#zookeeper概述"><span class="nav-number">1.</span> <span class="nav-text">zookeeper概述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ZK基本概念"><span class="nav-number">2.</span> <span class="nav-text">ZK基本概念</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Znode结构"><span class="nav-number">2.1.</span> <span class="nav-text">Znode结构</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Znode-Stat"><span class="nav-number">2.2.</span> <span class="nav-text">Znode Stat</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#zookeeper-session"><span class="nav-number">2.3.</span> <span class="nav-text">zookeeper session</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#zookeeper-watch"><span class="nav-number">2.4.</span> <span class="nav-text">zookeeper watch</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#zookeeper-watch-事件类型"><span class="nav-number">2.4.1.</span> <span class="nav-text">zookeeper watch 事件类型</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#zookeeper-ACL"><span class="nav-number">2.5.</span> <span class="nav-text">zookeeper ACL</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#zookeeper机制"><span class="nav-number">3.</span> <span class="nav-text">zookeeper机制</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
       
 
       
