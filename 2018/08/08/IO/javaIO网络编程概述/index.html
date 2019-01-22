@@ -69,13 +69,13 @@
 
 
 
-<meta name="description" content="IO数据传输过程 程序读数据当某个程序或已存在的进程/线程(后文将不加区分的只认为是进程)需要某段数据时，它只能在用户空间中属于它自己的内存中访问、修改，这段内存暂且称之为appbuffer。假设需要的数据在磁盘上，那么进程首先得发起相关系统调用，通知内核去加载磁盘上的文件。但正常情况下，数据只能加载到内核的缓冲区，暂且称之为kernel buffer。数据加载到kernelbuffer之后，还需">
+<meta name="description" content="IO数据传输过程 程序读数据当某个程序或已存在的进程/线程(后文将不加区分的只认为是进程)需要某段数据时，它只能在用户空间中属于它自己的内存中访问、修改，这段内存暂且称之为app buffer。假设需要的数据在磁盘上，那么进程首先得发起相关系统调用，通知内核去加载磁盘上的文件。但正常情况下，数据只能加载到内核的缓冲区，暂且称之为kernel buffer。数据加载到kernelbuffer之后，还">
 <meta name="keywords" content="网络IO">
 <meta property="og:type" content="article">
 <meta property="og:title" content="javaIO网络编程参考">
 <meta property="og:url" content="http://yoursite.com/2018/08/08/IO/javaIO网络编程概述/index.html">
 <meta property="og:site_name" content="Do Or Die">
-<meta property="og:description" content="IO数据传输过程 程序读数据当某个程序或已存在的进程/线程(后文将不加区分的只认为是进程)需要某段数据时，它只能在用户空间中属于它自己的内存中访问、修改，这段内存暂且称之为appbuffer。假设需要的数据在磁盘上，那么进程首先得发起相关系统调用，通知内核去加载磁盘上的文件。但正常情况下，数据只能加载到内核的缓冲区，暂且称之为kernel buffer。数据加载到kernelbuffer之后，还需">
+<meta property="og:description" content="IO数据传输过程 程序读数据当某个程序或已存在的进程/线程(后文将不加区分的只认为是进程)需要某段数据时，它只能在用户空间中属于它自己的内存中访问、修改，这段内存暂且称之为app buffer。假设需要的数据在磁盘上，那么进程首先得发起相关系统调用，通知内核去加载磁盘上的文件。但正常情况下，数据只能加载到内核的缓冲区，暂且称之为kernel buffer。数据加载到kernelbuffer之后，还">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://yoursite.com/images/io_process.png">
 <meta property="og:image" content="http://yoursite.com/images/nio2.jpg">
@@ -84,10 +84,10 @@
 <meta property="og:image" content="http://yoursite.com/images/poll-io.png">
 <meta property="og:image" content="http://yoursite.com/images/a-io.png">
 <meta property="og:image" content="http://yoursite.com/images/reactor.png">
-<meta property="og:updated_time" content="2019-01-16T07:10:35.702Z">
+<meta property="og:updated_time" content="2019-01-22T01:52:18.573Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="javaIO网络编程参考">
-<meta name="twitter:description" content="IO数据传输过程 程序读数据当某个程序或已存在的进程/线程(后文将不加区分的只认为是进程)需要某段数据时，它只能在用户空间中属于它自己的内存中访问、修改，这段内存暂且称之为appbuffer。假设需要的数据在磁盘上，那么进程首先得发起相关系统调用，通知内核去加载磁盘上的文件。但正常情况下，数据只能加载到内核的缓冲区，暂且称之为kernel buffer。数据加载到kernelbuffer之后，还需">
+<meta name="twitter:description" content="IO数据传输过程 程序读数据当某个程序或已存在的进程/线程(后文将不加区分的只认为是进程)需要某段数据时，它只能在用户空间中属于它自己的内存中访问、修改，这段内存暂且称之为app buffer。假设需要的数据在磁盘上，那么进程首先得发起相关系统调用，通知内核去加载磁盘上的文件。但正常情况下，数据只能加载到内核的缓冲区，暂且称之为kernel buffer。数据加载到kernelbuffer之后，还">
 <meta name="twitter:image" content="http://yoursite.com/images/io_process.png">
 
 
@@ -351,8 +351,14 @@
 
       
         <h3 id="IO数据传输过程"><a href="#IO数据传输过程" class="headerlink" title="IO数据传输过程"></a>IO数据传输过程</h3><p><img src="/images/io_process.png" alt=""></p>
-<h4 id="程序读数据"><a href="#程序读数据" class="headerlink" title="程序读数据"></a>程序读数据</h4><p>当某个程序或已存在的进程/线程(后文将不加区分的只认为是进程)需要某段数据时，它只能在用户空间中属于它自己的内存中访问、修改，这段内存暂且称之为app<br>buffer。假设需要的数据在磁盘上，那么进程首先得发起相关系统调用，通知内核去加载磁盘上的文件。但正常情况下，数据只能加载到内核的缓冲区，暂且称之为kernel buffer。数据加载到kernel<br>buffer之后，还需将数据复制到app buffer。到了这里，进程就可以对数据进行访问、修改了。</p>
+<h4 id="程序读数据"><a href="#程序读数据" class="headerlink" title="程序读数据"></a>程序读数据</h4><p>当某个程序或已存在的进程/线程(后文将不加区分的只认为是进程)需要某段数据时，它只能在用户空间中属于它自己的内存中访问、修改，这段内存暂且称之为<code>app buffer</code>。假设需要的数据在磁盘上，那么进程首先得发起相关系统调用，通知内核去加载磁盘上的文件。但正常情况下，数据只能加载到内核的缓冲区，暂且称之为<code>kernel buffer</code>。数据加载到kernel<br>buffer之后，还需将数据复制到app buffer。到了这里，进程就可以对数据进行访问、修改了。</p>
+<p>这个过程中进行了两次上下文切换(用户态和内核态之间)， 两次IO拷贝(DMA加载到内核，内核copy到用户空间)</p>
 <h4 id="程序发送数据"><a href="#程序发送数据" class="headerlink" title="程序发送数据"></a>程序发送数据</h4><p>当我们的数据要通过TCP连接传送出去时，过程如下：TCP/IP协议栈维护着两个缓冲区：send buffer和recv buffer，它们合称为socket buffer。需要通过TCP连接传输出去的数据，需要先复制到send<br>buffer，再复制给网卡(NIC)通过网络传输出去。如果通过TCP连接接收到数据，数据首先通过网卡进入recv buffer，再被复制到用户空间的app buffer。</p>
+<p>这个过程也发生了两次上下文切换和IO拷贝:</p>
+<ol>
+<li>将用户区的缓存拷贝到内核区的socket buffer， 同时从用户态切换到内核态</li>
+<li>将socket buffer的数据通过DMA拷贝到TCP协议网卡中(IO拷贝), 然后返回系统调用结果给用户空间(上下文切换)</li>
+</ol>
 <h4 id="零拷贝"><a href="#零拷贝" class="headerlink" title="零拷贝"></a>零拷贝</h4><p>我们可以看到，网络数据从kernel buffer复制到app buffer再复制到send buffer， 这个过程中如果进程不需要修改数据，就直接发送给TCP连接的另一端，可以不用从kernel buffer复制到app<br>buffer，而是直接复制到send buffer。这就是零拷贝(zero copy)技术。</p>
 <h3 id="五种经典IO模型"><a href="#五种经典IO模型" class="headerlink" title="五种经典IO模型"></a>五种经典IO模型</h3><p>所有的系统I/O都分为两个阶段：等待就绪和操作。举例来说，读函数，分为等待系统可读和真正的读；同理，写函数分为等待网卡可以写和真正的写。</p>
 <p>需要说明的是等待就绪的阻塞是不使用CPU的，是在“空等”；而真正的读写操作的阻塞是使用CPU的，真正在”干活”，而且这个过程非常快，属于memory copy，带宽通常在1GB/s级别以上，可以理解为基本不耗时。</p>
