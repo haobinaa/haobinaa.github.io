@@ -53,7 +53,7 @@
 <link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
 
 
-  <meta name="keywords" content="springboot," />
+  <meta name="keywords" content="netty," />
 
 
 
@@ -69,18 +69,18 @@
 
 
 
-<meta name="description" content="使用RestTemplate服务间的调用通常用rest api和rpc两种方式，Spring cloud体系就是基于rest api，使用RestTemplate，基于HttpClient。 配置bean注入的方式12345678910111213141516@Configurationpublic class RestTemplateConfig &amp;#123;    @Bean    publi">
-<meta name="keywords" content="springboot">
+<meta name="description" content="零拷贝(Zero-copy)传统意义的零拷贝 Zero-Copy describes computer operations in which the CPU does not perform the task of copying data from one memory area to another  传统的零拷贝指的是数据传输过程中，不需要CPU进行数据的拷贝。主要是数据在用户空间与内核中">
+<meta name="keywords" content="netty">
 <meta property="og:type" content="article">
-<meta property="og:title" content="RestTemplate使用">
-<meta property="og:url" content="http://yoursite.com/2018/03/16/spring/RestTemplate使用/index.html">
+<meta property="og:title" content="Netty ByteBuf 零拷贝">
+<meta property="og:url" content="http://yoursite.com/2019/01/17/netty ByteBuf零拷贝/index.html">
 <meta property="og:site_name" content="Do Or Die">
-<meta property="og:description" content="使用RestTemplate服务间的调用通常用rest api和rpc两种方式，Spring cloud体系就是基于rest api，使用RestTemplate，基于HttpClient。 配置bean注入的方式12345678910111213141516@Configurationpublic class RestTemplateConfig &amp;#123;    @Bean    publi">
+<meta property="og:description" content="零拷贝(Zero-copy)传统意义的零拷贝 Zero-Copy describes computer operations in which the CPU does not perform the task of copying data from one memory area to another  传统的零拷贝指的是数据传输过程中，不需要CPU进行数据的拷贝。主要是数据在用户空间与内核中">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-06-13T15:12:35.839Z">
+<meta property="og:updated_time" content="2019-01-22T01:18:37.673Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="RestTemplate使用">
-<meta name="twitter:description" content="使用RestTemplate服务间的调用通常用rest api和rpc两种方式，Spring cloud体系就是基于rest api，使用RestTemplate，基于HttpClient。 配置bean注入的方式12345678910111213141516@Configurationpublic class RestTemplateConfig &amp;#123;    @Bean    publi">
+<meta name="twitter:title" content="Netty ByteBuf 零拷贝">
+<meta name="twitter:description" content="零拷贝(Zero-copy)传统意义的零拷贝 Zero-Copy describes computer operations in which the CPU does not perform the task of copying data from one memory area to another  传统的零拷贝指的是数据传输过程中，不需要CPU进行数据的拷贝。主要是数据在用户空间与内核中">
 
 
 
@@ -110,13 +110,13 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/2018/03/16/spring/RestTemplate使用/"/>
+  <link rel="canonical" href="http://yoursite.com/2019/01/17/netty ByteBuf零拷贝/"/>
 
 
 
 
 
-  <title>RestTemplate使用 | Do Or Die</title>
+  <title>Netty ByteBuf 零拷贝 | Do Or Die</title>
   
 
 
@@ -253,7 +253,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/16/spring/RestTemplate使用/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/01/17/netty ByteBuf零拷贝/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Leo Hao">
@@ -270,7 +270,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">RestTemplate使用</h1>
+          <h1 class="post-title" itemprop="name headline">Netty ByteBuf 零拷贝</h1>
         
 
         <div class="post-meta">
@@ -282,8 +282,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-16T23:00:28+08:00">
-                2018-03-16
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-01-17T17:09:51+08:00">
+                2019-01-17
               </time>
             
 
@@ -305,8 +305,8 @@
               
               
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/spring/" itemprop="url" rel="index">
-                    <span itemprop="name">spring</span>
+                  <a href="/categories/IO/" itemprop="url" rel="index">
+                    <span itemprop="name">IO</span>
                   </a>
                 </span>
 
@@ -342,13 +342,30 @@
       
 
       
-        <h3 id="使用RestTemplate"><a href="#使用RestTemplate" class="headerlink" title="使用RestTemplate"></a>使用RestTemplate</h3><p>服务间的调用通常用rest api和rpc两种方式，Spring cloud体系就是基于rest api，使用RestTemplate，基于HttpClient。</p>
-<h4 id="配置bean注入的方式"><a href="#配置bean注入的方式" class="headerlink" title="配置bean注入的方式"></a>配置bean注入的方式</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">@Configuration</span><br><span class="line">public class RestTemplateConfig &#123;</span><br><span class="line"></span><br><span class="line">    @Bean</span><br><span class="line">    public RestTemplate restTemplate(ClientHttpRequestFactory factory) &#123;</span><br><span class="line">        return new RestTemplate(factory);;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Bean</span><br><span class="line">    public ClientHttpRequestFactory simpleClientHttpRequestFactory() &#123;</span><br><span class="line">        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();</span><br><span class="line">        factory.setReadTimeout(5000);</span><br><span class="line">        factory.setConnectTimeout(5000);</span><br><span class="line">        return factory;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h3 id="配置拦截器"><a href="#配置拦截器" class="headerlink" title="配置拦截器"></a>配置拦截器</h3><p>实现<code>ClientHttpRequestInterceptor</code><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">public class HttpInterceptor implements ClientHttpRequestInterceptor &#123;</span><br><span class="line"></span><br><span class="line">    private Logger log = LoggerFactory.getLogger(HttpInterceptor.class);</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public ClientHttpResponse intercept(HttpRequest request, byte[] body,</span><br><span class="line">            ClientHttpRequestExecution execution) throws IOException &#123;</span><br><span class="line">        log.info(&quot;请求地址：&#123;&#125;&quot;, request.getURI());</span><br><span class="line">        log.info(&quot;请求方法： &#123;&#125;&quot;, request.getMethod());</span><br><span class="line">        log.info(&quot;请求内容：&#123;&#125;&quot;, new String(body));</span><br><span class="line">        log.info(&quot;请求头：&#123;&#125;&quot;, request.getHeaders());</span><br><span class="line">        return execution.execute(request, body);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>修改生成<code>RestTemplate</code>的bean,添加拦截器<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">@Bean</span><br><span class="line">public RestTemplate restTemplate(ClientHttpRequestFactory factory) &#123;</span><br><span class="line">    RestTemplate restTemplate = new RestTemplate(factory);</span><br><span class="line">    restTemplate.getInterceptors().add(new HttpInterceptor());</span><br><span class="line">    return restTemplate;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>我们在拦截器里面打印了请求的信息，但是我想打印相应的信息的时候出了问题。</p>
-<p><code>ClientHttpResponse</code>的<code>getBody()</code>返回值是一个InputStream，如果在拦截器将<code>ClientHttpResponse</code>的body读取了，那么需要获得返回信息的地方就得不到相应体。</p>
-<p>解决方案是，在new RestTemplate的时候，使用<code>BufferingClientHttpRequestFactory</code>，具体代码如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">public RestTemplate restTemplate(ClientHttpRequestFactory factory) &#123;</span><br><span class="line">    RestTemplate restTemplate = new RestTemplate(</span><br><span class="line">            new BufferingClientHttpRequestFactory(factory));</span><br><span class="line">    return restTemplate;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+        <h2 id="零拷贝-Zero-copy"><a href="#零拷贝-Zero-copy" class="headerlink" title="零拷贝(Zero-copy)"></a>零拷贝(Zero-copy)</h2><h3 id="传统意义的零拷贝"><a href="#传统意义的零拷贝" class="headerlink" title="传统意义的零拷贝"></a>传统意义的零拷贝</h3><blockquote>
+<p>Zero-Copy describes computer operations in which the CPU does not perform the task of copying data from one memory area to another</p>
+</blockquote>
+<p>传统的零拷贝指的是数据传输过程中，不需要CPU进行数据的拷贝。主要是数据在用户空间与内核中间之间的拷贝</p>
+<p>在发送数据的时候，传统的实现方式是:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">File.read(bytes)</span><br><span class="line">Socket.send(bytes)</span><br></pre></td></tr></table></figure></p>
+<p>这种方式需要四次数据拷贝和四次上下文切换： </p>
+<ol>
+<li>数据从磁盘读取到内核的read buffer </li>
+<li>数据从内核缓冲区拷贝到用户缓冲区 </li>
+<li>数据从用户缓冲区拷贝到内核的socket buffer</li>
+<li>数据从内核的socket buffer拷贝到网卡接口的缓冲区</li>
+</ol>
+<p>明显上面的第二步和第三步是没有必要的，通过java的FileChannel.transferTo方法，可以避免上面两次多余的拷贝（当然这需要底层操作系统支持）：</p>
+<ol>
+<li>调用transferTo,数据从文件由DMA引擎拷贝到内核read buffer </li>
+<li>接着DMA从内核read buffer将数据拷贝到网卡接口buffer</li>
+</ol>
+<p>上面的两次操作都不需要CPU参与，所以就达到了零拷贝</p>
+<p>备注：DMA(直接存储器存取)，外部设备不通过CPU而直接与系统内存交换数据的接口技术</p>
+<h3 id="Netty中的零拷贝"><a href="#Netty中的零拷贝" class="headerlink" title="Netty中的零拷贝"></a>Netty中的零拷贝</h3><p>OS层面的零拷贝主要避免在<code>用户态(User-space)</code>和<code>内核态(Kernel-space)</code>之间来回拷贝数据。比如Linux可以将一段用户空间映射到内核空间，映射成功后，用户对这段内存区域的修改可以直接反映到内核空间，这种映射的方式就不需要在两个空间来回拷贝数据，提高了数据传输的效率。</p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="http://blog.onlycatch.com/post/Netty%E4%B8%AD%E7%9A%84%E9%9B%B6%E6%8B%B7%E8%B4%9D" target="_blank" rel="noopener">Netty中的零拷贝</a></li>
+<li><a href="https://segmentfault.com/a/1190000007560884" target="_blank" rel="noopener">对于Netty ByteBuf零拷贝的理解</a></li>
+</ul>
 
       
     </div>
@@ -366,7 +383,7 @@
       
         <div class="post-tags">
           
-            <a href="/tags/springboot/" rel="tag"><i class="fa fa-tag"></i> springboot</a>
+            <a href="/tags/netty/" rel="tag"><i class="fa fa-tag"></i> netty</a>
           
         </div>
       
@@ -379,8 +396,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2018/02/04/架构/微服务介绍/" rel="next" title="微服务介绍">
-                <i class="fa fa-chevron-left"></i> 微服务介绍
+              <a href="/2019/01/03/zookeeper分布式协调详解/" rel="next" title="zookeeper分布式协调详解">
+                <i class="fa fa-chevron-left"></i> zookeeper分布式协调详解
               </a>
             
           </div>
@@ -388,10 +405,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2018/03/27/IO/NIO简述/" rel="prev" title="NIO简述">
-                NIO简述 <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -524,7 +537,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#使用RestTemplate"><span class="nav-number">1.</span> <span class="nav-text">使用RestTemplate</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#配置bean注入的方式"><span class="nav-number">1.1.</span> <span class="nav-text">配置bean注入的方式</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#配置拦截器"><span class="nav-number">2.</span> <span class="nav-text">配置拦截器</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#零拷贝-Zero-copy"><span class="nav-number">1.</span> <span class="nav-text">零拷贝(Zero-copy)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#传统意义的零拷贝"><span class="nav-number">1.1.</span> <span class="nav-text">传统意义的零拷贝</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Netty中的零拷贝"><span class="nav-number">1.2.</span> <span class="nav-text">Netty中的零拷贝</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">1.3.</span> <span class="nav-text">参考资料</span></a></li></ol></li></ol></div>
             
 
           </div>

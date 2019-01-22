@@ -78,13 +78,13 @@
 <meta property="og:description" content="IO数据传输过程 程序读数据当某个程序或已存在的进程/线程(后文将不加区分的只认为是进程)需要某段数据时，它只能在用户空间中属于它自己的内存中访问、修改，这段内存暂且称之为appbuffer。假设需要的数据在磁盘上，那么进程首先得发起相关系统调用，通知内核去加载磁盘上的文件。但正常情况下，数据只能加载到内核的缓冲区，暂且称之为kernel buffer。数据加载到kernelbuffer之后，还需">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://yoursite.com/images/io_process.png">
-<meta property="og:image" content="https://tech.meituan.com/img/nio/nio2.jpg">
+<meta property="og:image" content="http://yoursite.com/images/nio2.jpg">
 <meta property="og:image" content="http://yoursite.com/images/block_io.png">
 <meta property="og:image" content="http://yoursite.com/images/non-block-io.png">
 <meta property="og:image" content="http://yoursite.com/images/poll-io.png">
 <meta property="og:image" content="http://yoursite.com/images/a-io.png">
 <meta property="og:image" content="http://yoursite.com/images/reactor.png">
-<meta property="og:updated_time" content="2018-10-15T12:14:18.786Z">
+<meta property="og:updated_time" content="2019-01-16T07:10:35.702Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="javaIO网络编程参考">
 <meta name="twitter:description" content="IO数据传输过程 程序读数据当某个程序或已存在的进程/线程(后文将不加区分的只认为是进程)需要某段数据时，它只能在用户空间中属于它自己的内存中访问、修改，这段内存暂且称之为appbuffer。假设需要的数据在磁盘上，那么进程首先得发起相关系统调用，通知内核去加载磁盘上的文件。但正常情况下，数据只能加载到内核的缓冲区，暂且称之为kernel buffer。数据加载到kernelbuffer之后，还需">
@@ -357,7 +357,7 @@
 <h3 id="五种经典IO模型"><a href="#五种经典IO模型" class="headerlink" title="五种经典IO模型"></a>五种经典IO模型</h3><p>所有的系统I/O都分为两个阶段：等待就绪和操作。举例来说，读函数，分为等待系统可读和真正的读；同理，写函数分为等待网卡可以写和真正的写。</p>
 <p>需要说明的是等待就绪的阻塞是不使用CPU的，是在“空等”；而真正的读写操作的阻塞是使用CPU的，真正在”干活”，而且这个过程非常快，属于memory copy，带宽通常在1GB/s级别以上，可以理解为基本不耗时。</p>
 <p>下图是几种常见I/O模型的对比：</p>
-<p><img src="https://tech.meituan.com/img/nio/nio2.jpg" alt=""></p>
+<p><img src="/images/nio2.jpg" alt=""></p>
 <h4 id="Blocking-IO-阻塞IO"><a href="#Blocking-IO-阻塞IO" class="headerlink" title="Blocking IO(阻塞IO)"></a>Blocking IO(阻塞IO)</h4><p>也叫 <strong>同步阻塞IO</strong> ， 请求数据的进程需要一直阻塞等待读取完成才能返回，同时整个读取的动作也是要同步等待I/O操作的完成才返回。</p>
 <p><img src="/images/block_io.png" alt=""></p>
 <h4 id="Nonblocking-IO-非阻塞IO"><a href="#Nonblocking-IO-非阻塞IO" class="headerlink" title="Nonblocking IO(非阻塞IO)"></a>Nonblocking IO(非阻塞IO)</h4><p>备注，此NIO并非java的NIO(new io)</p>
@@ -561,7 +561,7 @@
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">45</span>
+                <span class="site-state-item-count">46</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
@@ -583,7 +583,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">17</span>
+                <span class="site-state-item-count">18</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
