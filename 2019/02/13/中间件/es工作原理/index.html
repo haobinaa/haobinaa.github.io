@@ -73,14 +73,14 @@
 <meta name="keywords" content="es">
 <meta property="og:type" content="article">
 <meta property="og:title" content="es工作原理">
-<meta property="og:url" content="http://yoursite.com/2019/02/13/es工作原理/index.html">
+<meta property="og:url" content="http://yoursite.com/2019/02/13/中间件/es工作原理/index.html">
 <meta property="og:site_name" content="Do Or Die">
 <meta property="og:description" content="概述elasticsearch设计的理念就是分布式搜索引擎，底层实现还是基于Lucene的，核心思想是在多态机器上启动多个es进程实例，组成一个es集群。 es的基本概念1.集群（cluster） 一个集群有多个节点（服务器）组成，通过所有的节点一起保存你的全部数据并且通过联合索引和搜索功能的节点的集合，每一个集群有一个唯一的名称标识 2.节点（node） 一个节点就是一个单一的服务器，是你的集群">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://yoursite.com/images/es/es-write.png">
 <meta property="og:image" content="http://yoursite.com/images/es/es-write-detail.png">
 <meta property="og:image" content="http://yoursite.com/images/es/es-search-process.png">
-<meta property="og:updated_time" content="2019-02-13T03:47:15.783Z">
+<meta property="og:updated_time" content="2019-02-13T03:52:49.695Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="es工作原理">
 <meta name="twitter:description" content="概述elasticsearch设计的理念就是分布式搜索引擎，底层实现还是基于Lucene的，核心思想是在多态机器上启动多个es进程实例，组成一个es集群。 es的基本概念1.集群（cluster） 一个集群有多个节点（服务器）组成，通过所有的节点一起保存你的全部数据并且通过联合索引和搜索功能的节点的集合，每一个集群有一个唯一的名称标识 2.节点（node） 一个节点就是一个单一的服务器，是你的集群">
@@ -114,7 +114,7 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/2019/02/13/es工作原理/"/>
+  <link rel="canonical" href="http://yoursite.com/2019/02/13/中间件/es工作原理/"/>
 
 
 
@@ -257,7 +257,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/02/13/es工作原理/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/02/13/中间件/es工作原理/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Leo Hao">
@@ -362,7 +362,8 @@
 <p>index -&gt; type -&gt; mapping -&gt; document -&gt; field。</p>
 </blockquote>
 <p>index 相当于 mysql 里的一张表。在高版本的es里已经不建议使用type了(es7.x 已经完全移除了<code>mapping type</code>)， 可以认为你可以认为 index 是一个类别的表，具体的每个 type 代表了 mysql中的一个表。而 mapping 就是这个 type 的表结构定义，定义了这个表的字段和类型。你往 index 里的一个 type 里面写的一条数据，叫做一条 document，一条 document 就代表了 mysql 中某个表里的一行，每个 document 有多个 field，每个 field 就代表了这个 document 中的一个字段的值。</p>
-<h4 id="扩展和高可用概念"><a href="#扩展和高可用概念" class="headerlink" title="扩展和高可用概念"></a>扩展和高可用概念</h4><p> 1.分片（shards）</p>
+<h4 id="扩展和高可用概念"><a href="#扩展和高可用概念" class="headerlink" title="扩展和高可用概念"></a>扩展和高可用概念</h4><p> ES默认为一个索引创建5个主分片, 并分别为其创建一个副本分片. 也就是说每个索引都由5个主分片成本, 而每个主分片都相应的有一个copy</p>
+<p> 1.分片（shards）</p>
 <p> 在一个搜索里存储的数据，潜在的情况下可能会超过单个节点的硬件的存储限制，为了解决这个问题，elasticsearch便提供了分片的功能，它可以将索引划分为多个分片，当你创建一个索引的时候，你就可以简单的定义你想要的分片的数量，每一个分片本身是一个全功能的完全独立的索引，可以部署到集群中的任何一个节点。</p>
 <p> 2.复制（replica）</p>
 <p> 在一个网络情况下，故障可能会随时发生，有一个故障恢复机制是必须的，为了达到这个目的，ES允许你制作一个或多个拷贝放入一个叫做复制分片或短暂的复制品中。replica 主要解决以下两个问题:</p>
@@ -544,6 +545,10 @@
 
           <div class="post-nav-prev post-nav-item">
             
+              <a href="/2019/02/19/CMS收集器和G1收集器/" rel="prev" title="CMS收集器和G1收集器">
+                CMS收集器和G1收集器 <i class="fa fa-chevron-right"></i>
+              </a>
+            
           </div>
         </div>
       
@@ -618,7 +623,7 @@
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-count">49</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
