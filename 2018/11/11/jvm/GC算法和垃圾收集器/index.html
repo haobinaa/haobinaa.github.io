@@ -81,7 +81,7 @@
 <meta property="og:image" content="http://yoursite.com/images/gc-copying.png">
 <meta property="og:image" content="http://yoursite.com/images/mark-compact.png">
 <meta property="og:image" content="http://yoursite.com/images/gc-generation.jpg">
-<meta property="og:updated_time" content="2018-11-14T14:33:17.017Z">
+<meta property="og:updated_time" content="2019-02-13T15:27:50.957Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="GC算法和垃圾收集器">
 <meta name="twitter:description" content="判断对象是否存活垃圾收集器在对堆回收之前，第一件事情就是要确定这些对象哪些还“存活”着，哪些对象已经“死去”(即不可能再被任何途径使用的对象)、 引用计数算法(Reference Counting)给对象中添加一个引用计数器，每当有一个地方引用它时，计数器值加1；当引用失效时，计数器减1；任何时刻计数器都为0的对象就是不可能再被使用的。 引用计数算法的实现简单，判断效率也很高，在大部分情况下它都是">
@@ -356,7 +356,7 @@
 <p>在Java语言里，可作为GC Roots对象的包括如下几种：</p>
 <ol>
 <li>虚拟机栈(栈桢中的本地变量表)中的引用的对象</li>
-<li>方法区中的类静态属性引用的对象</li>
+<li>方法区中的类静态属性引用的对象(static 属性)</li>
 <li>方法区中的常量引用的对象</li>
 <li>本地方法栈中JNI的引用的对象</li>
 </ol>
@@ -425,7 +425,7 @@
 <p>在新生代中，每次垃圾收集时都发现有大批对象死去，只有少量存活，选用：复制算法</p>
 <p>在老年代中因为对象存活率高、没有额外空间对它进行分配担保，就必须使用“标记-清除”或者“标记-压缩”算法来进行回收。</p>
 <h3 id="垃圾收集器"><a href="#垃圾收集器" class="headerlink" title="垃圾收集器"></a>垃圾收集器</h3><p>如果说收集算法是内存回收的方法论，垃圾收集器就是内存回收的具体实现。</p>
-<p>gc收集器的各个年代分布,?代表g1收集器， 连线代表可以搭配使用：</p>
+<p>gc收集器的各个年代分布,<code>?</code>代表g1收集器， 连线代表可以搭配使用：</p>
 <p><img src="/images/gc-generation.jpg" alt=""></p>
 <h4 id="Serial收集器"><a href="#Serial收集器" class="headerlink" title="Serial收集器"></a>Serial收集器</h4><p>默认的新生代收集器</p>
 <h5 id="特点"><a href="#特点" class="headerlink" title="特点"></a>特点</h5><ol>
@@ -635,7 +635,7 @@
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">48</span>
+                <span class="site-state-item-count">49</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
