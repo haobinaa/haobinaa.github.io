@@ -294,6 +294,28 @@
           </span>
 
           
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/jvm/" itemprop="url" rel="index">
+                    <span itemprop="name">jvm</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
 
           
             
@@ -323,8 +345,13 @@
       
         
           
-          
-          
+          概述java相较于C/C++等语言的优势之一是，有着自动的内存管理和垃圾回收机制，这一机制的实现依靠于JVM提供的各种垃圾收集器，现在用的最多的应该是 CMS/G1
+GC主要做的工作有：
+
+分配内存, 为每个新建的对象分配空间
+确保还在使用的对象内存一直在，不能把有用的空间当垃圾回收了
+释放不再使用
+          ...
           <!--noindex-->
           <div class="post-button text-center">
             <a class="btn" href="/2019/02/19/CMS收集器和G1收集器/#more" rel="contents">
@@ -1787,7 +1814,7 @@ jvm主要分，堆、方法区、java栈、本地方法栈、程序计数器五�
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">19</span>
+                <span class="site-state-item-count">20</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
