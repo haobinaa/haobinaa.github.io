@@ -70,7 +70,7 @@ GC中保留下来的对象。JVM会随意选取一个Survivor作为to区域，�
 3. 静态变量（类变量 class static variables）
 4. 即时编译器编译后的代码等
 
-对于使用HotSpot VM的程序员来说，很多人把方法区称之为“永久代（Permanent Generation）”（备注：永久代为HotSpot特有,但现已经被移除）
+对于使用HotSpot VM的程序员来说，很多人把方法区称之为“永久代（Permanent Generation）”（备注：永久代为HotSpot特有,但现已经被移除）.永久代的垃圾回收和老年代的垃圾回收是绑定的，一旦其中一个区域被占满，这两个区都要进行垃圾回收。
 
 ##### 运行时常量池
 
@@ -283,3 +283,4 @@ public class JavaVMStackOOM {
 - [纯洁的微笑博客](http://www.ityouknow.com/jvm/2017/08/25/jvm-memory-structure.html)
 - [杨晓峰-如何监控java堆内和堆外的内存]
 - [JVM自动内存管理机制](http://liucw.cn/2017/09/28/jvm/JVM%E8%87%AA%E5%8A%A8%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E6%9C%BA%E5%88%B6/)
+- [Java永久代去哪儿了](https://droidyue.com/blog/2015/08/22/where-has-the-java-permgen-gone/)

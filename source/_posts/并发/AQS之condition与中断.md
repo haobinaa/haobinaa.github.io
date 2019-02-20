@@ -78,10 +78,21 @@ public class ConditionObject implements Condition, java.io.Serializable {
 AQS中使用了阻塞队列来等待锁， 这里还有另一个概念： 条件队列（condition queue）。如：
 ![](/images/aqs/aqs2-2.png)
 
-这里需要知道几点:
+在AQS中Node的属性有:
+``` 
+volatile int waitStatus; // 可取值 0、CANCELLED(1)、SIGNAL(-1)、CONDITION(-2)、PROPAGATE(-3)
+volatile Node prev;
+volatile Node next;
+volatile Thread thread;
+Node nextWaiter;
+```
+其中`prev`和`next`用来实现阻塞队列的双向链表， `nextWaiter`用来实现条件队列的单向链表
+
+这里还需要知道几点:
 1. 一个 ReentrantLock 实例可以通过多次调用 newCondition() 来产生多个 Condition 实例，这里对应 condition1 和 condition2。注意，ConditionObject 只有两个属性 firstWaiter 和 lastWaiter；
 2. 每个 condition 有一个关联的条件队列，如线程 1 调用 condition1.await() 方法即可将当前线程 1 包装成 Node 后加入到条件队列中，然后阻塞在这里，不继续往下执行，条件队列是一个单向链表
 3. 调用 condition1.signal() 会将condition1 对应的条件队列的 firstWaiter 移到阻塞队列的队尾，等待获取锁，获取锁后 await 方法返回，继续往下执行
+
 
 #### await方法
 ``` 
@@ -113,7 +124,7 @@ public final void await() throws InterruptedException {
 }
 ```
 
-#### addConditionWaiter-将节点加入到条件队列
+#### addConditionWaiter-将节点加入到条件队列(condition queue)
 
 addConditionWaiter() 是将当前节点加入到条件队列
 ``` 
@@ -136,7 +147,7 @@ private Node addConditionWaiter() {
     return node;
 }
 ```
-在addWaiter 方法中，有一个 unlinkCancelledWaiters() 方法，该方法用于清除队列中已经取消等待的节点。
+在addWaiter 方法中，有一个 `unlinkCancelledWaiters()` 方法，该方法用于清除队列中已经取消等待的节点。
 
 当 await 的时候如果发生了取消操作，或者是在节点入队的时候，发现最后一个节点是被取消的，会调用一次这个方法：
 ``` 
@@ -191,7 +202,8 @@ final int fullyRelease(Node node) {
 }
 ```
 
-#### 等待进入阻塞队列
+#### 等待进入阻塞队列(自旋等待)
+
 释放掉锁以后，接下来是这段，这边会自旋，如果发现自己还没到阻塞队列，那么挂起，等待被转移到阻塞队列：
 ``` 
 int interruptMode = 0;
@@ -203,10 +215,11 @@ while (!isOnSyncQueue(node)) {
         break;
 }
 ```
-isOnSyncQueue(Node node) 用于判断节点是否已经转移到阻塞队列了：
+
+`isOnSyncQueue(Node node)` 用于判断节点是否已经转移到阻塞队列了：
 ``` 
 // 在节点入条件队列的时候，初始化时设置了 waitStatus = Node.CONDITION
-// 前面我提到，signal 的时候需要将节点从条件队列移到阻塞队列，
+// 前面提到，signal 的时候需要将节点从条件队列移到阻塞队列，
 // 这个方法就是判断 node 是否已经移动到阻塞队列了
 final boolean isOnSyncQueue(Node node) {
     // 移动过去的时候，node 的 waitStatus 会置为 0，这个之后在说 signal 方法的时候会说到
@@ -239,8 +252,157 @@ private boolean findNodeFromTail(Node node) {
         t = t.prev;
     }
 }
-```
+``` 
 回到前面的循环，isOnSyncQueue(node) 返回 false 的话，那么进到 LockSupport.park(this); 这里线程挂起。
+
+#### signal 唤醒线程， 转移阻塞队列
+
+在`await`中，使用 `LockSupport.park(this)`将线程挂起了，等待唤醒
+
+唤醒操作通常由另一个线程来操作，就像生产者-消费者模式中，如果线程因为等待消费而挂起，那么当生产者生产了一个东西后，会调用 signal 唤醒正在等待的线程来消费
+
+``` 
+// 唤醒等待了最久的线程
+// 其实就是，将这个线程对应的 node 从条件队列转移到阻塞队列
+public final void signal() {
+    // 调用 signal 方法的线程必须持有当前的独占锁
+    if (!isHeldExclusively())
+        throw new IllegalMonitorStateException();
+    Node first = firstWaiter;
+    if (first != null)
+        doSignal(first);
+}
+
+// 从条件队列队头往后遍历，找出第一个需要转移的 node
+// 因为前面我们说过，有些线程会取消排队，但是还在队列中
+private void doSignal(Node first) {
+    do {
+          // 将 firstWaiter 指向 first 节点后面的第一个
+        // 如果将队头移除后，后面没有节点在等待了，那么需要将 lastWaiter 置为 null
+        if ( (firstWaiter = first.nextWaiter) == null)
+            lastWaiter = null;
+        // 因为 first 马上要被移到阻塞队列了，和条件队列的链接关系在这里断掉
+        first.nextWaiter = null;
+    } while (!transferForSignal(first) &&
+             (first = firstWaiter) != null);
+      // 这里 while 循环，如果 first 转移不成功，那么选择 first 后面的第一个节点进行转移，依此类推
+}
+
+
+// 将节点从条件队列转移到阻塞队列
+// true 代表成功转移
+// false 代表在 signal 之前，节点已经取消了
+final boolean transferForSignal(Node node) {
+
+    // CAS 如果失败，说明此 node 的 waitStatus 已不是 Node.CONDITION，说明节点已经取消，
+    // 既然已经取消，也就不需要转移了，方法返回，转移后面一个节点
+    // 否则，将 waitStatus 置为 0
+    if (!compareAndSetWaitStatus(node, Node.CONDITION, 0))
+        return false;
+
+    // enq(node): 自旋进入阻塞队列的队尾
+    // 注意，这里的返回值 p 是 node 在阻塞队列的前驱节点
+    Node p = enq(node);
+    int ws = p.waitStatus;
+    // ws > 0 说明 node 在阻塞队列中的前驱节点取消了等待锁，直接唤醒 node 对应的线程。
+    // 唤醒之后会怎么样，后面再解释
+    // 如果 ws <= 0, 那么 compareAndSetWaitStatus 将会被调用，
+    // 上篇介绍的时候说过，节点入队后，需要把前驱节点的状态设为 Node.SIGNAL(-1)
+    if (ws > 0 || !compareAndSetWaitStatus(p, ws, Node.SIGNAL))
+        // 如果前驱节点取消或者 CAS 失败，会进到这里唤醒线程，之后的操作看下一节
+        LockSupport.unpark(node.thread);
+    return true;
+}
+```
+正常情况下，`ws > 0 || !compareAndSetWaitStatus(p, ws, Node.SIGNAL)` 这句中，ws <= 0，而且 compareAndSetWaitStatus(p, ws, Node.SIGNAL) 会返回 true，所以一般也不会进去 if 语句块中唤醒 node 对应的线程。然后这个方法返回 true，也就意味着 signal 方法结束了，节点进入了阻塞队列。
+
+假设发生了阻塞队列中的前驱节点取消等待，或者 CAS 失败，只要唤醒线程，让其进到下一步即可。
+
+#### signal唤醒后，await检查中断状态
+
+上一步 signal 之后，我们的线程由条件队列转移到了阻塞队列，之后就准备获取锁了。只要重新获取到锁了以后，继续往下执行。
+
+等线程从挂起中恢复过来:
+``` 
+int interruptMode = 0;
+while (!isOnSyncQueue(node)) {
+    // 线程挂起
+    LockSupport.park(this);
+
+    if ((interruptMode = checkInterruptWhileWaiting(node)) != 0)
+        break;
+}
+```
+interruptMode 可以取值为 REINTERRUPT（1），THROW_IE（-1），0 ：
+- REINTERRUPT： 代表 await 返回的时候，需要重新设置中断状态
+- THROW_IE： 代表 await 返回的时候，需要抛出 InterruptedException 异常
+- 0 ：说明在 await 期间，没有发生中断
+
+有以下三种情况会让 `LockSupport.park(this)` 这句返回继续往下执行：
+1. 常规路劲。signal -> 转移节点到阻塞队列 -> 获取了锁（unpark）
+2. 线程中断。在 park 的时候，另外一个线程对这个线程进行了中断
+3. signal 的时候我们说过，转移以后的前驱节点取消了，或者对前驱节点的CAS操作失败了
+
+
+线程唤醒后第一步是调用 checkInterruptWhileWaiting(node) 这个方法，此方法用于判断是否在线程挂起期间发生了中断，如果发生了中断，是 signal 调用之前中断的，还是 signal 之后发生的中断:
+``` 
+// 1. 如果在 signal 之前已经中断，返回 THROW_IE
+// 2. 如果是 signal 之后中断，返回 REINTERRUPT
+// 3. 没有发生中断，返回 0
+private int checkInterruptWhileWaiting(Node node) {
+    return Thread.interrupted() ?
+        (transferAfterCancelledWait(node) ? THROW_IE : REINTERRUPT) :
+        0;
+}
+```
+
+怎么判断是 signal 之前还是之后发生的中断：
+``` 
+// 只有线程处于中断状态，才会调用此方法
+// 如果需要的话，将这个已经取消等待的节点转移到阻塞队列
+// 返回 true：如果此线程在 signal 之前被取消，
+final boolean transferAfterCancelledWait(Node node) {
+    // 用 CAS 将节点状态设置为 0 
+    // 如果这步 CAS 成功，说明是 signal 方法之前发生的中断，因为如果 signal 先发生的话，signal 中会将 waitStatus 设置为 0
+    if (compareAndSetWaitStatus(node, Node.CONDITION, 0)) {
+        // 将节点放入阻塞队列
+        // 这里我们看到，即使中断了，依然会转移到阻塞队列
+        enq(node);
+        return true;
+    }
+
+    // 到这里是因为 CAS 失败，肯定是因为 signal 方法已经将 waitStatus 设置为了 0
+    // signal 方法会将节点转移到阻塞队列，但是可能还没完成，这边自旋等待其完成
+    // 当然，这种事情还是比较少的吧：signal 调用之后，没完成转移之前，发生了中断
+    while (!isOnSyncQueue(node))
+        Thread.yield();
+    return false;
+}
+```
+
+所以这个自旋的 while 循环如果要退出， 要么中断， 要么转移成功
+
+#### 获取独占锁
+
+while 循环出来以后，下面是这段代码：
+``` 
+if (acquireQueued(node, savedState) && interruptMode != THROW_IE)
+    interruptMode = REINTERRUPT;
+```
+由于 while 出来后，我们确定节点已经进入了阻塞队列，准备获取锁。
+
+这里的 acquireQueued(node, savedState) 的第一个参数 node 之前已经经过 enq(node) 进入了队列，参数 savedState 是之前释放锁前的 state，这个方法返回的时候，代表当前线程获取了锁，而且 state == savedState了。
+
+注意，前面我们说过，不管有没有发生中断，都会进入到阻塞队列，而 acquireQueued(node, savedState) 的返回值就是代表线程是否被中断。如果返回 true，说明被中断了，而且 interruptMode != THROW_IE，说明在 signal 之前就发生中断了，这里将 interruptMode 设置为 REINTERRUPT，用于待会重新中断。
+
+下面:
+``` 
+if (node.nextWaiter != null) // clean up if cancelled
+    unlinkCancelledWaiters();
+if (interruptMode != 0)
+    reportInterruptAfterWait(interruptMode);
+```
+之前说过，如果有节点取消，也会调用 unlinkCancelledWaiters 这个方法，就是这里了。
 
 ### 参考资料
 
