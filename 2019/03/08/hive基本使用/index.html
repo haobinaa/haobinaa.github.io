@@ -77,10 +77,13 @@
 <meta property="og:site_name" content="Do Or Die">
 <meta property="og:description" content="由于最近项目需要和大数据对接，需要了解一下数仓的基本知识，所以记录一下hive的基础原理和使用 hive简介 Hive是一种用类SQL语句来协助读写、管理那些存储在分布式存储系统上大数据集的数据仓库软件  hive的特点:  通过类SQL来分析大数据，而避免了写MapReduce程序来分析数据，这样使得分析数据更容易 数据是存储在HDFS上的，Hive本身并不提供数据的存储功能 Hive是将数据映">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2019-03-08T10:33:04.331Z">
+<meta property="og:image" content="http://yoursite.com/images/bigdata/hive-arch.jpg">
+<meta property="og:image" content="http://yoursite.com/images/bigdata/hive-buckets.jpg">
+<meta property="og:updated_time" content="2019-03-10T14:36:12.470Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="hive基本使用">
 <meta name="twitter:description" content="由于最近项目需要和大数据对接，需要了解一下数仓的基本知识，所以记录一下hive的基础原理和使用 hive简介 Hive是一种用类SQL语句来协助读写、管理那些存储在分布式存储系统上大数据集的数据仓库软件  hive的特点:  通过类SQL来分析大数据，而避免了写MapReduce程序来分析数据，这样使得分析数据更容易 数据是存储在HDFS上的，Hive本身并不提供数据的存储功能 Hive是将数据映">
+<meta name="twitter:image" content="http://yoursite.com/images/bigdata/hive-arch.jpg">
 
 
 
@@ -354,6 +357,213 @@
 <li>数据存储方面：它能够存储很大的数据集，并且对数据完整性、格式要求并不严格</li>
 <li>数据处理方面：因为Hive语句最终会生成MapReduce任务去计算，所以不适用于实时计算的场景，它适用于离线分析</li>
 </ul>
+<h3 id="整体架构"><a href="#整体架构" class="headerlink" title="整体架构"></a>整体架构</h3><p><img src="/images/bigdata/hive-arch.jpg" alt=""></p>
+<h4 id="驱动引擎"><a href="#驱动引擎" class="headerlink" title="驱动引擎"></a>驱动引擎</h4><p>Hive的核心是驱动引擎，驱动引擎由四部分组成：</p>
+<ul>
+<li>解释器：解释器的作用是将HiveSQL语句转换为语法树（AST）</li>
+<li>编译器：编译器是将语法树编译为逻辑执行计划</li>
+<li>优化器：优化器是对逻辑执行计划进行优化</li>
+<li>执行器：执行器是调用底层的运行框架执行逻辑执行计划</li>
+</ul>
+<h4 id="底层存储和执行流程"><a href="#底层存储和执行流程" class="headerlink" title="底层存储和执行流程"></a>底层存储和执行流程</h4><p>Hive的数据是存储在HDFS上的。Hive中的库和表可以看作是对HDFS上数据做的一个映射。所以Hive必须是运行在一个Hadoop集群上的</p>
+<p>Hive中的执行器，是将最终要执行的MapReduce程序放到YARN上以一系列Job的方式去执行</p>
+<h4 id="Hive元数据的存储结构"><a href="#Hive元数据的存储结构" class="headerlink" title="Hive元数据的存储结构"></a>Hive元数据的存储结构</h4><p>Hive的元数据是一般是存储在MySQL这种关系型数据库上的，Hive和MySQL之间通过MetaStore服务交互</p>
+<table>
+<thead>
+<tr>
+<th>元数据项</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Owner</td>
+<td>库、表的所属者</td>
+</tr>
+<tr>
+<td>LastAccessTime</td>
+<td>最后修改时间</td>
+</tr>
+<tr>
+<td>Table Type</td>
+<td>表类型（内部表、外部表）</td>
+</tr>
+<tr>
+<td>CreateTime</td>
+<td>创建时间</td>
+</tr>
+<tr>
+<td>Location</td>
+<td>存储位置</td>
+</tr>
+</tbody>
+</table>
+<h4 id="Hive客户端"><a href="#Hive客户端" class="headerlink" title="Hive客户端"></a>Hive客户端</h4><p>Hive的客户端种类:</p>
+<ul>
+<li>cli命令行客户端：采用交互窗口，用hive命令行和Hive进行通信。</li>
+<li>HiveServer2客户端：用Thrift协议进行通信，Thrift是不同语言之间的转换器，是连接不同语言程序间的协议，通过JDBC或者ODBC去访问Hive</li>
+<li>HUE客户端：通过Web页面来和Hive进行交互，使用的比较多</li>
+</ul>
+<h4 id="Hive基本数据类型"><a href="#Hive基本数据类型" class="headerlink" title="Hive基本数据类型"></a>Hive基本数据类型</h4><p>Hive支持关系型数据中大多数基本数据类型，同时Hive中也有特有的三种复杂类型。</p>
+<table>
+<thead>
+<tr>
+<th>数据类型</th>
+<th>长度</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tinyint</td>
+<td>1字节的有符号整数</td>
+<td>-128~127</td>
+</tr>
+<tr>
+<td>SmallInt</td>
+<td>1个字节的有符号整数</td>
+<td>-32768~32767</td>
+</tr>
+<tr>
+<td>Int</td>
+<td>4个字节的有符号整数</td>
+<td>-2147483648 ~ 2147483647</td>
+</tr>
+<tr>
+<td>BigInt</td>
+<td>8个字节的有符号整数</td>
+<td></td>
+</tr>
+<tr>
+<td>Boolean</td>
+<td>布尔类型，true或者false</td>
+<td>true、false</td>
+</tr>
+<tr>
+<td>Float</td>
+<td>单精度浮点数</td>
+<td></td>
+</tr>
+<tr>
+<td>Double</td>
+<td>双精度浮点数</td>
+<td></td>
+</tr>
+<tr>
+<td>String</td>
+<td>字符串</td>
+<td></td>
+</tr>
+<tr>
+<td>TimeStamp</td>
+<td>整数    支持Unix timestamp，可以达到纳秒精度</td>
+<td></td>
+</tr>
+<tr>
+<td>Binary</td>
+<td>字节数组</td>
+<td></td>
+</tr>
+<tr>
+<td>Date</td>
+<td>日期    0000-01-01 ~ 9999-12-31，常用String代替</td>
+</tr>
+</tbody>
+</table>
+<h3 id="DDL操作-库和表的定义"><a href="#DDL操作-库和表的定义" class="headerlink" title="DDL操作(库和表的定义)"></a>DDL操作(库和表的定义)</h3><h4 id="库操作"><a href="#库操作" class="headerlink" title="库操作"></a>库操作</h4><p>创建一个数据库会在HDFS上创建一个目录，Hive里数据库的概念类似于程序中的命名空间，用数据库来组织表，在大量Hive的情况下，用数据库来分开可以避免表名冲突。Hive默认的数据库是default。</p>
+<blockquote>
+<p>hive&gt; create database if not exists user_db;</p>
+</blockquote>
+<p>Describe 命令来查看数据库定义，包括：数据库名称、数据库在HDFS目录、HDFS用户名称。</p>
+<blockquote>
+<p>hive&gt; describe database user_db;<br> 数据库名称  数据库在HDFS的目录  HDFS用户名称</p>
+</blockquote>
+<p> 删除、切换数据库与mysql命令一样(drop、use)</p>
+<h4 id="创建表"><a href="#创建表" class="headerlink" title="创建表"></a>创建表</h4><p> 创建表一般有几种方式：</p>
+<ul>
+<li>create table 方式</li>
+<li>create table as select 方式：根据查询的结果自动创建表，并将查询结果数据插入新建的表中</li>
+<li><p>create table like tablename1 方式：是克隆表，只复制tablename1表的结构</p>
+<h5 id="外部表"><a href="#外部表" class="headerlink" title="外部表"></a>外部表</h5><p>外部表是没有被hive完全控制的表，当表删除后，数据不会被删除。</p>
+</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">hive&gt; create external table iislog_ext (</span><br><span class="line">    &gt;  ip string,</span><br><span class="line">    &gt;  logtime string    </span><br><span class="line">    &gt; )</span><br><span class="line">    &gt; ;</span><br></pre></td></tr></table></figure>
+<h5 id="创建分区表"><a href="#创建分区表" class="headerlink" title="创建分区表"></a>创建分区表</h5><p>Hive查询一般是扫描整个目录，但是有时候我们关心的数据只是集中在某一部分数据上，比如我们一个Hive查询，往往是只是查询某一天的数据，这样的情况下，可以使用分区表来优化，一天是一个分区，查询时候，Hive只扫描指定天分区的数据</p>
+<p>普通表和分区表的区别在于：一个Hive表在HDFS上是有一个对应的目录来存储数据，普通表的数据直接存储在这个目录下，而分区表数据存储时，是再划分子目录来存储的。一个分区一个子目录。主要作用是来优化查询性能。</p>
+<p>例如:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">--创建经销商操作日志表</span><br><span class="line">create table user_action_log</span><br><span class="line">(</span><br><span class="line">companyId INT comment   &apos;公司ID&apos;,</span><br><span class="line">userid INT comment   &apos;销售ID&apos;,</span><br><span class="line">originalstring STRING comment   &apos;url&apos;, </span><br><span class="line">host STRING comment   &apos;host&apos;,</span><br><span class="line">absolutepath STRING comment   &apos;绝对路径&apos;,</span><br><span class="line">query STRING comment   &apos;参数串&apos;,</span><br><span class="line">refurl STRING comment   &apos;来源url&apos;,</span><br><span class="line">clientip STRING comment   &apos;客户端Ip&apos;,</span><br><span class="line">cookiemd5 STRING comment   &apos;cookiemd5&apos;,</span><br><span class="line">timestamp STRING comment   &apos;访问时间戳&apos;</span><br><span class="line">)</span><br><span class="line">partitioned by (dt string)</span><br><span class="line">row format delimited fields terminated by &apos;,&apos;</span><br><span class="line">stored as textfile;</span><br></pre></td></tr></table></figure></p>
+<p>这个日志表以dt字段分区，dt是个虚拟的字段，dt下并不存储数据，而是用来分区的，实际数据存储时，dt字段值相同的数据存入同一个子目录中，插入数据或者导入数据时，同一天的数据dt字段赋值一样，这样就实现了数据按dt日期分区存储。</p>
+<p>当Hive查询数据时，如果指定了dt筛选条件，那么只需要到对应的分区下去检索数据即可，大大提高了效率。所以对于分区表查询时，尽量添加上分区字段的筛选条件</p>
+<h5 id="创建桶表"><a href="#创建桶表" class="headerlink" title="创建桶表"></a>创建桶表</h5><p>桶表也是一种用于优化查询而设计的表类型。创建通表时，指定桶的个数、分桶的依据字段，hive就可以自动将数据分桶存储。查询时只需要遍历一个桶里的数据，或者遍历部分桶，这样就提高了查询效率。</p>
+<p>例如:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">------创建订单表</span><br><span class="line">create table user_leads</span><br><span class="line">(</span><br><span class="line">leads_id string,</span><br><span class="line">user_id string,</span><br><span class="line">user_id string,</span><br><span class="line">user_phone string,</span><br><span class="line">user_name string,</span><br><span class="line">create_time string</span><br><span class="line">)</span><br><span class="line">clustered by (user_id) sorted by(leads_id) into 10 buckets </span><br><span class="line">row format delimited fields terminated by &apos;\t&apos; </span><br><span class="line">stored as textfile;</span><br></pre></td></tr></table></figure></p>
+<ul>
+<li>clustered by是指根据userid的值进行哈希后模除分桶个数，根据得到的结果，确定这行数据分入哪个桶中，这样的分法，可以确保相同userid的数据放入同一个桶中。而经销商的订单数据，大部分是根据user_id进行查询的。这样大部分情况下是只需要查询一个桶中的数据就可以了</li>
+<li>sorted by 是指定桶中的数据以哪个字段进行排序，排序的好处是，在join操作时能获得很高的效率</li>
+<li>into 10 buckets是指定一共分10个桶</li>
+<li>在HDFS上存储时，一个桶存入一个文件中，这样根据user_id进行查询时，可以快速确定数据存在于哪个桶中，而只遍历一个桶可以提供查询效率</li>
+</ul>
+<p>分桶表读写过程如下:<br><img src="/images/bigdata/hive-buckets.jpg" alt=""></p>
+<h5 id="其他表操作"><a href="#其他表操作" class="headerlink" title="其他表操作"></a>其他表操作</h5><ul>
+<li><p>查看表定义:<code>describe userinfo;</code></p>
+</li>
+<li><p>查看表的详细信息:<code>describe formatted userinfo;</code></p>
+</li>
+<li><p>修改表名:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">describe formatted userinfo;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>添加字段：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">---在user_info表添加一个字段provinceid，int 类型</span><br><span class="line">alter table user_info add columns (provinceid int );</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>修改字段：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">alter table user_info replace columns (userid int,username string,cityid int,joindate date,provinceid int);</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>修改字段，只是修改了Hive表的元数据信息（元数据信息一般是存储在MySql中），并不对存在于HDFS中的表数据做修改。并不是所有的Hive表都可以修改字段，只有使用了native SerDe (序列化反序列化类型)的表才能修改字段</p>
+<ul>
+<li>删除表:<code>drop table if exists user_info;</code></li>
+</ul>
+<h3 id="DML操作-数据操作"><a href="#DML操作-数据操作" class="headerlink" title="DML操作(数据操作)"></a>DML操作(数据操作)</h3><h4 id="加载数据到Hive"><a href="#加载数据到Hive" class="headerlink" title="加载数据到Hive"></a>加载数据到Hive</h4><h5 id="加载到普通表"><a href="#加载到普通表" class="headerlink" title="加载到普通表"></a>加载到普通表</h5><p>可以将本地文本文件内容批量加载到Hive表中，要求文本文件中的格式和Hive表的定义一致，包括：字段个数、字段顺序、列分隔符都要一致。</p>
+<p>例如:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">load data local inpath &apos;/home/hadoop/userinfodata.txt&apos; overwrite into table user_info;</span><br></pre></td></tr></table></figure></p>
+<ul>
+<li>local关键字表示源数据文件在本地，源文件可以在HDFS上，如果在HDFS上，则去掉local，inpath后面的路径是类似”hdfs://namenode:9000/user/datapath”这样的HDFS上文件的路径。</li>
+<li>overwrite关键字表示如果hive表中存在数据，就会覆盖掉原有的数据。如果省略overwrite，则默认是追加数据\</li>
+</ul>
+<h5 id="加载到分区表"><a href="#加载到分区表" class="headerlink" title="加载到分区表"></a>加载到分区表</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">load data local inpath &apos;/home/hadoop/actionlog.txt&apos; overwrite into table user_action_log </span><br><span class="line">PARTITION (dt=&apos;2017-05-26&apos;);</span><br></pre></td></tr></table></figure>
+<p>将这批数据加载到dt为2017-05-26的分区中</p>
+<h5 id="加载到分桶表"><a href="#加载到分桶表" class="headerlink" title="加载到分桶表"></a>加载到分桶表</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">------先创建普通临时表</span><br><span class="line">create table user_leads_tmp</span><br><span class="line">(</span><br><span class="line">leads_id string,</span><br><span class="line">user_id string,</span><br><span class="line">user_id string,</span><br><span class="line">user_phone string,</span><br><span class="line">user_name string,</span><br><span class="line">create_time string</span><br><span class="line">)</span><br><span class="line">row format delimited fields terminated by &apos;,&apos; </span><br><span class="line">stored as textfile;</span><br><span class="line">------数据载入临时表</span><br><span class="line">load data local inpath &apos;/home/hadoop/lead.txt&apos; overwrite into table user_leads_tmp;</span><br><span class="line">------导入分桶表</span><br><span class="line">set hive.enforce.bucketing = true;</span><br><span class="line">insert overwrite table user_leads select * from  user_leads_tmp;</span><br></pre></td></tr></table></figure>
+<p><code>set hive.enforce.bucketing = true;</code>表明了启用分桶表</p>
+<h4 id="导出数据"><a href="#导出数据" class="headerlink" title="导出数据"></a>导出数据</h4><p>将hive数据导出到本地文件(也可导出到HDFS，将local关键字去掉即可)<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">insert overwrite local directory &apos;/home/hadoop/user_info.bak2016-08-22 &apos;</span><br><span class="line">select * from user_info;</span><br></pre></td></tr></table></figure></p>
+<h4 id="插入数据"><a href="#插入数据" class="headerlink" title="插入数据"></a>插入数据</h4><h5 id="insert-select导入"><a href="#insert-select导入" class="headerlink" title="insert select导入"></a>insert select导入</h5><p>这里是将查询结果导入到表中，overwrite关键字是覆盖目标表中的原来数据。如果缺省，就是追加数据:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">insert overwrite table user_leads select * from  user_leads_tmp;</span><br></pre></td></tr></table></figure></p>
+<p>如果插入数据的表是分区表，则需要加入dt<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">insert overwrite table user_leads PARTITION (dt=&apos;2017-05-26&apos;) </span><br><span class="line">select * from  user_leads_tmp;</span><br></pre></td></tr></table></figure></p>
+<p>hive每次查询都会将结果集遍历一遍，也可以将一个结果集插入多个表，提高效率:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">from user_action_log</span><br><span class="line">insert overwrite table log1 select companyid,originalstring  where companyid=&apos;100006&apos;</span><br><span class="line">insert overwrite table log2 select companyid,originalstring  where companyid=&apos;10002&apos;</span><br></pre></td></tr></table></figure></p>
+<h5 id="复制表"><a href="#复制表" class="headerlink" title="复制表"></a>复制表</h5><p>复制表是将源表的结构和数据复制并创建为一个新表，复制过程中，可以对数据进行筛选，列可以进行删减。</p>
+<p>对user_leads表进行复制备份，复制时筛选了2016-08-22以前的数据，减少几个列，并添加了一个bakdate列:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">create table user_leads_bak</span><br><span class="line">row format delimited fields terminated by &apos;\t&apos;</span><br><span class="line">stored as textfile</span><br><span class="line">as</span><br><span class="line">select leads_id,user_id,&apos;2016-08-22&apos; as bakdate</span><br><span class="line">from user_leads</span><br><span class="line">where create_time&lt;&apos;2016-08-22&apos;;</span><br></pre></td></tr></table></figure></p>
+<h5 id="克隆表"><a href="#克隆表" class="headerlink" title="克隆表"></a>克隆表</h5><p>克隆表时会克隆源表的所有元数据信息，但是不会复制源表的数据:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">--克隆表user_leads，创建新表user_leads_like</span><br><span class="line">create table user_leads_like like  user_leads;</span><br></pre></td></tr></table></figure></p>
+<h5 id="备份表"><a href="#备份表" class="headerlink" title="备份表"></a>备份表</h5><p>备份是将表的元数据和数据都导出到HDFS上:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">export table user_action_log partition (dt=&apos;2016-08-19&apos;)</span><br><span class="line">to &apos;/user/hive/action_log.export&apos;</span><br></pre></td></tr></table></figure></p>
+<h3 id="HQL语句"><a href="#HQL语句" class="headerlink" title="HQL语句"></a>HQL语句</h3><h4 id="select查询"><a href="#select查询" class="headerlink" title="select查询"></a>select查询</h4><ul>
+<li><p>指定列</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">select * from user_leads;</span><br><span class="line"></span><br><span class="line">select leads_id,user_id,create_time from user_leads;</span><br><span class="line">select e.leads_id from user_leads e;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>函数列, 函数可以是hive自带，也可以是用户自定位的</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select companyid,upper(host),UUID(32) from user_action_log;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>算数运算列，可以进行各种算数运算(加减乘除取模等)，运算结果做为结果列:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select companyid,userid, (companyid + userid) as sumint from useractionlog;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>限制返回条数, 与mysql limit类似:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select * from user_action_log limit 100;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>Case When Then 条件判断语句:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">---case when 两种写法</span><br><span class="line">select case companyid when 0 then &apos;未登录&apos; else companyid end from user_action_log;</span><br><span class="line"></span><br><span class="line">select case  when companyid=0 then &apos;未登录&apos; else companyid end from user_action_log;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h4 id="where筛选"><a href="#where筛选" class="headerlink" title="where筛选"></a>where筛选</h4><p>支持：=,&lt;,&gt;,&lt;&gt;(不等于),between and等于mysql类似。</p>
+<p>还支持匹配操作，如Link, RLike</p>
+<h4 id="group-by-分组"><a href="#group-by-分组" class="headerlink" title="group by 分组"></a>group by 分组</h4><p>Hive不支持having语句，有对group by 后的结果进行筛选的需求，可以先将筛选条件放入group by的结果中，然后在包一层，在外边对条件进行筛选。</p>
+<p>如mysql中类似<code>SELECT col1 FROM t1 GROUP BY col1 HAVING SUM(col2) &gt; 10</code>,转换为hive中:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">SELECT col1 FROM </span><br><span class="line">(SELECT col1, SUM(col2) AS col2sum</span><br><span class="line">       FROM t1 GROUP BY col1</span><br><span class="line">) t2</span><br><span class="line">WHERE t2.col2sum &gt; 10</span><br></pre></td></tr></table></figure></p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="https://gitbook.cn/books/5924bd0523245b0aa3776b65/index.html" target="_blank" rel="noopener">Hive快速入门</a></li>
+<li><a href="https://tech.meituan.com/2014/02/12/hive-sql-to-mapreduce.html" target="_blank" rel="noopener">Hive sql编译过程-美团点评</a></li>
+</ul>
 
       
     </div>
@@ -525,7 +735,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#hive简介"><span class="nav-number">1.</span> <span class="nav-text">hive简介</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#hive简介"><span class="nav-number">1.</span> <span class="nav-text">hive简介</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#整体架构"><span class="nav-number">2.</span> <span class="nav-text">整体架构</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#驱动引擎"><span class="nav-number">2.1.</span> <span class="nav-text">驱动引擎</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#底层存储和执行流程"><span class="nav-number">2.2.</span> <span class="nav-text">底层存储和执行流程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Hive元数据的存储结构"><span class="nav-number">2.3.</span> <span class="nav-text">Hive元数据的存储结构</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Hive客户端"><span class="nav-number">2.4.</span> <span class="nav-text">Hive客户端</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Hive基本数据类型"><span class="nav-number">2.5.</span> <span class="nav-text">Hive基本数据类型</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#DDL操作-库和表的定义"><span class="nav-number">3.</span> <span class="nav-text">DDL操作(库和表的定义)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#库操作"><span class="nav-number">3.1.</span> <span class="nav-text">库操作</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#创建表"><span class="nav-number">3.2.</span> <span class="nav-text">创建表</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#外部表"><span class="nav-number">3.2.1.</span> <span class="nav-text">外部表</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#创建分区表"><span class="nav-number">3.2.2.</span> <span class="nav-text">创建分区表</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#创建桶表"><span class="nav-number">3.2.3.</span> <span class="nav-text">创建桶表</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#其他表操作"><span class="nav-number">3.2.4.</span> <span class="nav-text">其他表操作</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#DML操作-数据操作"><span class="nav-number">4.</span> <span class="nav-text">DML操作(数据操作)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#加载数据到Hive"><span class="nav-number">4.1.</span> <span class="nav-text">加载数据到Hive</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#加载到普通表"><span class="nav-number">4.1.1.</span> <span class="nav-text">加载到普通表</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#加载到分区表"><span class="nav-number">4.1.2.</span> <span class="nav-text">加载到分区表</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#加载到分桶表"><span class="nav-number">4.1.3.</span> <span class="nav-text">加载到分桶表</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#导出数据"><span class="nav-number">4.2.</span> <span class="nav-text">导出数据</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#插入数据"><span class="nav-number">4.3.</span> <span class="nav-text">插入数据</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#insert-select导入"><span class="nav-number">4.3.1.</span> <span class="nav-text">insert select导入</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#复制表"><span class="nav-number">4.3.2.</span> <span class="nav-text">复制表</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#克隆表"><span class="nav-number">4.3.3.</span> <span class="nav-text">克隆表</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#备份表"><span class="nav-number">4.3.4.</span> <span class="nav-text">备份表</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#HQL语句"><span class="nav-number">5.</span> <span class="nav-text">HQL语句</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#select查询"><span class="nav-number">5.1.</span> <span class="nav-text">select查询</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#where筛选"><span class="nav-number">5.2.</span> <span class="nav-text">where筛选</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#group-by-分组"><span class="nav-number">5.3.</span> <span class="nav-text">group by 分组</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">6.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
             
 
           </div>
