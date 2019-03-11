@@ -358,8 +358,217 @@ SELECT col1 FROM
 WHERE t2.col2sum > 10
 ````
 
+#### 子查询
+
+Hive对子查询的支持有限，只允许在 select from 后面出现。比如：
+``` 
+---只支持如下形式的子查询
+select * from (
+  select userid,username from user_info i where i.userid='10595'
+  ) a;
+```
+
+并不支持列名中的子查询，如:
+``` 
+---不支持如下的子查询
+select 
+(select username from user_info i where i.userid=d.user_id) 
+from user_leads d where d.user_id='10595';
+```
+
+#### Join查询
+
+Hive对Join有一些限制，只支持等值连接，并不支持不等连接。原因是Hive语句最终是要转换为MapReduce程序来执行的，但是MapReduce程序很难实现这种不等判断的连接方式。如:
+``` 
+----等值连接
+select lead.* from user_leads lead
+left join user_info info 
+on lead.user_id=info.userid;
+---不等连接（不支持）
+select lead.* from user_leads lead
+left join user_info info 
+on lead.user_id!=info.userid;
+```
+
+并且hive的连接谓词不支持or
+``` 
+---on 后面的表达式不支持or
+select lead.* from user_leads lead
+left join user_info info 
+on lead.user_id=info.userid or lead.leads_id=0;
+```
+
+##### Inner Join
+
+内连接同Mysql中的一样，连接的两个表中，只有同时满足连接条件的记录才会放入结果表中。
+
+##### Left join
+
+同MySQL中一样，两个表左连接时，符合Where条件的左侧表的记录都会被保留下来，而符合On条件的右侧的表的记录才会被保留下来。
+
+##### Right join
+
+同Left Join相反，两个表左连接时，符合Where条件的右侧表的记录都会被保留下来，而符合On条件的左侧的表的记录才会被保留下来。
+
+##### Full join
+
+Full Join会将连接的两个表中的记录都保留下来。
+
+#### 排序
+
+##### Order By
+
+order by 的使用与mysql一样，对查询结果进行全局排序，但是Hive语句会放在Hadoop集群中进行MapReduce，如果数据集过大Reduce的过程就会很长，所以尽量不要在Hive中使用order by
+
+##### Sort By 和 Distribute By
+``` 
+select * from user_leads sort by user_id
+```
+Sort By是在每个reduce中进行排序，是一个局部排序，可以保证每个Reduce中是按照userid进行排好序的，但是全局上来说，相同的userid可以被分配到不同的Reduce上，虽然在各个Reduce上是排好序的，但是全局上不一定是排好序的。
+
+
+``` 
+--Distribute By 和Sort By实例
+select * from user_leads where user_id!='0' 
+Distribute By cast(user_id as int) Sort by cast(user_id as int);
+```
+Distribute By 指定map输出结果怎么样划分后分配到各个Reduce上去，比如Distribute By userid，就可以保证userid字段相同的结果被分配到同一个reduce上去执行。然后再指定Sort By userid，则在Reduce上进行按照userid进行排序。
+
+但是这种还是不能做到全局排序，只能保证排序字段值相同的放在一起，并且在reduce上局部是排好序的。
+
+需要注意的是Distribute By 必须写在Sort By前面。
+
+##### Cluster By
+
+如果Distribute By和Sort By的字段是同一个，可以简写为 Cluster By.
+``` 
+select * from user_leads where user_id!='0' 
+Cluster By cast(user_id as int) ;
+```
+
+##### 最终结果有序
+
+最终结果是比较大的，一般是取得一个小的结果集，然后在小的结果集上进行order by排序:
+``` 
+select * from (
+select user_id,count(leads_id) cnt from user_leads  
+where user_id!='0' 
+group by user_id
+) a order by a.cnt;
+```
+先用group by获得一个小的结果集，在对晓得结果集进行order by排序
+
+
+##### 取前N条有序
+
+按某个字段排序后，取出前N条:
+``` 
+select a.leads_id,a.user_name from (
+  select leads_id,user_name  from user_leads  
+distribute by length(user_name)  sort by length(user_name) desc limit 10
+ ) a order by length(a.user_name) desc limit 10;
+```
+
+这个语句是查询username最长的10条记录，实现是先根据username的长度在各个Reduce上进行排序后取各自的前10个，然后再从10*N条的结果集里用order by取前10个。
+
+### MapReduce执行过程
+
+Hive语句最终是要转换为MapReduce程序放到Hadoop上去执行的。
+
+#### MapReduce执行过程简介
+
+MapReduce过程大体分为两个阶段：map函数阶段和reduce函数阶段，两个阶段之间有有个shuffle。
+
+
+![](/images/bigdata/mapreduce-principle.jpg)
+- Hadoop将MapReduce输入的数据划分为等长的小分片，一般每个分片是128M，因为HDFS的每个块是128M
+- map函数是数据准备阶段，读取分片内容，并筛选掉不需要的数据，将数据解析为键值对的形式输出，map函数核心目的是形成对数据的索引，以供reduce函数方便对数据进行分析
+- 在map函数执行完后，进行map端的shuffle过程，map端的shuffle是将map函数的输出进行分区，不同分区的数据要传入不同的Reduce里去
+- 各个分区里的数据传入Reduce后，会先进行Reduce端的Shuffle过程，这里会将各个Map传递过来的相同分区的进行排序，然后进行分组，一个分组的数据执行一次reduce函数
+- reduce函数以分组的数据为数据源，对数据进行相应的分析，输出结果为最终的目标数据
+- 由于map任务的输出结果传递给reduce任务过程中，是在节点间的传输，是占用带宽的，这样带宽就制约了程序执行过程的最大吞吐量，为了减少map和reduce间的数据传输，在map后面添加了combiner函数来就map结果进行预处理，combiner函数是运行在map所在节点的
+
+执行过程图如:
+![](/images/bigdata/mapreduce.jpg)
+
+#### 分片
+
+HDFS上的文件要用很多mapper进程处理，而map函数接收的输入是键值对的形式，所以要先将文件进行切分并组织成键值对的形式，这个切分和转换的过程就是数据分片。
+
+#### Map过程
+
+每个数据分片将启动一个Map进程来处理，分片里的每个键值对运行一次map函数，根据map函数里定义的业务逻辑处理后，得到指定类型的键值对。
+
+#### Map shuffle过程
+
+Map端的shuffle如下:
+![](/images/bigdata/map-shuffle.jpg)
+
+##### 环形缓冲区
+
+Map输出结果是先放入内存中的一个环形缓冲区，这个环形缓冲区默认大小为100M(这个大小可以在`io.sort.mb`属性中设置)，当环形缓冲区里的数据量达到阀值时（这个值可以在`io.sort.spill.percent`属性中设置）就会溢出写入到磁盘，环形缓冲区是遵循先进先出原则，Map输出一直不停地写入，一个后台进程不时地读取后写入磁盘，如果写入速度快于读取速度导致环形缓冲区里满了时，map输出会被阻塞直到写磁盘过程结束。
+
+##### 分区
+
+从环形缓冲区溢出到磁盘过程，是将数据写入`mapred.local.dir`属性指定目录下的特定子目录的过程。 但是在真正写入磁盘之前，要进行一系列的操作，首先就是对于每个键，根据规则计算出来将来要输出到哪个reduce，根据reduce不同分不同的区，分区是在内存里分的，分区的个数和将来的reduce个数是一致的
+
+
+##### 排序
+
+在每个分区上会根据键进行排序
+
+##### Combiner
+
+combiner方法是对于map输出的结果按照业务逻辑预先进行处理，目的是对数据进行合并，减少map输出的数据量。
+
+排序后，如果指定了conmbiner方法，就运行combiner方法使得map的结果更紧凑，从而减少写入磁盘和将来网络传输的数据量
+
+##### 合并溢出文件
+
+环形缓冲区每次溢出，都会生成一个文件，所以在map任务全部完成之前，会进行合并成为一个溢出文件，每次溢出的各个文件都是按照分区进行排好序的，所以在合并文件过程中，也要进行分区和排序，最终形成一个已经分区和排好序的map输出文件。
+
+在合并文件时，如果文件个数大于某个指定的数量（可以在`min.num.spills.for.combine`属性设置），就会进再次combiner操作，如果文件太少，效果和效率上，就不值得花时间再去执行combiner来减少数据量了
+
+
+##### 压缩
+
+Map输出结果在进行了一系列的分区、排序、combiner合并、合并溢出文件后，得到一个map最终的结果后，就应该真正存储这个结果了，在存储之前，可以对最终结果数据进行压缩，一是可以节约磁盘空间，而是可以减少传递给reduce时的网络传输数据量。
+
+默认是不进行压缩的，可以在`mapred.compress.map.output`属性设置为true就启用了压缩，而压缩的算法有很多，可以在`mapred.map.output.compression.codec`属性中指定采用的压缩算法
+
+
+#### Reduce Shuffle过程
+
+Map端Shuffle完成后，将处理结果存入磁盘，然后通过网络传输到Reduce节点上，Reduce端首先对各个Map传递过来的数据进行Reduce 端的Shuffle操作，Reduce端的Shuffle过程如下所示：
+
+![](/images/bigdata/reduce-shuffle.jpg)
+
+##### 复制数据
+
+各个map完成时间肯定是不同的，只要有一个map执行完成，reduce就开始去从已完成的map节点上复制输出文件中属于它的分区中的数据，reduce端是多线程并行来复制各个map节点的输出文件的，线程数可以在`mapred.reduce.parallel.copies`属性中设置。
+
+reduce将复制来的数据放入内存缓冲区（缓冲区大小可以在`mapred.job.shuffle.input.buffer.percent`属性中设置）。当内存缓冲区中数据达到阀值大小或者达到map输出阀值，就会溢写到磁盘。
+
+写入磁盘之前，会对各个map节点来的数据进行合并排序，合并时如果指定了combiner，则会再次执行combiner以尽量减少写入磁盘的数据量。为了合并，如果map输出是压缩过的，要在内存中先解压缩后合并
+
+##### 合并数据
+
+合并排序其实是和复制文件同时并行执行的，最终目的是将来自各个map节点的数据合并并排序后，形成一个文件
+
+##### 分组
+
+分组是将相同key的键值对分为一组，一组是一个列表，列表中每一组在一次reduce方法中处理
+
+##### 执行reduce方法
+
+reduce端的shuffle后，就会执行reduce方法
+
+
+Reduce端的Shuffle过程后，最终形成了分好组的键值对列表，相同键的数据分为一组，分组的键是分组的键，值是原来值得列表，然后每一个分组执行一次reduce函数，根据reduce函数里的业务逻辑处理后，生成指定格式的键值对。
+
 
 ### 参考资料
+
 - [Hive快速入门](https://gitbook.cn/books/5924bd0523245b0aa3776b65/index.html)
 - [Hive sql编译过程-美团点评](https://tech.meituan.com/2014/02/12/hive-sql-to-mapreduce.html)
 
