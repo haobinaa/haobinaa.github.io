@@ -28,6 +28,12 @@ HDFS设计构想和目标如下:
 - 通过分布数据和逻辑到数据所在的多个节点上进行平行处理来提高效率
 - 通过自动维护多个数据副本和在故障发生时自动重新部署处理逻辑来实现可靠性
 
+
+HDFS的局限性:
+- 不适合低延迟的访问(适用于大规模的批量数据而不是某个特定数据)
+- 无法高效存储大量小文件(hdfs是通过nameNode保存文件元信息，文件数量越多，元数据检索越慢)
+- 不支持多用户写入， 及任意修改文件(HDFS设计理念就是只允许追加不允许修改)
+
 ### HDFS架构
 
 HDFS是主从（master/slave）架构。一个HDFS集群包含一个NameNode，作为管理文件系统名称空间（file system namespace）和管理客户端访问HDFS的主服务器。此外，还有一组DataNode节点，通常群集中的每个节点都是一个DataNode，用于管理自己节点上的存储。HDFS开放文件系统名称空间，并允许用户把数据存储在文件中。
@@ -42,9 +48,19 @@ HDFS是主从（master/slave）架构。一个HDFS集群包含一个NameNode，�
 
  Namenode 上保存着 HDFS 的名字空间。对于任何对文件系统元数据产生修改的操作， Namenode 都会使用一种称为 EditLog 的事务日志记录下来。例如，在 HDFS 中创建一个文件， Namenode 就会在 Editlog 中插入一条记录来表示；同样地，修改文件的副本系数也将往 Editlog 插入一条记录。 Namenode 在本地操作系统的文件系统中存储这个 Editlog 。整个文件系统的名 字空间，包括数据块到文件的映射、文件的属性等，都存储在一个称为 FsImage 的文件中，这 个文件也是放在 Namenode 所在的本地文件系统上。 
  
-  Namenode 在内存中保存着整个文件系统的名字空间和文件数据块映射 (Blockmap) 的映像 。这个关键的元数据结构设计得很紧凑，因而一个有 4G 内存的 Namenode 足够支撑大量的文件 和目录。当 Namenode 启动时，它从硬盘中读取 Editlog 和 FsImage ，将所有 Editlog 中的事务作 用在内存中的 FsImage 上，并将这个新版本的 FsImage 从内存中保存到本地磁盘上，然后删除 旧的 Editlog ，因为这个旧的 Editlog 的事务都已经作用在 FsImage 上了。这个过程称为一个检查 点 (checkpoint) 。在当前实现中，检查点只发生在 Namenode 启动时，在不久的将来将实现支持 周期性的检查点
+  Namenode 在内存中保存着整个文件系统的名字空间和文件数据块映射 (Blockmap) 的映像 。这个关键的元数据结构设计得很紧凑，因而一个有 4G 内存的 Namenode 足够支撑大量的文件 和目录。当 Namenode 启动时，它从硬盘中读取 Editlog 和 FsImage ，将所有 Editlog 中的事务作 用在内存中的 FsImage 上，并将这个新版本的 FsImage 从内存中保存到本地磁盘上，然后删除 旧的 Editlog ，因为这个旧的 Editlog 的事务都已经作用在 FsImage 上了。这个过程称为一个检查点 (checkpoint) 。在当前实现中，检查点只发生在 Namenode 启动时，在不久的将来将实现支持周期性的检查点
   
-  #### DataNode
+EditLog会随着系统的运行不断的增大，HDFS的NameNode会有一个备份节点(second NameNode)。备份节点会定期的和主名称节点通信，通信期间主名称节点editLog不能写入并生成一个新的 edit.new ，新到达的更新会写入 edit.new ，原来的editLog会被备份节点会把主节点的FsImage和editLog都拖过去合并成一个新的FsImage。然后发送给主节点把fsImage更新为这个合并过后的fsImage，并把edit.new更名为新的editLog
+  
+NameNode存储着HDFS的元数据，这里主要指的是:
+- FsImage: 保存系统文件树
+  - 文件的复制等级
+  - 块大小以及组成这个文件的块
+  - 修改和访问时间
+  - 访问权限  
+- EditLog: 记录对数据进行的创建、删除、重命名等操作
+  
+#### DataNode
   
   Datanode 将 HDFS 数据以文件的形式存储在本地的文件系统中，它并不知道有 关 HDFS 文件的信息。它把每个 HDFS 数据块存储在本地文件系统的一个单独的文件 中。 Datanode 并不在同一个目录创建所有的文件，实际上，它用试探的方法来确定 每个目录的最佳文件数目，并且在适当的时候创建子目录。在同一个目录中创建所 有的本地文件并不是最优的选择，这是因为本地文件系统可能无法高效地在单个目 录中支持大量的文件。 
 
@@ -55,15 +71,18 @@ HDFS是主从（master/slave）架构。一个HDFS集群包含一个NameNode，�
 
 HDFS支持传统的分层文件组织。用户或应用程序可以在这些目录内创建目录并存储文件。文件系统名称空间层次与大多数其他现有文件系统类似;可以创建和删除文件，将文件从一个目录移动到另一个目录，或者重命名文件。HDFS支持用户配额（user quotas）和访问权限（access permissions）。
 
+
+### 数据存储
+
 #### 数据副本
 
-HDFS设计宗旨是可靠的存储着超大型文件，运行在大规模的集群机器上。它将每个文件存储为一系列的块（a sequence of blocks）。文件的块被复制，是用来实现容错。块大小（block size ）和复制因子（replication factor）可以针对每个文件进行配置
+HDFS设计宗旨是可靠的存储着超大型文件，运行在大规模的集群机器上。它将每个文件存储为一系列的块（block）。文件的块被复制，是用来实现容错。块大小（block size ，默认是64MB）和复制因子（replication factor， 默认是3）可以针对每个文件进行配置
 
 一个文件中，除了最后一个数据块（blocks）之外，其他所有的数据块都具有相同的大小。当用户可以在将可变长度块的配置加到append和hsync后，可以在不填写最后一个块的情况下，写入到新的数据块中。
 
 应用程序可以在文件创建时指定文件的副本数量，也可以在后面进行修改。HDFS中的文件是一次性写入的（追加和截断除外），并且在任何时候都严格的限定一个文件只能有一个写入线程。
 
-NameNode决定着数据块的复制。它定期从集群中的每个DataNode接收心跳（Heartbeat）和数据块报告（Blockreport）。能接收到Heartbeat意味着DataNode运行正常。 而Blockreport包含DataNode上所有块的列表信息。使用这种策略的短期目标是在生产系统上对其进行验证，更多地了解其行为，并为测试和研究更复杂的策略奠定基础。
+NameNode决定着数据块的复制。它定期从集群中的每个DataNode接收心跳（Heartbeat）和数据块报告（Blockreport）。能接收到Heartbeat意味着DataNode运行正常。 而Blockreport包含DataNode上所有块的列表信息。
 
 ![](/images/bigdata/hdfs-datablock.jpg)
 

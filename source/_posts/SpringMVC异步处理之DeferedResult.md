@@ -5,6 +5,11 @@ tags: springmvc
 categories: spring
 ---
 
+在看到开源项目`xxl-conf`的源码的时候，看到他的配置变更后通知客户端是通过`DeferredResult`来处理的，之前没接触过这个，记录一下
+
+
+
+
 
 ### 参考资料
 - [DeferredResult的使用场景及用法](https://my.oschina.net/ojeta/blog/806087)

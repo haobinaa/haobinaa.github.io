@@ -1,5 +1,5 @@
 ---
-title: hbase基本使用
+title: hbase基本介绍
 date: 2019-03-11 08:45:04
 tags:
 categories: bigdata
@@ -28,39 +28,50 @@ Hbase有如下特性:
 
 ![](/images/bigdata/hbase-arch.jpg)
 
-- Zookeeper，作为分布式的协调。RegionServer也会把自己的信息写到ZooKeeper中
-- HDFS是Hbase运行的底层文件系统
-- RegionServer，理解为数据节点，存储数据的
-- Master RegionServer要实时的向Master报告信息。Master知道全局的RegionServer运行情况，可以控制RegionServer的故障转移和Region的切分
+Hbase是三层架构体系。
 
+- 其中Hbase表底层是存储在HDFS上，可以分为多个Region， Region分布在Region Server上
+- Master负责协调Region和负载
+- Zookeeper负责记录一些元数据
 
-细化后架构:
-![](/images/bigdata/hbase-arch-detail.jpg)
+HBase中有两张特殊的表： Root和META， META表负责记录Region的分区信息， Root表负责记录META的分区信息， Root表的位置信息则有Hadoop集群的zookeeper来记录。
+
+那么Hbase检索一条数据的流程应该是这样的:
+![](/images/bigdata/hbase-index.jpg)
 
 
 #### 存储结构
 
-在Hbase中，表被分割成多个更小的块然后分散的存储在不同的服务器上，这些小块叫做Regions，存放Regions的地方叫做RegionServer。Master进程负责处理不同的RegionServer之间的Region的分发。
-
-HRegionServer除了包含一些HRegions之外，还处理两种类型的文件用于数据存储：
-- HLog， 预写日志文件，也叫做WAL(write-ahead log)
-- HFile 真实的数据存储文件
-
-##### Hlog
-
-- MasterProcWAL：HMaster记录管理操作，比如解决冲突的服务器，表创建和其它DDLs等操作到它的WAL文件中，这个WALs存储在MasterProcWALs目录下，它不像RegionServer的WALs，HMaster的WAL也支持弹性操作，就是如果Master服务器挂了，其它的Master接管的时候继续操作这个文件
-
-- WAL记录所有的Hbase数据改变，如果一个RegionServer在MemStore进行FLush的时候挂掉了，WAL可以保证数据的改变被应用到。如果写WAL失败了，那么修改数据的完整操作就是失败的
-  - 通常情况，每个RegionServer只有一个WAL实例。
-  - WAL位于`/hbase/WALs/`目录下
-  - MultiWAL: 如果每个RegionServer只有一个WAL，由于HDFS必须是连续的，导致必须写WAL连续的，然后出现性能问题。MultiWAL可以让RegionServer同时写多个WAL并行的，通过HDFS底层的多管道，最终提升总的吞吐量，但是不会提升单个Region的吞吐量
+Hbase 是一种专门为半结构化数据和水平扩展性设计的数据库。它把数据存储在表中，表按“行健(rowkey)，列簇，列限定符和时间版本”的四维坐标系来组织。Hbase 是无模式数据库，只需要提前定义列簇，并不需要指定列限定符。同时它也是无类型数据库，所有数据都是按二进制字节方式存储的，对 Hbase 的操作和访问有 5 个基本方式，即 Get、Put、Delete 和 Scan 以及 Increment。Hbase 基于非行健值查询的唯一途径是通过带过滤器的扫描。
 
 
-##### HFile
+![](/images/bigdata/hbase-arch-detail.jpg)
 
-HFile是Hbase在HDFS中存储数据的格式，它包含多层的索引，这样在Hbase检索数据的时候就不用完全的加载整个文件。索引的大小(keys的大小，数据量的大小)影响block的大小，在大数据集的情况下，block的大小设置为每个RegionServer 1GB也是常见的。
+从上图我们可以看出 Hbase 的组成部件，HBase 中的每张表都通过行键按照一定的范围被分割成多个子表（HRegion），由 HRegionServer 管理，管理哪些 HRegion 由 HMaster 分配。
+
+HRegionServer 存取一个子表时，会创建一个 HRegion 对象，然后对表的每个列族 (Column Family) 创建一个 Store 实例，每个 Store 都会有 0 个或多个 StoreFile 与之对应，每个 StoreFile 都会对应一个 HFile，HFile 就是实际的存储文件。因此，一个 HRegion 有多少个列族就有多少个 Store。此外，每个 HRegion 还拥有一个 MemStore 内存缓存实例。
+
+- HFile：HBase 中 KeyValue 数据的存储格式，HFile 是 Hadoop 的二进制格式文件，实际上 StoreFile 就是对 HFile 做了轻量级包装，即 StoreFile 底层就是 HFile
+- HLog: HBase记录写入记录，WAL机制保证数据可靠性，即首先写日志再写缓存，即使发生宕机，也可以通过恢复HLog还原出原始数据。该步骤就是将数据构造为WALEdit对象，然后顺序写入HLog中。
+- MemStore：MemStore 即内存里放着的保存 KEY/VALUE 映射的 MAP，当 MemStore（默认 64MB）写满之后，会开始 flush 到磁盘（即 Hadoop 的 HDFS 上）的操作
+
+
+#### HLog之WAL(write ahead log)机制
+
+WAL(Write-Ahead Logging)是一种高效的日志算法,基本原理是在数据写入之前首先顺序写入日志，然后再写入缓存，等到缓存写满之后统一落盘。之所以能够提升写性能，是因为WAL将一次随机写转化为了一次顺序写加一次内存写。提升写性能的同时，WAL可以保证数据的可靠性，即在任何情况下数据不丢失。假如一次写入完成之后发生了宕机，即使所有缓存中的数据丢失，也可以通过恢复日志还原出丢失的数据。
+
+##### HBase写入流程分析
+
+1. zookeeper中存储了meta表的region信息，从meta表获取相应region信息，然后找到meta表的数据
+2. 根据meta表的数据找到写入数据对应的region信息, 找到对应的RegionServer
+3. 把数据分别写到HLog和MemStore上一份
+4. MemStore达到一个阈值后则把数据刷成一个StoreFile文件。若MemStore中的数据有丢失，则可以总HLog上恢复
+5. 当多个StoreFile文件达到一定的大小后，会触发Compact合并操作，合并为一个StoreFile，这里同时进行版本的合并和数据删除
+6. 当Compact后，逐步形成越来越大的StoreFIle后，会触发Split操作，把当前的StoreFile分成两个，这里相当于把一个大的region分割成两个region
+
 
 
 ### 参考资料
 - [入门Hbase](https://juejin.im/post/5c666cc4f265da2da53eb714)
-- [Apache Hbase入门教程](http://www.importnew.com/21958.html)
+- [Hbase设计与开发实战](https://www.ibm.com/developerworks/cn/analytics/library/ba-1604-hbase-develop-practice/index.html)
+- [HBase写入流程解析](http://hbasefly.com/2016/03/23/hbase_writer/)
