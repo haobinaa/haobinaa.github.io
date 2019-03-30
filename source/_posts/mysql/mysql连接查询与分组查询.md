@@ -1,5 +1,5 @@
 ---
-title: mysql连接查询
+title: mysql连接查询与分组查询
 date: 2017-12-13 18:08:55
 tags: mysql
 categories: mysql
@@ -13,11 +13,15 @@ dept:       id      dept_name
 
 
 ### 交叉连接(cross join)
+
 交叉连接是一个笛卡尔积的结果，表1中每条数据都会跟表2中的数据联系起来。假t1有两条数据，t2有三条数据，那么 `select * from t1,t2`就会出现6条数据
 
 ### 内连接(inner join)
-内连接返回两个表同时匹配的数据。(重点是同时满足)   
+
+内连接返回两个表同时匹配的数据。(重点是同时满足)  
+ 
 #### 等值连接  
+
 `select * from t1 inner join t2 on t1.id = t2.id`,或者是`select * from t1,t2 where t1.id = t2.id`
 
 #### 不等值连接
