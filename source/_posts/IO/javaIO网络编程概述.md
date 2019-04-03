@@ -4,29 +4,57 @@ date: 2018-08-08 17:16:12
 tags: 网络IO
 categories: IO
 ---
+
 ### IO数据传输过程
+
 ![](/images/io_process.png)
 
-#### 程序读数据
-当某个程序或已存在的进程/线程(后文将不加区分的只认为是进程)需要某段数据时，它只能在用户空间中属于它自己的内存中访问、修改，这段内存暂且称之为`app buffer`。假设需要的数据在磁盘上，那么进程首先得发起相关系统调用，通知内核去加载磁盘上的文件。但正常情况下，数据只能加载到内核的缓冲区，暂且称之为`kernel buffer`。数据加载到kernel 
-buffer之后，还需将数据复制到app buffer。到了这里，进程就可以对数据进行访问、修改了。
+
+#### 概念
+
+- 当某个程序或已存在的进程需要某段数据时，它只能在用户空间中属于它自己的内存中访问、修改，这段内存暂且称之为`app 
+  buffer`
+- 正常情况下，数据只能从磁盘(或其他外部设备)加载到内核的缓冲区，且称之为`kernel buffer` 
+- TCP/IP协议栈维护着两个缓冲区：`send buffer` 和 `recv buffer` ，它们合称为 `socket buffer`
+
+#### 程序读取数据
+
+1. 进程发起系统调用，通知内核将磁盘的文件加载到 kernel buffer(DMA直接内存拷贝)
+2. 将kernel buffer 的数据拷贝到 app buffer
 
 这个过程中进行了两次上下文切换(用户态和内核态之间)， 两次IO拷贝(DMA加载到内核，内核copy到用户空间)
 
-#### 程序发送数据
+#### 程序发送和读取网络数据
 
-当我们的数据要通过TCP连接传送出去时，过程如下：TCP/IP协议栈维护着两个缓冲区：send buffer和recv buffer，它们合称为socket buffer。需要通过TCP连接传输出去的数据，需要先复制到send 
-buffer，再复制给网卡(NIC)通过网络传输出去。如果通过TCP连接接收到数据，数据首先通过网卡进入recv buffer，再被复制到用户空间的app buffer。
+当数据要通过TCP发送出去的时候：
+1. app buffer 的数据复制到 send buffer(socket buffer)
+2. socket buffer 的数据通过DMA拷贝到网卡通过网络传输出去
+
+
+数据接收TCP数据时:
+1. 数据从网卡(NIC)拷贝到 recv buffer(socket buffer)
+2. socket buffer 的数据再拷贝到 app buffer
 
 这个过程也发生了两次上下文切换和IO拷贝:
 1. 将用户区的缓存拷贝到内核区的socket buffer， 同时从用户态切换到内核态
 2. 将socket buffer的数据通过DMA拷贝到TCP协议网卡中(IO拷贝), 然后返回系统调用结果给用户空间(上下文切换)
 
 #### 零拷贝
-我们可以看到，网络数据从kernel buffer复制到app buffer再复制到send buffer， 这个过程中如果进程不需要修改数据，就直接发送给TCP连接的另一端，可以不用从kernel buffer复制到app 
-buffer，而是直接复制到send buffer。这就是零拷贝(zero copy)技术。
+
+我们可以看到，要将磁盘上的数据发送到网络上要经过四次转换:
+
+1. 数据从磁盘读取到内核的 kernel buffer
+2. 数据从内核缓冲区拷贝到用户缓冲区
+3. 数据从用户缓冲区拷贝到内核的socket buffer
+4. 数据从内核的socket buffer拷贝到网卡接口的缓冲区
+
+但是如果我们进程不需要修改数据，则第二步和第三步是没有必要的。 操作系统直接将磁盘上的数据拷贝到 kernel buffer 后， 直接拷贝到网卡缓存区， 这就是零拷贝技术(两次拷贝都不需要CPU参与)
+
+备注： 这里的零拷贝跟netty的零拷贝不是一个概念， netty的零拷贝可以看我另一篇博客
+
 
 ### 五种经典IO模型
+
 所有的系统I/O都分为两个阶段：等待就绪和操作。举例来说，读函数，分为等待系统可读和真正的读；同理，写函数分为等待网卡可以写和真正的写。
 
 需要说明的是等待就绪的阻塞是不使用CPU的，是在“空等”；而真正的读写操作的阻塞是使用CPU的，真正在"干活"，而且这个过程非常快，属于memory copy，带宽通常在1GB/s级别以上，可以理解为基本不耗时。
