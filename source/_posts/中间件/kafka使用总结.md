@@ -299,12 +299,15 @@ producer 采用 push 模式将消息发布到 broker，每条消息都被 append
 
 #### 3. Consumer 消费消息
 
+costumer与partition相对应，一个partition最多被一个consumer消费，一个consumer可以消费多个partition。
+
 high-level consumer API 提供了 consumer group 的语义，一个消息只能被 group 内的一个 consumer 所消费，且 consumer 消费消息时不关注 offset，最后一个 offset 由 ZooKeeper 保存（下次消费时，该group 中的consumer将从offset记录的位置开始消费）
 
 注意:
 - 如果消费线程大于 patition 数量，则有些线程将收不到消息
 - 如果 patition 数量大于消费线程数，则有些线程多收到多个 patition 的消息
 - 如果一个线程消费多个 patition，则无法保证你收到的消息的顺序，而一个 patition 内的消息是有序的
+
 
 
 ### 参考资料

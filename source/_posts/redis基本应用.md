@@ -2,7 +2,7 @@
 title: redis基本应用
 date: 2019-05-07 11:48:16
 tags: redis
-categories: 中间价
+categories: 中间件
 ---
 ### redis中基本数据结构
 
