@@ -1,7 +1,7 @@
 ---
 title: kafka参数使用
 date: 2019-05-16 10:57:42
-tags: mq
+tags: kafka
 categories: 中间件
 ---
 

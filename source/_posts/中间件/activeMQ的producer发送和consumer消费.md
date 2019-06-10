@@ -2,7 +2,7 @@
 title: activeMQ的producer发送和consumer消费
 date: 2019-04-22 22:00:17
 tags: mq
-categories:中间价
+categories: 中间件
 ---
 
 ## 消息发送

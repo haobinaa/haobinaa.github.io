@@ -1,7 +1,7 @@
 ---
 title: kafka使用以及原理
 date: 2018-12-10 12:39:13
-tags: mq
+tags: kafka
 categories: 中间件
 ---
 
