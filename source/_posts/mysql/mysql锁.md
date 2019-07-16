@@ -195,6 +195,18 @@ show status like 'InnoDB_row_lock%';
 
 对于这5个状态变量，比较重要的主要是InnoDB_row_lock_time_avg（等待平均时长），InnoDB_row_lock_waits（等待总次数）以及InnoDB_row_lock_time（等待总时长）这三项。尤其是当等待次数很高，而且每次等待时长也不小的时候，我们就需要分析系统中为什么会有如此多的等待，然后根据分析结果着手指定优化计划。
 
+### MVCC(多版本并发控制)
+
+MVCC（Multi-Version Concurrency Control）即多版本并发控制。
+MySQL的大多数事务型（如InnoDB,Falcon等）存储引擎实现的都不是简单的行级锁。基于提升并发性能的考虑，他们一般都同时实现了MVCC。当前不仅仅是MySQL,其它数据库系统（如Oracle,PostgreSQL）也都实现了MVCC。值得注意的是MVCC并没有一个统一的实现标准，所以不同的数据库，不同的存储引擎的实现都不尽相同
+
+#### MVCC优缺点
+
+MVCC在大多数情况下代替了行锁，实现了对读的非阻塞，读不加锁，读写不冲突。缺点是每行记录都需要额外的存储空间，需要做更多的行维护和检查工作
+
+#### MVCC的实现原理
+
+mvcc依赖
 
 ### 参考资料
 - [mysql锁详解](http://www.cnblogs.com/luyucheng/p/6297752.html)

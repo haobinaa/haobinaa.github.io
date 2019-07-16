@@ -407,6 +407,9 @@ t Session A                      Session B
 | |  1 | a     |
 | +----+-------+
 ```
+
+### redo日志
+
 ### 参考资料
 - [mysql事务](http://www.cnblogs.com/luyucheng/p/6297480.html)
 - [mysql的四种隔离级别](http://www.cnblogs.com/zhoujinyi/p/3437475.html)

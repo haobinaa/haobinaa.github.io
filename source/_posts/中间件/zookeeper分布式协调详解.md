@@ -185,14 +185,3 @@ Leader选举需要达到的再次使用的条件，需要解决以下两个问�
 5. 统计投票。与启动时过程相同
 6. 改变服务器的状态。与启动时过程相同
 
-上边选出的只是准leader，要想变成leader还需完成数据同步
-
-#### 数据同步(选出Leader后的数据同步)
-
-选主只是选出了内存数据是最新的节点，仅仅靠这个是无法保证已经在leader服务器上提交的事务最终被所有服务器都提交。
-比如leader发起提议P1,并收到半数以上follower关于P1的ACK后，在广播commit消息之前宕机了，选举产生的新leader之前是follower，未收到关于P1的commit消息，内存中是没有P1的数据。而ZAB协议的设计是需要保证选主后，P1是需要应用到集群中的。这块的逻辑是通过选主后的数据同步来弥补
-
-选主后，节点需要切换状态，leader切换成LEADING状态后的流程如下：
-1. 重新加载本地磁盘上的数据快照至内存，并从日志文件中取出快照之后的所有事务操作，逐条应用至内存，并添加到已提交事务缓存commitedProposals。这样能保证日志文件中的事务操作，必定会应用到leader的内存数据库中
-2. 获取learner发送的FOLLOWERINFO/OBSERVERINFO信息，并与自身commitedProposals比对，确定采用哪种同步方式，不同的learner可能采用不同同步方式（DIFF同步、TRUNC+DIFF同步、SNAP同步）。这里是拿learner内存中的zxid与leader内存中的commitedProposals（min、max）比对，如果zxid介于min与max之间，但又不存在于commitedProposals中时，说明该zxid对应的事务需要TRUNC回滚；如果 zxid 介于min与max之间且存在于commitedProposals中，则leader需要将zxid+1~max 间所有事务同步给learner，这些内存缺失数据，很可能是因为leader切换过程中造成commit消息丢失，learner只完成了事务日志写入，未完成提交事务，未应用到内存
-3. leader主动向所有learner发送同步数据消息，每个learner有自己的发送队列，互不干扰。同步结束时，leader会向learner发送NEWLEADER指令，同时learner会反馈一个ACK。当leader接收到来自learner的ACK消息后，就认为当前learner已经完成了数据同步，同时进入“过半策略”等待阶段。当leader统计到收到了一半已上的ACK时，会向所有已经完成数据同步的learner发送一个UPTODATE指令，用来通知learner集群已经完成了数据同步，可以对外服务了
