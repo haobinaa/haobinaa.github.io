@@ -364,6 +364,8 @@ redis可以安装布隆过滤器插件来使用布隆过滤器。
 
 #### 简单限流
 
+使用 `zset` 这个数据结构的 `score` 来充当滑动窗口，保证value唯一即可，Java实现如下
+
 ```
 public class SimpleRateLimiter {
 
@@ -396,6 +398,10 @@ public class SimpleRateLimiter {
   }
 }
 ```
+
+#### 漏斗限流
+
+漏斗限流又叫漏桶限流，漏斗以一定速率往下滴水(响应请求), 往漏斗上方灌水(接受请求)，如果漏斗满了，就拒绝请求。 以 redis 提供的限流模块： `redis-cell`实现。
 
 ### 参考资料
 - [Redis分布式锁到底安全吗](http://zhangtielei.com/posts/blog-redlock-reasoning.html)
