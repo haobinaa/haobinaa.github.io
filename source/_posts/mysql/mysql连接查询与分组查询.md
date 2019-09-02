@@ -88,6 +88,8 @@ t1和t2的结果集被显示在了一起，默认以t1的字段为准，这里�
 ### 全连接(full join)
 
 我查了一下资料，mysql并不支持全连接(full join)这个功能，但是可以通过`left join`、`right join`、`union`实现全连接
+> 备注： union 操作用来联合两个查询结果(不包含重复值)
+union all 联合的结果包含重复值
 
 还是上面例子的两个表t1、t2
 
@@ -99,7 +101,7 @@ t1和t2的结果集被显示在了一起，默认以t1的字段为准，这里�
 |2      | 2     | 2    | a      |
 | 3     | 3     | 3     |  b     |
 
-`select * from t1 left join t2 on t1.t1id = t2.t2id`
+`select * from t1 right join t2 on t1.t1id = t2.t2id`
 
 | t1id | t1str | t2id | t2str |
 |------|-------|------|-------|

@@ -515,6 +515,7 @@ append(ls, String.class);
 ```
 
 #### 无法对泛型代码直接使用instanceof关键字
+
 我们无法对泛型代码直接使用instanceof关键字，因为Java编译器在生成代码的时候会擦除所有相关泛型的类型信息，正如我们上面验证过的JVM在运行时期无法识别出ArrayList<Integer>和ArrayList<String>的之间的区别：
 ``` 
 public static <E> void rtti(List<E> list) {
