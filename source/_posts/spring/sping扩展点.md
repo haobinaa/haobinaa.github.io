@@ -18,3 +18,5 @@ Spring在初始化容器的过程中，提供了一些扩展点，可以让用�
 IOC Bean的扩展点，也是体现Bean生命周期的一部分， Bean的生命周期如图:
 
 ![](/images/spring/bean_lifecycle.png)
+
+### BeanFactoryPostProcessor

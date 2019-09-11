@@ -534,8 +534,6 @@ public static void rtti(List<?> list) {
 }
 ```
 
-
-
 ### 参考资料
 - [java泛型详解](https://zhuanlan.zhihu.com/p/28242753)
 - [importNews java泛型](http://www.importnew.com/24029.html)
