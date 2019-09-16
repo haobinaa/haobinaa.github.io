@@ -126,3 +126,59 @@ public interface BeanPostProcessor {
 
 
 `BeanPostProcessor`的注册是在Ioc的加载过程中的`registerBeanPostProcessors()`,该过程中会实例化所有的BPP，并根据优先级排序。调用BPP的逻辑是在初始化所有的Bean之后
+
+调用过程是:
+```
+finishBeanFactoryInitialization->preInstantiateSingletons
+-> getBean -> doGetBean
+-> createBean
+-> doCreateBean
+-> initializeBean
+```
+
+
+`initializeBean`里执行具体的回调(`BeanPostProcessorsBeforeInitialization`,`afterPropertiesSet`,`BeanPostProcessorsAfterInitialization`), 代码如下
+``` 
+protected Object initializeBean(final String beanName, final Object bean, @Nullable RootBeanDefinition mbd) {
+    if (System.getSecurityManager() != null) {
+        AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
+            invokeAwareMethods(beanName, bean);
+            return null;
+        }, getAccessControlContext());
+    }
+    else {
+    // 如果 bean 实现了 BeanNameAware、BeanClassLoaderAware 或 BeanFactoryAware 接口，回调
+        invokeAwareMethods(beanName, bean);
+    }
+
+    Object wrappedBean = bean;
+    if (mbd == null || !mbd.isSynthetic()) {
+    // 回调 BeanPostProcessor 的 postProcessBeforeInitialization
+        wrappedBean = applyBeanPostProcessorsBeforeInitialization(wrappedBean, beanName);
+    }
+
+    try {
+        // 处理 bean 中定义的 init-method，
+       // 或者如果 bean 实现了 InitializingBean 接口，调用 afterPropertiesSet() 方法
+        invokeInitMethods(beanName, wrappedBean, mbd);
+    }
+    catch (Throwable ex) {
+        throw new BeanCreationException(
+                (mbd != null ? mbd.getResourceDescription() : null),
+                beanName, "Invocation of init method failed", ex);
+    }
+    if (mbd == null || !mbd.isSynthetic()) {
+        // 回调 BeanPostProcessor 的 postProcessAfterInitialization
+        wrappedBean = applyBeanPostProcessorsAfterInitialization(wrappedBean, beanName);
+    }
+
+    return wrappedBean;
+}
+```
+
+这个过程中可以看到，最后执行的回调方法不止有`BeanFactoryPostProcessor`接口的， 还有实现`InitializingBean`的，如:
+``` 
+public interface InitializingBean {
+	void afterPropertiesSet() throws Exception;
+}
+```

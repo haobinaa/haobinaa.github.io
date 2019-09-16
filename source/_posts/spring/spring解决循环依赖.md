@@ -65,7 +65,7 @@ protected Object getSingleton(String beanName, boolean allowEarlyReference) {
 }
 ```
 
-结合 `doCreateBea`中处理循环依赖的代码一起看一下:
+结合 `doCreateBean`中处理循环依赖的代码一起看一下:
 ```
 boolean earlySingletonExposure = (mbd.isSingleton() && this.allowCircularReferences &&
         isSingletonCurrentlyInCreation(beanName));
@@ -98,3 +98,13 @@ protected void addSingletonFactory(String beanName, ObjectFactory<?> singletonFa
 3. B拿到A对象后顺利完成了初始化三个阶段,完全初始化之后将自己放入到一级缓存singletonObjects中。此时返回A中，A此时能拿到B的对象顺利完成自己的初始化阶段2、3，最终A也完成了初始化，进去了一级缓存singletonObjects中
 
 这样就是整个解决 setter 循环依赖的过程
+
+### propertype 类型的Bean无法解决循环引用
+
+代码也在创建bean的时候体现:
+``` 
+// 创建过了此 beanName 的 prototype 类型的 bean，那么抛异常
+if (isPrototypeCurrentlyInCreation(beanName)) {
+    throw new BeanCurrentlyInCreationException(beanName);
+}
+```
