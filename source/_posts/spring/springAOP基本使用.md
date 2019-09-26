@@ -1,16 +1,31 @@
 ---
-title: springAOP(AOP)
+title: springAOP的基本使用
 date: 2017-11-30 15:50:24
 tags: springframework
 categories: spring
 ---
 
 ### AOP概念
-AOP（Aspect-Oriented Programming，面向切面编程）用一种称为“横切”的技术，剖解开封装的对象内部，并将那些影响了多个类的公共行为封装到一个可重用模块，并将其名为“Aspect”，即切面。AOP把软件系统分为两个部分：核心关注点和横切关注点。业务处理的主要流程是核心关注点，与之关系不大的部分是横切关注点。
 
- 实现AOP的技术，主要分为两大类：一是采用动态代理技术，利用截取消息的方式，对该消息进行装饰，以取代原有对象行为的执行；二是采用静态织入的方式，引入特定的语法创建“切面”，从而使得编译器可以在编译期间织入有关“切面”的代码。
+AOP 要实现的是在我们原来写的代码的基础上，进行一定的包装，如在方法执行前、方法返回后、方法抛出异常后等地方进行一定的拦截处理或者叫增强处理.AOP是通过生成代理类来增强方法。
+
+#### spring aop
+
+- 它基于动态代理来实现。默认地，如果使用接口的，用 JDK 提供的动态代理实现，如果没有接口，使用 CGLIB 实现
+- Spring AOP 依赖 IOC 容器来管理
+- Spring AOP 只能作用于 Spring 容器中的 Bean
+
+#### AspectJ
+
+- AspectJ 属于静态织入，它是通过修改代码来实现的，它的织入时机可以是
+    - Compile-time weaving：编译期织入
+    - Post-compile weaving：也就是已经生成了 .class 文件，或已经打成 jar 包了，这种情况需要增强处理的话，就要用到编译后织入
+    - Load-time weaving：指的是在加载类的时候进行织入，要实现这个时期的织入，有几种常见的方法。
+     1、自定义类加载器来干这个，这个应该是最容易想到的办法，在被织入类加载到 JVM 前去对它进行加载，这样就可以在加载的时候定义行为了。
+     2、在 JVM 启动的时候指定 AspectJ 提供的 agent：-javaagent:xxx/xxx/aspectjweaver.jar(链路追踪一般都是这个方式)
+
+#### 术语
  
- #### 术语
  - join point(连接点)：是程序执行中的一个精确执行点，例如类中的一个方法。它是一个抽象的概念，在实现AOP时，并不需要去定义一个join point
  - point cut（切入点）：本质上是一个捕获连接点的结构。在AOP中，可以定义一个point cut，来捕获相关方法的调用
  - advice（通知）：是point cut的执行代码，是执行“切面”的具体逻辑
@@ -203,5 +218,6 @@ argNames="参数列表参数名")
 这里通过component-scan扫描bean，spring生成bean的策略，如果没有name属性的申明，就会采取首字母小写的风格
 
 ### 参考资料
+
 - [基于Schema的AOP](http://blog.csdn.net/evankaka/article/details/45242505)
 - [基于AspectJ注解的AOP](http://blog.csdn.net/evankaka/article/details/45394409)
