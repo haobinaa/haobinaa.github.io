@@ -340,6 +340,14 @@ CMS（Concurrent Mark Sweep）收集器是一种以获取最短回收停顿时�
 
 ### GC日志
 
+#### young gc
+
+![](/images/jvm/young-gc-log.png)
+
+#### full gc
+![](/images/jvm/full-gc-log.png)
+
+#### 文字说明
 每一种收集器的日志形式都是由它们自身的实现所决定的，换而言之，每个收集器的日志格式都可以不一样。但虚拟机设计者为了方便用户阅读，将各个收集器的日志都维持一定的共性，例如以下两段典型的GC日志：
 
 ```
@@ -377,9 +385,12 @@ CMS（Concurrent Mark Sweep）收集器是一种以获取最短回收停顿时�
 
 #### 动态对象年龄判定
 为了能更好地适应不同程序的内存状况，虚拟机并不总是要求对象的年龄必须达到MaxTenuringThreshold才能晋升老年代，如果在Survivor空间中相同年龄所有对象大小的总和大于Survivor空间的一半，年龄大于或等于该年龄的对象就可以直接进入老年代，无须等到MaxTenuringThreshold中要求的年龄。
+
+
 ### 参考资料
 - [周志明-深入理解JVM虚拟机]
 - [Minor GC、Major GC和Full GC之间的区别](https://segmentfault.com/a/1190000007723051)
 - [jvm垃圾收集器和内存分配策略](http://liucw.cn/2017/12/24/jvm/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8%E4%B8%8E%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E7%AD%96%E7%95%A5/)
 - [cms收集器为何没有采用Mark-Sweep](http://hllvm.group.iteye.com/group/topic/38223)
 - [full gc 和 minor gc](https://juejin.im/post/5b8d2a5551882542ba1ddcf8)
+- [gc原理和性能调优实践](https://juejin.im/post/5d8c5a5de51d4578323d51bd)

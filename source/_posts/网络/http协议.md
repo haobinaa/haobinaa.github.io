@@ -220,7 +220,7 @@ Content-Type: application/json;charset=utf-8
 
 ### http常见知识点
 
-####　301和302的区别
+#### 301和302的区别
 
 - 301 redirect: 301 代表永久性转移(Permanently Moved)
 - 302 redirect: 302 代表暂时性转移(Temporarily Moved )
