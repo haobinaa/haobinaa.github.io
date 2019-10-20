@@ -1,8 +1,47 @@
 ---
-title: MMap内存文件映射
+title: MMap与FileChannel
 date: 2019-05-17 15:17:52
 tags: IO
+categories: IO
 ---
+### FileChannel
+
+FileChannel是一个连接到文件的通道,可以通过文件通道读写文件
+
+
+#### FileChannel的操作
+
+##### 打开FileChannel
+
+在使用FileChannel之前，必须先打开它。但是，我们无法直接打开一个FileChannel，需要通过使用一个`InputStream、OutputStream`或`RandomAccessFile`来获取一个FileChannel实例。下面是通过RandomAccessFile打开FileChannel的示例：
+``` 
+RandomAccessFile aFile = new RandomAccessFile("data/nio-data.txt", "rw");
+FileChannel inChannel = aFile.getChannel();
+```
+
+##### 从FileChannel中读取数据
+
+``` 
+ByteBuffer buf = ByteBuffer.allocate(48);
+int bytesRead = inChannel.read(buf);
+```
+
+首先分配一个Buffer,从FileChannel中读取的数据将被读到Buffer中。
+然后，调用FileChannel中`read()`。该方法将数据从FileChannel读取到Buffer中。read()方法返回的int值表示了有多少字节被读到了Buffer中。如果返回-1，表示到了文件末尾
+
+##### 向FileChannel中写数据
+
+``` 
+String newData = "New String to write to file...";
+ByteBuffer buf = ByteBuffer.allocate(48);
+buf.clear();
+buf.put(newData.getBytes());
+buf.flip();
+while(buf.hasRemaining()) {
+    channel.write(buf);
+}
+```
+
 
 ### 内存映射
 
@@ -96,3 +135,8 @@ public class Main {
     }
 }
 ``` 
+
+### 参考资料
+
+- [对文件IO操作的一些最佳实践](https://www.cnkirito.moe/file-io-best-practise/)
+- [并发编程网-FileChannel](http://ifeve.com/file-channel/)
