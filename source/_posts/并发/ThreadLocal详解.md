@@ -108,6 +108,7 @@ ThreadLocalMap(ThreadLocal<?> firstKey, Object firstValue) {
 构造方法中会新建一个数组，并将将第一次需要保存的键值存储到一个数组中，完成一些初始化工作。
 
 ##### 存储结构
+
 ThreadLocalMap 内部维护了一个哈希表（数组）来存储数据，并且定义了加载因子：
 ``` 
 // 初始容量，必须是 2 的幂
@@ -161,7 +162,7 @@ private void set(ThreadLocal key, Object value) {
             return;
         }
 
-        // 若索引位置的 Entry 的 key 为 null（key 已经被回收了），表示该位置的 Entry 已经无效，用要保存的键值替换该位置上的 Entry
+        // 若索引位置的 Entry 的 key 为 null（key 是弱引用，已经被回收了），表示该位置的 Entry 已经无效，用要保存的键值替换该位置上的 Entry
         if (k == null) {
             replaceStaleEntry(key, value, i);
             return;

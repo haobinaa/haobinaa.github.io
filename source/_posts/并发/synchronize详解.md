@@ -1,5 +1,5 @@
 ---
-title: synchronize详解
+title: synchronize和volatile
 date: 2017-11-19 11:31:32
 tags: 
 categories: 并发
@@ -7,7 +7,9 @@ categories: 并发
 
 ### synchronized实现原理
 
-synchronized可以保证方法或者代码块在运行时，同一时刻只有一个方法可以进入到临界区，**同时它还可以保证共享变量的内存可见性**
+一个线程在获取到监视器锁以后才能进入 synchronized 控制的代码块，一旦进入代码块，首先，该线程对于共享变量的缓存就会失效，因此 synchronized 代码块中对于共享变量的读取需要从主内存中重新获取，也就能获取到最新的值。
+
+退出代码块的时候的，会将该线程写缓冲区中的数据刷到主内存中，所以在 synchronized 代码块之前或 synchronized 代码块中对于共享变量的操作随着该线程退出 synchronized 块，会立即对其他线程可见（这句话的前提是其他读取共享变量的线程会从主内存读取最新值）
 
 Java中每一个对象都可以作为锁，这是synchronized实现同步的基础：
 
@@ -155,6 +157,26 @@ public class StringBufferTest {
 ##### 锁消除（Lock Elimination）
 
 锁消除即删除不必要的加锁操作。根据代码逃逸技术，如果判断到一段代码中，堆上的数据不会逃逸出当前线程，那么可以认为这段代码是线程安全的，不必要加锁。 
+
+
+### volatile
+
+volatile 保证内存可见性和禁止指令重排序
+
+volatile 有 synchronize 有类似的语义，读一个 volatile 变量之前，需要先使相应的本地缓存失效，这样就必须到主内存读取最新值，写一个 volatile 属性会立即刷入到主内存。所以，volatile 读和 monitorenter 有相同的语义，volatile 写和 monitorexit 有相同的语义。
+
+####　volatile使用总结
+
+1. volatile 修饰符适用于以下场景：某个属性被多个线程共享，其中有一个线程修改了此属性，其他线程可以立即得到修改后的值。
+2. volatile 属性的读写操作都是无锁的，它不能替代 synchronized，因为它没有提供原子性和互斥性。因为无锁，不需要花费时间在获取锁和释放锁上，所以说它是低成本的。
+
+3. volatile 只能作用于属性，我们用 volatile 修饰属性，这样 compilers 就不会对这个属性做指令重排序。
+
+4. volatile 提供了可见性，任何一个线程对其的修改将立马对其他线程可见。volatile 属性不会被线程缓存，始终从主存中读取。
+5. volatile 提供了 happens-before 保证，对 volatile 变量 v 的写入 happens-before 所有其他线程后续对 v 的读操作。
+另 volatile 可以使得 long 和 double 的赋值是原子的
+
+
 ### 参考资料
 - [类锁和对象锁](https://juejin.im/post/5adc8f8af265da0b7e0bdafe)
 - [对象锁和类锁全面解析](http://www.importnew.com/20444.html)
