@@ -10,7 +10,8 @@ categories: 并发
 我们常用 obj.wait()，obj.notify() 或 obj.notifyAll() 来实现生产者-消费者， 不过它们是基于对象监视器锁的。
 
 condition基于ReentrantLock实现了该模式(ArrayBlockingQueue也是采用这个方式)，例子:
-``` 
+
+```java
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -30,9 +31,9 @@ class BoundedBuffer {
         try {
             while (count == items.length)
                 notFull.await();  // 队列已满，等待，直到 not full 才能继续生产
-            items[putptr] = x;
-            if (++putptr == items.length) putptr = 0;
-            ++count;
+            items[putptr] = x; // 生产一个
+            if (++putptr == items.length) putptr = 0; // 如果已经到了数组的尾部，则从头开始(循环数组)
+            ++count; // 总量加1， 生产成功
             notEmpty.signal(); // 生产成功，队列已经 not empty 了，发个通知出去
         } finally {
             lock.unlock();
@@ -45,10 +46,10 @@ class BoundedBuffer {
         try {
             while (count == 0)
                 notEmpty.await(); // 队列为空，等待，直到队列 not empty，才能继续消费
-            Object x = items[takeptr];
-            if (++takeptr == items.length) takeptr = 0;
-            --count;
-            notFull.signal(); // 被我消费掉一个，队列 not full 了，发个通知出去
+            Object x = items[takeptr]; // 消费一个
+            if (++takeptr == items.length) takeptr = 0; // 同样是循环数组
+            --count; // 总量减1 消费成功
+            notFull.signal(); // 消费掉一个，队列 not full 了，发个通知出去
             return x;
         } finally {
             lock.unlock();
@@ -56,14 +57,11 @@ class BoundedBuffer {
     }
 }
 ```
-condition 是依赖于 ReentrantLock 的，不管是调用 await 进入等待还是 signal 唤醒，都必须获取到锁才能进行操作。每个 ReentrantLock 实例可以通过调用多次 newCondition 产生多个 ConditionObject 的实例：
-``` 
-final ConditionObject newCondition() {
-    return new ConditionObject();
-}
-```
+condition 是依赖于 ReentrantLock 的，不管是调用 `await` 进入等待还是 `signal` 唤醒，都必须获取到锁才能进行操作。每个 ReentrantLock 实例可以通过调用多次 newCondition 产生多个 `ConditionObject` 的实例。
+
+
 `ConditionObject` 是 `Condition` 的实现类，在 `AbstractQueuedSynchronizer` 类中:
-``` 
+```java
 public class ConditionObject implements Condition, java.io.Serializable {
         private static final long serialVersionUID = 1173984872572414699L;
         // 条件队列的第一个节点
@@ -71,6 +69,8 @@ public class ConditionObject implements Condition, java.io.Serializable {
         private transient Node firstWaiter;
         // 条件队列的最后一个节点
         private transient Node lastWaiter;
+        // ......
+}
 ```
 
 ### 条件队列
@@ -88,24 +88,33 @@ Node nextWaiter;
 ```
 其中`prev`和`next`用来实现阻塞队列的双向链表， `nextWaiter`用来实现条件队列的单向链表
 
-这里还需要知道几点:
-1. 一个 ReentrantLock 实例可以通过多次调用 newCondition() 来产生多个 Condition 实例，这里对应 condition1 和 condition2。注意，ConditionObject 只有两个属性 firstWaiter 和 lastWaiter；
-2. 每个 condition 有一个关联的条件队列，如线程 1 调用 condition1.await() 方法即可将当前线程 1 包装成 Node 后加入到条件队列中，然后阻塞在这里，不继续往下执行，条件队列是一个单向链表
-3. 调用 condition1.signal() 会将condition1 对应的条件队列的 firstWaiter 移到阻塞队列的队尾，等待获取锁，获取锁后 await 方法返回，继续往下执行
+结合图片, 流程如下:
+
+1. 条件队列和阻塞队列的节点，都是 Node 的实例，因为条件队列的节点是需要转移到阻塞队列中去的
+
+2. 一个 ReentrantLock 实例可以通过多次调用 `newCondition()` 来产生多个 Condition 实例，这里对应 condition1 和 condition2。注意，ConditionObject 只有两个属性 `firstWaiter`(条件队列第一个节点) 和 `lastWaiter`(条件队列最后一个节点)；
+
+3. 每个 condition 有一个关联的条件队列，如线程 1 调用 condition1.await() 方法即可将当前线程 1 包装成 Node 后加入到条件队列中，然后阻塞在这里，不继续往下执行，条件队列是一个单向链表
+
+3. 调用 condition1.signal() 会将 condition1 对应的条件队列的 firstWaiter 移到阻塞队列的队尾，等待获取锁，获取锁后 await 方法返回，继续往下执行
 
 
 #### await方法
-``` 
-// 首先，这个方法是可被中断的，不可被中断的是另一个方法 awaitUninterruptibly()
-// 这个方法会阻塞，直到调用 signal 方法（指 signal() 和 signalAll()，下同），或被中断
+
+```java
+// 这个方法会阻塞，直到调用 signal 方法（指 signal() 和 signalAll() ），或被中断
 public final void await() throws InterruptedException {
+    // 这个方法是可中断的，一开始就会判断中断状态
     if (Thread.interrupted())
         throw new InterruptedException();
+    
     // 添加到 condition 的条件队列中
     Node node = addConditionWaiter();
+    
     // 释放锁，返回值是释放锁之前的 state 值
     int savedState = fullyRelease(node);
     int interruptMode = 0;
+    
     // 这里退出循环有两种情况，之后再仔细分析
     // 1. isOnSyncQueue(node) 返回 true，即当前 node 已经转移到阻塞队列了
     // 2. checkInterruptWhileWaiting(node) != 0 会到 break，然后退出循环，代表的是线程中断
@@ -127,7 +136,7 @@ public final void await() throws InterruptedException {
 #### addConditionWaiter-将节点加入到条件队列(condition queue)
 
 addConditionWaiter() 是将当前节点加入到条件队列
-``` 
+```java
 // 将当前线程对应的节点入队，插入队尾
 private Node addConditionWaiter() {
     Node t = lastWaiter;
