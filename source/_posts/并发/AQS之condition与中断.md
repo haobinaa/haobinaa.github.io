@@ -94,9 +94,9 @@ Node nextWaiter;
 
 2. 一个 ReentrantLock 实例可以通过多次调用 `newCondition()` 来产生多个 Condition 实例，这里对应 condition1 和 condition2。注意，ConditionObject 只有两个属性 `firstWaiter`(条件队列第一个节点) 和 `lastWaiter`(条件队列最后一个节点)；
 
-3. 每个 condition 有一个关联的条件队列，如线程 1 调用 condition1.await() 方法即可将当前线程 1 包装成 Node 后加入到条件队列中，然后阻塞在这里，不继续往下执行，条件队列是一个单向链表
+3. 每个 condition 有一个关联的条件队列，如线程 1 调用 `condition1.await()` 方法即可将当前线程 1 包装成 Node 后加入到条件队列中，然后阻塞在这里，不继续往下执行，条件队列是一个单向链表
 
-3. 调用 condition1.signal() 会将 condition1 对应的条件队列的 firstWaiter 移到阻塞队列的队尾，等待获取锁，获取锁后 await 方法返回，继续往下执行
+3. 调用 `condition1.signal()` 会将 condition1 对应的条件队列的 firstWaiter 移到阻塞队列的队尾，等待获取锁，获取锁后 await 方法返回，继续往下执行
 
 
 #### await方法
@@ -115,10 +115,11 @@ public final void await() throws InterruptedException {
     int savedState = fullyRelease(node);
     int interruptMode = 0;
     
-    // 这里退出循环有两种情况，之后再仔细分析
+    // 这里退出循环有两种情况
     // 1. isOnSyncQueue(node) 返回 true，即当前 node 已经转移到阻塞队列了
     // 2. checkInterruptWhileWaiting(node) != 0 会到 break，然后退出循环，代表的是线程中断
     while (!isOnSyncQueue(node)) {
+        // 如果不在阻塞队列中，线程挂起等待在这里
         LockSupport.park(this);
         if ((interruptMode = checkInterruptWhileWaiting(node)) != 0)
             break;
@@ -133,7 +134,7 @@ public final void await() throws InterruptedException {
 }
 ```
 
-#### addConditionWaiter-将节点加入到条件队列(condition queue)
+##### addConditionWaiter-将节点加入到条件队列(condition queue)
 
 addConditionWaiter() 是将当前节点加入到条件队列
 ```java
@@ -141,6 +142,7 @@ addConditionWaiter() 是将当前节点加入到条件队列
 private Node addConditionWaiter() {
     Node t = lastWaiter;
     // 如果条件队列的最后一个节点取消了，将其清除出去
+    // 这里的判断条件是不为 CONDITION 即代表取消排队
     if (t != null && t.waitStatus != Node.CONDITION) {
         // 这个方法会遍历整个条件队列，然后会将已取消的所有节点清除出队列
         unlinkCancelledWaiters();
@@ -156,14 +158,14 @@ private Node addConditionWaiter() {
     return node;
 }
 ```
-在addWaiter 方法中，有一个 `unlinkCancelledWaiters()` 方法，该方法用于清除队列中已经取消等待的节点。
 
-当 await 的时候如果发生了取消操作，或者是在节点入队的时候，发现最后一个节点是被取消的，会调用一次这个方法：
-``` 
+`unlinkCancelledWaiters()` 方法用于清除队列中已经取消等待的节点。当 await 的时候如果发生了取消操作，或者是在节点入队的时候，发现最后一个节点是被取消的，会调用一次这个方法：
+```java
 // 等待队列是一个单向链表，遍历链表将已经取消等待的节点清除出去
 // 纯属链表操作，很好理解，看不懂多看几遍就可以了
 private void unlinkCancelledWaiters() {
     Node t = firstWaiter;
+    // 保存上个节点
     Node trail = null;
     while (t != null) {
         Node next = t.nextWaiter;
@@ -184,10 +186,10 @@ private void unlinkCancelledWaiters() {
 }
 ```
 
-#### fullyRelease-完全释放独占锁
+##### fullyRelease-完全释放独占锁
 
-回到 wait 方法，节点入队了以后，会调用 `int savedState = fullyRelease(node);` 方法释放锁，注意，这里是完全释放独占锁，因为 ReentrantLock 是可以重入的
-``` 
+节点入队了以后，会调用 `int savedState = fullyRelease(node);` 方法释放锁，注意，这里是完全释放独占锁，因为 ReentrantLock 是可以重入的, 所以 state 的值是可能大于1的
+```java
 // 首先，我们要先观察到返回值 savedState 代表 release 之前的 state 值
 // 对于最简单的操作：先 lock.lock()，然后 condition1.await()。
 //         那么 state 经过这个方法由 1 变为 0，锁释放，此方法返回 1
@@ -198,6 +200,9 @@ final int fullyRelease(Node node) {
     try {
         int savedState = getState();
         // 这里使用了当前的 state 作为 release 的参数，也就是完全释放掉锁，将 state 置为 0
+        // 如果线程在不持有锁的情况下调用， release这里是会抛出异常的， release释放锁有如下判断:
+        //    if (Thread.currentThread() != getExclusiveOwnerThread())
+        //                throw new IllegalMonitorStateException();
         if (release(savedState)) {
             failed = false;
             return savedState;
@@ -211,42 +216,43 @@ final int fullyRelease(Node node) {
 }
 ```
 
-#### 等待进入阻塞队列(自旋等待)
+##### 等待进入阻塞队列(自旋等待)
 
-释放掉锁以后，接下来是这段，这边会自旋，如果发现自己还没到阻塞队列，那么挂起，等待被转移到阻塞队列：
-``` 
+释放掉锁以后，接下来会自旋，如果发现自己还没到阻塞队列，那么挂起，等待被转移到阻塞队列：
+
+```java
 int interruptMode = 0;
+// 如果不在阻塞队列中了
 while (!isOnSyncQueue(node)) {
     // 线程挂起
     LockSupport.park(this);
-
     if ((interruptMode = checkInterruptWhileWaiting(node)) != 0)
         break;
 }
 ```
 
 `isOnSyncQueue(Node node)` 用于判断节点是否已经转移到阻塞队列了：
-``` 
+
+```java
 // 在节点入条件队列的时候，初始化时设置了 waitStatus = Node.CONDITION
 // 前面提到，signal 的时候需要将节点从条件队列移到阻塞队列，
 // 这个方法就是判断 node 是否已经移动到阻塞队列了
 final boolean isOnSyncQueue(Node node) {
     // 移动过去的时候，node 的 waitStatus 会置为 0，这个之后在说 signal 方法的时候会说到
     // 如果 waitStatus 还是 Node.CONDITION，也就是 -2，那肯定就是还在条件队列中
-    // 如果 node 的前驱 prev 指向还是 null，说明肯定没有在 阻塞队列
+    // 如果 node 的前驱 prev 指向还是 null，说明肯定没有在阻塞队列(prev属性是阻塞队列中使用到的)
+    // 这里解释一下，阻塞队列是双向链表所以 prev 不为 null
     if (node.waitStatus == Node.CONDITION || node.prev == null)
         return false;
     // 如果 node 已经有后继节点 next 的时候，那肯定是在阻塞队列了
+    // 同样 next 属性也是阻塞队列用到的
     if (node.next != null) 
         return true;
 
     // 这个方法从阻塞队列的队尾开始从后往前遍历找，如果找到相等的，说明在阻塞队列，否则就是不在阻塞队列
-
     // 可以通过判断 node.prev() != null 来推断出 node 在阻塞队列吗？答案是：不能。
-    // 这个可以看上篇 AQS 的入队方法，首先设置的是 node.prev 指向 tail，
+    // 在 AQS 的入队方法，首先设置的是 node.prev 指向 tail，
     // 然后是 CAS 操作将自己设置为新的 tail，可是这次的 CAS 是可能失败的。
-
-    // 调用这个方法的时候，往往我们需要的就在队尾的部分，所以一般都不需要完全遍历整个队列的
     return findNodeFromTail(node);
 }
 
@@ -261,16 +267,17 @@ private boolean findNodeFromTail(Node node) {
         t = t.prev;
     }
 }
-``` 
-回到前面的循环，isOnSyncQueue(node) 返回 false 的话，那么进到 LockSupport.park(this); 这里线程挂起。
+```
 
-#### signal 唤醒线程， 转移阻塞队列
+回到前面的循环，`isOnSyncQueue(node)` 返回 false 的话，那么进到 LockSupport.park(this); 这里线程挂起。
+
+#### signal 唤醒线程，转移阻塞队列
 
 在`await`中，使用 `LockSupport.park(this)`将线程挂起了，等待唤醒
 
 唤醒操作通常由另一个线程来操作，就像生产者-消费者模式中，如果线程因为等待消费而挂起，那么当生产者生产了一个东西后，会调用 signal 唤醒正在等待的线程来消费
 
-``` 
+```java
 // 唤醒等待了最久的线程
 // 其实就是，将这个线程对应的 node 从条件队列转移到阻塞队列
 public final void signal() {
@@ -286,7 +293,7 @@ public final void signal() {
 // 因为前面我们说过，有些线程会取消排队，但是还在队列中
 private void doSignal(Node first) {
     do {
-          // 将 firstWaiter 指向 first 节点后面的第一个
+        // 将 firstWaiter 指向 first 节点后面的第一个
         // 如果将队头移除后，后面没有节点在等待了，那么需要将 lastWaiter 置为 null
         if ( (firstWaiter = first.nextWaiter) == null)
             lastWaiter = null;
@@ -302,7 +309,6 @@ private void doSignal(Node first) {
 // true 代表成功转移
 // false 代表在 signal 之前，节点已经取消了
 final boolean transferForSignal(Node node) {
-
     // CAS 如果失败，说明此 node 的 waitStatus 已不是 Node.CONDITION，说明节点已经取消，
     // 既然已经取消，也就不需要转移了，方法返回，转移后面一个节点
     // 否则，将 waitStatus 置为 0
@@ -316,20 +322,20 @@ final boolean transferForSignal(Node node) {
     // ws > 0 说明 node 在阻塞队列中的前驱节点取消了等待锁，直接唤醒 node 对应的线程。
     // 唤醒之后会怎么样，后面再解释
     // 如果 ws <= 0, 那么 compareAndSetWaitStatus 将会被调用，
-    // 上篇介绍的时候说过，节点入队后，需要把前驱节点的状态设为 Node.SIGNAL(-1)
+    // AQS 篇介绍的时候说过，节点入队后，需要把前驱节点的状态设为 Node.SIGNAL(-1)
     if (ws > 0 || !compareAndSetWaitStatus(p, ws, Node.SIGNAL))
-        // 如果前驱节点取消或者 CAS 失败，会进到这里唤醒线程，之后的操作看下一节
+        // 如果前驱节点取消或者 CAS 失败，会进到这里唤醒线程
         LockSupport.unpark(node.thread);
     return true;
 }
 ```
-正常情况下，`ws > 0 || !compareAndSetWaitStatus(p, ws, Node.SIGNAL)` 这句中，ws <= 0，而且 compareAndSetWaitStatus(p, ws, Node.SIGNAL) 会返回 true，所以一般也不会进去 if 语句块中唤醒 node 对应的线程。然后这个方法返回 true，也就意味着 signal 方法结束了，节点进入了阻塞队列。
+正常情况下，`ws > 0 || !compareAndSetWaitStatus(p, ws, Node.SIGNAL)` 这里应该 ws <= 0，而且 compareAndSetWaitStatus(p, ws, Node.SIGNAL) 会返回 true，所以一般也不会进去 if 语句块中唤醒 node 对应的线程。然后这个方法返回 true，也就意味着 signal 方法结束了，节点进入了阻塞队列。
 
 假设发生了阻塞队列中的前驱节点取消等待，或者 CAS 失败，只要唤醒线程，让其进到下一步即可。
 
 #### signal唤醒后，await检查中断状态
 
-上一步 signal 之后，我们的线程由条件队列转移到了阻塞队列，之后就准备获取锁了。只要重新获取到锁了以后，继续往下执行。
+上一步 signal 之后，我们的线程由条件队列转移到了阻塞队列，之后就准备获取锁了。只要重新获取到锁了以后，继续往下看 await 执行。
 
 等线程从挂起中恢复过来:
 ``` 
