@@ -371,6 +371,8 @@ private int checkInterruptWhileWaiting(Node node) {
 }
 ```
 
+这里Thread.interrupted()：如果当前线程已经处于中断状态，那么该方法返回 true，同时将中断状态重置为 false，所以，才有后续的 重新中断（REINTERRUPT） 的使用
+
 怎么判断是 signal 之前还是之后发生的中断：
 ``` 
 // 只有线程处于中断状态，才会调用此方法
@@ -397,7 +399,7 @@ final boolean transferAfterCancelledWait(Node node) {
 
 所以这个自旋的 while 循环如果要退出， 要么中断， 要么转移成功
 
-#### 获取独占锁
+##### 获取独占锁
 
 while 循环出来以后，下面是这段代码：
 ``` 
@@ -418,6 +420,112 @@ if (interruptMode != 0)
     reportInterruptAfterWait(interruptMode);
 ```
 之前说过，如果有节点取消，也会调用 unlinkCancelledWaiters 这个方法，就是这里了。
+
+##### 处理中断状态
+
+interruptMode 的作用：
+- 0： 什么都不做，没有被中断过
+- THROW_IE： await 方法抛出 InterruptedException 异常，因为它代表在 await() 期间发生了中断
+- REINTERRUPT：新中断当前线程，因为它代表 await() 期间没有被中断，而是 signal() 以后发生的中断
+
+```java
+private void reportInterruptAfterWait(int interruptMode)
+    throws InterruptedException {
+    if (interruptMode == THROW_IE)
+        throw new InterruptedException();
+    else if (interruptMode == REINTERRUPT)
+        selfInterrupt();
+}
+```
+
+
+### java线程中断
+
+#### 线程中断
+
+java 中断某个线程，这个线程就停止运行了。中断代表线程状态，每个线程都关联了一个中断状态，是一个 true 或 false 的 boolean 值，初始值为 false。
+
+Thread 类中关于中断的几个方法:
+```java
+// Thread 类中的实例方法，持有线程实例引用即可检测线程中断状态
+public boolean isInterrupted() {}
+
+// Thread 中的静态方法，检测调用这个方法的线程是否已经中断
+// 注意：这个方法返回中断状态的同时，会将此线程的中断状态重置为 false
+// 所以，如果我们连续调用两次这个方法的话，第二次的返回值肯定就是 false 了
+public static boolean interrupted() {}
+
+// Thread 类中的实例方法，用于设置一个线程的中断状态为 true
+public void interrupt() {}
+```
+
+我们说中断一个线程，其实就是设置了线程的 interrupted status 为 true，至于说被中断的线程怎么处理这个状态，那是那个线程自己的事。如以下代码,就会响应中断：
+```java
+while (!Thread.interrupted()) {
+   doWork();
+   System.out.println("我做完一件事了，准备做下一件，如果没有其他线程中断我的话");
+}
+```
+
+一般除了 jdk 源码外，很少有专门对中断对处理
+
+
+#### jdk自动感知中断的情况
+
+1. Object类的 wait, Thread类的 join, sleep。这三类方法的线程被中断的时候，会自动感知到。如果线程阻塞在这些方法上（我们知道，这些方法会让当前线程阻塞），这个时候如果其他线程对这个线程进行了中断，那么这个线程会从这些方法中立即返回，抛出 InterruptedException 异常，同时重置中断状态为 false
+
+2. NIO 中 select方法。 一旦中断，select会立即返回
+
+
+#### InterruptedException
+
+这是一个特殊的异常，不是说 JVM 对其有特殊的处理，而是它的使用场景比较特殊。通常，我们可以看到，像 Object 中的 wait() 方法，ReentrantLock 中的 lockInterruptibly() 方法，Thread 中的 sleep() 方法等等，这些方法都带有 throws InterruptedException，我们通常称这些方法为阻塞方法（blocking method。
+
+阻塞方法一个很明显的特征是，它们需要花费比较长的时间（不是绝对的，只是说明时间不可控），还有它们的方法结束返回往往依赖于外部条件，如 wait 方法依赖于其他线程的 notify，lock 方法依赖于其他线程的 unlock等等。
+
+当我们看到方法上带有 throws InterruptedException 时，我们就要知道，这个方法应该是阻塞方法，我们如果希望它能早点返回的话，我们往往可以通过中断来实现。
+
+#### 处理中断
+
+正常我们处理中断一般如下:
+```java
+try {
+    Thread.sleep(10000);
+} catch (InterruptedException e) {
+    // ignore
+}
+```
+
+这里我们并不知道是真的 sleep 了10s还是1s就被中断了，这里的代码将中断异常吞了。
+
+AQS中处理中断如下:
+```java
+// 带中断的 lock
+public void lockInterruptibly() throws InterruptedException {
+    sync.acquireInterruptibly(1);
+}
+```
+
+正常的lock方法不响应中断。如果 thread1 调用了 lock() 方法，过了很久还没抢到锁，这个时候 thread2 对其进行了中断，thread1 是不响应这个请求的，它会继续抢锁，当然它不会把“被中断”这个信息扔掉。如下:
+```java
+public final void acquire(int arg) {
+    if (!tryAcquire(arg) &&
+        acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
+        // 我们看到，这里也没做任何特殊处理，就是记录下来中断状态。
+        // 这样，如果外层方法需要去检测的时候，至少我们没有把这个信息丢了
+        selfInterrupt();// Thread.currentThread().interrupt();
+}
+```
+而对于 lockInterruptibly() 方法，因为其方法上面有 throws InterruptedException ，这个信号告诉我们，如果我们要取消线程抢锁，直接中断这个线程即可，它会立即返回，抛出 InterruptedException 异常
+
+并且在 Condition 代码中，如果方法会抛出`InterruptedException`，那么方法体第一句就是:
+```java
+public final void await() throws InterruptedException {
+    if (Thread.interrupted())
+        throw new InterruptedException();
+     ...... 
+}
+```
 
 ### 参考资料
 
