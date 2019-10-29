@@ -337,8 +337,8 @@ final boolean transferForSignal(Node node) {
 
 上一步 signal 之后，我们的线程由条件队列转移到了阻塞队列，之后就准备获取锁了。只要重新获取到锁了以后，继续往下看 await 执行。
 
-等线程从挂起中恢复过来:
-``` 
+等线程从挂起中恢复过来, 返回 await中:
+```java
 int interruptMode = 0;
 while (!isOnSyncQueue(node)) {
     // 线程挂起
@@ -360,7 +360,7 @@ interruptMode 可以取值为 REINTERRUPT（1），THROW_IE（-1），0 ：
 
 
 线程唤醒后第一步是调用 checkInterruptWhileWaiting(node) 这个方法，此方法用于判断是否在线程挂起期间发生了中断，如果发生了中断，是 signal 调用之前中断的，还是 signal 之后发生的中断:
-``` 
+```java
 // 1. 如果在 signal 之前已经中断，返回 THROW_IE
 // 2. 如果是 signal 之后中断，返回 REINTERRUPT
 // 3. 没有发生中断，返回 0
@@ -373,8 +373,8 @@ private int checkInterruptWhileWaiting(Node node) {
 
 这里Thread.interrupted()：如果当前线程已经处于中断状态，那么该方法返回 true，同时将中断状态重置为 false，所以，才有后续的 重新中断（REINTERRUPT） 的使用
 
-怎么判断是 signal 之前还是之后发生的中断：
-``` 
+如果发生中断则判断是 signal 之前还是之后发生的中断：
+```java
 // 只有线程处于中断状态，才会调用此方法
 // 如果需要的话，将这个已经取消等待的节点转移到阻塞队列
 // 返回 true：如果此线程在 signal 之前被取消，
@@ -397,12 +397,14 @@ final boolean transferAfterCancelledWait(Node node) {
 }
 ```
 
-所以这个自旋的 while 循环如果要退出， 要么中断， 要么转移成功
+到这里就可以看出，整个 while 循环的退出条件:
+1. 发生中断， 将节点放入阻塞队列返回false， 退出 while
+2. signal 已经将节点转移到了阻塞队列
 
 ##### 获取独占锁
 
 while 循环出来以后，下面是这段代码：
-``` 
+```java
 if (acquireQueued(node, savedState) && interruptMode != THROW_IE)
     interruptMode = REINTERRUPT;
 ```
@@ -410,7 +412,8 @@ if (acquireQueued(node, savedState) && interruptMode != THROW_IE)
 
 这里的 acquireQueued(node, savedState) 的第一个参数 node 之前已经经过 enq(node) 进入了队列，参数 savedState 是之前释放锁前的 state，这个方法返回的时候，代表当前线程获取了锁，而且 state == savedState了。
 
-注意，前面我们说过，不管有没有发生中断，都会进入到阻塞队列，而 acquireQueued(node, savedState) 的返回值就是代表线程是否被中断。如果返回 true，说明被中断了，而且 interruptMode != THROW_IE，说明在 signal 之前就发生中断了，这里将 interruptMode 设置为 REINTERRUPT，用于待会重新中断。
+并且根据前面的逻辑，不管有没有发生中断，都会进入到阻塞队列，而 acquireQueued(node, savedState) 的返回值就是代表线程是否被中断。如果返回 true，说明被中断了，而且 interruptMode != 
+THROW_IE，说明在 signal 之前就发生中断了，这里将 interruptMode 设置为 REINTERRUPT，用于待会重新中断。
 
 下面:
 ``` 
@@ -421,12 +424,12 @@ if (interruptMode != 0)
 ```
 之前说过，如果有节点取消，也会调用 unlinkCancelledWaiters 这个方法，就是这里了。
 
-##### 处理中断状态
+##### 处理中断状态(interruptMode)
 
-interruptMode 的作用：
+在这里已经可以看出 interruptMode 的作用：
 - 0： 什么都不做，没有被中断过
-- THROW_IE： await 方法抛出 InterruptedException 异常，因为它代表在 await() 期间发生了中断
-- REINTERRUPT：新中断当前线程，因为它代表 await() 期间没有被中断，而是 signal() 以后发生的中断
+- THROW_IE(-1)： await 方法抛出 InterruptedException 异常，因为它代表在 await() 期间发生了中断
+- REINTERRUPT(1)：新中断当前线程，因为它代表 await() 期间没有被中断，而是 signal() 以后发生的中断
 
 ```java
 private void reportInterruptAfterWait(int interruptMode)
