@@ -1,11 +1,11 @@
 ---
 title: AQS下的并发工具类
-date: 2018-10-23 19:57:21
+date: 2019-10-23 19:57:21
 tags:
 categories: 并发
 ---
 ### CountDownLatch
-CountDownLatch也叫闭锁, 它允许一个或多个线程一直等待，直到其他线程的操作执行完后再执行。
+`CountDownLatch`也叫闭锁, 它允许一个或多个线程一直等待，直到其他线程的操作执行完后再执行。
 
 #### 使用示例
 
@@ -14,7 +14,7 @@ CountDownLatch的构造函数接收一个int类型的参数作为计数器，如
 > 备注：由于CountDownLatch方法可以用在任何地方，这里说的N个点，可以是N个线程，也可以是1个线程里的N个执行步骤。用在多个线程时，只需要把CountDownLatch的引用传递到线程里即可。
 
 示例(所有工人工作完成后在打印完成)：
-``` 
+```java 
 public class CountDownLatchDemo {
 
     public static void main(String[] args) {
@@ -80,12 +80,14 @@ public class CountDownLatchDemo {
     }
 }
 ```
+该例子， t3和t4会一直阻塞至 t1，t2全部完成后才会执行
 
 #### 源码分析
 
 ##### 构造方法
+
 需要传入一个不小于 0 的整数：
-``` 
+```java
 public CountDownLatch(int count) {
     if (count < 0) throw new IllegalArgumentException("count < 0");
     this.sync = new Sync(count);
@@ -108,7 +110,7 @@ AQS 里面的 state 是一个整数值，这边用一个 int count 参数其实�
 
 await() 方法，它代表线程阻塞，等待 state 的值减为 0。
 
-``` 
+```java
 public void await() throws InterruptedException {
     sync.acquireSharedInterruptibly(1);
 }

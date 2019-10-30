@@ -1,6 +1,6 @@
 ---
 title: AQS之condition与中断
-date: 2018-07-26 23:45:25
+date: 2019-07-26 23:45:25
 tags:
 categories: 并发
 ---
@@ -530,6 +530,85 @@ public final void await() throws InterruptedException {
 }
 ```
 
+#### ReentrantLock带中断的lock
+
+ReentrantLock 可以lock并抛出`InterruptedException`:
+```java
+public void lockInterruptibly() throws InterruptedException {
+    sync.acquireInterruptibly(1);
+}
+
+public final void acquireInterruptibly(int arg)
+        throws InterruptedException {
+    // 如果线程中断，直接抛出中断异常
+    if (Thread.interrupted())
+        throw new InterruptedException();
+    if (!tryAcquire(arg))
+        doAcquireInterruptibly(arg);
+}
+
+// 继续看 doAcquireInterruptibly
+private void doAcquireInterruptibly(int arg) throws InterruptedException {
+    final Node node = addWaiter(Node.EXCLUSIVE);
+    boolean failed = true;
+    try {
+        for (;;) {
+            final Node p = node.predecessor();
+            if (p == head && tryAcquire(arg)) {
+                setHead(node);
+                p.next = null; // help GC
+                failed = false;
+                return;
+            }
+            if (shouldParkAfterFailedAcquire(p, node) &&
+                parkAndCheckInterrupt())
+                // 就是这里了，一旦异常，马上结束这个方法，抛出异常。
+                // 这里不再只是标记这个方法的返回值代表中断状态
+                // 而是直接抛出异常，而且外层也不捕获，一直往外抛到 lockInterruptibly
+                throw new InterruptedException();
+        }
+    } finally {
+        // 如果通过 InterruptedException 异常出去，那么 failed 就是 true 了
+        if (failed)
+            cancelAcquire(node);
+    }
+}
+
+// cancelAcquire 节点取消，并设置 waitStatus 为 Node.CANCELLED
+private void cancelAcquire(Node node) {
+    if (node == null)
+        return;
+    node.thread = null;
+    // 找一个合适的前驱。其实就是将它前面的队列中已经取消的节点都清除
+    Node pred = node.prev;
+    while (pred.waitStatus > 0)
+        node.prev = pred = pred.prev;
+    Node predNext = pred.next;
+
+    // 设置节点状态为取消
+    node.waitStatus = Node.CANCELLED;
+    // 如果是尾节点，则把自己从阻塞队列移除
+    if (node == tail && compareAndSetTail(node, pred)) {
+        compareAndSetNext(pred, predNext, null);
+    } else {
+        int ws;
+        // 如果不是尾节点，并且前驱节点不为CANCEL
+        // 将自己移除阻塞节点
+        if (pred != head &&
+            ((ws = pred.waitStatus) == Node.SIGNAL ||
+             (ws <= 0 && compareAndSetWaitStatus(pred, ws, Node.SIGNAL))) &&
+            pred.thread != null) {
+            Node next = node.next;
+            if (next != null && next.waitStatus <= 0)
+                compareAndSetNext(pred, predNext, next);
+        } else {
+            // 入股前驱节点已经取消则唤醒后继节点
+            unparkSuccessor(node);
+        }
+        node.next = node; // help GC
+    }
+}
+```
 ### 参考资料
 
 - [AQS简介](http://cmsblogs.com/?p=2174)
