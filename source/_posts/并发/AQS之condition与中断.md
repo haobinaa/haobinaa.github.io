@@ -335,7 +335,7 @@ final boolean transferForSignal(Node node) {
 
 #### signal唤醒后，await检查中断状态
 
-上一步 signal 之后，我们的线程由条件队列转移到了阻塞队列，之后就准备获取锁了。只要重新获取到锁了以后，继续往下看 await 执行。
+上一步 signal 之后，我们的线程由条件队列转移到了阻塞队列，之后就准备获取锁了(阻塞队列执行完毕就会唤醒排队的node)。只要重新获取到锁了以后，继续往下看 await 执行。
 
 等线程从挂起中恢复过来, 返回 await中:
 ```java

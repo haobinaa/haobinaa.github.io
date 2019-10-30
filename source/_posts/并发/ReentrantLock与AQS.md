@@ -233,10 +233,11 @@ final boolean acquireQueued(final Node node, int arg) {
            // 注意，阻塞队列不包含head节点，head一般指的是占有锁的线程，head后面的才称为阻塞队列
             // 这里我们说一下，为什么可以去试着获取锁：
             // 1. 首先，它是队头，这个是第一个条件，其次，当前的head有可能是刚刚初始化的node，
-            // enq(node) 方法里面有提到，head是延时初始化的，而且new Node()的时候没有设置任何线程
+            // enq(node) 方法里面有提到，head初始化的适合(也就是 new Node())并没有设置任何线程
             // 也就是说，当前的head不属于任何一个线程，所以作为队头，可以去试一试，
             // tryAcquire已经分析过了, 忘记了请往前看一下，就是简单用CAS试操作一下state
             if (p == head && tryAcquire(arg)) {
+                // 获取到锁，把当前线程设置为head
                 setHead(node);
                 p.next = null; // help GC
                 failed = false;
