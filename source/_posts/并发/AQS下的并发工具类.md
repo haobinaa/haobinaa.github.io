@@ -116,10 +116,10 @@ public void await() throws InterruptedException {
 }
 public final void acquireSharedInterruptibly(int arg)
         throws InterruptedException {
+    // 响应中断状态
     if (Thread.interrupted())
         throw new InterruptedException();
-    // t3 和 t4 调用 await 的时候，state 都大于 0。
-    // 也就是说，这个 if 返回 true，然后往里看
+    // 此时state才初始化，所以这里为true
     if (tryAcquireShared(arg) < 0)
         doAcquireSharedInterruptibly(arg);
 }
@@ -130,10 +130,11 @@ protected int tryAcquireShared(int acquires) {
 ```
 
 接下来是 `doAcquireSharedInterruptibly` , 从方法名我们就可以看出，这个方法是获取共享锁，并且此方法是可中断的（中断的时候抛出 InterruptedException 退出这个方法）:
-``` 
+
+```java
 private void doAcquireSharedInterruptibly(int arg)
     throws InterruptedException {
-    // 1. 入队
+    // 1. 以共享模式入队
     final Node node = addWaiter(Node.SHARED);
     boolean failed = true;
     try {
@@ -142,6 +143,7 @@ private void doAcquireSharedInterruptibly(int arg)
             if (p == head) {
                 // 同上，只要 state 不等于 0，那么这个方法返回 -1
                 int r = tryAcquireShared(arg);
+                // 如果state等于0
                 if (r >= 0) {
                     setHeadAndPropagate(node, r);
                     p.next = null; // help GC
@@ -149,7 +151,6 @@ private void doAcquireSharedInterruptibly(int arg)
                     return;
                 }
             }
-            // 2
             if (shouldParkAfterFailedAcquire(p, node) &&
                 parkAndCheckInterrupt())
                 throw new InterruptedException();
@@ -159,6 +160,26 @@ private void doAcquireSharedInterruptibly(int arg)
             cancelAcquire(node);
     }
 }
+
+
+// ===  shouldParkAfterFailedAcquire
+    private static boolean shouldParkAfterFailedAcquire(Node pred, Node node) {
+        int ws = pred.waitStatus;
+        // 如果前驱为 SIGNAL 直接返回true
+        if (ws == Node.SIGNAL)
+            return true;
+        if (ws > 0) {
+            // 如果取消了排队，则将前面所有取消的移除队列
+            do {
+                node.prev = pred = pred.prev;
+            } while (pred.waitStatus > 0);
+            pred.next = node;
+        } else {
+            // 将前驱节点设置为 SIGNAL
+            compareAndSetWaitStatus(pred, ws, Node.SIGNAL);
+        }
+        return false;
+    }
 ```
 
 结合上述的demo分析源码过程：
@@ -178,11 +199,13 @@ private void doAcquireSharedInterruptibly(int arg)
 
 这样t3和t4都被挂起了，等待唤醒
 
-##### countDown
-``` 
+##### countDown 流程
+
+```java
 public void countDown() {
     sync.releaseShared(1);
 }
+
 public final boolean releaseShared(int arg) {
     // 只有当 state 减为 0 的时候，tryReleaseShared 才返回 true
     // 否则只是简单的 state = state - 1 那么 countDown 方法就结束了
@@ -207,26 +230,33 @@ protected boolean tryReleaseShared(int releases) {
 ```
 
 countDown 方法就是每次调用都将 state 值减 1，如果 state 减到 0 了，那么就调用下面的方法进行唤醒阻塞队列中的线程：
-``` 
+```java
 // 调用这个方法的时候，state == 0
 private void doReleaseShared() {
     for (;;) {
         Node h = head;
+       // 1. h == null, 说明阻塞队列为空
+       // 2. h == tail, 说明头结点可能是刚刚初始化的头节点，
+       // 这两种情况都代表阻塞队列没有节点，不需要唤醒
         if (h != null && h != tail) {
             int ws = h.waitStatus;
-            // t3 入队的时候，已经将头节点的 waitStatus 设置为 Node.SIGNAL（-1） 了
+            // 入队的时候已经被后入对的把前驱节点设置为SIGNAL（-1）了
             if (ws == Node.SIGNAL) {
                 if (!compareAndSetWaitStatus(h, Node.SIGNAL, 0))
-                    continue;            // loop to recheck cases
+                 // 如果 CAS 失败就走下面的流程
+                    continue;            
                 // 就是这里，唤醒 head 的后继节点，也就是阻塞队列中的第一个节点
-                // 在这里，也就是唤醒 t3
                 unparkSuccessor(h);
             }
             else if (ws == 0 &&
-                     !compareAndSetWaitStatus(h, 0, Node.PROPAGATE)) // todo
-                continue;                // loop on failed CAS
+            // 这个 CAS 失败的场景是：执行到这里的时候，刚好有一个节点入队，入队会将这个 ws 设置为 -1
+                     !compareAndSetWaitStatus(h, 0, Node.PROPAGATE)) 
+                continue;                
         }
-        if (h == head)                   // loop if head changed
+        // 如果到这里的时候，前面唤醒的线程已经占领了 head，那么再循环唤醒下一个节点
+        // 否则，就是 head 没变(之前CAS失败，h没有被后继节点占领)，那么退出循环，
+        // 退出循环是不是意味着阻塞队列中的其他节点就不唤醒了？当然不是，唤醒的线程之后还是会调用这个方法的
+        if (h == head)
             break;
     }
 }

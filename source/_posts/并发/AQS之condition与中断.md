@@ -441,94 +441,49 @@ private void reportInterruptAfterWait(int interruptMode)
 }
 ```
 
+### AQS 取消排队
 
-### java线程中断
+#### 独占锁取消排队
 
-#### 线程中断
-
-java 中断某个线程，这个线程就停止运行了。中断代表线程状态，每个线程都关联了一个中断状态，是一个 true 或 false 的 boolean 值，初始值为 false。
-
-Thread 类中关于中断的几个方法:
+可以使用中断取消对锁的竞争，回到`acquireQueued`中:
 ```java
-// Thread 类中的实例方法，持有线程实例引用即可检测线程中断状态
-public boolean isInterrupted() {}
+final boolean acquireQueued(final Node node, int arg) {
+    boolean failed = true;
+    try {
+        boolean interrupted = false;
+        for (;;) {
+            final Node p = node.predecessor();
+            if (p == head && tryAcquire(arg)) {
+                setHead(node);
+                p.next = null; // help GC
+                failed = false;
+                return interrupted;
+            }
+            if (shouldParkAfterFailedAcquire(p, node) &&
+                parkAndCheckInterrupt())
+                interrupted = true;
+        }
+    } finally {
+        if (failed)
+            cancelAcquire(node);
+    }
+}
 
-// Thread 中的静态方法，检测调用这个方法的线程是否已经中断
-// 注意：这个方法返回中断状态的同时，会将此线程的中断状态重置为 false
-// 所以，如果我们连续调用两次这个方法的话，第二次的返回值肯定就是 false 了
-public static boolean interrupted() {}
-
-// Thread 类中的实例方法，用于设置一个线程的中断状态为 true
-public void interrupt() {}
-```
-
-我们说中断一个线程，其实就是设置了线程的 interrupted status 为 true，至于说被中断的线程怎么处理这个状态，那是那个线程自己的事。如以下代码,就会响应中断：
-```java
-while (!Thread.interrupted()) {
-   doWork();
-   System.out.println("我做完一件事了，准备做下一件，如果没有其他线程中断我的话");
+// =============== 在看看parkAndCheckInterrupt
+private final boolean parkAndCheckInterrupt() {
+    LockSupport.park(this);
+    return Thread.interrupted();
 }
 ```
 
-一般除了 jdk 源码外，很少有专门对中断对处理
+可以看到如果我们要取消一个线程的排队，我们需要在另外一个线程中对其进行中断。比如某线程调用 lock() 长时间不返回，我想中断它。一旦对其进行中断，此线程会从 LockSupport.park(this); 中唤醒，然后 Thread.interrupted(); 返回 true。
+
+但是即使中断唤醒了这个线程，也仅仅是设置了 ` interrupted = true` 一个状态标记， 而且，由于 `Thread.interrupted(); 会清除中断状态(重置中断状态为false)`，第二次进 parkAndCheckInterrupt 的时候，返回会是 false。
+
+所以 lock() 处理中断的方法就是，你中断归中断，我抢锁还是照样抢锁，几乎没关系，只是我抢到锁了以后，设置线程的中断状态而已，也不抛出任何异常出来。调用者获取锁后，可以去检查是否发生过中断，也可以不理会
 
 
-#### jdk自动感知中断的情况
 
-1. Object类的 wait, Thread类的 join, sleep。这三类方法的线程被中断的时候，会自动感知到。如果线程阻塞在这些方法上（我们知道，这些方法会让当前线程阻塞），这个时候如果其他线程对这个线程进行了中断，那么这个线程会从这些方法中立即返回，抛出 InterruptedException 异常，同时重置中断状态为 false
-
-2. NIO 中 select方法。 一旦中断，select会立即返回
-
-
-#### InterruptedException
-
-这是一个特殊的异常，不是说 JVM 对其有特殊的处理，而是它的使用场景比较特殊。通常，我们可以看到，像 Object 中的 wait() 方法，ReentrantLock 中的 lockInterruptibly() 方法，Thread 中的 sleep() 方法等等，这些方法都带有 throws InterruptedException，我们通常称这些方法为阻塞方法（blocking method。
-
-阻塞方法一个很明显的特征是，它们需要花费比较长的时间（不是绝对的，只是说明时间不可控），还有它们的方法结束返回往往依赖于外部条件，如 wait 方法依赖于其他线程的 notify，lock 方法依赖于其他线程的 unlock等等。
-
-当我们看到方法上带有 throws InterruptedException 时，我们就要知道，这个方法应该是阻塞方法，我们如果希望它能早点返回的话，我们往往可以通过中断来实现。
-
-#### 处理中断
-
-正常我们处理中断一般如下:
-```java
-try {
-    Thread.sleep(10000);
-} catch (InterruptedException e) {
-    // ignore
-}
-```
-
-这里我们并不知道是真的 sleep 了10s还是1s就被中断了，这里的代码将中断异常吞了。
-
-AQS中处理中断如下:
-```java
-// 带中断的 lock
-public void lockInterruptibly() throws InterruptedException {
-    sync.acquireInterruptibly(1);
-}
-```
-
-正常的lock方法不响应中断。如果 thread1 调用了 lock() 方法，过了很久还没抢到锁，这个时候 thread2 对其进行了中断，thread1 是不响应这个请求的，它会继续抢锁，当然它不会把“被中断”这个信息扔掉。如下:
-```java
-public final void acquire(int arg) {
-    if (!tryAcquire(arg) &&
-        acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
-        // 我们看到，这里也没做任何特殊处理，就是记录下来中断状态。
-        // 这样，如果外层方法需要去检测的时候，至少我们没有把这个信息丢了
-        selfInterrupt();// Thread.currentThread().interrupt();
-}
-```
-而对于 lockInterruptibly() 方法，因为其方法上面有 throws InterruptedException ，这个信号告诉我们，如果我们要取消线程抢锁，直接中断这个线程即可，它会立即返回，抛出 InterruptedException 异常
-
-并且在 Condition 代码中，如果方法会抛出`InterruptedException`，那么方法体第一句就是:
-```java
-public final void await() throws InterruptedException {
-    if (Thread.interrupted())
-        throw new InterruptedException();
-     ...... 
-}
-```
 
 #### ReentrantLock带中断的lock
 
@@ -595,28 +550,125 @@ private void cancelAcquire(Node node) {
         // 如果不是尾节点，并且前驱节点不为CANCEL
         // 将自己移除阻塞节点
         if (pred != head &&
-            ((ws = pred.waitStatus) == Node.SIGNAL ||
-             (ws <= 0 && compareAndSetWaitStatus(pred, ws, Node.SIGNAL))) &&
-            pred.thread != null) {
+            ((ws = pred.waitStatus) == Node.SIGNAL || (ws <= 0 && compareAndSetWaitStatus(pred, ws, Node.SIGNAL))) 
+            && pred.thread != null) {
             Node next = node.next;
+            // 如果有next节点， 将自己从阻塞队列移除
             if (next != null && next.waitStatus <= 0)
                 compareAndSetNext(pred, predNext, next);
         } else {
-            // 入股前驱节点已经取消则唤醒后继节点
+            // 如果前驱节点已经取消则唤醒后继节点
             unparkSuccessor(node);
         }
         node.next = node; // help GC
     }
 }
 ```
+
+这个带中断的lock:`lockInterruptibly`被中断后，就会将 waitStatus 设置为 CANCELLED ， 并移出阻塞队列
+
+与 lock 的区别就是， lock 即使被中断， 还是会抢锁，而 lockInterruptibly 则将自己移除阻塞队列，不再抢锁
+
+### java线程中断
+
+#### 线程中断
+
+java 中断某个线程，这个线程就停止运行了。中断代表线程状态，每个线程都关联了一个中断状态，是一个 true 或 false 的 boolean 值，初始值为 false。
+
+Thread 类中关于中断的几个方法:
+```java
+// Thread 类中的实例方法，持有线程实例引用即可检测线程中断状态
+public boolean isInterrupted() {}
+
+// Thread 中的静态方法，检测调用这个方法的线程是否已经中断
+// 注意：这个方法返回中断状态的同时，会将此线程的中断状态重置为 false
+// 所以，如果我们连续调用两次这个方法的话，第二次的返回值肯定就是 false 了(第一次调用已经重置了中断状态为false, 前提是两次调用中间没有发生其他设置线程中断的语句)
+public static boolean interrupted() {}
+
+// Thread 类中的实例方法，用于设置一个线程的中断状态为 true
+public void interrupt() {}
+```
+
+我们说中断一个线程，其实就是设置了线程的 interrupted status 为 true，至于说被中断的线程怎么处理这个状态，那是那个线程自己的事。如以下代码,就会响应中断：
+```java
+while (!Thread.interrupted()) {
+   doWork();
+   System.out.println("我做完一件事了，准备做下一件，如果没有其他线程中断我的话");
+}
+```
+
+一般除了 jdk 源码外，很少有专门对中断对处理
+
+
+#### jdk自动感知中断的情况
+
+1. Object类的 wait, Thread类的 join, sleep。这三类方法的线程被中断的时候，会自动感知到。如果线程阻塞在这些方法上（我们知道，这些方法会让当前线程阻塞），这个时候如果其他线程对这个线程进行了中断，那么这个线程会从这些方法中立即返回，抛出 InterruptedException 异常，同时重置中断状态为 false
+
+2. NIO 中 select方法。 一旦中断，select会立即返回
+
+3. LockSupport.park 也能自动感知中断, 但并不会将中断状态设置为false
+
+
+#### InterruptedException
+
+这是一个特殊的异常，不是说 JVM 对其有特殊的处理，而是它的使用场景比较特殊。通常，我们可以看到，像 Object 中的 wait() 方法，ReentrantLock 中的 lockInterruptibly() 方法，Thread 中的 sleep() 方法等等，这些方法都带有 throws InterruptedException，我们通常称这些方法为阻塞方法（blocking method。
+
+阻塞方法一个很明显的特征是，它们需要花费比较长的时间（不是绝对的，只是说明时间不可控），还有它们的方法结束返回往往依赖于外部条件，如 wait 方法依赖于其他线程的 notify，lock 方法依赖于其他线程的 unlock等等。
+
+当我们看到方法上带有 throws InterruptedException 时，我们就要知道，这个方法应该是阻塞方法，我们如果希望它能早点返回的话，我们往往可以通过中断来实现。
+
+#### 处理中断
+
+正常我们处理中断一般如下:
+```java
+try {
+    Thread.sleep(10000);
+} catch (InterruptedException e) {
+    // ignore
+}
+```
+
+这里我们并不知道是真的 sleep 了10s还是1s就被中断了，这里的代码将中断异常吞了。
+
+AQS中处理中断如下:
+```java
+// 带中断的 lock
+public void lockInterruptibly() throws InterruptedException {
+    sync.acquireInterruptibly(1);
+}
+```
+
+正常的lock方法不响应中断。如果 thread1 调用了 lock() 方法，过了很久还没抢到锁，这个时候 thread2 对其进行了中断，thread1 是不响应这个请求的，它会继续抢锁，当然它不会把“被中断”这个信息扔掉。如下:
+```java
+public final void acquire(int arg) {
+    if (!tryAcquire(arg) &&
+        acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
+        // 我们看到，这里也没做任何特殊处理，就是记录下来中断状态。
+        // 这样，如果外层方法需要去检测的时候，至少我们没有把这个信息丢了
+        selfInterrupt();// Thread.currentThread().interrupt();
+}
+```
+而对于 lockInterruptibly() 方法，因为其方法上面有 throws InterruptedException ，这个信号告诉我们，如果我们要取消线程抢锁，直接中断这个线程即可，它会立即返回，抛出 InterruptedException 异常
+
+并且在 Condition 代码中，如果方法会抛出`InterruptedException`，那么方法体第一句就是:
+```java
+public final void await() throws InterruptedException {
+    if (Thread.interrupted())
+        throw new InterruptedException();
+     ...... 
+}
+```
+
+
 ### 参考资料
 
 - [AQS简介](http://cmsblogs.com/?p=2174)
 - [java并发包的基石](https://www.cnblogs.com/chengxiao/p/7141160.html)
 - [java AQS的实现原理](https://www.jianshu.com/p/279baac48960)
-- [同步状态的获取和释放](http://cmsblogs.com/?p=2197)
 - [阻塞和唤醒线程](http://cmsblogs.com/?p=2205)
 - [java并发之AQS详解](https://www.cnblogs.com/waterystone/p/4920797.html)
 - [LockSupport详解](https://leokongwq.github.io/2017/01/13/java-LockSupport.html)
 - [java队列同步器AQS](https://blog.csdn.net/pange1991/article/details/80930394)
 - [一行一行源码分析AQS二](https://javadoop.com/post/AbstractQueuedSynchronizer-2)
+- [interrupt和LockSupport.park()深入理解](https://cgiirw.github.io/2018/05/27/Interrupt_Ques/)
+- [java8 Thread&Lock](https://javadoop.com/post/Threads-And-Locks-md#toc5)
