@@ -273,45 +273,54 @@ CyclicBarrier 的源码是基于 Condition 实现的
 
 
 #### 基本属性
-``` 
-  // CyclicBarrier 是可以重复使用的，我们把每次从开始使用到穿过栅栏当做"一代"
-  private static class Generation {
-      boolean broken = false;
-  }
+```java
+public class CyclicBarrier {
+    // CyclicBarrier 是可以重复使用的，每次从开始使用到穿过栅栏当做"一代"，或者"一个周期"
+    private static class Generation {
+        boolean broken = false;
+    }
 
-  // CyclicBarrier 是基于 Condition 的
-  // Condition 是“条件”的意思，CyclicBarrier 的等待线程通过 barrier 的“条件”是大家都到了栅栏上
-  private final Condition trip = lock.newCondition();
+    // 栅栏的锁
+    private final ReentrantLock lock = new ReentrantLock();
 
-  // 参与的线程数
-  private final int parties;
+    // CyclicBarrier 是基于 Condition 的
+    // Condition 是“条件”的意思，CyclicBarrier 的等待线程通过 barrier 的“条件”是大家都到了栅栏上
+    private final Condition trip = lock.newCondition();
 
-  // 如果设置了这个，代表越过栅栏之前，要执行相应的操作
-  private final Runnable barrierCommand;
+    // 参与的线程数
+    private final int parties;
 
-  // 当前所处的“代”
-  private Generation generation = new Generation();
+    // 如果设置了这个，代表越过栅栏之前，要执行相应的操作
+    private final Runnable barrierCommand;
 
-  // 还没有到栅栏的线程数，这个值初始为 parties，然后递减
-  // 还没有到栅栏的线程数 = parties - 已经到栅栏的数量
-  private int count;
+    // 当前所处的“代”
+    private Generation generation = new Generation();
 
-  public CyclicBarrier(int parties, Runnable barrierAction) {
-      if (parties <= 0) throw new IllegalArgumentException();
-      this.parties = parties;
-      this.count = parties;
-      this.barrierCommand = barrierAction;
-  }
+    // 还没有到栅栏的线程数，这个值初始为 parties，然后递减
+    // 到栅栏的线程数 = parties - count
+    private int count;
 
-  public CyclicBarrier(int parties) {
-      this(parties, null);
-  }
+    public CyclicBarrier(int parties, Runnable barrierAction) {
+        if (parties <= 0) throw new IllegalArgumentException();
+        this.parties = parties;
+        this.count = parties;
+        this.barrierCommand = barrierAction;
+    }
+
+    public CyclicBarrier(int parties) {
+        this(parties, null);
+    }
 ```
 
 概念图:
 ![](/images/aqs/cyclicbarrier-3.png)
 
+#### 源码分析
+
 ##### 开启新的一代(nextGeneration)
+
+开启新的一代，类似于重新实例化一个 CyclicBarrier 实例
+
 ``` 
 // 开启新的一代，当最后一个线程到达栅栏上的时候，调用这个方法来唤醒其他线程，同时初始化“下一代”
 private void nextGeneration() {
@@ -325,6 +334,7 @@ private void nextGeneration() {
 ```
 
 ##### 打破一个栅栏
+
 ``` 
 private void breakBarrier() {
     // 设置状态 broken 为 true
@@ -336,7 +346,7 @@ private void breakBarrier() {
 }
 ```
 
-#### await方法
+#### await-等待通过栅栏
 
 等待通过栅栏方法 await 方法：
 ``` 
@@ -358,7 +368,8 @@ public int await(long timeout, TimeUnit unit)
 ```
 
 doawait:
-``` 
+
+```java
 private int dowait(boolean timed, long nanos)
         throws InterruptedException, BrokenBarrierException,
                TimeoutException {
@@ -447,11 +458,52 @@ private int dowait(boolean timed, long nanos)
             }
         }
     } finally {
+        // 最后释放锁
         lock.unlock();
     }
 }
 ```
 
+栅栏被打破的情况:
+1. 中断，如果某个等待的线程发生了中断，那么会打破栅栏，同时抛出 InterruptedException 异常
+2. 超时，打破栅栏，同时抛出 TimeoutException 异常
+3. 指定执行的操作抛出了异常
+
+##### 栅栏上处于等待状态的线程
+
+```java
+public int getNumberWaiting() {
+    final ReentrantLock lock = this.lock;
+    lock.lock();
+    try {
+        // 前面说过， count是还未到栅栏的线程数
+        return parties - count;
+    } finally {
+        lock.unlock();
+    }
+}
+```
+
+##### 重置一个栅栏
+
+```java
+public void reset() {
+    final ReentrantLock lock = this.lock;
+    lock.lock();
+    try {
+        // 打破现在的栅栏
+        breakBarrier();  
+        // 生成一个新的栅栏
+        nextGeneration(); 
+    } finally {
+        lock.unlock();
+    }
+}
+```
+
+如果初始化时，指定了线程 parties = 4，前面有 3 个线程调用了 await 等待，在第 4 个线程调用 await 之前，如果调用 reset 方法，那么会发生什么？
+
+首先，打破栅栏，那意味着所有等待的线程（3个等待的线程）会唤醒，await 方法会通过抛出 `BrokenBarrierException `异常返回。然后开启新的一代，重置了 count 和 generation，相当于一切归零了。
 
 ### Semaphore
 
@@ -462,8 +514,8 @@ Semaphore 类似一个资源池（可以类比线程池），每个线程需要�
 
 #### 构造方法
 
-这里和 ReentrantLock 类似，用了公平策略和非公平策略:
-``` 
+这里和 ReentrantLock 类似，用了公平策略和非公平策略, 默认是非公平锁:
+```java
 public Semaphore(int permits) {
     sync = new NonfairSync(permits);
 }
@@ -474,7 +526,11 @@ public Semaphore(int permits, boolean fair) {
 ```
 
 #### acquire
-``` 
+
+基本上跟 reentrantLock 的 acquire 方法一样， 只不过多了两个可以传参的方法， 如果需要一次获取超过一个资源，可以用这个
+```java
+
+// ============== 带 InterruptedException
 public void acquire() throws InterruptedException {
     sync.acquireSharedInterruptibly(1);
 }
@@ -489,12 +545,21 @@ public void acquireUninterruptibly(int permits) {
     if (permits < 0) throw new IllegalArgumentException();
     sync.acquireShared(permits);
 }
+
+// ============= 不带 InterruptedException
+public void acquireUninterruptibly() {
+    sync.acquireShared(1);
+}
+public final void acquireShared(int arg) {
+    if (tryAcquireShared(arg) < 0)
+        doAcquireShared(arg);
+}
 ```
 
-#### 非公平策略与公平策略
+#### 非公平和公平的tryAcquireShared
 
 Semaphore 分公平策略和非公平策略， 两种`tryAcquireShared`的实现：
-``` 
+```java
 // 公平策略：
 protected int tryAcquireShared(int acquires) {
     for (;;) {
@@ -523,8 +588,50 @@ final int nonfairTryAcquireShared(int acquires) {
 }
 ```
 
+其实也就是之前一样的，区别就是公平锁会判断是否有线程排队，而非公平锁是直接操作
+
+#### doAcquireShared
+
+由于 tryAcquireShared(arg) 返回小于 0 的时候，说明 state 已经小于 0 了（没资源了），此时 acquire 不能立马拿到资源，需要进入到阻塞队列等待, 执行doAcquireShared:
+```java
+private void doAcquireShared(int arg) {
+    final Node node = addWaiter(Node.SHARED);
+    boolean failed = true;
+    try {
+        boolean interrupted = false;
+        for (;;) {
+            final Node p = node.predecessor();
+            if (p == head) {
+                int r = tryAcquireShared(arg);
+                if (r >= 0) {
+                    setHeadAndPropagate(node, r);
+                    p.next = null; // help GC
+                    if (interrupted)
+                        selfInterrupt();
+                    failed = false;
+                    return;
+                }
+            }
+            if (shouldParkAfterFailedAcquire(p, node) &&
+                parkAndCheckInterrupt())
+                interrupted = true;
+        }
+    } finally {
+        if (failed)
+            cancelAcquire(node);
+    }
+}
+```
+
+这里跟之前的基本一模一样
+
+
+
 #### release释放资源
-``` 
+
+线程被挂起后，就需要等待 release 释放资源：
+
+```java
 // 任务介绍，释放一个资源
 public void release() {
     sync.releaseShared(1);
@@ -550,8 +657,9 @@ protected final boolean tryReleaseShared(int releases) {
 }
 ```
 
-doReleaseShared 唤醒等待线程:
-``` 
+tryReleaseShared 方法总是会返回 true, 接下来执行 doReleaseShared 唤醒等待线程:
+
+```java
 private void doReleaseShared() {
     for (;;) {
         Node h = head;
@@ -572,6 +680,7 @@ private void doReleaseShared() {
 }
 ```
 
+这里跟 condition 的唤醒也基本差不多
 
 ### 参考资料
 - [java并发工具类-CountDownLatch](https://juejin.im/post/5af3c17f51882567113b37d0)
