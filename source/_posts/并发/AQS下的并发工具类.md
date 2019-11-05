@@ -143,7 +143,7 @@ private void doAcquireSharedInterruptibly(int arg)
             if (p == head) {
                 // 同上，只要 state 不等于 0，那么这个方法返回 -1
                 int r = tryAcquireShared(arg);
-                // 如果state等于0
+                // 如果 state=0， r的值为1
                 if (r >= 0) {
                     setHeadAndPropagate(node, r);
                     p.next = null; // help GC
@@ -175,7 +175,7 @@ private void doAcquireSharedInterruptibly(int arg)
             } while (pred.waitStatus > 0);
             pred.next = node;
         } else {
-            // 将前驱节点设置为 SIGNAL
+            // 将前驱节点设置为 SIGNAL，并进入下一次for循环
             compareAndSetWaitStatus(pred, ws, Node.SIGNAL);
         }
         return false;
@@ -189,7 +189,7 @@ private void doAcquireSharedInterruptibly(int arg)
 ![](/images/aqs/countdown-1.png)
 
 
-(2) 由于 `tryAcquireShared` 这个方法会返回 -1，所以 `if (r >= 0)` 这个分支不会进去。到 `shouldParkAfterFailedAcquire` 的时候，t3 将 head 的 waitStatus 值设置为 -1，如下：
+(2) 由于 `tryAcquireShared` 这个方法会返回 -1，所以 `if (r >= 0)` 这个分支不会进去。到 `shouldParkAfterFailedAcquire` 的时候，t3 将 head 的 waitStatus 值设置为 -1，并开始下一次循环,如下：
 
 ![](/images/aqs/countdown-2.png)
 
@@ -220,6 +220,7 @@ public final boolean releaseShared(int arg) {
 protected boolean tryReleaseShared(int releases) {
     for (;;) {
         int c = getState();
+        // 如果直接是0，就返回了(代表并没有释放锁的过程)
         if (c == 0)
             return false;
         int nextc = c-1;
@@ -235,28 +236,107 @@ countDown 方法就是每次调用都将 state 值减 1，如果 state 减到 0 
 private void doReleaseShared() {
     for (;;) {
         Node h = head;
-       // 1. h == null, 说明阻塞队列为空
-       // 2. h == tail, 说明头结点可能是刚刚初始化的头节点，
-       // 这两种情况都代表阻塞队列没有节点，不需要唤醒
         if (h != null && h != tail) {
             int ws = h.waitStatus;
-            // 入队的时候已经被后入对的把前驱节点设置为SIGNAL（-1）了
+            // 首先，头节点已经被第一个入队的线程设置为  Node.SIGNAL（-1） 了
             if (ws == Node.SIGNAL) {
+                // 将头节点的 waitStatus 设置为0
                 if (!compareAndSetWaitStatus(h, Node.SIGNAL, 0))
-                 // 如果 CAS 失败就走下面的流程
                     continue;            
-                // 就是这里，唤醒 head 的后继节点，也就是阻塞队列中的第一个节点
+                // 唤醒 head的后继节点
                 unparkSuccessor(h);
             }
             else if (ws == 0 &&
-            // 这个 CAS 失败的场景是：执行到这里的时候，刚好有一个节点入队，入队会将这个 ws 设置为 -1
                      !compareAndSetWaitStatus(h, 0, Node.PROPAGATE)) 
                 continue;                
         }
-        // 如果到这里的时候，前面唤醒的线程已经占领了 head，那么再循环唤醒下一个节点
-        // 否则，就是 head 没变(之前CAS失败，h没有被后继节点占领)，那么退出循环，
-        // 退出循环是不是意味着阻塞队列中的其他节点就不唤醒了？当然不是，唤醒的线程之后还是会调用这个方法的
         if (h == head)
+            break;
+    }
+}
+```
+这里已经把head之后的第一个节点给唤醒了，返回到刚刚 await 中断的地方看 parkAndCheckInterrupt 返回false(线程没有中断的情况下):
+```java
+private void doAcquireSharedInterruptibly(int arg)
+    throws InterruptedException {
+    final Node node = addWaiter(Node.SHARED);
+    boolean failed = true;
+    try {
+        for (;;) {
+            final Node p = node.predecessor();
+            if (p == head) {
+                int r = tryAcquireShared(arg);
+                if (r >= 0) {
+                    setHeadAndPropagate(node, r); // 2. 这里是下一步
+                    p.next = null; // help GC
+                    failed = false;
+                    return;
+                }
+            }
+            if (shouldParkAfterFailedAcquire(p, node) &&
+                // 1. 唤醒后这个方法返回, 进入下一次循环
+                parkAndCheckInterrupt())
+                throw new InterruptedException();
+        }
+    } finally {
+        if (failed)
+            cancelAcquire(node);
+    }
+}
+```
+
+然后就会调用 `setHeadAndPropagate(node, r)` 占领头节点，然后唤醒队列的其他线程:
+```java
+private void setHeadAndPropagate(Node node, int propagate) {
+    Node h = head;
+    setHead(node);
+
+    // 这里的意思是唤醒当前 node 之后的节点
+    // 即 t3 已经醒了，马上唤醒 t4,如果 t4 后面还有 t5，那么 t4 醒了以后，马上将 t5 给唤醒
+    if (propagate > 0 || h == null || h.waitStatus < 0 ||
+        (h = head) == null || h.waitStatus < 0) {
+        Node s = node.next;
+        if (s == null || s.isShared())
+            // 又是这个方法，只是现在的 head 已经不是原来的空节点了，是 t3 的节点了
+            doReleaseShared();
+    }
+}
+```
+
+接着回到 doReleaseShared，这里经过之前的流程第一个节点(t3)已经是头节点了 ：
+```java
+// 此时的 state 是0
+private void doReleaseShared() {
+    for (;;) {
+        Node h = head;
+        //  h == null: 说明阻塞队列为空
+        //  h == tail: 说明头结点可能是刚刚初始化的头节点，队列并没有任何节点
+        // 或者是普通线程节点，但是此节点既然是头节点了，那么代表已经被唤醒了，阻塞队列没有其他节点了
+        // 所以这两种情况不需要进行唤醒后继节点
+        if (h != null && h != tail) {
+            int ws = h.waitStatus;
+            // t4(下一个节点) 将头节点(此时是 t3)的 waitStatus 设置为 Node.SIGNAL（-1） 了
+            if (ws == Node.SIGNAL) {
+                // 这里 CAS 可能失败, 因为第一轮for循环唤醒 t4
+                // 如果t4已经 setHeadAndPropagate 成为头节点了才跑到下面的 if (h == head)
+                // 这时候会返回false并进入下一轮循环
+                // 此时 t4 也进入了这个方法那么 t3 和 t4就只有一个能成功
+                if (!compareAndSetWaitStatus(h, Node.SIGNAL, 0))
+                    continue;            
+                // 就是这里，唤醒 head 的后继节点，也就是阻塞队列中的第一个节点
+                // 在这里，也就是唤醒 t4
+                unparkSuccessor(h);
+            }
+            else if (ws == 0 &&
+                     // 这个 CAS 失败的场景是：执行到这里的时候，刚好有一个节点入队，入队会将这个 ws 设置为 -1
+                     !compareAndSetWaitStatus(h, 0, Node.PROPAGATE))
+                continue;                
+        }
+        // h == head, 说明头节点还没有被刚刚用 unparkSuccessor 唤醒的线程（这里可以理解为 t4）占有，此时 break 退出循环(我觉得可能是为了避免死循环， 因为这里也是循环退出的条件)
+        // h != head：头节点被刚刚唤醒的线程（t4）占有，那么这里重新进入下一轮循环，唤醒下一个节点
+        // 从之前的代码可以看出，t4被唤醒后是会调用 setHeadAndPropagate 来唤醒接下来的节点的
+        // 这里还是会进行下一次循环来唤醒 t5， 是基于吞吐量的考虑
+        if (h == head)                   
             break;
     }
 }
@@ -265,14 +345,75 @@ private void doReleaseShared() {
 
 ### CyclicBarrier
 
-字面意思是“可重复使用的栅栏”, ，CyclicBarrier 和 CountDownLatch很像，只是 CyclicBarrier 可以有不止一个栅栏，因为它的栅栏（Barrier）可以重复使用（Cyclic）。
+CyclicBarrier 字面意思回环栅栏，通过它可以实现让一组线程等待至某个状态之后再全部同时执行。
+叫做回环是因为当所有等待线程都被释放以后，CyclicBarrier可以被重用。
+叫做栅栏，大概是描述所有线程被栅栏挡住了，当都达到时，一起跳过栅栏执行，也算形象。我们可以把这个状态就叫做barrier。
 
 ![](/images/aqs/cyclicbarrier-2.png)
 
 CyclicBarrier 的源码是基于 Condition 实现的
 
+#### 使用例子
+
+这里模拟的是旅游出发的时候， 导游等到每个人都到达了，出发前把签证发到每个人手上在一起出发。
+```java
+public class CyclicBarrierDemo {
+
+    public static void main(String[] args) {
+        CyclicBarrier cyclicBarrier = new CyclicBarrier(3, new TourGuideTask());
+        Executor executor = Executors.newFixedThreadPool(3);
+        //登哥最大牌，到的最晚
+        executor.execute(new TravelTask(cyclicBarrier, "哈登", 5));
+        executor.execute(new TravelTask(cyclicBarrier, "保罗", 3));
+        executor.execute(new TravelTask(cyclicBarrier, "戈登", 1));
+    }
+
+    static class TravelTask implements Runnable {
+
+        private CyclicBarrier cyclicBarrier;
+        private String name;
+        private int arriveTime;//赶到的时间
+
+        public TravelTask(CyclicBarrier cyclicBarrier, String name, int arriveTime) {
+            this.cyclicBarrier = cyclicBarrier;
+            this.name = name;
+            this.arriveTime = arriveTime;
+        }
+
+        @Override
+        public void run() {
+            try {
+                //模拟达到需要花的时间
+                Thread.sleep(arriveTime * 1000);
+                System.out.println(name + "到达集合点");
+                cyclicBarrier.await();
+                System.out.println(name + "开始旅行啦～～");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (BrokenBarrierException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+    static class TourGuideTask implements Runnable {
+        @Override
+        public void run() {
+            System.out.println("****导游分发护照签证****");
+            try {
+                //模拟发护照签证需要2秒
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+```
 
 #### 基本属性
+
 ```java
 public class CyclicBarrier {
     // CyclicBarrier 是可以重复使用的，每次从开始使用到穿过栅栏当做"一代"，或者"一个周期"
@@ -300,6 +441,9 @@ public class CyclicBarrier {
     // 到栅栏的线程数 = parties - count
     private int count;
 
+    // 构造函数
+    // 第一个参数是一起执行的线程数
+    // 第二个参数是当线程都处于 barrier 的时候，先执行的一个线程
     public CyclicBarrier(int parties, Runnable barrierAction) {
         if (parties <= 0) throw new IllegalArgumentException();
         this.parties = parties;
@@ -510,6 +654,39 @@ public void reset() {
 Semaphore 类似一个资源池（可以类比线程池），每个线程需要调用 acquire() 方法获取资源，然后才能执行，执行完后，需要 release 资源，让给其他的线程用。
 
 基本思路:创建 Semaphore 实例的时候，需要一个参数 permits，这个基本上可以确定是设置给 AQS 的 state 的，然后每个线程调用 acquire 的时候，执行 state = state - 1，release 的时候执行 state = state + 1，当然，acquire 的时候，如果 state = 0，说明没有资源了，需要等待其他线程 release。
+
+#### 使用例子
+
+semaphore 用来控制某类资源的线程数，比如数据库连接。读取几万个文件的数据到数据库中，由于文件读取是IO密集型任务，可以启动几十个线程并发读取，但是数据库连接数只有20个，这时就必须控制最多只有20
+个线程能够拿到数据库连接进行操作。这个时候，就可以使用Semaphore做流量控制：
+
+```java
+public class Semaphore {
+    private static final int COUNT = 80;
+    private static Executor executor =  Executors.newFixedThreadPool(COUNT);
+    private static Semaphore semaphore = new Semaphore(20);
+    public static void main(String[] args) {
+        for (int i=0; i< COUNT; i++) {
+            executor.execute(new ThreadTest.Task());
+        }
+    }
+
+    static class Task implements Runnable {
+        @Override
+        public void run() {
+            try {
+                //读取文件中...
+                semaphore.acquire();
+                // 存储数据中...
+                semaphore.release();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+            }
+        }
+    }
+}
+```
 
 
 #### 构造方法
