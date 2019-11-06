@@ -859,6 +859,11 @@ private void doReleaseShared() {
 
 这里跟 condition 的唤醒也基本差不多
 
+
+### Pharse
+
+todo....
+
 ### 参考资料
 - [java并发工具类-CountDownLatch](https://juejin.im/post/5af3c17f51882567113b37d0)
 - [死磕java并发-CountDownLatch](http://cmsblogs.com/?p=2253)
