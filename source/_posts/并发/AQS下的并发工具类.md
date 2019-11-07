@@ -860,12 +860,9 @@ private void doReleaseShared() {
 这里跟 condition 的唤醒也基本差不多
 
 
-### Pharse
-
-todo....
-
 ### 参考资料
 - [java并发工具类-CountDownLatch](https://juejin.im/post/5af3c17f51882567113b37d0)
 - [死磕java并发-CountDownLatch](http://cmsblogs.com/?p=2253)
 - [java中的并发工具类](https://www.jianshu.com/p/3cdeda81c517)
 - [一行一行源码分析清楚 AbstractQueuedSynchronizer (三)](https://javadoop.com/post/AbstractQueuedSynchronizer-3)
+- [Pharse 介绍](https://javadoop.com/post/phaser-tutorial)
