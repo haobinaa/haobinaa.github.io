@@ -1,5 +1,5 @@
 ---
-title: MMap与FileChannel
+title: MMAP 与 FileChannel
 date: 2019-05-17 15:17:52
 tags: IO
 categories: IO
@@ -9,9 +9,7 @@ categories: IO
 FileChannel是一个连接到文件的通道,可以通过文件通道读写文件
 
 
-#### FileChannel的操作
-
-##### 打开FileChannel
+#### 打开FileChannel
 
 在使用FileChannel之前，必须先打开它。但是，我们无法直接打开一个FileChannel，需要通过使用一个`InputStream、OutputStream`或`RandomAccessFile`来获取一个FileChannel实例。下面是通过RandomAccessFile打开FileChannel的示例：
 ``` 
@@ -19,55 +17,29 @@ RandomAccessFile aFile = new RandomAccessFile("data/nio-data.txt", "rw");
 FileChannel inChannel = aFile.getChannel();
 ```
 
-##### 从FileChannel中读取数据
+#### FileChannel 读写数据
 
-``` 
-ByteBuffer buf = ByteBuffer.allocate(48);
-int bytesRead = inChannel.read(buf);
+```java
+// 写
+byte[] data = new byte[4096];
+long position = 1024L;
+// 指定 position 写入 4kb 的数据
+fileChannel.write(ByteBuffer.wrap(data), position);
+// 从当前文件指针的位置写入 4kb 的数据
+fileChannel.write(ByteBuffer.wrap(data));
+
+// 读
+ByteBuffer buffer = ByteBuffer.allocate(4096);
+long position = 1024L;
+// 指定 position 读取 4kb 的数据
+fileChannel.read(buffer,position)；
+// 从当前文件指针的位置读取 4kb 的数据
+fileChannel.read(buffer);
 ```
 
-首先分配一个Buffer,从FileChannel中读取的数据将被读到Buffer中。
-然后，调用FileChannel中`read()`。该方法将数据从FileChannel读取到Buffer中。read()方法返回的int值表示了有多少字节被读到了Buffer中。如果返回-1，表示到了文件末尾
 
-##### 向FileChannel中写数据
 
-``` 
-String newData = "New String to write to file...";
-ByteBuffer buf = ByteBuffer.allocate(48);
-buf.clear();
-buf.put(newData.getBytes());
-buf.flip();
-while(buf.hasRemaining()) {
-    channel.write(buf);
-}
-```
 
-####　FileChannle几个方法
-
-- position:在FileChannel的某个特定位置进行数据的读/写操作。可以通过调用`position()`获取FileChannel的当前位置,也可以通过调用`position(long pos)`设置FileChannel的当前位置：
-``` 
-long pos = channel.position();
-channel.position(pos +123);
-```
-
-- size:`size()`将返回该实例所关联文件的大小:
-``` 
-long fileSize = channel.size();
-```
-
-- truncate:`truncate()`截取一个文件。截取文件时，文件将中指定长度后面的部分将被删除:
-``` 
-// 截取文件的前1024字节
-channel.truncate(1024);
-```
-
-- force：`force()`将通道里尚未写入磁盘的数据强制写到磁盘上。出于性能方面的考虑，操作系统会将数据缓存在内存中(page cache)
-，所以无法保证写入到FileChannel里的数据一定会即时写到磁盘上。要保证这一点，需要调用force()方法:
-
-``` 
-// 强制将文件写到磁盘上
-channel.force(true);
-```
 
 ### 内存映射
 

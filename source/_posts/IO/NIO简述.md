@@ -10,67 +10,9 @@ java nio的核心有以下几部分组成：
 - buffers
 - selectors
 
-### Channel
->A channel represents an open connection to an entity such as a hardware device, a file, a network socket, or a 
-program component that is capable of performing one or more distinct I/O operations, for example reading or writing.  
-一个Channel（通道）代表和某一实体的连接，这个实体可以是文件、网络套接字等。也就是说，通道是Java NIO提供的一座桥梁，用于我们的程序和操作系统底层I/O服务进行交互
-
-
-基本上，所有的 IO 在NIO 中都从一个Channel 开始。Channel 有点象流。 数据可以从Channel读到Buffer中，也可以从Buffer 写到Channel中
-
-NIO中主要的channel：
-- FileChannel
-- DatagramChannel
-- SocketChannel
-- SeverSocketChannel 
-
-Java NIO的通道类似流，但又有些不同：
-
-既可以从通道中读取数据，又可以写数据到通道。但流的读写通常是单向的。
-- 通道可以异步地读写。
-- 通道中的数据总是要先读到一个Buffer，或者总是要从一个Buffer中写入。
-- 正如上面所说，从通道读取数据到缓冲区，从缓冲区写入数据到通道。
-
-如下图所示：
-![](http://ifeve.com/wp-content/uploads/2013/06/overview-channels-buffers.png)
-
-之前提到的channel的实现：
-
-- FileChannel 从文件中读写数据
-- DatagramChannel 能通过UDP读写网络中的数据
-- SocketChannel 能通过TCP读写网络中的数据
-- ServerSocketChannel可以监听新进来的TCP连接，像Web服务器那样。对每一个新进来的连接都会创建一个SocketChannel
-
-#### 基本的channel示例
-``` 
-RandomAccessFile aFile = new RandomAccessFile("data/nio-data.txt", "rw");
-FileChannel inChannel = aFile.getChannel();
-ByteBuffer buf = ByteBuffer.allocate(48);
-int bytesRead = inChannel.read(buf);
-
-while (bytesRead != -1) {
-
-    System.out.println("Read " + bytesRead);
-
-    buf.flip();
-
-    while (buf.hasRemaining()) {
-
-        System.out.print((char) buf.get());
-
-    }
-
-    buf.clear();
-
-    bytesRead = inChannel.read(buf);
-
-}
-
-aFile.close();
-```
-注意 buf.flip() 的调用，首先读取数据到Buffer，然后反转Buffer,接着再从Buffer中读取数据
-
 ### Buffer
+
+一个 `Buffer` 本质上是内存中的一块，我们可以将数据写入这块内存，之后从这块内存获取数据
 
 关键的Buffer实现：
 - ByteBuffer
@@ -80,86 +22,216 @@ aFile.close();
 - IntBuffer
 - LongBuffer
 - ShortBuffer
+- MappedByteBuffer
+
+核心的还是 `ByteBuffer`， 其他的 Char、Integer 等只是包装了一下它而已， 通常我们是直接使用 `ByteBuffer`。
+
+`MappedByteBuffer` 用于实现内存映射文件，这里暂时不讨论
+
+
 
 #### capacity, position, limit
 
-缓冲区本质上是一块可以写入数据，然后可以从中读取数据的内存。这块内存被包装成NIO Buffer对象，并提供了一组方法，用来方便的访问该块内存
+可以将 `Buffer` 理解成一个数组， 数组有容量， 每次访问需要指定下标
 
-Buffer中有3个很重要的变量，它们是理解Buffer工作机制的关键，分别是:
+`Buffer` 中有3个很重要的变量，它们是理解Buffer工作机制的关键，分别是:
 
-- capacity （总容量,缓存区容纳元素的最大数量， 在创建缓冲区的时候被设定，并且永远不能被改变）
-- position （指针当前位置）
-- limit （读/写边界位置, 在写模式下表示最多能写入多少数据； 在读模式下表示最多能读到多少数据，应该和缓存区中实际数据大小相同）
+- capacity: 代表这个缓冲区的容量，一旦设定就不可以更改
+- position: 初始值是 0， 每写入 Buffer 一个值， position 就自动加 1， 代表下一次写入的位置。读也是类似，每读一个值，position 就加 1
+- limit: 写操作模式下，limit 代表的是最大能写入的数据，这个时候 limit 等于 capacity。写结束后，切换到读模式，此时的 limit 等于 Buffer 中实际的数据大小，因为 Buffer 不一定被写满了
 
-capacity、positon、limit在读写模式的说明：
-![](http://ifeve.com/wp-content/uploads/2013/06/buffers-modes.png)
+#### 初始化 Buffer
 
-
-在对Buffer进行读/写的过程中，position会往后移动，而 limit 就是 position 移动的边界。由此不难想象，在对Buffer进行写入操作时，limit应当设置为capacity的大小，而对Buffer进行读取操作时，limit应当设置为数据的实际结束位置。（注意：将Buffer数据 写入 通道是Buffer 读取 操作，从通道 读取 数据到Buffer是Buffer 写入 操作）
-
-#### flip
-
-buffer中的flip方法涉及到bufer中的Capacity,Position和Limit三个概念。其中Capacity在读写模式下都是固定的，就是我们分配的缓冲大小,Position类似于读写指针，表示当前读(写)到什么位置,Limit在写模式下表示最多能写入多少数据，此时和Capacity相同，在读模式下表示最多能读多少数据，此时和缓存中的实际数据大小相同。在写模式下调用flip方法，那么limit就设置为了position当前的值(即当前写了多少数据),postion会被置为0，以表示读操作从缓存的头开始读。也就是说调用flip之后，读写指针指到缓存头部，并且设置了最多只能读出之前写入的数据长度(而不是整个缓存的容量大小)
-
-#### rewind
-
-rewind()将position设回0，所以你可以重读Buffer中的所有数据。limit保持不变，仍然表示能从Buffer中读取多少个元素（byte、char等）。
-
-
-#### clear和compact
-一旦读完Buffer中的数据，需要让Buffer准备好再次被写入。可以通过clear()或compact()方法来完成。
-
-如果调用的是clear()方法，position将被设回0，limit被设置成 capacity的值。换句话说，Buffer 被清空了。Buffer中的数据并未清除，只是这些标记告诉我们可以从哪里开始往Buffer里写数据。
-
-
-如果Buffer中仍有未读的数据，且后续还需要这些数据，但是此时想要先先写些数据，那么使用compact()方法。compact()将未读取完的数据（position 与 limit 之间的数据）移动到缓冲区开头，并将 position 设置为这段数据末尾的下一个位置。其实就等价于重新向缓冲区中写入了这么一段数据
-
-
-
-#### mark方法与reset方法
-通过调用Buffer.mark()方法，可以标记Buffer中的一个特定position。之后可以通过调用Buffer.reset()方法恢复到这个position。例如：
-``` 
-// 在当前位置做个标记，通过buffer.get()已经将position移动了多次
-buffer.mark();
-// 将position移动到标记的位置
-buffer.reset();  //set position back to mark.
+Buffer 的实现类提供了一个静态的方法 `allocate(int capacity)`, 来实例化 Buffer, 如:
+```
+ByteBuffer byteBuf = ByteBuffer.allocate(1024);
+IntBuffer intBuf = IntBuffer.allocate(1024);
+LongBuffer longBuf = LongBuffer.allocate(1024);
 ```
 
-#### 示例
-``` 
-   FileChannel channel = new RandomAccessFile("test.txt", "rw").getChannel();
-    channel.position(channel.size());  // 移动文件指针到末尾（追加写入）
-
-    ByteBuffer byteBuffer = ByteBuffer.allocate(20);
-
-    // 数据写入Buffer
-    byteBuffer.put("你好，世界！\n".getBytes(StandardCharsets.UTF_8));
-
-    // Buffer -> Channel
-    byteBuffer.flip();
-    while (byteBuffer.hasRemaining()) {
-        channel.write(byteBuffer);
-    }
-
-    channel.position(0); // 移动文件指针到开头（从头读取）
-    CharBuffer charBuffer = CharBuffer.allocate(10);
-    CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder();
-
-    // 读出所有数据
-    byteBuffer.clear();
-    while (channel.read(byteBuffer) != -1 || byteBuffer.position() > 0) {
-        byteBuffer.flip();
-
-        // 使用UTF-8解码器解码
-        charBuffer.clear();
-        decoder.decode(byteBuffer, charBuffer, false);
-        System.out.print(charBuffer.flip().toString());
-
-        byteBuffer.compact(); // 数据可能有剩余
-    }
-
-  channel.close();
+实际场景中，也会经常使用 `wrap` 来初始化:
 ```
+public static ByteBuffer  wrap(byte[] array)
+```
+
+#### Buffer 的读写操作
+
+##### 往Buffer中写
+
+`Buffer` 提供了一些 put 方法用于填充数据到 `Buffer` 中， 另外常见的操作就是将 `Channel` 中的数据读入 `Buffer`， 代码示例:
+
+```java
+//  put 方法需要注意不能超过 Buffer 的 capacity
+
+// 填充一个 byte 值
+public abstract ByteBuffer put(byte b);
+// 在指定位置填充一个 int 值
+public abstract ByteBuffer put(int index, byte b);
+// 将一个数组中的值填充进去
+public final ByteBuffer put(byte[] src) {...}
+public ByteBuffer put(byte[] src, int offset, int length) {...}
+
+
+// 从外部(文件或网络)中读取 Buffer 大小的数据
+int num = channel.read(buf);
+```
+
+##### 读取Buffer的值
+
+
+如果要读 Buffer 中的值，需要切换模式，从写入模式切换到读出模式。调用 Buffer 的 `flip()` 方法，可以从写入模式切换到读取模式。其实这个方法也就是设置了一下 position 和 limit 值:
+
+```
+// flip 方法
+public final Buffer flip() {
+    limit = position; // 将 limit 设置为实际写入的数据数量
+    position = 0; // 重置 position 为 0
+    mark = -1; // mark 之后再说
+    return this;
+}
+```
+
+对应写的put方法， Buffer 也提供了一系列的 get 方法用来读， 同样也经常将写入 Buffer 的数据传输到 Channel 中:
+```java
+// 根据 position 来获取数据
+public abstract byte get();
+// 获取指定位置的数据
+public abstract byte get(int index);
+// 将 Buffer 中的数据写入到数组中
+public ByteBuffer get(byte[] dst)
+
+// 网 channel 中写入 buffer 大小的数据
+int num = channel.write(buf);
+```
+
+#### mark 和 reset
+
+mark 用于临时保存 position 的值，每次调用 mark() 方法都会将 mark 设值为当前的 position，便于后续需要的时候使用:
+
+``` 
+public final Buffer mark() {
+    mark = position;
+    return this;
+}
+```
+
+reset 用于将 position 设回 mark 标记的值:
+``` 
+public final Buffer reset() {
+    int m = mark;
+    if (m < 0)
+        throw new InvalidMarkException();
+    position = m;
+    return this;
+}
+```
+
+如果需要重新读数据可以考虑使用 mark&reset
+
+#### rewind 和 clear
+
+rewind()：会重置 position 为 0，通常用于重新从头读写 Buffer：
+```
+public final Buffer rewind() {
+    position = 0;
+    mark = -1;
+    return this;
+}
+```
+
+
+clear(): 重置 Buffer， 一般数据重新写入 Buffer 前调用clear:
+``` 
+public final Buffer clear() {
+    position = 0;
+    limit = capacity;
+    mark = -1;
+    return this;
+}
+```
+
+
+### Channel
+
+Channel 是数据来源或写入的目的地，NIO中主要的channel：
+- FileChannel： 文件通道，用于文件读写
+- DatagramChannel: UDP 连接的接收和发送
+- SocketChannel: TCP 客户端
+- SeverSocketChannel: TCP 服务端
+
+通道(Channel)用于和 Buffer 一起操作，读操作将 Channel 的数据写入 Buffer (`Channel.read(buffer)`), 写操作将 Buffer 的数据写入到 Channel 中(`channel.write(buffer)`)
+
+#### FileChannel
+
+FileChannel 主要用于一些文件的操作，常见的操作如下:
+
+##### 初始化
+
+可以从 inputstream 或 RandomAccessFile 获取一个 FileChannel:
+```java
+// inputstream
+FileInputStream inputStream = new FileInputStream(new File("/data.txt"));
+FileChannel fileChannel = inputStream.getChannel();
+
+// RandomAccessFile
+FileChannel fileChannel = new RandomAccessFile(new File("/data.txt"), "rw").getChannel();
+```
+
+##### 读取/写入文件内容
+
+前面说过，Channel 的数据操作是和 Buffer 打交道的:
+```java
+
+ByteBuffer buffer = ByteBuffer.allocate(1024);
+// 读取数据到 buffer
+int num = fileChannel.read(buffer);
+
+// 写入文件
+// Buffer 切换为读模式
+buffer.flip();
+while(buffer.hasRemaining()) {
+    // 将 Buffer 中的内容写入文件
+    fileChannel.write(buffer);
+}
+```
+
+#### SocketChannel
+
+SocketChannel 可以理解成一个 TCP 的客户端.
+
+打开一个TCP连接:
+`SocketChannel socketChannel = SocketChannel.open(new InetSocketAddress("127.0.0.1", 80));`
+
+读写数据与 FileChannel 没什么区别， 都是通过操作 Buffer 缓冲区:
+``` 
+// 读取数据
+socketChannel.read(buffer);
+
+// 写入数据到网络连接中
+while(buffer.hasRemaining()) {
+    socketChannel.write(buffer);   
+}
+```
+
+#### ServerSocketChannel
+
+ServerSocketChannel 可以理解成TCP的服务端。
+
+打开一个TCP服务操作如下：
+``` 
+// 实例化
+ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
+// 监听 8080 端口
+serverSocketChannel.socket().bind(new InetSocketAddress(8080));
+
+while (true) {
+    // 一旦有一个 TCP 连接进来，就对应创建一个 SocketChannel 进行处理
+    SocketChannel socketChannel = serverSocketChannel.accept();
+}
+```
+
+ServerSocketChannel 不和 Buffer 打交道了，因为它并不实际处理数据，它一旦接收到请求后，实例化 SocketChannel，之后在这个连接通道上的数据传递它就不管了，因为它需要继续监听端口，等待下一个连接
+
 
 ### Selector
 
