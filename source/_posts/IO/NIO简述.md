@@ -233,6 +233,31 @@ while (true) {
 ServerSocketChannel 不和 Buffer 打交道了，因为它并不实际处理数据，它一旦接收到请求后，实例化 SocketChannel，之后在这个连接通道上的数据传递它就不管了，因为它需要继续监听端口，等待下一个连接
 
 
+#### DatagramChannel
+
+UDP 和 TCP 不一样，DatagramChannel 一个类处理了服务端和客户端。
+
+监听端口操作:
+``` 
+DatagramChannel channel = DatagramChannel.open();
+channel.socket().bind(new InetSocketAddress(9090));
+// 接收数据
+ByteBuffer buf = ByteBuffer.allocate(48);
+channel.receive(buf);
+```
+
+发送数据操作:
+``` 
+String data = "hello world";
+
+ByteBuffer buf = ByteBuffer.allocate(11);
+buf.put(newData.getBytes());
+buf.flip();
+int bytesSent = channel.send(buf, new InetSocketAddress("jenkov.com", 80));
+```
+
+UDP 是无连接的，不需要握手，也不需要通知对方。所以他无法保证数据的送达
+
 ### Selector
 
 Selector（选择器）是一个特殊的组件，用于采集各个通道的状态（或者说事件）。我们先将通道注册到选择器，并设置好关心的事件，然后就可以通过调用select()方法，静静地等待事件发生,通道有四个事件供我们监听：

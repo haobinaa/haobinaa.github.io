@@ -53,11 +53,12 @@ GC中保留下来的对象。JVM会随意选取一个Survivor作为to区域，�
 
 在年代堆视角中，还标记出了virtual区域， 在 JVM 内部，如果 Xms 小于 Xmx，堆的大小并不会直接扩展到其上限， 当内存需求不断增长的时候， JVM会逐渐扩张新生代等区域的大小，所以Virtual区域代表的就是暂时不可用的空间
 
-#### 监控和诊断堆内存的工具
+#### 监控和诊断堆内存的工具和方法
 
-- 图形化工具： JConsole
-- 命令行工具： jstat、 jmap
-- JMC(java mission control)
+- Jconsole 图形化分析
+- 命令行工具： jstat、 jmap 等命令配合参数进行运行时查询
+- 使用 Eclipse MAT 来分析 jmap 堆转储的文件
+- gc 日志分析
 
 #### 方法区
 
