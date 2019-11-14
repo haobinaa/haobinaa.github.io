@@ -120,7 +120,7 @@ java中常量池分为三种类型:
 
 上面已经写过 Class Constant Pool 的结构。这里再总结一下，class常量池主要存储两大常量： 字面量和符号引用。
 
-##### 字面量
+##### 字面量(Literal)
 
 字面量有点接近于 java 语言层面的概念，主要包括：
 
@@ -133,7 +133,9 @@ java中常量池分为三种类型:
 
 - final 修饰的成员变量，包括静态变量、实例变量和局部变量
 
-##### 符号引用
+简单来说就是用双引号引起来的字符串字面量。
+
+##### 符号引用(Symbolic References)
 
 符号引用主要指的是:
 1. 类和接口的全限定名称，比如`java/lang/String`
@@ -144,83 +146,93 @@ java中常量池分为三种类型:
 
 #### 运行时常量池
 
-运行时常量池是方法区的一部分，所以也是全局共享的。
-
-class 文件常量池在编译阶段就已经确定；JVM 规范对 class 文件结构有着严格的规范，必须符合此规范的 class 文件才会被 JVM 认可和装载.运行时常量池 中保存着一些 class 文件中描述的符号引用，同时还会将这些符号引用所翻译出来的直接引用存储在运行时常量池中。
-
- 运行时常量池相对于 class 常量池一大特征就是其具有动态性，Java 规范并不要求常量只能在运行时才产生，也就是说运行时常量池中的内容并不全部来自 class 常量池，class 常量池并非运行时常量池的唯一数据输入口；在运行时可以通过代码生成常量并将其放入运行时常量池中，这种特性被用的较多的是`String.intern()`
+jvm在执行某个类的时候，必须经过加载、连接、初始化，而连接又包括验证、准备、解析三个阶段。而当类加载到内存中后，jvm就会将class
+常量池中的内容存放到运行时常量池中，由此可知，运行时常量池也是每个类都有一个。在上面我也说了，class常量池中存的是字面量和符号引用，也就是说他们存的并不是对象的实例，而是对象的符号引用值。而经过解析（resolve
+）之后，也就是把符号引用替换为直接引用，解析的过程会去查询全局字符串池(String Table)，以保证运行时常量池所引用的字符串与全局字符串池中所引用的是一致的。
 
 运行时常量池再JDK8之前位于永久代，JDK8移入元空间(Metaspace)
 
 
-#### 全局字符串常量池
+#### 全局字符串常量池(String Pool)
 
-##### java中创建字符串对象的两种方式
 
-java中创建字符串对象一般有两种方式(StringBuiler和StringBuffer除外):
+HotSpot VM里，记录interned string的一个全局表叫做StringTable，它本质上就是个HashSet<String>。这是个纯运行时的结构，而且是惰性（lazy）维护的。注意它只存储对java.lang.String实例的引用，而不存储String对象的内容。 注意，它只存了引用，根据这个引用可以得到具体的String对象。
+
+一般我们说一个字符串进入了全局的字符串常量池其实是说在这个StringTable中保存了对它的引用，反之，如果说没有在其中就是中没有对它的引用。
+
+##### 字面量进入字符串常量池的时机
+
+在前面一小节提到，在类的解析(resolve)的过程中，会去查询 String Table 保证运行时常量池所引用的字符串字面量与 String Table 一致。其实这个表述不是很准确，总的来说应该是这样的:
+
+- HotSpot VM的实现来说，加载类的时候，那些字符串字面量会进入到当前类的运行时常量池，不会进入全局的字符串常量池 ;
+
+- 在字面量赋值的时候，会翻译成字节码ldc指令，ldc指令触发`lazy resolution`动作:
+    1. 到当前类的运行时常量池（runtime constant pool）去查找该index对应的项(这里其实存的是一个索引，类型是 String_info)
+    2. 如果该项尚未resolve则resolve之，并返回resolve后的内容
+    3. 遇到String类型常量时，resolve的过程如果发现StringTable已经有了内容匹配的java.lang.String的引用，则直接返回这个引用;
+    4. 如果StringTable里尚未有内容匹配的String实例的引用，则会在Java堆里创建一个对应内容的String对象，然后在StringTable记录下这个引用，并返回这个引用出去
+
+##### 字符串拼接(+)的本质
+
+对于拼接的参数只有字面量或常量，则会直接返回 String Poll 中的引用:
 ``` 
-String s0 = "hello'；
-String s1 = new String ("hello");
+String s1 = "hello";
+String s2 = "hel" + "lo";
+System.out.println(s1 == s2) // true
 ```
+这个在解析的时候， s2是直接返回的拼接后的 "hello" 的在 String Table 中的引用。
 
-1. 第一种声明的字面量 hello 是在编译期就已经确定的，它会直接进入class文件常量池中；当运行期间在全局字符串常量池中会保存它的一个引用，实际上最终还是要在堆上创建一个`hello`对象
-2. 第二种方式方式使用了`new String()`，也就是调用了String类的构造函数，我们知道new指令是创建一个类的实例对象并完成加载初始化的，因此这个字符串对象是在运行期才能确定的，创建的字符串对象是在堆内存上
-
-这里看一段典型的代码:
+如果是堆中两个不同地方创建的对象，实质上是通过 `StringBuilder.append` 拼接出来的:
+``` 
+String s3 = "hello";
+String s4 = "hel" + new String("lo");
+System.out.println(s3 == s4) // false
+```
+这个时候 s4 实际上是通过 `StringBuilder.append` 拼接出来，并且最终调用`StringBuilder.toString`返回的，`StringBuilder.toString`方法如下:
 ```java
-String s1 = "Hello";
-String s2 = "Hello";
-String s3 = "Hel" + "lo";
-String s4 = "Hel" + new String("lo");
-String s5 = new String("Hello");
-String s7 = "H";
-String s8 = "ello";
-String s9 = s7 + s8;
-
-System.out.println(s1 == s2);  // true
-System.out.println(s1 == s3);  // true
-System.out.println(s1 == s4);  // false
-System.out.println(s1 == s9);  // false
+  public String toString() {
+        // Create a copy, don't share the array
+        return new String(value, 0, count);
+    }
 ```
+可以看到是 new 了一个新的 String 对象， 最终 s4 指向的是另一个对象
 
-1. s1==s2
+##### String.intern 
 
-这个对比第一部分常量池的讲解应该很好理解，因为字面量"Hello"在运行时会进入运行时常量池，同时同一份字面量只会保留一份，所有引用都指向这一份字符串，自然引用的地址也就相同了
+String#intern()这个方法的作用是：
+1. 如果字符串未在 String Pool 中，那么就往 Pool 中增加一条记录，然后返回 Pool 中的引用
+2. 如果已经在 Pool 中，直接返回 Pool 中的引用
 
-2. s1==s3
+这样一段代码:
+```java
+public static void main(String[] args) {
+    String s = new String("1");
+    s.intern();
+    String s2 = "1";
+    System.out.println(s == s2);
 
-这个主要牵扯String"+"号编译器优化的问题，s3虽然是动态拼接出来的字符串，但是所有参与拼接的部分都是已知的字面量，在编译期间，这种拼接会被优化，编译器直接帮你拼好，因此String s3 = "Hel" + "lo";在class文件中被优化成String s3 = "Hello";，所以s1 == s3成立
-
-3. s1 != s4
-
-new String("lo")在堆中new了一个String对象出来，而“Hel”字面量是通过另一种操作在堆中创建的对象，这两个在堆中不同地方创建的对象是通过StringBuilder
-.append方法拼接出来的，并且最终会调用StringBuilder.toString方法输出(最终输出的也是“Hello”),这些通过上面字节码的分析都可以看得出来，我们来看看StringBuilder.toString方法:
-``` 
-public String toString() {
-    // Create a copy, don't share the array
-    return new String(value, 0, count);
+    String s3 = new String("1") + new String("1");
+    s3.intern();
+    String s4 = "11";
+    System.out.println(s3 == s4);
 }
 ```
-最终是拼接出来一个对象， s4 指向了拼接出来这个对象。而s1指向的是另一个对象
+打印的结果：
 
-4. s1 != s9
-
-s9 这种两个字面量拼接的方式，同样是以StringBuilder.append生成的(字节码分析)一个全新的对象
-
-##### 字符串常量池
-
-String s1="hello" 字符串对象在哪里？
-
-这里要引申出我们要说的概念：字符串常量池。运行时常量池不是一个概念。但我们在代码中申明String s1 = "Hello";这句代码后，在类加载的过程中，类的class文件的信息会被解析到内存的方法区里。class文件里常量池里大部分数据会被加载到“运行时常量池”，包括String的字面量；但同时“Hello”字符串的一个引用会被存到同样在“非堆”区域的“字符串常量池”中，而"Hello"本体还是和所有对象一样，创建在Java堆中。
-
-字符串常量池是JVM所维护的一个字符串实例的引用表，在HotSpot VM中，它是一个叫做StringTable的全局表。在字符串常量池中维护的是字符串实例的引用，底层实现就是一个Hashtable。这些被维护的引用所指的字符串实例，被称作”被驻留的字符串”或”interned string”或通常所说的”进入了字符串常量池的字符串”
-
-JDK7 以后字符串常量池被移到了 java heap 中
+- jdk6: `false false`
+- jdk7(及以上): `false true`
 
 
+原因:
 
+- JDK6 中常量池在永久代中(Perm Space)，字符串对象完全存储在不同的空间
+- JDK7 字符串常量池已经从 Perm 区移到正常的 Java Heap 区域了(JDK8 取消了永久代改为了元空间，但字符串常量池还在 Java Heap 中)。s3 实际上是一个 `new String(11)` 的对象， 通过`String#intern` 将引用放入了 String Table 中，所以 s4 直接在 String Table 中找到了对应的引用， `s3 == s4`。而 `String s = new String("1")`时，已经创建了两个对象。常量池中的“1” 和 JAVA Heap 中的字符串对象。s.intern(); 这一句是 s 对象去常量池中寻找后发现 “1” 已经在常量池里了。在`s2 = 1`这行代码中返回的是常量池中的"1"对象的引用。
 
+### 参考资料
 
+- [深入理解String#intern](https://tech.meituan.com/2014/03/06/in-depth-understanding-string-intern.html)
+- [new String("字面量")中的字面量是何时进入常量池的](https://www.zhihu.com/question/55994121)
+- [java几种常量池的区分](http://tangxman.github.io/2015/07/27/the-difference-of-java-string-pool/)
 
  
 
