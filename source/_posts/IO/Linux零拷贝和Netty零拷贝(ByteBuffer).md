@@ -111,11 +111,6 @@ splice 系统调用可以在内核空间的读缓冲区（read buffer）和网�
 
 相比较于 mmap 内存映射的方式，sendfile 少了 2 次上下文切换，但是仍然有 1 次 CPU 拷贝操作。sendfile 存在的问题是用户程序不能对数据进行修改，而只是单纯地完成了一次数据传输过程。
 
-#### splice
-
-
-
-
 ### Netty中的零拷贝
 
 传统IO数据传输，在之前 [java网络编程模型概述](https://blog.haobin95.club/2018/08/08/IO/javaIO%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B%E6%A6%82%E8%BF%B0/)中有描述
