@@ -1,5 +1,5 @@
 ---
-title: mysql事务以及MVCC
+title: mysql事务隔离级别与MVCC
 date: 2019-09-02 21:25:21
 tags: mysql
 categories: mysql
