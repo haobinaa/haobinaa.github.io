@@ -266,6 +266,89 @@ mysql> SELECT * FROM hero;
 
 对于使用REPEATABLE READ隔离级别的事务来说，只会在第一次执行查询语句时生成一个`ReadView`，之后的查询就不会重复生成了.
 
+假如现在系统里有两个事务id分别为100、200的事务在执行：
+``` 
+########### Transaction 100
+BEGIN;
+UPDATE hero SET name = '关羽' WHERE number = 1;
+UPDATE hero SET name = '张飞' WHERE number = 1;
+
+########### Transaction 200
+BEGIN;
+# 更新了一些别的表的记录
+...
+```
+备注: 事务执行过程中，只有在第一次真正修改记录时（INSERT、DELETE、UPDATE,SELECT默认生成的事务id是0），才会被分配一个单独的事务id，这个事务id是递增的。所以我们才在Transaction 200
+ 中更新一些别的表的记录，目的是让它分配事务id。
+
+这个时候版本链如下:
+
+![](/images/mysql/version-chain-1.png)
+
+现在有一个`READ COMMITTED`级别的事务开始执行:
+``` 
+
+BEGIN;
+# 此时Transaction 100、200未提交， 执行 SELECT1:
+SELECT * FROM hero WHERE number = 1; # 得到的列name的值为'刘备
+```
+这个SELECT1的执行过程如下：
+1. 在执行SELECT语句时会先生成一个ReadView，ReadView的m_ids列表的内容就是[100, 200]，min_trx_id为100，max_trx_id为201，creator_trx_id为0。
+   
+2. 然后从版本链中挑选可见的记录，从图中可以看出，最新版本的列name的内容是'张飞'，该版本的trx_id值为100，在m_ids列表内，所以不符合可见性要求，根据roll_pointer跳到下一个版本。
+   
+3. 下一个版本的列name的内容是'关羽'，该版本的trx_id值也为100，也在m_ids列表内，所以也不符合要求，继续跳到下一个版本。
+   
+4. 下一个版本的列name的内容是'刘备'，该版本的trx_id值为80，小于ReadView中的min_trx_id值100，所以这个版本是符合要求的，最后返回给用户的版本就是这条列name为'刘备'的记录。
+
+然后提交一下事务id为100的事务:
+``` 
+# Transaction 100
+BEGIN;
+UPDATE hero SET name = '关羽' WHERE number = 1;
+UPDATE hero SET name = '张飞' WHERE number = 1;
+## 这个时候提交这个事务
+COMMIT;
+```
+
+然后再到事务id为200的事务中更新一下表hero中number为1的记录：
+``` 
+# Transaction 200
+BEGIN;
+
+# 更新了一些别的表的记录
+...
+
+#### 更新 number 为 1 的记录， 前面的更新操作只是为了之前生成一个新的事务id
+UPDATE hero SET name = '赵云' WHERE number = 1;
+UPDATE hero SET name = '诸葛亮' WHERE number = 1;
+```
+
+这个时候版本链就是这样:
+![](/images/mysql/version-chain-2.png)
+
+然后再到刚才使用READ COMMITTED隔离级别的事务中继续查找这个number为1的记录，如下：
+``` 
+# 使用READ COMMITTED隔离级别的事务
+BEGIN;
+
+# SELECT1：Transaction 100、200均未提交
+SELECT * FROM hero WHERE number = 1; # 得到的列name的值为'刘备'
+
+# SELECT2：Transaction 100提交，Transaction 200未提交
+SELECT * FROM hero WHERE number = 1; # 得到的列name的值为'张飞'
+```
+
+这个SELECT2的执行过程如下：
+
+1. 在执行SELECT语句时会又会单独生成一个ReadView，该ReadView的m_ids列表的内容就是[200]（事务id为100的那个事务已经提交了，所以再次生成快照时就没有它了），min_trx_id为200
+，max_trx_id为201，creator_trx_id为0。
+
+2. 然后从版本链中挑选可见的记录，从图中可以看出，最新版本的列name的内容是'诸葛亮'，该版本的trx_id值为200，在m_ids列表内，所以不符合可见性要求，根据roll_pointer跳到下一个版本。
+
+3. 下一个版本的列name的内容是'赵云'，该版本的trx_id值为200，也在m_ids列表内，所以也不符合要求，继续跳到下一个版本。
+
+4. 下一个版本的列name的内容是'张飞'，该版本的trx_id值为100，小于ReadView中的min_trx_id值200，所以这个版本是符合要求的，最后返回给用户的版本就是这条列name为'张飞'的记录。
 
 ##### REPEATABLE READ —— 在第一次读取数据时生成一个ReadView
 
