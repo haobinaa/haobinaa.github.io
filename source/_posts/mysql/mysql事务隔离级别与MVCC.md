@@ -28,7 +28,9 @@ categories: mysql
 
 #### 不可重复读(Non-Repeatable Read)
 
-一个事务只能读到另一个已经提交的事务修改过的数据，并且其他事务每对该数据进行一次修改并提交后，该事务都能查询得到最新值(注重的是update和delete操作)
+一个事务只能读到另一个已经提交的事务修改过的数据，并且其他事务每对该数据进行一次修改并提交后，该事务都能查询得到最新值(注重的是update和delete操作)。
+
+换句话说个事务从开始直到提交之前，所做的任何修改对其他事务都是不可见的。但是两次执行同样的查询，可能会得到不一样的结果(读到了其他事务的修改结果)。
 
 
 #### 幻读(Phantom Read)
@@ -51,14 +53,22 @@ categories: mysql
 
 #### mysql四个隔离级别
 
-| 隔离级别  |   数据一致性   | 脏读    | 不可重复读 |   幻读 |
-|----------|:--------------|:--------|:--------|:--------|
-|未提交读(Read uncommited)| 最低级别，只能保证不读取物理上损坏的数据| Y | Y | Y |
-| 已提交读(Read commited) | 语句级别 | N | Y | Y |
-| 可重复读(Repeatable Read) | 事务级 | N | N | Y |
-| 串行执行(Serializable) | 最高级别，事务级 | N | N | N |
+| 隔离级别              | 脏读    | 不可重复读 |   幻读 |
+|---------- -----------|:--------|:--------|:--------|
+|未提交读(Read uncommited)| N      | N      | N     |
+| 已提交读(Read commited) | N       | Y     | Y      |
+|可重复读(Repeatable Read)| N       | N     | Y      |
+| 串行执行(Serializable)  | N       | N     | N       |
 
+- `READ UNCOMMITTED`隔离级别下，可能发生脏读、不可重复读和幻读问题。
 
+- `READ COMMITTED`隔离级别下，可能发生不可重复读和幻读问题，但是不可以发生脏读问题。
+
+- `REPEATABLE READ`隔离级别下，可能发生幻读问题，但是不可以发生脏读和不可重复读的问题(这也是mysql的默认隔离级别)。
+
+- `SERIALIZABLE`隔离级别下，各种问题都不可以发生。
+
+注意: 脏写是很严重的情况，无论哪种隔离级别都不允许发生脏写
 
 ### 验证
 - 默认隔离级别
@@ -207,40 +217,63 @@ select * from book_table where bookid = 1;
 
 innodb记录都会包含两个隐藏列:
 - `trx_id`：每次一个事务对某条记录进行改动时，都会把该事务的`事务id`赋值给`trx_id`隐藏列
-
 - `roll_pointer`：每次对某条记录进行改动时，都会把旧的版本写入到undo日志中，然后这个隐藏列就相当于一个指针，可以通过它来找到该记录修改前的信息
 
-当对一条记录多次更新后，所有的版本都会被roll_pointer属性连接成一个链表，我们把这个链表称之为版本链，版本链的头节点就是当前记录最新的值。类似:
+当对一条记录多次更新后，所有的版本都会被roll_pointer属性连接成一个链表(insert操作对应的undo log没有该属性，因为该记录没有更早的版本)，我们把这个链表称之为版本链，版本链的头节点就是当前记录最新的值。版本链的头节点就是当前记录最新的值。另外，每个版本中还包含生成该版本时对应的事务id，类似:
+
 ![](/images/mysql/roll_pointer_undo.png)
 
 
 #### ReadView
 
-对于使用`READ UNCOMMITTED`隔离级别的事务来说，由于可以读到未提交事务修改过的记录，所以直接读取记录的最新版本就好了；对于使用`SERIALIZABLE`
-隔离级别的事务来说，InnoDB使用加锁的方式来访问记录；对于使用`READ COMMITTED`和`REPEATABLE READ`隔离级别的事务来说，都必须保证读到已经提交了的事务修改过的记录，也就是说假如另一个事务已经修改了记录但是尚未提交，是不能直接读取最新版本的记录的，核心问题就是：需要判断一下版本链中的哪个版本是当前事务可见的。为此，InnoDB提出了一个ReadView的概念，这个ReadView中主要包含4个比较重要的内容：
+对于使用`READ UNCOMMITTED`隔离级别的事务来说，由于可以读到未提交事务修改过的记录，所以直接读取记录的最新版本就好了；
+对于使用`SERIALIZABLE`隔离级别的事务来说，InnoDB使用加锁的方式来访问记录；
+对于使用`READ COMMITTED`和`REPEATABLE READ`隔离级别的事务来说，都必须保证读到已经提交了的事务修改过的记录，也就是说假如另一个事务已经修改了记录但是尚未提交，是不能直接读取最新版本的记录的，核心问题就是：需要判断一下版本链中的哪个版本是当前事务可见的。为此，InnoDB提出了一个`ReadView`的概念，这个ReadView中主要包含4个比较重要的内容：
 
-1. m_ids：表示在生成ReadView时当前系统中活跃的读写事务的事务id列表。
-2. min_trx_id：表示在生成ReadView时当前系统中活跃的读写事务中最小的事务id，也就是m_ids中的最小值。
-3. max_trx_id：表示生成ReadView时系统中应该分配给下一个事务的id值。
-4. creator_trx_id：表示生成该ReadView的事务的事务id
+1. `m_ids`：表示在生成`ReadView`时当前系统中活跃的读写事务的事务id列表。
 
-有了这个ReadView，这样在访问某条记录时，只需要按照下边的步骤判断记录的某个版本是否可见:
+2. `min_trx_id`：表示在生成`ReadView`时当前系统中活跃的读写事务中最小的事务id，也就是m_ids中的最小值。
 
-1. 如果被访问版本的trx_id属性值与ReadView中的creator_trx_id值相同，意味着当前事务在访问它自己修改过的记录，所以该版本可以被当前事务访问。
-2. 如果被访问版本的trx_id属性值小于ReadView中的min_trx_id值，表明生成该版本的事务在当前事务生成ReadView前已经提交，所以该版本可以被当前事务访问
-3. 如果被访问版本的trx_id属性值大于ReadView中的max_trx_id值，表明生成该版本的事务在当前事务生成ReadView后才开启，所以该版本不可以被当前事务访问
-4. 如果被访问版本的trx_id属性值在ReadView的min_trx_id和max_trx_id之间，那就需要判断一下trx_id属性值是不是在m_ids列表中，如果在，说明创建ReadView时生成该版本的事务还是活跃的，该版本不可以被访问；如果不在，说明创建ReadView时生成该版本的事务已经被提交，该版本可以被访问
+3. `max_trx_id`：表示生成`ReadView`时系统中应该分配给下一个事务的id值(max_trx_id并不是m_ids中的最大值。事务id是递增分配的，假如现在有id为1，2，3这三个事务，之后id为3的事务提交了。那么一个新的读事务在生成ReadView时，m_ids就包括1和2，min_trx_id的值就是1，max_trx_id的值就是4)。
+
+4. `creator_trx_id`：表示生成该`ReadView`的事务的事务id
+
+有了`ReadView`，这样在访问某条记录时，只需要按照下边的步骤判断记录的某个版本是否可见:
+
+1. 如果被访问版本的`trx_id`与`ReadView中`的`creator_trx_id`值相同，意味着当前事务在访问它自己修改过的记录，所以该版本可以被当前事务访问。
+
+2. 如果被访问版本的`trx_id`小于`ReadView`中的`min_trx_id`值，表明生成该版本的事务在当前事务生成`ReadView`前已经提交，所以该版本可以被当前事务访问
+
+3. 如果被访问版本的`trx_id`大于`ReadView`中的`max_trx_id`值，表明生成该版本的事务在当前事务生成`ReadView`后才开启，所以该版本不可以被当前事务访问
+
+4. 如果被访问版本的`trx_id`在`ReadView`的`min_trx_id`和`max_trx_id之`间，那就需要判断一下`trx_id`属性值是不是在`m_ids`列表中，如果在，说明创建`ReadView`时生成该版本的事务还是活跃的，该版本不可以被访问；如果不在，说明创建`ReadView`时生成该版本的事务已经被提交，该版本可以被访问
+
+如果某个版本的数据对当前事务不可见的话，那就顺着版本链找到下一个版本的数据，继续按照上边的步骤判断可见性，依此类推，直到版本链中的最后一个版本。如果最后一个版本也不可见的话，那么就意味着该条记录对该事务完全不可见，查询结果就不包含该记录
+
+#### READ COMMITTED和 REPEATABLE READ生成 RAED VIEW的时机
+
+在MySQL中，READ COMMITTED和REPEATABLE READ隔离级别的的一个非常大的区别就是它们生成ReadView的时机不同。假设现在表hero中只有一条由事务id为80的事务插入的一条记录：
+``` 
+mysql> SELECT * FROM hero;
++--------+--------+---------+
+| number | name   | country |
++--------+--------+---------+
+|      1 | 刘备   | 蜀      |
++--------+--------+---------+
+```
+
+##### READ COMMITTED —— 每次读取数据前都生成一个ReadView
+
+对于使用REPEATABLE READ隔离级别的事务来说，只会在第一次执行查询语句时生成一个`ReadView`，之后的查询就不会重复生成了.
 
 
-#### READ COMMITTED和REPEATABLE READ生成 RAED VIEW的时机
-
-todo
-
-
+##### REPEATABLE READ —— 在第一次读取数据时生成一个ReadView
 
 #### mvcc总结
 
 所谓的MVCC（Multi-Version Concurrency Control ，多版本并发控制）指的就是在使用READ COMMITTD、REPEATABLE READ这两种隔离级别的事务在执行普通的SEELCT操作时访问记录的版本链的过程，这样子可以使不同事务的读-写、写-读操作并发执行，从而提升系统性能。READ COMMITTD、REPEATABLE READ这两个隔离级别的一个很大不同就是：生成ReadView的时机不同，READ COMMITTD在每一次进行普通SELECT操作前都会生成一个ReadView，而REPEATABLE READ只在第一次进行普通SELECT操作前生成一个ReadView，之后的查询操作都重复使用这个ReadView就好了。
+
+
 ### 参考资料
 - [mysql事务](http://www.cnblogs.com/luyucheng/p/6297480.html)
 - [mysql的四种隔离级别](http://www.cnblogs.com/zhoujinyi/p/3437475.html)
