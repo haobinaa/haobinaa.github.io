@@ -224,6 +224,8 @@ innodb记录都会包含两个隐藏列:
 ![](/images/mysql/roll_pointer_undo.png)
 
 
+
+
 #### ReadView
 
 对于使用`READ UNCOMMITTED`隔离级别的事务来说，由于可以读到未提交事务修改过的记录，所以直接读取记录的最新版本就好了；
@@ -264,7 +266,7 @@ mysql> SELECT * FROM hero;
 
 ##### READ COMMITTED —— 每次读取数据前都生成一个ReadView
 
-对于使用REPEATABLE READ隔离级别的事务来说，只会在第一次执行查询语句时生成一个`ReadView`，之后的查询就不会重复生成了.
+对于使用REPEATABLE READ隔离级别的事务来说，只会在第一次执行查询语句时生成一个`ReadView`，之后的查询就不会重复生成了
 
 假如现在系统里有两个事务id分别为100、200的事务在执行：
 ``` 
@@ -293,13 +295,13 @@ BEGIN;
 SELECT * FROM hero WHERE number = 1; # 得到的列name的值为'刘备
 ```
 这个SELECT1的执行过程如下：
-1. 在执行SELECT语句时会先生成一个ReadView，ReadView的m_ids列表的内容就是[100, 200]，min_trx_id为100，max_trx_id为201，creator_trx_id为0。
+1. 在执行SELECT语句时会先生成一个`ReadView`，`ReadView`的m_ids列表的内容就是[100, 200]，`min_trx_id`为`100`，`max_trx_id`为`201`，creator_trx_id为0。
    
-2. 然后从版本链中挑选可见的记录，从图中可以看出，最新版本的列name的内容是'张飞'，该版本的trx_id值为100，在m_ids列表内，所以不符合可见性要求，根据roll_pointer跳到下一个版本。
+2. 然后从版本链中挑选可见的记录，从图中可以看出，最新版本的列name的内容是'张飞'，该版本的`trx_id`值为100，在m_ids列表内，所以不符合可见性要求，根据roll_pointer跳到下一个版本。
    
-3. 下一个版本的列name的内容是'关羽'，该版本的trx_id值也为100，也在m_ids列表内，所以也不符合要求，继续跳到下一个版本。
+3. 下一个版本的列name的内容是'关羽'，该版本的`trx_id`值也为100，也在`m_ids`列表内，所以也不符合要求，继续跳到下一个版本。
    
-4. 下一个版本的列name的内容是'刘备'，该版本的trx_id值为80，小于ReadView中的min_trx_id值100，所以这个版本是符合要求的，最后返回给用户的版本就是这条列name为'刘备'的记录。
+4. 下一个版本的列name的内容是'刘备'，该版本的`trx_id`值为80，小于ReadView中的`min_trx_id`值100，所以这个版本是符合要求的，最后返回给用户的版本就是这条列name为'刘备'的记录。
 
 然后提交一下事务id为100的事务:
 ``` 
@@ -327,7 +329,7 @@ UPDATE hero SET name = '诸葛亮' WHERE number = 1;
 这个时候版本链就是这样:
 ![](/images/mysql/version-chain-2.png)
 
-然后再到刚才使用READ COMMITTED隔离级别的事务中继续查找这个number为1的记录，如下：
+然后再到刚才使用`READ COMMITTED`隔离级别的事务中继续查找这个number为1的记录，如下：
 ``` 
 # 使用READ COMMITTED隔离级别的事务
 BEGIN;
@@ -341,20 +343,45 @@ SELECT * FROM hero WHERE number = 1; # 得到的列name的值为'张飞'
 
 这个SELECT2的执行过程如下：
 
-1. 在执行SELECT语句时会又会单独生成一个ReadView，该ReadView的m_ids列表的内容就是[200]（事务id为100的那个事务已经提交了，所以再次生成快照时就没有它了），min_trx_id为200
-，max_trx_id为201，creator_trx_id为0。
+1. 在执行SELECT语句时会又会单独生成一个`ReadView`，该`ReadView`的`m_ids`列表的内容就是[200]（事务id为100的那个事务已经提交了，所以再次生成快照时就没有它了），`min_trx_id`为200，`max_trx_id为`201，`creator_trx_id`为0。
 
-2. 然后从版本链中挑选可见的记录，从图中可以看出，最新版本的列name的内容是'诸葛亮'，该版本的trx_id值为200，在m_ids列表内，所以不符合可见性要求，根据roll_pointer跳到下一个版本。
+2. 然后从版本链中挑选可见的记录，从图中可以看出，最新版本的列name的内容是'诸葛亮'，该版本的`trx_id`值为200，在`m_ids`列表内，所以不符合可见性要求，根据roll_pointer跳到下一个版本。
 
-3. 下一个版本的列name的内容是'赵云'，该版本的trx_id值为200，也在m_ids列表内，所以也不符合要求，继续跳到下一个版本。
+3. 下一个版本的列name的内容是'赵云'，该版本的`trx_id`值为200，也在`m_ids`列表内，所以也不符合要求，继续跳到下一个版本。
 
-4. 下一个版本的列name的内容是'张飞'，该版本的trx_id值为100，小于ReadView中的min_trx_id值200，所以这个版本是符合要求的，最后返回给用户的版本就是这条列name为'张飞'的记录。
+4. 下一个版本的列name的内容是'张飞'，该版本的`trx_id`值为100，小于`ReadView`中的`min_trx_id`值200，所以这个版本是符合要求的，最后返回给用户的版本就是这条列name为'张飞'的记录。
 
 ##### REPEATABLE READ —— 在第一次读取数据时生成一个ReadView
 
+对于使用`REPEATABLE READ`隔离级别的事务来说，只会在第一次执行查询语句时生成一个`ReadView`，之后的查询就不会重复生成了。
+
+还是使用上个例子，对于`REPEATABLE READ`来说， 执行 SELECT1 的时候:
+
+1. 在执行SELECT语句时会先生成一个`ReadView`，`ReadView`的`m_ids`列表的内容就是[100, 200]，`min_trx_id`为100，`max_trx_id`为201，`creator_trx_id`为0。
+
+2. 然后从版本链中挑选可见的记录，从图中可以看出，最新版本的列name的内容是'张飞'，该版本的`trx_id`值为100，在`m_ids`列表内，所以不符合可见性要求，根据roll_pointer跳到下一个版本。
+
+3. 下一个版本的列name的内容是'关羽'，该版本的`trx_id`值也为100，也在`m_ids`列表内，所以也不符合要求，继续跳到下一个版本。
+
+4. 下一个版本的列name的内容是'刘备'，该版本的`trx_id`值为80，小于ReadView中的`min_trx_id`值100，所以这个版本是符合要求的，最后返回给用户的版本就是这条列name为'刘备'的记录。
+
+对于这个`REPEATABLE READ`的事务，在执行 SELECT2 的时候:
+
+1. 因为当前事务的隔离级别为`REPEATABLE READ`，而之前在执行SELECT1时已经生成过`ReadView`了，所以此时直接复用之前的`ReadView`，之前的`ReadView`的`m_ids`列表的内容就是[100, 200]，`min_trx_id`为100，`max_trx_id`为201，`creator_trx_id`为0。
+
+2. 然后从版本链中挑选可见的记录，从图中可以看出，最新版本的列name的内容是'诸葛亮'，该版本的`trx_id`值为200，在`m_ids`列表内，所以不符合可见性要求，根据roll_pointer跳到下一个版本。
+
+3. 下一个版本的列name的内容是'赵云'，该版本的`trx_id`值为200，也在`m_ids`列表内，所以也不符合要求，继续跳到下一个版本。
+
+4. 下一个版本的列name的内容是'张飞'，该版本的`trx_id`值为100，而m_ids列表中是包含值为100的事务id的，所以该版本也不符合要求，同理下一个列name的内容是'关羽'的版本也不符合要求。继续跳到下一个版本。
+
+5. 下一个版本的列name的内容是'刘备'，该版本的trx_id值为80，小于ReadView中的`min_trx_id`值100，所以这个版本是符合要求的，最后返回给用户的版本就是这条列c为'刘备'的记录
+
+也就是说两次SELECT查询得到的结果是重复的，记录的列c值都是'刘备'，这就是可重复读的含义。如果我们之后再把事务id为200的记录提交了，然后再到刚才使用REPEATABLE READ隔离级别的事务中继续查找这个number为1的记录，得到的结果还是'刘备'
+
 #### mvcc总结
 
-所谓的MVCC（Multi-Version Concurrency Control ，多版本并发控制）指的就是在使用READ COMMITTD、REPEATABLE READ这两种隔离级别的事务在执行普通的SEELCT操作时访问记录的版本链的过程，这样子可以使不同事务的读-写、写-读操作并发执行，从而提升系统性能。READ COMMITTD、REPEATABLE READ这两个隔离级别的一个很大不同就是：生成ReadView的时机不同，READ COMMITTD在每一次进行普通SELECT操作前都会生成一个ReadView，而REPEATABLE READ只在第一次进行普通SELECT操作前生成一个ReadView，之后的查询操作都重复使用这个ReadView就好了。
+所谓的`MVCC`（Multi-Version Concurrency Control ，多版本并发控制）指的就是在使用`READ COMMITTD`、`REPEATABLE READ`这两种隔离级别的事务在执行普通的SEELCT操作时访问记录的版本链的过程，这样子可以使不同事务的读-写、写-读操作并发执行，从而提升系统性能。`READ COMMITTD`、`REPEATABLE READ`这两个隔离级别的一个很大不同就是：生成`ReadView`的时机不同，`READ COMMITTD`在每一次进行普通SELECT操作前都会生成一个`ReadView`，而`REPEATABLE READ`只在第一次进行普通SELECT操作前生成一个`ReadView`，之后的查询操作都重复使用这个`ReadView`就好了。
 
 
 ### 参考资料
