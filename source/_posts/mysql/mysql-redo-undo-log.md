@@ -3,6 +3,7 @@ title: mysql事务-redo/undo log
 date: 2019-09-02 21:17:57
 tags: mysql
 categories: mysql
+typora-root-url: ..\..
 ---
 
 ### 事务的持久性

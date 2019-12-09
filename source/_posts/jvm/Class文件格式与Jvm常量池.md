@@ -3,6 +3,7 @@ title: Class文件格式与Jvm常量池
 date: 2019-11-11 16:08:16
 tags:
 categories: jvm
+typora-root-url: ..\..\images
 ---
 
 ### Class 文件
@@ -38,7 +39,7 @@ ClassFile {
 
 ##### 1.magic
 
-在class文件开头的四个字节， 存放着class文件的魔数， 这个魔数是class文件的标志，他是一个固定的值： 0XCAFEBABE 。 也就是说他是判断一个文件是不是class格式的文件的标准， 如果开头四个字节不是0XCAFEBABE， 那么就说明它不是class文件， 不能被JVM识别
+在class文件开头的四个字节， 存放着class文件的魔数， 这个魔数是class文件的标志，他是一个固定的值： `0XCAFEBABE` 。 也就是说他是判断一个文件是不是class格式的文件的标准， 如果开头四个字节不是`0XCAFEBABE`， 那么就说明它不是class文件， 不能被JVM识别
 
 ##### 2. minor_version/major_version
 
