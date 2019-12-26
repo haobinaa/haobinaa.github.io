@@ -34,7 +34,7 @@ Outbound 的 out 指的是 出去，比如 connect、write、flush 这些 IO 操
  Inbound 是接收。如 accept、read 这种就属于 Inbound 事件
  
  比如服务端的childHandler中有如下代码:
- ``` 
+ ``` e
  1. pipeline.addLast(new StringDecoder());
  2. pipeline.addLast(new StringEncoder());
  3. pipeline.addLast(new BizHandler());
@@ -199,4 +199,5 @@ DelimiterBasedFrameDecoder 是行拆包器的通用版本，只不过我们可�
 - `handlerRemoved()`: 这条连接上添加的所有的业务逻辑处理器都给移除掉
 
 channelHandler的生命周期用图表示:
+
 ![](/images/netty/channelHandler_lifecycle.png)
