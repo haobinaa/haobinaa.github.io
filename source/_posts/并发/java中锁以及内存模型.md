@@ -14,8 +14,7 @@ categories: 并发
 
 #### 内存可见性
 
-Java中使用JMM屏蔽了CPU
-的多级缓存: 所有的共享变量存在于主内存中，每个线程有自己的本地内存，线程读写共享数据也是通过本地内存交换的。在操作数据的时候，每个线程都会将自己需要的数据读到线程本地缓存中，数据修改后也是写入到缓存中，然后等待刷入到主存中。所以会导致有些线程读取的值是一个过期的值。
+Java中使用JMM屏蔽了CPU的多级缓存: 所有的共享变量存在于主内存中，每个线程有自己的本地内存，线程读写共享数据也是通过本地内存交换的。在操作数据的时候，每个线程都会将自己需要的数据读到线程本地缓存中，数据修改后也是写入到缓存中，然后等待刷入到主存中。所以会导致有些线程读取的值是一个过期的值。
 
 #### 原子性
 
@@ -57,4 +56,4 @@ Java 编程语言规范中提到，对于 64 位的值的写入，可以分为�
  
  - [Java基础并发模型](https://javadoop.com/post/java-memory-model)
  - [正确使用volatile变量](https://www.ibm.com/developerworks/cn/java/j-jtp06197.html)
- - [Java并发中锁优化](https://mp.weixin.qq.com/s?__biz=MzU0OTk3ODQ3Ng==&mid=2247486831&idx=1&sn=69ca4c63d806f1d22579b3a3df52d3e7&chksm=fba6e56cccd16c7ada14fc23d052de0f2f02c4cc1560f65bdf2c2d473a8a1a0047b35738d911&mpshare=1&scene=1&srcid=&sharer_sharetime=1577408454552&sharer_shareid=3c10d2bfc6ced97cc6607b57b30ea1b1&key=ff1b1d089c15295c3c600d3f8ce8ddc0ab879df14ddc473fbdb57ad415231a9bcb4bb7f2ea68cd2fda61541fb745234b412d411fe4d487ab5fb9abd86e45657420c8503edd6acff6cd47d3c0cecbc220&ascene=1&uin=MjkyMjA3ODQwNA%3D%3D&devicetype=Windows+10&version=62070158&lang=zh_CN&exportkey=A98bG3TKu5AOwxw3wb3J5VU%3D&pass_ticket=D%2BYz2lIw3c6APzjfwsbD3JI58lKvJxKoZkAABhujFNfpTDob6624UaGy6Df0b6gp)
+ - [Java中的锁](https://mp.weixin.qq.com/s?__biz=MzU0OTk3ODQ3Ng==&mid=2247486831&idx=1&sn=69ca4c63d806f1d22579b3a3df52d3e7&chksm=fba6e56cccd16c7ada14fc23d052de0f2f02c4cc1560f65bdf2c2d473a8a1a0047b35738d911&mpshare=1&scene=1&srcid=&sharer_sharetime=1577408454552&sharer_shareid=3c10d2bfc6ced97cc6607b57b30ea1b1&key=ff1b1d089c15295c3c600d3f8ce8ddc0ab879df14ddc473fbdb57ad415231a9bcb4bb7f2ea68cd2fda61541fb745234b412d411fe4d487ab5fb9abd86e45657420c8503edd6acff6cd47d3c0cecbc220&ascene=1&uin=MjkyMjA3ODQwNA%3D%3D&devicetype=Windows+10&version=62070158&lang=zh_CN&exportkey=A98bG3TKu5AOwxw3wb3J5VU%3D&pass_ticket=D%2BYz2lIw3c6APzjfwsbD3JI58lKvJxKoZkAABhujFNfpTDob6624UaGy6Df0b6gp)
