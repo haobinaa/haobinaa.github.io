@@ -5,6 +5,7 @@ tags:
 categories: 并发
 ---
 ### 概要
+
 ThreadLocal 用于提供线程局部变量，在多线程环境可以保证各个线程里的变量独立于其它线程里的变量。也就是说 ThreadLocal 可以为每个线程创建一个【单独的变量副本】，相当于线程的 private static 类型变量
 
 ThreadLocal 的作用和同步机制有些相反：同步机制是为了保证多线程环境下数据的一致性；而 ThreadLocal 是保证了多线程环境下数据的独立性
@@ -14,7 +15,7 @@ ThreadLocal 的作用和同步机制有些相反：同步机制是为了保证�
 
 #### set(T value)和get()方法
 
-set(T value) 方法中，首先获取当前线程，然后在获取到当前线程的 ThreadLocalMap，如果 ThreadLocalMap 不为 null，则将 value 保存到 ThreadLocalMap 中，并用当前 ThreadLocal 作为 key；否则创建一个 ThreadLocalMap 并给到当前线程，然后保存 value。
+set(T value) 方法中，首先获取当前线程，然后在获取到当前线程的 `ThreadLocalMap`，如果 ThreadLocalMap 不为 null，则将 value 保存到 ThreadLocalMap 中，并用当前 ThreadLocal 作为 key；否则创建一个 ThreadLocalMap 并给到当前线程，然后保存 value。
 
 ThreadLocalMap 相当于一个 HashMap，是真正保存值的地方。
 ``` 
@@ -28,7 +29,8 @@ public void set(T value) {
         createMap(t, value);
 }
 ```
-在 get() 方法中也会获取到当前线程的 ThreadLocalMap，如果 ThreadLocalMap 不为 null，则把获取 key 为当前 ThreadLocal 的值；否则调用 setInitialValue() 方法返回初始值，并保存到新创建的 ThreadLocalMap 中。
+
+在 get() 方法中也会获取到当前线程的 ThreadLocalMap，如果 ThreadLocalMap 不为 null，则把获取 key 为当前 ThreadLocal 的值；否则调用 setInitialValue() 方法返回初始值(null)，并保存到新创建的 ThreadLocalMap 中。
 
 ``` 
 public T get() {
@@ -70,6 +72,7 @@ public void remove() {
 ```
 
 #### 当前线程的 ThreadLocalMap(getMap(t))
+
 在 set，get，initialValue 和 remove 方法中都会获取到当前线程，然后通过当前线程获取到 ThreadLocalMap，如果 ThreadLocalMap 为 null，则会创建一个 ThreadLocalMap，并给到当前线程。
 ``` 
 ThreadLocalMap getMap(Thread t) {
@@ -93,6 +96,7 @@ public class Thread implements Runnable {
 中维护的值也是属于线程自己的。这就保证了 ThreadLocal(类型为ThreadLocalMap)变量在每个线程中是独立的，在多线程环境下不会相互影响。
 
 #### ThreadLocalMap
+
 ##### 构造方法
 ThreadLocal 中当前线程的 ThreadLocalMap 为 null 时会使用 ThreadLocalMap 的构造方法新建一个 ThreadLocalMap：
 ``` 
@@ -128,6 +132,7 @@ private void setThreshold(int len) {
     threshold = len * 2 / 3;
 }
 ```
+
 table 是一个 Entry 类型的数组，Entry 是 ThreadLocalMap 的一个内部类：
 ``` 
 static class Entry extends WeakReference<ThreadLocal<?>> {
@@ -141,6 +146,7 @@ static class Entry extends WeakReference<ThreadLocal<?>> {
 ```
 
 ##### 保存键值对
+
 调用`ThreadLocalMap`的`set(ThreadLocal key, Object value)`方法将数据保存到哈希表中：
 ``` 
 private void set(ThreadLocal key, Object value) {
@@ -209,6 +215,7 @@ private void rehash() {
 ```
 
 ##### 获取Entry
+
 取值是直接获取到 Entry 对象，使用 `getEntry(ThreadLocal key)` 方法：
 ``` 
 private Entry getEntry(ThreadLocal key) {
@@ -265,7 +272,7 @@ private void remove(ThreadLocal key) {
         if (e.get() == key) {
             // 清除 Entry 的 key 的引用
             e.clear();
-            // 清除无效的 Entry
+            // 清除无效的 Entry(entry.value 和 entry)
             expungeStaleEntry(i);
             return;
         }
@@ -274,6 +281,7 @@ private void remove(ThreadLocal key) {
 ```
 
 #### 内存泄露原因分析
+
 ![](/images/threadlocal.png)
 
 ThreadLocal的实现是这样的：每个Thread 维护一个 ThreadLocalMap 映射表，这个映射表的 key 是 ThreadLocal实例本身，value 是真正需要存储的 Object。
@@ -281,13 +289,17 @@ ThreadLocal的实现是这样的：每个Thread 维护一个 ThreadLocalMap 映�
 也就是说 ThreadLocal 本身并不存储值，它只是作为一个 key 来让线程从 ThreadLocalMap 获取 value。值得注意的是图中的虚线，表示 ThreadLocalMap 是使用 ThreadLocal 的弱引用作为 Key 的，弱引用的对象在 GC 时会被回收。
 
 ##### 为何会内存泄露
-每个thread中都存在一个map, map的类型是ThreadLocal.ThreadLocalMap. Map中的key为一个threadlocal实例. 这个Map的确使用了弱引用,不过弱引用只是针对key. 每个key都弱引用指向threadlocal. 当把threadlocal实例置为null以后,没有任何强引用指向threadlocal实例,所以threadlocal将会被gc回收. 但是,我们的value却不能回收,因为存在一条从current thread连接过来的强引用. 只有当前thread结束以后, current thread就不会存在栈中,强引用断开, Current Thread, Map, value将全部被GC回收。所以得出一个结论就是只要这个线程对象被gc回收，就不会出现内存泄露，但在threadLocal设为null和线程结束这段时间不会被回收的，就发生了我们认为的内存泄露。其实这是一个对概念理解的不一致，也没什么好争论的。最要命的是线程对象不被回收的情况，这就发生了真正意义上的内存泄露。比如使用线程池的时候，线程结束是不会销毁的，会再次使用的就可能出现内存泄露 。（在web应用中，每次http请求都是一个线程，tomcat容器配置使用线程池时会出现内存泄漏问题）
 
-ThreadLocalMap使用ThreadLocal的弱引用作为key，如果一个ThreadLocal没有外部强引用来引用它，那么系统 GC 的时候，这个ThreadLocal势必会被回收，这样一来，ThreadLocalMap中就会出现key为null的Entry，就没有办法访问这些key为null的Entry的value，如果当前线程再迟迟不结束的话，这些key为null的Entry的value就会一直存在一条强引用链：Thread Ref -> Thread -> ThreaLocalMap -> Entry -> value永远无法回收，造成内存泄漏。
+从上图可以看出，`ThreadLocal`对象是被两种引用指向的：
+1. 强引用: 对应的 `ThreadLocalRef`, 也就是我们代码中显示声明的 `ThreadLocal`对象
+2. 弱引用: 对应的是 `ThreadLocalMap` 中的 `Entry extends WeakReference<ThreadLocal<?>>`，作为 key 以一个弱引用指向 `ThreadLocal` 对象。
+
+当强引用断开的时候，此时`ThreadLocal`对象只有一个弱引用指向了，那么GC发生时，`ThreadLocal`对象就会被回收。但此时 `key==null`， `value`已经不能被应用程序访问到了，当前线程如果没有被回收的情况下(如线程池),仍有一个引用链`Thread Ref -> Thread -> ThreaLocalMap -> Entry -> value`存在，成了脏数据，造成了内存泄漏
 
 
 ##### ThreadLocalMap的设计
-ThreadLocalMap的设计中已经考虑到这种情况，也加上了一些防护措施：在ThreadLocal的get(),set(),remove()的时候都会清除线程ThreadLocalMap里所有key为null的value。
+
+ThreadLocalMap的设计中已经考虑到这种情况，也加上了一些防护措施：在ThreadLocal的get(),set(),remove()的时候都会清除线程ThreadLocalMap里所有key为null的value,并清理对应的 Entry。
 
 但是这些被动的预防措施并不能保证不会内存泄漏：
 - 使用static的ThreadLocal，延长了ThreadLocal的生命周期，可能导致的内存泄漏
@@ -299,6 +311,7 @@ ThreadLocalMap的设计中已经考虑到这种情况，也加上了一些防护
   为了应对非常大和长时间的用途，哈希表使用弱引用的 key。
   
 下面我们分两种情况讨论：
+
 - key 使用强引用：引用的ThreadLocal的对象被回收了，但是ThreadLocalMap还持有ThreadLocal的强引用，如果没有手动删除，ThreadLocal不会被回收，导致Entry内存泄漏。
 - key 使用弱引用：引用的ThreadLocal的对象被回收了，由于ThreadLocalMap持有ThreadLocal的弱引用，即使没有手动删除，ThreadLocal也会被回收。value在下一次ThreadLocalMap调用set,get，remove的时候会被清除。
 
