@@ -27,10 +27,9 @@ jvm主要分，堆、方法区、java栈、本地方法栈、程序计数器五�
 
 普通对象直接分配在新生代的 eden 区域
 
-新生代是大部分对象创建和销毁的区域，在通常的 Java 应用中，绝大部分对象生命周期都是很短暂的。其内部又分为 `Eden` 作为对象初始化分配的区域， 两个`survivor`区域 s1 和 s2， 分别为from和to，用来放置从`Minor 
-GC`中保留下来的对象。JVM会随意选取一个Survivor作为to区域，然后会在GC过程中，将Eden中存活下来的对象和from中的对象拷贝到to这个区域， 防止内存碎片化，进一步清理无用对象
+新生代是大部分对象创建和销毁的区域，在通常的 Java 应用中，绝大部分对象生命周期都是很短暂的。其内部又分为 `Eden` 作为对象初始化分配的区域， 两个`survivor`区域 s1 和 s2， 分别为from和to，用来放置从`Minor GC`中保留下来的对象。JVM会随意选取一个Survivor作为to区域，然后会在GC过程中，将Eden中存活下来的对象和from中的对象拷贝到to这个区域， 防止内存碎片化，进一步清理无用对象
 
-对Eden区域继续划分， Hotspot JVM还有一个概念叫Thread Local Allocation Buffer(TLAB), 这是JVM对每个线程分配的一个私有缓存区域，避免多线程同时分配的时候操作同一个地址时可能需要加锁等机制而影响分配速度。TLAB仍然分配在堆上，结构比较简单，start、end就是起止地址，top表示已经分配到那里了，top与end相遇的时候，代表该缓存已经满了，JVM会试图再从Eden中分配一块
+对Eden区域继续划分， Hotspot JVM还有一个概念叫`Thread Local Allocation Buffer(TLAB)`, 这是JVM对每个线程分配的一个私有缓存区域，避免多线程同时分配的时候操作同一个地址时可能需要加锁等机制而影响分配速度。TLAB仍然分配在堆上，结构比较简单，start、end就是起止地址，top表示已经分配到那里了，top与end相遇的时候，代表该缓存已经满了，JVM会试图再从Eden中分配一块
 
 ![](/images/TLAB.png)
 
@@ -41,6 +40,9 @@ GC`中保留下来的对象。JVM会随意选取一个Survivor作为to区域，�
 
 老年代放置长生命周期的对象，通常是从Survivor区域拷贝过来的对象(达到年龄阈值后晋升到老年代的对象)。当然也有特殊情况，我们知道普通对象会被分配在TLAB上，如果对象较大，JVM会试图直接分配在Eden其他位置上，如果对象太大，无法在新生代找到足够长的连续空间，JVM会直接分配在老年代
 
+##### 过早提升(Premature Promotion)
+
+在Minor GC过程中，Survivor 可能不足以容纳Eden和另一个Survivor中的存活对象。如果Survivor中的存活对象溢出，多余的对象将被移到老年代，这称为过早提升(Premature Promotion)，这会导致老年代中短期存活对象的增长，可能会引发严重的性能问题。再进一步说，在Minor GC过程中，如果老年代满了而无法容纳更多的对象，Minor GC 之后通常就会进行Full GC,这将导致遍历整个Java堆，这称为提升失败(Promotion Failure)
 
 ##### 堆参数设置
 

@@ -334,10 +334,13 @@ mysql> EXPLAIN SELECT * FROM s1 INNER JOIN s2 ON s1.id = s2.id;
   - `Using join buffer (Block Nested Loop)`：这是因为对表`s2`的访问不能有效利用索引，只好退而求其次，使用`join buffer`来减少对`s2`表的访问次数，从而提高性能。
   - `Using where`：可以看到查询语句中有一个`s1.common_field = s2.common_field`条件，因为`s1`是驱动表，`s2`是被驱动表，所以在访问`s2`表时，`s1.common_field`的值已经确定下来了，所以实际上查询`s2`表的条件就是`s2.common_field = 一个常数`，所以提示了`Using where`额外信息。
 
+### 优化案例
+
 
 
 ### 参考资料
 
 - [mysq条件下推物化](http://mysql.taobao.org/monthly/2016/07/08/)
 - [explain执行计划](https://juejin.im/book/5bffcbc9f265da614b11b731/section/5c061b576fb9a049aa6ed8a4)
+- [SQL性能优化-书写高质量SQL](https://juejin.im/post/5e0f5eec5188253a9d4a436f)
 
