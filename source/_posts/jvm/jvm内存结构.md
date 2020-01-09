@@ -50,7 +50,6 @@ jvm主要分，堆、方法区、java栈、本地方法栈、程序计数器五�
 - -Xms: 最小堆体积
 - -XX:NewRatio=value 老年代和新生代的比例(默认是2，即新生代是堆区域的 1/3)
 - -XX:XX:SurvivorRatio=value 新生代 eden 和 survivor 的比例，默认是8，也就是说 eden 是 from 或 to 的8倍
-- 
 
 #### 监控和诊断堆内存的工具和方法
 

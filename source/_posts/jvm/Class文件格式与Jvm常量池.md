@@ -147,15 +147,15 @@ java中常量池分为三种类型:
 
 #### 运行时常量池
 
-jvm在执行某个类的时候，必须经过加载、连接、初始化，而连接又包括验证、准备、解析三个阶段。而当类加载到内存中后，jvm就会将class常量池中的内容存放到运行时常量池中，由此可知，运行时常量池也是每个类都有一个。在上面我也说了，class常量池中存的是字面量和符号引用，也就是说他们存的并不是对象的实例，而是对象的符号引用值。而经过解析（resolve）之后，也就是把符号引用替换为直接引用，解析的过程会去查询全局字符串池(String Table)，以保证运行时常量池所引用的字符串与全局字符串池中所引用的是一致的。
+jvm在执行某个类的时候，必须经过加载、连接、初始化，而连接又包括验证、准备、解析三个阶段。而当类加载到内存中后，jvm就会将class常量池中的内容存放到运行时常量池中，由此可知，运行时常量池也是每个类都有一个。在上面我也说了，class常量池中存的是字面量和符号引用，也就是说他们存的并不是对象的实例，而是对象的符号引用值。`而经过解析（resolve）之后，也就是把符号引用替换为直接引用`，解析的过程会去查询全局字符串池(String Table)，以保证运行时常量池所引用的字符串与全局字符串池中所引用的是一致的。
 
-运行时常量池再JDK8之前位于永久代，JDK8移入元空间(Metaspace)
+运行时常量池再JDK8之前位于永久代，JDK8移入元空间(Metaspace)。
 
 
 #### 全局字符串常量池(String Pool)
 
 
-HotSpot VM里，记录interned string的一个全局表叫做StringTable，它本质上就是个HashSet<String>。这是个纯运行时的结构，而且是惰性（lazy）维护的。注意它只存储对java.lang.String实例的引用，而不存储String对象的内容。 注意，它只存了引用，根据这个引用可以得到具体的String对象。
+HotSpot VM里，记录interned string的一个全局表叫做`StringTable`，它本质上就是个`HashSet<String>`。这是个纯运行时的结构，而且是惰性（lazy）维护的。注意它只存储对java.lang.String实例的引用，而不存储String对象的内容。 注意，它只存了引用，根据这个引用可以得到具体的String对象。
 
 一般我们说一个字符串进入了全局的字符串常量池其实是说在这个StringTable中保存了对它的引用，反之，如果说没有在其中就是中没有对它的引用。
 
@@ -174,7 +174,7 @@ HotSpot VM里，记录interned string的一个全局表叫做StringTable，它�
 ##### 字符串拼接(+)的本质
 
 对于拼接的参数只有字面量或常量，则会直接返回 String Poll 中的引用:
-``` 
+```java
 String s1 = "hello";
 String s2 = "hel" + "lo";
 System.out.println(s1 == s2) // true
@@ -182,13 +182,13 @@ System.out.println(s1 == s2) // true
 这个在解析的时候， s2是直接返回的拼接后的 "hello" 的在 String Table 中的引用。
 
 如果是堆中两个不同地方创建的对象，实质上是通过 `StringBuilder.append` 拼接出来的:
-``` 
+```java
 String s3 = "hello";
 String s4 = "hel" + new String("lo");
 System.out.println(s3 == s4) // false
 ```
 这个时候 s4 实际上是通过 `StringBuilder.append` 拼接出来，并且最终调用`StringBuilder.toString`返回的，`StringBuilder.toString`方法如下:
-```java
+```
   public String toString() {
         // Create a copy, don't share the array
         return new String(value, 0, count);
@@ -224,7 +224,8 @@ public static void main(String[] args) {
 
 原因:
 
-- JDK6 中常量池在永久代中(Perm Space)，字符串对象完全存储在不同的空间
+- JDK6 中字符串常量池(String Pool)在永久代中(Perm Space)，`String.intern`会把字符串实例复制到字符串常量池种，所以返回的是永久代中字符串实例的引用，而`new String
+`返回的是堆中实例的引用，两者完全不一样
 - JDK7 字符串常量池已经从 Perm 区移到正常的 Java Heap 区域了(JDK8 取消了永久代改为了元空间，但字符串常量池还在 Java Heap 中)。s3 实际上是一个 `new String(11)` 的对象， 通过`String#intern` 将引用放入了 String Table 中，所以 s4 直接在 String Table 中找到了对应的引用， `s3 == s4`。而 `String s = new String("1")`时，已经创建了两个对象。常量池中的“1” 和 JAVA Heap 中的字符串对象。s.intern(); 这一句是 s 对象去常量池中寻找后发现 “1” 已经在常量池里了。在`s2 = 1`这行代码中返回的是常量池中的"1"对象的引用。
 
 ### 参考资料
