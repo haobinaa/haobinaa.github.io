@@ -27,11 +27,8 @@ Spring 容器将每一个正在创建的bean 标识符放在一个"当前创建 
 
 spring 使用三级缓存来解决单例 setter 循环依赖：
 ```
-/** Cache of singleton objects: bean name –> bean instance */
 private final Map singletonObjects = new ConcurrentHashMap(256);
-/** Cache of singleton factories: bean name –> ObjectFactory */
 private final Map> singletonFactories = new HashMap>(16);
-/** Cache of early singleton objects: bean name –> bean instance */
 private final Map earlySingletonObjects = new HashMap(16);
 ```
 
@@ -89,11 +86,27 @@ protected void addSingletonFactory(String beanName, ObjectFactory<?> singletonFa
         }
     }
 }
+// bean 可以通过 SmartInstantiationAwareBeanPostProcessor 进行扩展
+// 所以采用了三级缓存而不是两级缓存
+// 这里参考 https://blog.csdn.net/weixin_42228338/article/details/97163101
+protected Object getEarlyBeanReference(String beanName, RootBeanDefinition mbd, Object bean) {
+    Object exposedObject = bean;
+    if (!mbd.isSynthetic() && hasInstantiationAwareBeanPostProcessors()) {
+        for (BeanPostProcessor bp : getBeanPostProcessors()) {
+            if (bp instanceof SmartInstantiationAwareBeanPostProcessor) {
+                SmartInstantiationAwareBeanPostProcessor ibp = (SmartInstantiationAwareBeanPostProcessor) bp;
+                exposedObject = ibp.getEarlyBeanReference(exposedObject, beanName);
+            }
+        }
+    }
+    return exposedObject;
+}
 ```
 `addSingletonFactory`这段代码发生在`createBeanInstance`之后，`populateBean`之前，也就是说单例对象此时已经被创建出来(调用了构造器)。这个对象已经被生产出来了，此时将这个对象提前曝光出来，让大家使用。
 
 举例说明一下这样做的用意，假如A依赖了B， B也同时依赖于A:
-1. A首先完成了初始化的第一步，并且将自己提前曝光到`singletonFactories`中，此时进行初始化的第二步，发现自己依赖对象B，此时就尝试去get(B)，发现B还没有被create，所以走create流程
+1. A首先完成了初始化的第一步，并且将自己提前曝光到`singletonFactories`中，此时进行初始化的第二步(populateBean填充属性)，发现自己依赖对象B，此时就尝试去get(B)，发现B还没有被create
+，所以走create流程
 2. B在初始化第一步的时候发现自己依赖了对象A，于是尝试get(A)，尝试一级缓存singletonObjects(肯定没有，因为A还没初始化完全)，尝试二级缓存earlySingletonObjects（也没有），尝试三级缓存singletonFactories，由于A通过ObjectFactory将自己提前曝光了，所以B能够通过ObjectFactory.getObject拿到A对象
 3. B拿到A对象后顺利完成了初始化三个阶段,完全初始化之后将自己放入到一级缓存singletonObjects中。此时返回A中，A此时能拿到B的对象顺利完成自己的初始化阶段2、3，最终A也完成了初始化，进去了一级缓存singletonObjects中
 
