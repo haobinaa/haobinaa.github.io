@@ -262,7 +262,7 @@ font:
   enable: false
 
   # Uri of fonts host. E.g. //fonts.googleapis.com (Default).
-  host:
+  host: //fonts.lug.ustc.edu.cn
 
   # Font options:
   # `external: true` will load this font family from `host` above.
@@ -705,3 +705,26 @@ images: images
 
 # Theme version
 version: 5.1.2
+
+
+# hexo-neat
+# 博文压缩
+neat_enable: true
+neat_html:
+  enable: true
+  exclude:
+# css 压缩
+neat_css:
+  enable: true
+  excluede:
+    - '**/*.min.css'
+# js 压缩
+neat_js:
+  enable: true
+  mangle: true
+  output:
+  compress:
+  exclude:
+    - '**/*.min.js'
+    - '**/jquery.fancybox.pack.js'
+    - '**/index.js'
