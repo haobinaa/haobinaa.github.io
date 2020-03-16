@@ -55,7 +55,7 @@ categories: mysql
 
 | 隔离级别              | 脏读    | 不可重复读 |   幻读 |
 |---------- -----------|:--------|:--------|:--------|
-|未提交读(Read uncommited)| N      | N      | N     |
+|未提交读(Read uncommited)| Y      |  Y      | Y     |
 | 已提交读(Read commited) | N       | Y     | Y      |
 |可重复读(Repeatable Read)| N       | N     | Y      |
 | 串行执行(Serializable)  | N       | N     | N       |
