@@ -386,3 +386,4 @@ public void transaction_nested_nested_exception(){
 ### 参考资料
 
 - [Spring 事务源码剖析](https://www.javazhiyin.com/24922.html)
+- [一口气说出6中@Transactional失效的场景](https://juejin.im/post/5e72e97c6fb9a07cb346083f#heading-2)
