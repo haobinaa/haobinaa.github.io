@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+  <link href="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.min.js" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+  
+
+<link href="//cdn.staticfile.org/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="mysql,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="事务的持久性我们操作 Mysql 数据的时候，都是把数据页加载到 Buffer Pool 中才可以访问，但是事务是需要具有持久性的，如果我们只再内存的BufferPool中修改了页面，假设在事务提交后突然发生了某个故障，导致内存中的数据都失效了，那么这个已经提交了的事务对数据库中所做的更改也就跟着丢失了。为了保证事务的持久性，我们需要在事务提交完成之前把该事务所修改的所有页面都刷新到磁盘。 但是会">
+<meta name="keywords" content="mysql">
+<meta property="og:type" content="article">
+<meta property="og:title" content="mysql事务-redo&#x2F;undo log">
+<meta property="og:url" content="http://yoursite.com/2019/09/02/mysql/mysql-redo-undo-log/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="事务的持久性我们操作 Mysql 数据的时候，都是把数据页加载到 Buffer Pool 中才可以访问，但是事务是需要具有持久性的，如果我们只再内存的BufferPool中修改了页面，假设在事务提交后突然发生了某个故障，导致内存中的数据都失效了，那么这个已经提交了的事务对数据库中所做的更改也就跟着丢失了。为了保证事务的持久性，我们需要在事务提交完成之前把该事务所修改的所有页面都刷新到磁盘。 但是会">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/images/mysql/mtr.png">
+<meta property="og:image" content="http://yoursite.com/images/mysql/innodb-row.png">
+<meta property="og:updated_time" content="2020-06-07T04:32:06.983Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="mysql事务-redo&#x2F;undo log">
+<meta name="twitter:description" content="事务的持久性我们操作 Mysql 数据的时候，都是把数据页加载到 Buffer Pool 中才可以访问，但是事务是需要具有持久性的，如果我们只再内存的BufferPool中修改了页面，假设在事务提交后突然发生了某个故障，导致内存中的数据都失效了，那么这个已经提交了的事务对数据库中所做的更改也就跟着丢失了。为了保证事务的持久性，我们需要在事务提交完成之前把该事务所修改的所有页面都刷新到磁盘。 但是会">
+<meta name="twitter:image" content="http://yoursite.com/images/mysql/mtr.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2019/09/02/mysql/mysql-redo-undo-log/">
+
+
+
+
+
+  <title>mysql事务-redo/undo log | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/09/02/mysql/mysql-redo-undo-log/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">mysql事务-redo/undo log</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-09-02T21:17:57+08:00">
+                2019-09-02
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mysql/" itemprop="url" rel="index">
+                    <span itemprop="name">mysql</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="事务的持久性"><a href="#事务的持久性" class="headerlink" title="事务的持久性"></a>事务的持久性</h3><p>我们操作 Mysql 数据的时候，都是把数据页加载到 Buffer Pool 中才可以访问，但是事务是需要具有持久性的，如果我们只再内存的Buffer<br>Pool中修改了页面，假设在事务提交后突然发生了某个故障，导致内存中的数据都失效了，那么这个已经提交了的事务对数据库中所做的更改也就跟着丢失了。为了保证事务的持久性，我们需要在事务提交完成之前把该事务所修改的所有页面都刷新到磁盘。</p>
+<p>但是会面临一些问题:</p>
+<ul>
+<li><p>刷新一个完整的数据页太浪费了:有时候我们仅仅修改了某个页面中的一个字节，但是我们知道在InnoDB中是以页为单位来进行磁盘IO的，也就是说我们在该事务提交时不得不将一个完整的页面从内存中刷新到磁盘，我们又知道一个页面默认是16KB大小，只修改一个字节就要刷新16KB的数据到磁盘上显然是太浪费了</p>
+</li>
+<li><p>随机IO刷起来比较慢: 一个事务可能包含很多语句，即使是一条语句也可能修改许多页面，但是该事务修改的这些页面可能并不相邻，这就意味着在将某个事务修改的Buffer Pool中的页面刷新到磁盘时，需要进行很多的随机IO，随机IO比顺序IO要慢很多(page cache 的缘故)</p>
+</li>
+</ul>
+<h3 id="redo-log"><a href="#redo-log" class="headerlink" title="redo log"></a>redo log</h3><p>我们只是想让已经提交了的事务对数据库中数据所做的修改永久生效，即使后来系统崩溃，在重启后也能把这种修改恢复出来。所以我们其实没有必要在每次事务提交时就把该事务在内存中修改过的全部页面刷新到磁盘，只需要把修改了哪些东西记录一下就好。<br>当系统崩溃后，重启只需要按照记录的内容更新数据页，那么事务对数据库做的修改又可以被恢复出来。这种被记录的内容被称为<code>redo log(重做日志)</code>。使用 redo log 的优点:</p>
+<ul>
+<li>redo log 占用空间很小</li>
+<li>redo log 是顺序写入的</li>
+</ul>
+<h4 id="redo-log-格式"><a href="#redo-log-格式" class="headerlink" title="redo log 格式"></a>redo log 格式</h4><p>redo log 通用格式如下:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">|   type    |   spaceID     |   page number     |   data    |</span><br></pre></td></tr></table></figure></p>
+<ul>
+<li>type: 这条 redo log 的类型， redo log 有 53 种不同类型</li>
+<li>space id: 表空间id</li>
+<li>page number： 页号</li>
+<li>data: 这条 redo log 的内容</li>
+</ul>
+<p>redo 日志的类型有很多，主要是用来把事务在执行过程中对数据库所做的所有修改都记录下来，在之后系统崩溃重启后可以把事务所做的任何修改都恢复出来.</p>
+<h4 id="Mini-Transaction"><a href="#Mini-Transaction" class="headerlink" title="Mini-Transaction"></a>Mini-Transaction</h4><h5 id="以组的形势写入-redo-log-保证原子性"><a href="#以组的形势写入-redo-log-保证原子性" class="headerlink" title="以组的形势写入 redo log(保证原子性)"></a>以组的形势写入 redo log(保证原子性)</h5><p>语句在执行过程中可能修改若干个页面。比如一条INSERT语句会更新聚簇索引和二级索引对应B+树中的页面。由于对这些页面的更改都发生在Buffer Pool中，所以在修改完页面之后，需要记录一下相应的redo<br>日志。在执行语句的过程中产生的redo日志被InnoDB的划分成了若干个不可分割的组。</p>
+<p>InnoDB 向某个索引对应的B+树中插入一条记录的这个过程必须是原子的， 不能只执行一部分(如分配页面，插入记录，插入目录项记录)。在保证原子操作的时候，必须以组的形式来记录的redo日志，在进行系统崩溃重启恢复时，针对某个组中的redo日志，要么把全部的日志都恢复掉，要么一条也不恢复。</p>
+<p>在 InnoDB 中，原子性操作产生的一系列日志是以一个类型为<code>MLOG_MULTI_REC_END</code>结尾(这是一种特殊的redo日志，该类型只有一个type字段为31)。这样在系统崩溃重启进行恢复时，只有当解析到类型为<code>MLOG_MULTI_REC_END</code>的redo日志，才认为解析到了一组完整的redo日志，才会进行恢复。否则的话直接放弃前边解析到的redo日志。</p>
+<h5 id="Mini-Transaction-概念"><a href="#Mini-Transaction-概念" class="headerlink" title="Mini-Transaction 概念"></a>Mini-Transaction 概念</h5><p>MySQL把对底层页面中的一次原子访问的过程称之为一个<code>Mini-Transaction</code>，简称<code>mtr</code>,一个<code>mtr</code>可以包含一组redo日志，在进行崩溃恢复时这一组redo日志作为一个不可分割的整体。</p>
+<p>一个事务可以包含若干条语句，每一条语句其实是由若干个mtr组成，每一个mtr又可以包含若干条redo日志，画个图表示它们的关系就是这样：<br><img src="/images/mysql/mtr.png" alt></p>
+<h4 id="redo-log-写入过程"><a href="#redo-log-写入过程" class="headerlink" title="redo log 写入过程"></a>redo log 写入过程</h4><p>InnoDB的为了更好的进行系统崩溃恢复，它把通过mtr生成的redo日志都放在了大小为<code>512字节</code>的页中(与存储在表空间的数据页不同, 存储数据和索引目录的页大小为16KB)</p>
+<h5 id="redo-log缓冲区"><a href="#redo-log缓冲区" class="headerlink" title="redo log缓冲区"></a>redo log缓冲区</h5><p>InnoDB为了解决磁盘速度过慢的问题而引入了Buffer Pool。同理，写入redo日志时也不能直接直接写到磁盘上，实际上在服务器启动时就向操作系统申请了一大片称之为<code>redo log buffer</code>的连续内存空间。</p>
+<p>我们可以通过启动参数<code>innodb_log_buffer_size</code>来指定log buffer的大小，在MySQL 5.7.21这个版本中，该启动参数的默认值为<code>16MB</code>。</p>
+<h5 id="redo-log-写入-log-buffer"><a href="#redo-log-写入-log-buffer" class="headerlink" title="redo log 写入 log buffer"></a>redo log 写入 log buffer</h5><p>向log buffer中写入redo日志的过程是顺序的，也就是先往前边的block中写，当该block的空闲空间用完之后再往下一个block中写。</p>
+<p>前边说过一个<code>mtr</code>执行过程中可能产生若干条redo日志，这些redo日志是一个不可分割的组，所以其实并不是每生成一条redo日志，就将其插入到<code>log buffer</code>中，而是每个mtr运行过程中产生的日志先暂时存到一个地方，当该<code>mtr</code>结束的时候，将过程中产生的一组redo日志再全部复制到<code>log buffer</code>中。</p>
+<h4 id="redo-log-刷盘时机"><a href="#redo-log-刷盘时机" class="headerlink" title="redo log 刷盘时机"></a>redo log 刷盘时机</h4><p>前边说<code>mtr</code>运行过程中产生的一组redo日志在mtr结束时会被复制到log buffer中，这些日志页不会一直存在内存中，在一些情况下它们会被刷新到磁盘里，比如：</p>
+<ul>
+<li><p><code>log buffer</code> 空间不足时： 如果当前写入log buffer的redo日志量已经占满了log buffer总容量的大约一半左右，就需要把这些日志刷新到磁盘上。</p>
+</li>
+<li><p>事务提交时: 在事务提交时可以不把修改过的<code>Buffer Pool</code>页面刷新到磁盘，但是为了保证持久性，必须要把修改这些页面对应的<code>redo log</code>刷新到磁盘。</p>
+</li>
+<li><p>后台线程刷新: 后台有一个线程，大约每秒都会刷新一次<code>log buffer</code>中的 redo log 到磁盘。</p>
+</li>
+<li><p>checkpoint</p>
+</li>
+</ul>
+<h4 id="checkpoint"><a href="#checkpoint" class="headerlink" title="checkpoint"></a>checkpoint</h4><p>redo log 只是为了系统崩溃后恢复脏页用的，如果对应的脏页已经刷新到了磁盘(flush 链表中的更改已经落到了磁盘上)，也就是说即使现在系统崩溃，那么在重启后也用不着使用redo日志恢复该页面了，所以该redo<br>日志也就没有存在的必要了，那么它占用的磁盘空间就可以被后续的redo日志所重用。也就是说：判断某些redo日志占用的磁盘空间是否可以覆盖的依据就是它对应的脏页是否已经刷新到磁盘里。</p>
+<p>Innodb 有个一全局变量<code>checkpoint_lsn(checkpoint log sequence number)</code>来代表当前系统中可以被覆盖的redo日志总量是多少。假如某个页a被刷新到了磁盘，mtr_1生成的redo日志就可以被覆盖了，所以我们可以进行一个增加<code>checkpoint_lsn</code>的操作，我们把这个过程称之为做一次checkpoint。</p>
+<p>checkpoint 操作也会释放 log buffer 的空间，因为 log buffer 的容量是有限的，所以 Innodb 采用循环记录的方式。check point 会释放出已经刷新到磁盘的 redo log, 释放出空间。不用去细想checkpoint是怎么操作的，只需要知道经过checkpoint后，log buffer 会释放出已经刷新到磁盘的 redo日志空间</p>
+<h4 id="innodb-flush-log-at-trx-commit"><a href="#innodb-flush-log-at-trx-commit" class="headerlink" title="innodb_flush_log_at_trx_commit"></a>innodb_flush_log_at_trx_commit</h4><p>前边说为了保证事务的持久性，用户线程在事务提交时需要将该事务执行过程中产生的所有redo日志都刷新到磁盘上。这一条要求太狠了，会很明显的降低数据库性能。如果有的同学对事务的持久性要求不是那么强烈的话，可以选择修改一个称为<code>innodb_flush_log_at_trx_commit</code>的系统变量的值，该变量有3个可选的值：</p>
+<ul>
+<li>0：当该系统变量值为0时，表示在事务提交时不立即向磁盘中同步redo日志，这个任务是交给后台线程做的。</li>
+</ul>
+<p>这样很明显会加快请求处理速度，但是如果事务提交后服务器挂了，后台线程没有及时将redo日志刷新到磁盘，那么该事务对页面的修改会丢失。这种操作会增加吞吐量，但是对数据要求很严格的场景，数据库 crash 会导致数据丢失</p>
+<ul>
+<li><p>1：当该系统变量值为1时，表示在事务提交时需要将redo日志同步到磁盘，可以保证事务的持久性。1也是<code>innodb_flush_log_at_trx_commit</code>的默认值。</p>
+</li>
+<li><p>2：当该系统变量值为2时，表示在事务提交时需要将redo日志写到操作系统的缓冲区中，但并不需要保证将日志真正的刷新到磁盘。由操作系统来决定什么时候刷盘(操作系统的 page cache 刷盘策略)</p>
+</li>
+</ul>
+<p>这种情况下如果数据库挂了，操作系统没挂的话，事务的持久性还是可以保证的，但是操作系统也挂了的话，那就不能保证持久性了。</p>
+<h3 id="事务回滚和记录"><a href="#事务回滚和记录" class="headerlink" title="事务回滚和记录"></a>事务回滚和记录</h3><p>事务需要保证原子性(要么全部成功要么全部失败)，所以当事务执行到一半出现错误或程序手动指定<code>ROLLBACK</code>语句时，需要将已执行的修改恢复(回滚)，这样看起来这个事务就什么都没做，符合原子性的要求。</p>
+<p>要满足事务的回滚，当对一条记录做改动时（这里的改动可以指<code>INSERT、DELETE、UPDATE</code>），都需要把回滚时所需的东西都给记下来。比如:</p>
+<ul>
+<li>插入一条记录时，至少要把这条记录的主键值记下来，之后回滚的时候只需要把这个主键值对应的记录删掉就好了。</li>
+<li>删除了一条记录，至少要把这条记录中的内容都记下来，这样之后回滚时再把由这些内容组成的记录插入到表中就好了。</li>
+<li>修改了一条记录，至少要把修改这条记录前的旧值都记录下来，这样之后回滚时再把这条记录更新为旧值就好了。</li>
+</ul>
+<p>这些为了回滚而记录的这些东东称之为撤销日志(<code>undo log</code>)。这里需要注意的是<code>select</code>操作不会产生任何更改，所以并不需要记录对应的 <code>redo log</code>。</p>
+<h4 id="事务id"><a href="#事务id" class="headerlink" title="事务id"></a>事务id</h4><p>当开启事务的时候，innodb 会为当前事务分配一个唯一的<code>事务id</code>, 本质上就是一个数字，它的分配策略和行记录的隐藏列<code>row_id</code>（当用户没有为表创建主键和UNIQUE键时InnoDB自动创建的列）的分配策略大抵相同，具体策略如下:</p>
+<ul>
+<li>服务器会在内存中维护一个全局变量，每当需要为某个事务分配一个事务id时，就会把该变量的值当作事务id分配给该事务，并且把该变量自增1</li>
+<li>每当这个变量的值为256的倍数时，就会将该变量的值刷新到系统表空间的页号为5的页面中一个称之为<code>Max Trx ID</code>的属性处，这个属性占用8个字节的存储空间</li>
+<li>当系统下一次重新启动时，会将上边提到的<code>Max Trx ID</code>属性加载到内存中，将该值加上256之后赋值给我们前边提到的全局变量（因为在上次关机时该全局变量的值可能大于Max Trx ID属性值）</li>
+</ul>
+<p>InnoDB记录行格式的时候：聚簇索引的记录除了会保存完整的用户数据以外，而且还会自动添加名为trx_id、roll_pointer的隐藏列，如果用户没有在表中定义主键以及UNIQUE键，还会自动添加一个名为row_id的隐藏列。所以一条记录在页面中的真实结构看起来就是这样的：</p>
+<p><img src="/images/mysql/innodb-row.png" alt></p>
+<p>其中 roll_pointer 是指向记录对应的 <code>undo log</code> 的一个指针</p>
+<h4 id="undo-log"><a href="#undo-log" class="headerlink" title="undo log"></a>undo log</h4><p>undo log 主要用来事务回滚， 专门存储在一个叫做<code>FIL_PAGE_UNDO_LOG</code>类型的页面中。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/mysql/" rel="tag"><i class="fa fa-tag"></i> mysql</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/07/26/并发/AQS之condition与中断/" rel="next" title="AQS之condition与中断">
+                <i class="fa fa-chevron-left"></i> AQS之condition与中断
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/09/02/mysql/mysql事务隔离级别与MVCC/" rel="prev" title="mysql事务隔离级别与MVCC">
+                mysql事务隔离级别与MVCC <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">勿在浮沙筑高台</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">66</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">23</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#事务的持久性"><span class="nav-number">1.</span> <span class="nav-text">事务的持久性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#redo-log"><span class="nav-number">2.</span> <span class="nav-text">redo log</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#redo-log-格式"><span class="nav-number">2.1.</span> <span class="nav-text">redo log 格式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Mini-Transaction"><span class="nav-number">2.2.</span> <span class="nav-text">Mini-Transaction</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#以组的形势写入-redo-log-保证原子性"><span class="nav-number">2.2.1.</span> <span class="nav-text">以组的形势写入 redo log(保证原子性)</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Mini-Transaction-概念"><span class="nav-number">2.2.2.</span> <span class="nav-text">Mini-Transaction 概念</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#redo-log-写入过程"><span class="nav-number">2.3.</span> <span class="nav-text">redo log 写入过程</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#redo-log缓冲区"><span class="nav-number">2.3.1.</span> <span class="nav-text">redo log缓冲区</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#redo-log-写入-log-buffer"><span class="nav-number">2.3.2.</span> <span class="nav-text">redo log 写入 log buffer</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#redo-log-刷盘时机"><span class="nav-number">2.4.</span> <span class="nav-text">redo log 刷盘时机</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#checkpoint"><span class="nav-number">2.5.</span> <span class="nav-text">checkpoint</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#innodb-flush-log-at-trx-commit"><span class="nav-number">2.6.</span> <span class="nav-text">innodb_flush_log_at_trx_commit</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#事务回滚和记录"><span class="nav-number">3.</span> <span class="nav-text">事务回滚和记录</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#事务id"><span class="nav-number">3.1.</span> <span class="nav-text">事务id</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#undo-log"><span class="nav-number">3.2.</span> <span class="nav-text">undo log</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/jquery/2.1.3/jquery.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fastclick/1.0.6/fastclick.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.bootcss.com/jquery_lazyload/1.9.7/jquery.lazyload.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.ui.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

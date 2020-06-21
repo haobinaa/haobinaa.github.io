@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+  <link href="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.min.js" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+  
+
+<link href="//cdn.staticfile.org/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="Hexo, NexT">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="Spring 事务不生效的原因同一个类中无事务方法调用一个有事务方法事务不生效123456789public void testTransactionWork() &amp;#123;    insertTransaction();&amp;#125;@Transactionalpublic void insertTransaction() &amp;#123;    testMapper.insert(&amp;quot;li">
+<meta property="og:type" content="article">
+<meta property="og:title" content="spring事务传播">
+<meta property="og:url" content="http://yoursite.com/2020/02/07/spring/spring事务传播/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="Spring 事务不生效的原因同一个类中无事务方法调用一个有事务方法事务不生效123456789public void testTransactionWork() &amp;#123;    insertTransaction();&amp;#125;@Transactionalpublic void insertTransaction() &amp;#123;    testMapper.insert(&amp;quot;li">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2020-06-07T04:32:06.986Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="spring事务传播">
+<meta name="twitter:description" content="Spring 事务不生效的原因同一个类中无事务方法调用一个有事务方法事务不生效123456789public void testTransactionWork() &amp;#123;    insertTransaction();&amp;#125;@Transactionalpublic void insertTransaction() &amp;#123;    testMapper.insert(&amp;quot;li">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2020/02/07/spring/spring事务传播/">
+
+
+
+
+
+  <title>spring事务传播 | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/02/07/spring/spring事务传播/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">spring事务传播</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-02-07T14:44:02+08:00">
+                2020-02-07
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/spring/" itemprop="url" rel="index">
+                    <span itemprop="name">spring</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="Spring-事务不生效的原因"><a href="#Spring-事务不生效的原因" class="headerlink" title="Spring 事务不生效的原因"></a>Spring 事务不生效的原因</h3><h4 id="同一个类中无事务方法调用一个有事务方法事务不生效"><a href="#同一个类中无事务方法调用一个有事务方法事务不生效" class="headerlink" title="同一个类中无事务方法调用一个有事务方法事务不生效"></a>同一个类中无事务方法调用一个有事务方法事务不生效</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">public void testTransactionWork() &#123;</span><br><span class="line">    insertTransaction();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">@Transactional</span><br><span class="line">public void insertTransaction() &#123;</span><br><span class="line">    testMapper.insert(&quot;lili&quot;);</span><br><span class="line">    throw new NullPointerException(&quot;null&quot;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在同一个类中，外部调用<code>testTransactionWork</code>，<code>testTransactionWork</code>无事务, <code>insertTransaction</code>有事务, 执行后记录还是插入成功，并没有因为<code>insertTransaction</code>抛出异常而回滚，事务没有生效.</p>
+<p>原因: AOP使用的是动态代理的机制，它会给类生成一个代理类，事务的相关操作都在代理类上完成。内部方式是实例调用，调用的还是原来的对象的方法，不会被 AOP 增强。</p>
+<h3 id="Spring-事务的传播级别"><a href="#Spring-事务的传播级别" class="headerlink" title="Spring 事务的传播级别"></a>Spring 事务的传播级别</h3><p>Spring 事务传播级别与数据库事务隔离级别不同，传播分为 7 种级别:</p>
+<ol>
+<li><p><code>PROPAGATION_REQUIRED</code>：Spring的默认传播级别，如果上下文中存在事务则加入当前事务，如果不存在事务则新建事务执行。</p>
+</li>
+<li><p><code>PROPAGATION_SUPPORTS</code>：如果上下文中存在事务则加入当前事务，如果没有事务则以非事务方式执行。</p>
+</li>
+<li><p><code>PROPAGATION_MANDATORY</code>：该传播级别要求上下文中必须存在事务，否则抛出异常</p>
+</li>
+<li><p><code>PROPAGATION_REQUIRES_NEW</code>：该传播级别每次执行都会创建新事务，并同时将上下文中的事务挂起，执行完当前线程后再恢复上下文中事务。（子事务的执行结果不影响父事务的执行和回滚）</p>
+</li>
+<li><p><code>PROPAGATION_NOT_SUPPORTED</code>：当上下文中有事务则挂起当前事务，执行完当前逻辑后再恢复上下文事务。（降低事务大小，将非核心的执行逻辑包裹执行。）</p>
+</li>
+<li><p><code>PROPAGATION_NEVER</code>：该传播级别要求上下文中不能存在事务，否则抛出异常。</p>
+</li>
+<li><p><code>PROPAGATION_NESTED</code>：嵌套事务，如果上下文中存在事务则作为内层事务嵌套执行，如果不存在则新建事务。如果外层有事务并抛出异常，被嵌套的内层事务会回滚，反之如果内层事务抛出异常，外层事务不受影响。</p>
+</li>
+</ol>
+<h3 id="PROPAGATION-REQUIRED"><a href="#PROPAGATION-REQUIRED" class="headerlink" title="PROPAGATION_REQUIRED"></a>PROPAGATION_REQUIRED</h3><p>在<code>UserService</code>中申明事务的传播级别为<code>PROPAGATION.REQUIRED</code>:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">@Service</span><br><span class="line">public class UserServiceImpl &#123;</span><br><span class="line"></span><br><span class="line">    @Transactional(propagation = Propagation.REQUIRED)</span><br><span class="line">    public void addRequired(User user)&#123;</span><br><span class="line">        userMapper.insert(user);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Transactional(propagation = Propagation.REQUIRED)</span><br><span class="line">    public void addRequiredException(User user)&#123;</span><br><span class="line">        userMapper.insert(user);</span><br><span class="line">        throw new RuntimeException();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h4 id="外围未开启事务"><a href="#外围未开启事务" class="headerlink" title="外围未开启事务"></a>外围未开启事务</h4><p>方法一:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">public void notransaction_exception_required_required()&#123;</span><br><span class="line">    User user=new User();</span><br><span class="line">    user.setName(&quot;李四&quot;);</span><br><span class="line">    userService.addRequired(user);</span><br><span class="line">    throw new RuntimeException();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>方法二:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">public void notransaction_required_required_exception()&#123;</span><br><span class="line">    User user1=new User();</span><br><span class="line">    user1.setName(&quot;张三&quot;);</span><br><span class="line">    userService.addRequired(user1);</span><br><span class="line">    </span><br><span class="line">    User user2=new User();</span><br><span class="line">    user2.setName(&quot;李四&quot;);</span><br><span class="line">    userService.addRequiredException(user2);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>结果分析:</p>
+<table>
+<thead>
+<tr>
+<th>序号</th>
+<th style="text-align:center">结果</th>
+<th style="text-align:left">原因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>方法一</td>
+<td style="text-align:center">插入数据”李四”</td>
+<td style="text-align:left">外围方法没开启事务, 不影响插入数据的独立方法</td>
+</tr>
+<tr>
+<td>方法二</td>
+<td style="text-align:center">未插入数据</td>
+<td style="text-align:left">在 addRequiredException 独立事务中抛出了异常，数据回滚</td>
+</tr>
+</tbody>
+</table>
+<h4 id="外围方法开启事务"><a href="#外围方法开启事务" class="headerlink" title="外围方法开启事务"></a>外围方法开启事务</h4><p>方法一:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">@Transactional(propagation = Propagation.REQUIRED)</span><br><span class="line">public void transaction_exception_required_required()&#123;</span><br><span class="line">    User user1=new User();</span><br><span class="line">    user1.setName(&quot;张三&quot;);</span><br><span class="line">    userService.addRequired(user1);  </span><br><span class="line">    throw new RuntimeException();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>方法二:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">@Transactional(propagation = Propagation.REQUIRED)</span><br><span class="line">public void transaction_required_required_exception()&#123;</span><br><span class="line">    User user1=new User();</span><br><span class="line">    user1.setName(&quot;张三&quot;);</span><br><span class="line">    userService.addRequired(user1);</span><br><span class="line">    </span><br><span class="line">    User user2=new User();</span><br><span class="line">    user2.setName(&quot;李四&quot;);</span><br><span class="line">    userService.addRequiredException(user2);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>方法三:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">@Transactional</span><br><span class="line">public void transaction_required_required_exception_try()&#123;</span><br><span class="line">    User user1=new User();</span><br><span class="line">    user1.setName(&quot;张三&quot;);</span><br><span class="line">    userService.addRequired(user1);</span><br><span class="line">    </span><br><span class="line">    User user2=new User();</span><br><span class="line">    user2.setName(&quot;李四&quot;);</span><br><span class="line">    try &#123;</span><br><span class="line">        userService.addRequiredException(user2);</span><br><span class="line">    &#125; catch (Exception e) &#123;</span><br><span class="line">        System.out.println(&quot;方法回滚&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>结果分析:</p>
+<table>
+<thead>
+<tr>
+<th>序号</th>
+<th style="text-align:center">结果</th>
+<th style="text-align:left">原因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>方法一</td>
+<td style="text-align:center">未插入数据</td>
+<td style="text-align:left">外围方法开启事务，内部方法加入外围方法事务，外围方法回滚，内部方法也要回滚</td>
+</tr>
+<tr>
+<td>方法二</td>
+<td style="text-align:center">未插入数据</td>
+<td style="text-align:left">外围方法开启事务，内部方法加入外围方法事务，内部方法抛出异常回滚，外围方法感知异常致使整体事务回滚</td>
+</tr>
+<tr>
+<td>方法三</td>
+<td style="text-align:center">未插入数据</td>
+<td style="text-align:left">外围方法开启事务，内部方法加入外围方法事务，内部方法抛出异常回滚，即使方法被catch不被外围方法感知，整个事务依然回滚</td>
+</tr>
+</tbody>
+</table>
+<p>这里针对方法三的情况做一个分析，这是比较常见的情况，很多时候我们认为异常被捕获了就可以正常插入数据，但是实际会抛出<code>org.springframework.transaction.UnexpectedRollbackException
+: Transaction rolled back because it has been marked as rollback-only</code>这个异常，数据不会插入。</p>
+<p>这里的原因是，当事务发生异常会设置一个状态 <code>Rollback</code>, 如果外围事务读到了这个异常的状态，提交的时候就会抛出上述的异常(详细代码可以看参考资料中 Spring 事务源码分析)</p>
+<h3 id="PROPAGATION-REQUIRES-NEW"><a href="#PROPAGATION-REQUIRES-NEW" class="headerlink" title="PROPAGATION_REQUIRES_NEW"></a>PROPAGATION_REQUIRES_NEW</h3><p>给 <code>UserService</code> 新增一个传播等级为 <code>Propagation.REQUIRES_NEW</code> 的方法:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">@Service</span><br><span class="line">public class UserServiceImpl implements UserService &#123;</span><br><span class="line">    //省略其他...</span><br><span class="line">    @Transactional(propagation = Propagation.REQUIRES_NEW)</span><br><span class="line">    public void addRequiresNew(User user)&#123;</span><br><span class="line">        userMapper.insert(user);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    @Override</span><br><span class="line">    @Transactional(propagation = Propagation.REQUIRES_NEW)</span><br><span class="line">    public void addRequiresNewException(User user)&#123;</span><br><span class="line">        userMapper.insert(user);</span><br><span class="line">        throw new RuntimeException();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h4 id="外围没有开启事务"><a href="#外围没有开启事务" class="headerlink" title="外围没有开启事务"></a>外围没有开启事务</h4><p>方法一:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">public void notransaction_exception_requiresNew_requiresNew()&#123;</span><br><span class="line">    User user1=new User();</span><br><span class="line">    user1.setName(&quot;张三&quot;);</span><br><span class="line">    userService.addRequiresNew(user1);</span><br><span class="line">    </span><br><span class="line">    User user2=new User();</span><br><span class="line">    user2.setName(&quot;李四&quot;);</span><br><span class="line">    userService.addRequiresNew(user2);</span><br><span class="line">    throw new RuntimeException();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>方法二:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">public void notransaction_requiresNew_requiresNew_exception()&#123;</span><br><span class="line">    User user1=new User();</span><br><span class="line">    user1.setName(&quot;张三&quot;);</span><br><span class="line">    userService.addRequiresNew(user1);</span><br><span class="line">    </span><br><span class="line">    User user2=new User();</span><br><span class="line">    user2.setName(&quot;李四&quot;);</span><br><span class="line">    userService.addRequiresNewException(user2);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>结果： 两种都成功插入，外围未开启事务。<code>Propagation.REQUIRES_NEW</code>传播级别下会开启自己的事务，独立运行</p>
+<h4 id="外围开启事务"><a href="#外围开启事务" class="headerlink" title="外围开启事务"></a>外围开启事务</h4><p>方法一:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">@Transactional(propagation = Propagation.REQUIRED)</span><br><span class="line">public void transaction_exception_required_requiresNew_requiresNew()&#123;</span><br><span class="line">    User user1=new User();</span><br><span class="line">    user1.setName(&quot;张三&quot;);</span><br><span class="line">    userService.addRequired(user1);</span><br><span class="line">    </span><br><span class="line">    User user2=new User();</span><br><span class="line">    user2.setName(&quot;李四&quot;);</span><br><span class="line">    userService.addRequiresNew(user2);</span><br><span class="line">    </span><br><span class="line">    User user3=new User();</span><br><span class="line">    user3.setName(&quot;王五&quot;);</span><br><span class="line">    userService.addRequiresNew(user3);</span><br><span class="line">    throw new RuntimeException();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>方法二:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">@Transactional(propagation = Propagation.REQUIRED)</span><br><span class="line">public void transaction_required_requiresNew_requiresNew_exception()&#123;</span><br><span class="line">    User user1=new User();</span><br><span class="line">    user1.setName(&quot;张三&quot;);</span><br><span class="line">    userService.addRequired(user1);</span><br><span class="line">    </span><br><span class="line">    User user2=new User();</span><br><span class="line">    user2.setName(&quot;李四&quot;);</span><br><span class="line">    userService.addRequiresNew(user2);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>方法三<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">@Transactional(propagation = Propagation.REQUIRED)</span><br><span class="line">public void transaction_required_requiresNew_requiresNew_exception()&#123;</span><br><span class="line">    User user1=new User();</span><br><span class="line">    user1.setName(&quot;张三&quot;);</span><br><span class="line">    userService.addRequired(user1);</span><br><span class="line">    </span><br><span class="line">    User user2=new User();</span><br><span class="line">    user2.setName(&quot;李四&quot;);</span><br><span class="line">    userService.addRequiresNew(user2);</span><br><span class="line">    </span><br><span class="line">    User user3=new User();</span><br><span class="line">    user3.setName(&quot;王五&quot;);</span><br><span class="line">    try &#123;</span><br><span class="line">        userService.addRequiresNewException(user3);</span><br><span class="line">    &#125; catch (Exception e) &#123;</span><br><span class="line">        System.out.println(&quot;回滚&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>结果:</p>
+<table>
+<thead>
+<tr>
+<th>序号</th>
+<th style="text-align:center">结果</th>
+<th style="text-align:left">原因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>方法一</td>
+<td style="text-align:center">张三未插入，李四插入</td>
+<td style="text-align:left">外围方法开启事务，并抛出异常，张三与外围方法共一个事务故回滚，李四都是新开启事务，不受外围方法影响</td>
+</tr>
+<tr>
+<td>方法二</td>
+<td style="text-align:center">张三未插入，李四插入，王五未插入</td>
+<td style="text-align:left">外围方法开启事务，插入“张三”方法和外围方法一个事务，插入“李四”方法、插入“王五”方法分别在独立的新建事务中。插入“王五”方法抛出异常，首先插入 “王五”方法的事务被回滚，异常继续抛出被外围方法感知，外围方法事务亦被回滚，故插入“张三”方法也被回滚</td>
+</tr>
+<tr>
+<td>方法三</td>
+<td style="text-align:center">张三插入，李四插入，王五未插入</td>
+<td style="text-align:left">外围方法开启事务，插入“张三”方法和外围方法一个事务，插入“李四”方法、插入“王五”方法分别在独立的新建事务中。插入“王五”方法抛出异常，首先插入“王五”方法的事务被回滚，异常被catch不会被外围方法感知，外围方法事务不回滚，故插入“张三”方法插入成功</td>
+</tr>
+</tbody>
+</table>
+<p>这里的捕获异常的情况下，与 <code>PROPAGATION_REQUIRE</code> 级别下比较， 因为捕获异常的事务方法是一个独立的事务，即使设置了自己的事务为 <code>Rollback-only</code> 也不会影响外围事务</p>
+<h3 id="PROPAGATION-NESTED"><a href="#PROPAGATION-NESTED" class="headerlink" title="PROPAGATION_NESTED"></a>PROPAGATION_NESTED</h3><p><code>UserService</code> 新增 <code>PROPAGATION_NESTED</code> 传播级别的方法:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">@Service</span><br><span class="line">public class UserServiceImpl implements UserService &#123;</span><br><span class="line">    //省略其他...</span><br><span class="line">    @Override</span><br><span class="line">    @Transactional(propagation = Propagation.NESTED)</span><br><span class="line">    public void addNested(User2 user)&#123;</span><br><span class="line">        user2Mapper.insert(user);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    @Override</span><br><span class="line">    @Transactional(propagation = Propagation.NESTED)</span><br><span class="line">    public void addNestedException(User2 user)&#123;</span><br><span class="line">        user2Mapper.insert(user);</span><br><span class="line">        throw new RuntimeException();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h4 id="外围方法没有开启事务"><a href="#外围方法没有开启事务" class="headerlink" title="外围方法没有开启事务"></a>外围方法没有开启事务</h4><p>方法一:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">public void notransaction_exception_nested_nested()&#123;</span><br><span class="line">    User user1=new User();</span><br><span class="line">    user1.setName(&quot;张三&quot;);</span><br><span class="line">    userService.addNested(user1);</span><br><span class="line">    throw new RuntimeException();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>方法二:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">public void notransaction_nested_nested_exception()&#123;</span><br><span class="line">    User1 user1=new User1();</span><br><span class="line">    user1.setName(&quot;张三&quot;);</span><br><span class="line">    user1Service.addNested(user1);</span><br><span class="line">    </span><br><span class="line">    User2 user2=new User2();</span><br><span class="line">    user2.setName(&quot;李四&quot;);</span><br><span class="line">    user2Service.addNestedException(user2);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>结果:</p>
+<table>
+<thead>
+<tr>
+<th>序号</th>
+<th style="text-align:center">结果</th>
+<th style="text-align:left">原因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>方法一</td>
+<td style="text-align:center">插入数据”张三”</td>
+<td style="text-align:left">外围方法没开启事务, 不影响插入数据的独立方法</td>
+</tr>
+<tr>
+<td>方法二</td>
+<td style="text-align:center">张三插入，李四未插入</td>
+<td style="text-align:left">外围没有开启事务，分别在自己独立方法的事务中运行，李四插入抛出异常所以回滚</td>
+</tr>
+</tbody>
+</table>
+<h4 id="外围方法开启事务-1"><a href="#外围方法开启事务-1" class="headerlink" title="外围方法开启事务"></a>外围方法开启事务</h4><p>方法一:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">@Transactional</span><br><span class="line">public void transaction_exception_nested_nested()&#123;</span><br><span class="line">    User user1=new User();</span><br><span class="line">    user1.setName(&quot;张三&quot;);</span><br><span class="line">    userService.addNested(user1);</span><br><span class="line">    throw new RuntimeException();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>方法二:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">@Transactional</span><br><span class="line">public void transaction_nested_nested_exception()&#123;</span><br><span class="line">    User user1=new User();</span><br><span class="line">    user1.setName(&quot;张三&quot;);</span><br><span class="line">    userService.addNested(user1);</span><br><span class="line">    </span><br><span class="line">    User user2=new User();</span><br><span class="line">    user2.setName(&quot;李四&quot;);</span><br><span class="line">    userService.addNestedException(user2);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>方法三<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">@Transactional</span><br><span class="line">public void transaction_nested_nested_exception()&#123;</span><br><span class="line">    User user1=new User();</span><br><span class="line">    user1.setName(&quot;张三&quot;);</span><br><span class="line">    userService.addNested(user1);</span><br><span class="line">    </span><br><span class="line">    User user2=new User();</span><br><span class="line">    user2.setName(&quot;李四&quot;);</span><br><span class="line">    try &#123;</span><br><span class="line">        user2Service.addNestedException(user2);</span><br><span class="line">    &#125; catch (Exception e) &#123;</span><br><span class="line">        System.out.println(&quot;方法回滚&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>结果：</p>
+<table>
+<thead>
+<tr>
+<th>序号</th>
+<th style="text-align:center">结果</th>
+<th style="text-align:left">原因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>方法一</td>
+<td style="text-align:center">张三未插入</td>
+<td style="text-align:left">外围方法开启事务，并抛出异常，内部方法必须回滚</td>
+</tr>
+<tr>
+<td>方法二</td>
+<td style="text-align:center">张三、李四均未插入</td>
+<td style="text-align:left">外围方法开启事务，内部事务为外围事务的子事务，内部方法抛出异常回滚，且外围方法感知异常致使整体事务回滚</td>
+</tr>
+<tr>
+<td>方法三</td>
+<td style="text-align:center">张三插入，李四未插入</td>
+<td style="text-align:left">外围方法开启事务，内部事务为外围事务的子事务，插入“张三”内部方法抛出异常，可以单独对子事务回滚</td>
+</tr>
+</tbody>
+</table>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="https://www.javazhiyin.com/24922.html" target="_blank" rel="noopener">Spring 事务源码剖析</a></li>
+<li><a href="https://juejin.im/post/5e72e97c6fb9a07cb346083f#heading-2" target="_blank" rel="noopener">一口气说出6中@Transactional失效的场景</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/12/25/架构/谈谈一个框架的扩展加载/" rel="next" title="谈谈一个框架的扩展加载">
+                <i class="fa fa-chevron-left"></i> 谈谈一个框架的扩展加载
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/03/14/并发/ReentrantReadWriteLock读写锁/" rel="prev" title="ReentrantReadWriteLock读写锁">
+                ReentrantReadWriteLock读写锁 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">勿在浮沙筑高台</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">66</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">23</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Spring-事务不生效的原因"><span class="nav-number">1.</span> <span class="nav-text">Spring 事务不生效的原因</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#同一个类中无事务方法调用一个有事务方法事务不生效"><span class="nav-number">1.1.</span> <span class="nav-text">同一个类中无事务方法调用一个有事务方法事务不生效</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Spring-事务的传播级别"><span class="nav-number">2.</span> <span class="nav-text">Spring 事务的传播级别</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#PROPAGATION-REQUIRED"><span class="nav-number">3.</span> <span class="nav-text">PROPAGATION_REQUIRED</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#外围未开启事务"><span class="nav-number">3.1.</span> <span class="nav-text">外围未开启事务</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#外围方法开启事务"><span class="nav-number">3.2.</span> <span class="nav-text">外围方法开启事务</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#PROPAGATION-REQUIRES-NEW"><span class="nav-number">4.</span> <span class="nav-text">PROPAGATION_REQUIRES_NEW</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#外围没有开启事务"><span class="nav-number">4.1.</span> <span class="nav-text">外围没有开启事务</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#外围开启事务"><span class="nav-number">4.2.</span> <span class="nav-text">外围开启事务</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#PROPAGATION-NESTED"><span class="nav-number">5.</span> <span class="nav-text">PROPAGATION_NESTED</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#外围方法没有开启事务"><span class="nav-number">5.1.</span> <span class="nav-text">外围方法没有开启事务</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#外围方法开启事务-1"><span class="nav-number">5.2.</span> <span class="nav-text">外围方法开启事务</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">6.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/jquery/2.1.3/jquery.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fastclick/1.0.6/fastclick.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.bootcss.com/jquery_lazyload/1.9.7/jquery.lazyload.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.ui.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

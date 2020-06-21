@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+  <link href="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.min.js" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+  
+
+<link href="//cdn.staticfile.org/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="Hexo, NexT">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="springboot 中的扩展加载(SpringFactoriesLoader)在 SpringBoot 启动类上都会标注@SpringBootApplication这个注解，其中的最重要的组成是@EnableAutoConfiguration, 再进入会发现是 @Import (AutoConfigurationImportSelector.class)这个注解在起作用。 自动加载配置的逻辑是:">
+<meta property="og:type" content="article">
+<meta property="og:title" content="谈谈一个框架的扩展加载">
+<meta property="og:url" content="http://yoursite.com/2019/12/25/架构/谈谈一个框架的扩展加载/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="springboot 中的扩展加载(SpringFactoriesLoader)在 SpringBoot 启动类上都会标注@SpringBootApplication这个注解，其中的最重要的组成是@EnableAutoConfiguration, 再进入会发现是 @Import (AutoConfigurationImportSelector.class)这个注解在起作用。 自动加载配置的逻辑是:">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2020-06-07T04:32:06.993Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="谈谈一个框架的扩展加载">
+<meta name="twitter:description" content="springboot 中的扩展加载(SpringFactoriesLoader)在 SpringBoot 启动类上都会标注@SpringBootApplication这个注解，其中的最重要的组成是@EnableAutoConfiguration, 再进入会发现是 @Import (AutoConfigurationImportSelector.class)这个注解在起作用。 自动加载配置的逻辑是:">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2019/12/25/架构/谈谈一个框架的扩展加载/">
+
+
+
+
+
+  <title>谈谈一个框架的扩展加载 | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/12/25/架构/谈谈一个框架的扩展加载/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">谈谈一个框架的扩展加载</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-12-25T08:50:53+08:00">
+                2019-12-25
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/架构/" itemprop="url" rel="index">
+                    <span itemprop="name">架构</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="springboot-中的扩展加载-SpringFactoriesLoader"><a href="#springboot-中的扩展加载-SpringFactoriesLoader" class="headerlink" title="springboot 中的扩展加载(SpringFactoriesLoader)"></a>springboot 中的扩展加载(SpringFactoriesLoader)</h3><p>在 SpringBoot 启动类上都会标注<code>@SpringBootApplication</code>这个注解，其中的最重要的组成是<code>@EnableAutoConfiguration</code>, 再进入会发现是 <code>@Import
+(AutoConfigurationImportSelector.class)</code>这个注解在起作用。</p>
+<p>自动加载配置的逻辑是:<code>selectImports-&gt;selectImports-&gt;getAutoConfigurationEntry</code>，不过这里不是分析 <code>SpringBoot
+ 启动流程</code>，我们关心的是他如何加载配置的。可以在<code>getAutoConfigurationEntry</code>看到使用的是<code>SpringFactoriesLoader</code>，主要代码:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">public static List &lt; String &gt; loadFactoryNames(Class &lt; ? &gt; factoryClass, @Nullable ClassLoader classLoader) &#123;</span><br><span class="line">    String factoryClassName = factoryClass.getName();</span><br><span class="line">    return loadSpringFactories(classLoader).getOrDefault(factoryClassName, Collections.emptyList());</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">private static Map &lt; String, List &lt; String &gt;&gt; loadSpringFactories(@Nullable ClassLoader classLoader) &#123;</span><br><span class="line">    MultiValueMap &lt; String, String &gt; result = cache.get(classLoader);</span><br><span class="line">    if (result != null) &#123;</span><br><span class="line">        return result;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    try &#123;</span><br><span class="line">        // 扫描所有 jar 包类路径下  META-INF/spring.factories</span><br><span class="line">        Enumeration &lt; URL &gt; urls = (classLoader != null ?</span><br><span class="line">            classLoader.getResources(FACTORIES_RESOURCE_LOCATION) :</span><br><span class="line">            ClassLoader.getSystemResources(FACTORIES_RESOURCE_LOCATION));</span><br><span class="line">        result = new LinkedMultiValueMap &lt; &gt; ();</span><br><span class="line">        while (urls.hasMoreElements()) &#123;</span><br><span class="line">            URL url = urls.nextElement();</span><br><span class="line">            UrlResource resource = new UrlResource(url);</span><br><span class="line">            // 把扫描到的这些文件的内容包装成 properties 对象</span><br><span class="line">            Properties properties = PropertiesLoaderUtils.loadProperties(resource);</span><br><span class="line">            for (Map.Entry &lt; ? , ? &gt; entry : properties.entrySet()) &#123;</span><br><span class="line">                String factoryClassName = ((String) entry.getKey()).trim();</span><br><span class="line">                for (String factoryName: StringUtils.commaDelimitedListToStringArray((String) entry.getValue())) &#123;</span><br><span class="line">                    // 从 properties 中获取到 EnableAutoConfiguration.class 类（类名）对应的值，然后把他们添加在容器中</span><br><span class="line">                    result.add(factoryClassName, factoryName.trim());</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        cache.put(classLoader, result);</span><br><span class="line">        return result;</span><br><span class="line">    &#125; catch (IOException ex) &#123;</span><br><span class="line">        throw new IllegalArgumentException(&quot;Unable to load factories from location [&quot; +</span><br><span class="line">            FACTORIES_RESOURCE_LOCATION + &quot;]&quot;, ex);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这样就把我们配置在 <code>META-INF/spring.factories</code> 中的配置类给找出来了，完成了自动配置的加载(spring 的 @import 机制会完成这个 bean 的注入过程)</p>
+<h3 id="Java-SPI"><a href="#Java-SPI" class="headerlink" title="Java SPI"></a>Java SPI</h3><p>SPI 全称 Service Provider Interface，是Java提供的一套用来被第三方实现或者扩展的API，它可以用来启用框架扩展和替换组件，可以根据使用者的配置，来加载接口的具体实现类。</p>
+<h4 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h4><p>先看看怎么使用。首先创建一个<code>Repository</code>接口，和两个实现类:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">public interface Repository &#123;</span><br><span class="line">    void connect();</span><br><span class="line">&#125;</span><br><span class="line">public class MongoRepository implements Repository &#123;</span><br><span class="line">    @Override</span><br><span class="line">    public void connect() &#123;</span><br><span class="line">        System.out.println(&quot;mongo repository&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">public class MysqlRepository implements Repository &#123;</span><br><span class="line">    @Override</span><br><span class="line">    public void connect() &#123;</span><br><span class="line">        System.out.println(&quot;mysql connected&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>然后在<code>META-INF/services</code>下新建一个与接口同名的文件:<code>com.java.Repository</code>,里面的内容是具体实现类的类的全名:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">com.java.impl.MongoRepository</span><br><span class="line">com.java.MysqlRepository</span><br></pre></td></tr></table></figure></p>
+<p>运行方法:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">@Test</span><br><span class="line">public void jdkSpi() &#123;</span><br><span class="line">    ServiceLoader&lt;Repository&gt; serviceLoader = ServiceLoader.load(Repository.class);</span><br><span class="line">    Iterator&lt;Repository&gt; iterable = serviceLoader.iterator();</span><br><span class="line">    while (iterable.hasNext()) &#123;</span><br><span class="line">        System.out.println(iterable.next().getClass().getName());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>可以在控制台上看到，输出了配置文件中的类，也就是代表了配置文件中的类已经被加载了。</p>
+<h4 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h4><p>jdk 的这种机制，把约定(接口)和实现分离，我们当引入具体实现的时候，不会给服务使用方带来任何代码上的修改，并且只有服务方主动使用的时候才会真正的去初始化，完成动态的加载。</p>
+<p>可以看到 jdk 是通过 <code>ServiceLoader</code> 来实现, 它的 <code>load()</code> 流程如下:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">public static &lt;S&gt; ServiceLoader&lt;S&gt; load(Class&lt;S&gt; service) &#123;</span><br><span class="line">    // 获取当前线程上下文加载器</span><br><span class="line">    ClassLoader cl = Thread.currentThread().getContextClassLoader();</span><br><span class="line">    return ServiceLoader.load(service, cl);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public static &lt;S&gt; ServiceLoader&lt;S&gt; load(Class&lt;S&gt; service,ClassLoader loader)&#123;</span><br><span class="line">    return new ServiceLoader&lt;&gt;(service, loader);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">private ServiceLoader(Class&lt;S&gt; svc, ClassLoader cl) &#123;</span><br><span class="line">    service = Objects.requireNonNull(svc, &quot;Service interface cannot be null&quot;);</span><br><span class="line">    // 如果传入 ClassLoader 为空则使用系统类加载器    </span><br><span class="line">    loader = (cl == null) ? ClassLoader.getSystemClassLoader() : cl;</span><br><span class="line">    // 访问权限判断</span><br><span class="line">    acc = (System.getSecurityManager() != null) ? AccessController.getContext() : null;</span><br><span class="line">    // 往下面看</span><br><span class="line">    reload();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>上面的内容是获取当前类的加载器，传给成员变量<code>loader</code>,并进入<code>reload</code>流程, <code>reload</code>是初始化了一个<code>LazyIterator</code>对象, 看看它的<code>next()</code>:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br></pre></td><td class="code"><pre><span class="line">public S next() &#123;</span><br><span class="line">    if (acc == null) &#123;</span><br><span class="line">        // 非系统类加载器走这里</span><br><span class="line">        return nextService();</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        PrivilegedAction&lt;S&gt; action = new PrivilegedAction&lt;S&gt;() &#123;</span><br><span class="line">            public S run() &#123; return nextService(); &#125;</span><br><span class="line">        &#125;;</span><br><span class="line">        return AccessController.doPrivileged(action, acc);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">private S nextService() &#123;</span><br><span class="line">    if (!hasNextService())</span><br><span class="line">        throw new NoSuchElementException();</span><br><span class="line">    String cn = nextName;</span><br><span class="line">    nextName = null;</span><br><span class="line">    Class&lt;?&gt; c = null;</span><br><span class="line">    try &#123;</span><br><span class="line">        // 加载具体的的实现类</span><br><span class="line">        c = Class.forName(cn, false, loader);</span><br><span class="line">    &#125; catch (ClassNotFoundException x) &#123;</span><br><span class="line">        fail(service,</span><br><span class="line">             &quot;Provider &quot; + cn + &quot; not found&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">    if (!service.isAssignableFrom(c)) &#123;</span><br><span class="line">        fail(service,</span><br><span class="line">             &quot;Provider &quot; + cn  + &quot; not a subtype&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">    try &#123;</span><br><span class="line">        S p = service.cast(c.newInstance());</span><br><span class="line">        providers.put(cn, p);</span><br><span class="line">        return p;</span><br><span class="line">    &#125; catch (Throwable x) &#123;</span><br><span class="line">        fail(service,</span><br><span class="line">             &quot;Provider &quot; + cn + &quot; could not be instantiated&quot;,</span><br><span class="line">             x);</span><br><span class="line">    &#125;</span><br><span class="line">    throw new Error();          // This cannot happen</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// 判断是否有，如果有则赋值给 nextName</span><br><span class="line">private boolean hasNextService() &#123;</span><br><span class="line">    if (nextName != null) &#123;</span><br><span class="line">        return true;</span><br><span class="line">    &#125;</span><br><span class="line">    if (configs == null) &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            // 路径是 META-INF/services/ + 传入的文件名(接口全名)</span><br><span class="line">            String fullName = PREFIX + service.getName();</span><br><span class="line">            if (loader == null)</span><br><span class="line">                configs = ClassLoader.getSystemResources(fullName);</span><br><span class="line">            else</span><br><span class="line">                configs = loader.getResources(fullName);</span><br><span class="line">        &#125; catch (IOException x) &#123;</span><br><span class="line">            fail(service, &quot;Error locating configuration files&quot;, x);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    while ((pending == null) || !pending.hasNext()) &#123;</span><br><span class="line">        if (!configs.hasMoreElements()) &#123;</span><br><span class="line">            return false;</span><br><span class="line">        &#125;</span><br><span class="line">        pending = parse(service, configs.nextElement());</span><br><span class="line">    &#125;</span><br><span class="line">    nextName = pending.next();</span><br><span class="line">    return true;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>可以看到，整个流程还是很清晰的，就是去找<code>META-INF/service</code>下对应的class全名的文件，然后返回出去。</p>
+<h3 id="Dubbo-中-扩展点的加载"><a href="#Dubbo-中-扩展点的加载" class="headerlink" title="Dubbo 中 扩展点的加载"></a>Dubbo 中 扩展点的加载</h3><p>Dubbo 文档中描述 Dubbo SPI 改进了 JDK SPI 的以下问题:</p>
+<ul>
+<li>JDK 标准的 SPI 会一次性实例化扩展点所有实现，如果有扩展实现初始化很耗时，但如果没用上也加载，会很浪费资源。</li>
+<li>如果扩展点加载失败，连扩展点的名称都拿不到了(不会上报真正失败的原因)。</li>
+<li>增加了对扩展点 IoC 和 AOP 的支持，一个扩展点可以直接 setter 注入其它扩展点。</li>
+</ul>
+<p>dubbo的扩展点加载具体以下特点:</p>
+<ul>
+<li>自动包装: <code>ExtensionLoader</code> 在加载扩展点时，如果加载到的扩展点有拷贝构造函数，则判定为扩展点 <code>Wrapper</code> 类。<code>Wrapper</code>类可以为扩展点之上做一些处理，类似于 AOP</li>
+<li>自动装配: 扩展点实现类的成员如果是其他扩展点，<code>ExtensionLoader</code>会自动注入依赖的扩展点。</li>
+<li>扩展点自适应: <code>ExtensionLoader</code> 注入的依赖扩展点是一个 <code>Adaptive</code> 实例，直到扩展点方法执行时才决定调用是哪一个扩展点实现。</li>
+<li>扩展点自动激活，如果扩展点有多个实现类，可以使用<code>@Activate</code>来自动激活，简化配置</li>
+</ul>
+<h4 id="使用-1"><a href="#使用-1" class="headerlink" title="使用"></a>使用</h4><p>借用官网的例子，新建接口<code>Robot</code>和两个实现类:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">// 这里需要标注是一个 SPI 扩展</span><br><span class="line">@SPI</span><br><span class="line">public interface Robot &#123;</span><br><span class="line">    void sayHello();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public class Bumblebee implements Robot &#123;</span><br><span class="line">    @Override</span><br><span class="line">    public void sayHello() &#123;</span><br><span class="line">        System.out.println(&quot;Hello, I am Bumblebee.&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public class Bumblebee implements Robot &#123;</span><br><span class="line">    @Override</span><br><span class="line">    public void sayHello() &#123;</span><br><span class="line">        System.out.println(&quot;Hello, I am Bumblebee.&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>然后在 <code>META-INF/dubbo/</code> 下新建与接口同名的文件<code>com.code.service.Robot</code>，并配置扩展实现类:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">bumblebee = com.code.service.impl.Bumblebee</span><br><span class="line">optimusPrime = com.code.service.impl.OptimusPrime</span><br></pre></td></tr></table></figure></p>
+<p>执行:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">public static void main(String[] args) &#123;</span><br><span class="line">    ExtensionLoader&lt;Robot&gt; extensionLoader = ExtensionLoader.getExtensionLoader(Robot.class);</span><br><span class="line">    Robot optimusPrime = extensionLoader.getExtension(&quot;optimusPrime&quot;);</span><br><span class="line">    optimusPrime.sayHello();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>控制台输出:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Hello, I am Optimus Prime.</span><br></pre></td></tr></table></figure></p>
+<h4 id="加载扩展对象"><a href="#加载扩展对象" class="headerlink" title="加载扩展对象"></a>加载扩展对象</h4><p>上面的使用例子可以看出，首先通过 ExtensionLoader 的 getExtensionLoader 方法获取一个 ExtensionLoader 实例，然后再通过 ExtensionLoader 的 getExtension 方法获取拓展类对象。</p>
+<h5 id="getExtensionLoader"><a href="#getExtensionLoader" class="headerlink" title="getExtensionLoader"></a>getExtensionLoader</h5><p><code>getExtensionLoader()</code>用于从缓存中获取与拓展类对应的 ExtensionLoader，若缓存未命中，则创建一个新的实例：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">public static &lt;T&gt; ExtensionLoader&lt;T&gt; getExtensionLoader(Class&lt;T&gt; type) &#123;</span><br><span class="line">    if (type == null)</span><br><span class="line">        throw new IllegalArgumentException(&quot;Extension type == null&quot;);</span><br><span class="line">    if (!type.isInterface()) &#123;</span><br><span class="line">        throw new IllegalArgumentException(&quot;Extension type(&quot; + type + &quot;) is not interface!&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">    if (!withExtensionAnnotation(type)) &#123;</span><br><span class="line">        throw new IllegalArgumentException(&quot;Extension type(&quot; + type +</span><br><span class="line">                &quot;) is not extension, because WITHOUT @&quot; + SPI.class.getSimpleName() + &quot; Annotation!&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">    // 从缓存中获取对应扩展点的 ExtensionLoader 实例</span><br><span class="line">    ExtensionLoader&lt;T&gt; loader = (ExtensionLoader&lt;T&gt;) EXTENSION_LOADERS.get(type);</span><br><span class="line">    // 若缓存没有命中，则创建一个实例</span><br><span class="line">    if (loader == null) &#123;</span><br><span class="line">        EXTENSION_LOADERS.putIfAbsent(type, new ExtensionLoader&lt;T&gt;(type));</span><br><span class="line">        loader = (ExtensionLoader&lt;T&gt;) EXTENSION_LOADERS.get(type);</span><br><span class="line">    &#125;</span><br><span class="line">    return loader;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h5 id="getExtension"><a href="#getExtension" class="headerlink" title="getExtension"></a>getExtension</h5><p><code>getExtension(String name)</code>获取扩展类对象:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">public T getExtension(String name) &#123;</span><br><span class="line">    if (name == null || name.length() == 0)</span><br><span class="line">        throw new IllegalArgumentException(&quot;Extension name == null&quot;);</span><br><span class="line">    if (&quot;true&quot;.equals(name)) &#123;</span><br><span class="line">        // 获取默认的拓展实现类</span><br><span class="line">        return getDefaultExtension();</span><br><span class="line">    &#125;</span><br><span class="line">    // Holder 用于持有目标对象</span><br><span class="line">    Holder&lt;Object&gt; holder = cachedInstances.get(name);</span><br><span class="line">    if (holder == null) &#123;</span><br><span class="line">        cachedInstances.putIfAbsent(name, new Holder&lt;Object&gt;());</span><br><span class="line">        holder = cachedInstances.get(name);</span><br><span class="line">    &#125;</span><br><span class="line">    Object instance = holder.get();</span><br><span class="line">    // 双重检查</span><br><span class="line">    if (instance == null) &#123;</span><br><span class="line">        synchronized (holder) &#123;</span><br><span class="line">            instance = holder.get();</span><br><span class="line">            if (instance == null) &#123;</span><br><span class="line">                // 创建拓展实例</span><br><span class="line">                instance = createExtension(name);</span><br><span class="line">                // 设置实例到 holder 中</span><br><span class="line">                holder.set(instance);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return (T) instance;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>上述逻辑较为简单，尝试从缓存中获取对象，若缓存没有则创建扩展对象,创建对象<code>createExtension(String name)</code>流程如下:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">private T createExtension(String name) &#123;</span><br><span class="line">    // 从配置文件中加载所有的拓展类，可得到“配置项名称”到“配置类”的映射关系表</span><br><span class="line">    Class&lt;?&gt; clazz = getExtensionClasses().get(name);</span><br><span class="line">    if (clazz == null) &#123;</span><br><span class="line">        throw findException(name);</span><br><span class="line">    &#125;</span><br><span class="line">    try &#123;</span><br><span class="line">        T instance = (T) EXTENSION_INSTANCES.get(clazz);</span><br><span class="line">        if (instance == null) &#123;</span><br><span class="line">            // 通过反射创建实例</span><br><span class="line">            EXTENSION_INSTANCES.putIfAbsent(clazz, clazz.newInstance());</span><br><span class="line">            instance = (T) EXTENSION_INSTANCES.get(clazz);</span><br><span class="line">        &#125;</span><br><span class="line">        // 向实例中注入依赖</span><br><span class="line">        injectExtension(instance);</span><br><span class="line">        Set&lt;Class&lt;?&gt;&gt; wrapperClasses = cachedWrapperClasses;</span><br><span class="line">        if (wrapperClasses != null &amp;&amp; !wrapperClasses.isEmpty()) &#123;</span><br><span class="line">            // 循环创建 Wrapper 实例</span><br><span class="line">            for (Class&lt;?&gt; wrapperClass : wrapperClasses) &#123;</span><br><span class="line">                // 将当前 instance 作为参数传给 Wrapper 的构造方法，并通过反射创建 Wrapper 实例。</span><br><span class="line">                // 然后向 Wrapper 实例中注入依赖，最后将 Wrapper 实例再次赋值给 instance 变量</span><br><span class="line">                 // 所以最终返回的是一个 wrapper 类的实例</span><br><span class="line">                instance = injectExtension(</span><br><span class="line">                    (T) wrapperClass.getConstructor(type).newInstance(instance));</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        return instance;</span><br><span class="line">    &#125; catch (Throwable t) &#123;</span><br><span class="line">        throw new IllegalStateException(&quot;...&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这里主要分为四个步骤</p>
+<ol>
+<li>通过 getExtensionClasses 获取所有的拓展类</li>
+<li>通过反射创建拓展对象</li>
+<li>向拓展对象中注入依赖(dubbo 的 IOC 机制)</li>
+<li>将拓展对象包裹在相应的 <code>Wrapper</code> 对象中</li>
+</ol>
+<h6 id="获取所有扩展类"><a href="#获取所有扩展类" class="headerlink" title="获取所有扩展类"></a>获取所有扩展类</h6><p><code>getExtensionClasses()</code> 会根据配置文件解析出 <code>扩展项-&gt;扩展类</code> 的映射关系表(Map&lt;名称, 拓展类&gt;)，流程如下:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br></pre></td><td class="code"><pre><span class="line">private Map&lt;String, Class&lt;?&gt;&gt; getExtensionClasses() &#123;</span><br><span class="line">    // 从缓存中获取已加载的拓展类</span><br><span class="line">    Map&lt;String, Class&lt;?&gt;&gt; classes = cachedClasses.get();</span><br><span class="line">    // 双重检查</span><br><span class="line">    if (classes == null) &#123;</span><br><span class="line">        synchronized (cachedClasses) &#123;</span><br><span class="line">            classes = cachedClasses.get();</span><br><span class="line">            if (classes == null) &#123;</span><br><span class="line">                // 加载拓展类</span><br><span class="line">                classes = loadExtensionClasses();</span><br><span class="line">                cachedClasses.set(classes);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return classes;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// loadExtensionClasses 加载扩展类</span><br><span class="line">private Map&lt;String, Class&lt;?&gt;&gt; loadExtensionClasses() &#123;</span><br><span class="line">    // 获取 SPI 注解，这里的 type 变量是在调用 getExtensionLoader 方法时传入的(接口类型)</span><br><span class="line">    final SPI defaultAnnotation = type.getAnnotation(SPI.class);</span><br><span class="line">    if (defaultAnnotation != null) &#123;</span><br><span class="line">        String value = defaultAnnotation.value();</span><br><span class="line">        if ((value = value.trim()).length() &gt; 0) &#123;</span><br><span class="line">            // 对 SPI 注解内容进行切分</span><br><span class="line">            String[] names = NAME_SEPARATOR.split(value);</span><br><span class="line">            // 检测 SPI 注解内容是否合法，不合法则抛出异常</span><br><span class="line">            if (names.length &gt; 1) &#123;</span><br><span class="line">                throw new IllegalStateException(&quot;more than 1 default extension name on extension...&quot;);</span><br><span class="line">            &#125;</span><br><span class="line">            // 设置默认名称</span><br><span class="line">            if (names.length == 1) &#123;</span><br><span class="line">                cachedDefaultName = names[0];</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    Map&lt;String, Class&lt;?&gt;&gt; extensionClasses = new HashMap&lt;String, Class&lt;?&gt;&gt;();</span><br><span class="line">    // 加载指定文件夹下的配置文件</span><br><span class="line">    // META-INF/dubbo/internal/</span><br><span class="line">    loadDirectory(extensionClasses, DUBBO_INTERNAL_DIRECTORY);</span><br><span class="line">    // META-INF/dubbo/</span><br><span class="line">    loadDirectory(extensionClasses, DUBBO_DIRECTORY);</span><br><span class="line">    // META-INF/services/</span><br><span class="line">    loadDirectory(extensionClasses, SERVICES_DIRECTORY);</span><br><span class="line">    return extensionClasses;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// loadDirectory 加载指定文件夹配置</span><br><span class="line">private void loadDirectory(Map&lt;String, Class&lt;?&gt;&gt; extensionClasses, String dir) &#123;</span><br><span class="line">    // fileName = 文件夹路径 + type 全限定名 </span><br><span class="line">    String fileName = dir + type.getName();</span><br><span class="line">    try &#123;</span><br><span class="line">        Enumeration&lt;java.net.URL&gt; urls;</span><br><span class="line">        ClassLoader classLoader = findClassLoader();</span><br><span class="line">        // 根据文件名加载所有的同名文件</span><br><span class="line">        if (classLoader != null) &#123;</span><br><span class="line">            urls = classLoader.getResources(fileName);</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            urls = ClassLoader.getSystemResources(fileName);</span><br><span class="line">        &#125;</span><br><span class="line">        if (urls != null) &#123;</span><br><span class="line">            while (urls.hasMoreElements()) &#123;</span><br><span class="line">                java.net.URL resourceURL = urls.nextElement();</span><br><span class="line">                // 加载资源, 这个方法做的事情比较多</span><br><span class="line">                // 1. 解析配置文件(=号分割)</span><br><span class="line">                // 2. 通过反射加载扩展实现类</span><br><span class="line">                // 3. 调用 loadClass 缓存各种类</span><br><span class="line">                loadResource(extensionClasses, classLoader, resourceURL);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; catch (Throwable t) &#123;</span><br><span class="line">        logger.error(&quot;...&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>获取缓存的逻辑不复杂，就是有点长, 到这里基本就完成了上述的1、2步，获取了扩展实现类并通过反射创建了扩展对象</p>
+<h6 id="Dubbo-IOC"><a href="#Dubbo-IOC" class="headerlink" title="Dubbo IOC"></a>Dubbo IOC</h6><p>Dubbo IOC 是通过 setter 方法注入依赖。Dubbo 首先会通过反射获取到实例的所有方法，然后再遍历方法列表，检测方法名是否具有 setter 方法特征。若有，则通过 ObjectFactory 获取依赖对象，最后通过反射调用 setter 方法将依赖设置到目标对象中。整个过程对应的代码如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">private T injectExtension(T instance) &#123;</span><br><span class="line">    try &#123;</span><br><span class="line">        if (objectFactory != null) &#123;</span><br><span class="line">            // 遍历目标类的所有方法</span><br><span class="line">            for (Method method : instance.getClass().getMethods()) &#123;</span><br><span class="line">                // 检测方法是否以 set 开头，且方法仅有一个参数，且方法访问级别为 public</span><br><span class="line">                if (method.getName().startsWith(&quot;set&quot;)</span><br><span class="line">                    &amp;&amp; method.getParameterTypes().length == 1</span><br><span class="line">                    &amp;&amp; Modifier.isPublic(method.getModifiers())) &#123;</span><br><span class="line">                    // 获取 setter 方法参数类型</span><br><span class="line">                    Class&lt;?&gt; pt = method.getParameterTypes()[0];</span><br><span class="line">                    try &#123;</span><br><span class="line">                        // 获取属性名，比如 setName 方法对应属性名 name</span><br><span class="line">                        String property = method.getName().length() &gt; 3 ? </span><br><span class="line">                            method.getName().substring(3, 4).toLowerCase() + </span><br><span class="line">                            	method.getName().substring(4) : &quot;&quot;;</span><br><span class="line">                        // 从 ObjectFactory 中获取依赖对象</span><br><span class="line">                        Object object = objectFactory.getExtension(pt, property);</span><br><span class="line">                        if (object != null) &#123;</span><br><span class="line">                            // 通过反射调用 setter 方法设置依赖</span><br><span class="line">                            method.invoke(instance, object);</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125; catch (Exception e) &#123;</span><br><span class="line">                        logger.error(&quot;fail to inject via method...&quot;);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; catch (Exception e) &#123;</span><br><span class="line">        logger.error(e.getMessage(), e);</span><br><span class="line">    &#125;</span><br><span class="line">    return instance;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h4 id="自适应扩展"><a href="#自适应扩展" class="headerlink" title="自适应扩展"></a>自适应扩展</h4><p>Dubbo 的扩展都是通过 SPI 机制进行加载，有时候希望扩展被调用前，根据运行参数进行加载。这里感觉起来就很矛盾，既然没有被加载，怎么去调用呢? Dubbo 的自适应扩展机制解决了这个问题。</p>
+<p>这里的代码有些复杂，主要的流程是通过<code>@Adaptive</code>注解标注在类或方法上，如果是标注在类上就会生成代理类(这种模式比较简单)，如果标注在方法上，就会由框架自动生成加载扩展的逻辑。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/12/06/mysql/mysql优化概述/" rel="next" title="mysql优化概述">
+                <i class="fa fa-chevron-left"></i> mysql优化概述
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/02/07/spring/spring事务传播/" rel="prev" title="spring事务传播">
+                spring事务传播 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">勿在浮沙筑高台</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">66</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">23</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#springboot-中的扩展加载-SpringFactoriesLoader"><span class="nav-number">1.</span> <span class="nav-text">springboot 中的扩展加载(SpringFactoriesLoader)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Java-SPI"><span class="nav-number">2.</span> <span class="nav-text">Java SPI</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#使用"><span class="nav-number">2.1.</span> <span class="nav-text">使用</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#原理"><span class="nav-number">2.2.</span> <span class="nav-text">原理</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Dubbo-中-扩展点的加载"><span class="nav-number">3.</span> <span class="nav-text">Dubbo 中 扩展点的加载</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#使用-1"><span class="nav-number">3.1.</span> <span class="nav-text">使用</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#加载扩展对象"><span class="nav-number">3.2.</span> <span class="nav-text">加载扩展对象</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#getExtensionLoader"><span class="nav-number">3.2.1.</span> <span class="nav-text">getExtensionLoader</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#getExtension"><span class="nav-number">3.2.2.</span> <span class="nav-text">getExtension</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#获取所有扩展类"><span class="nav-number">3.2.2.1.</span> <span class="nav-text">获取所有扩展类</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#Dubbo-IOC"><span class="nav-number">3.2.2.2.</span> <span class="nav-text">Dubbo IOC</span></a></li></ol></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#自适应扩展"><span class="nav-number">3.3.</span> <span class="nav-text">自适应扩展</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/jquery/2.1.3/jquery.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fastclick/1.0.6/fastclick.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.bootcss.com/jquery_lazyload/1.9.7/jquery.lazyload.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.ui.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

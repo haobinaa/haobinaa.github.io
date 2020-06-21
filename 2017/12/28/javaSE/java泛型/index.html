@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+  <link href="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.min.js" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+  
+
+<link href="//cdn.staticfile.org/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="javaSE,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="简介语法糖语法糖指在计算机语言中添加的某种语法，这种语法对语言的功能并没有影响，但是更方便程序员使用。Java中最常用的语法糖主要有泛型、变长参数、条件编译、自动拆装箱、内部类等。虚拟机并不支持这些语法，它们在编译阶段就被还原回了简单的基础语法结构，这个过程成为解语法糖。 泛型的好处 提高安全性: 将运行期的错误转换到编译期. 如果我们在对一个对象所赋的值不符合其泛型的规定, 就会编译报错  避免">
+<meta name="keywords" content="javaSE">
+<meta property="og:type" content="article">
+<meta property="og:title" content="java泛型详解">
+<meta property="og:url" content="http://yoursite.com/2017/12/28/javaSE/java泛型/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="简介语法糖语法糖指在计算机语言中添加的某种语法，这种语法对语言的功能并没有影响，但是更方便程序员使用。Java中最常用的语法糖主要有泛型、变长参数、条件编译、自动拆装箱、内部类等。虚拟机并不支持这些语法，它们在编译阶段就被还原回了简单的基础语法结构，这个过程成为解语法糖。 泛型的好处 提高安全性: 将运行期的错误转换到编译期. 如果我们在对一个对象所赋的值不符合其泛型的规定, 就会编译报错  避免">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2020-06-07T04:32:06.981Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="java泛型详解">
+<meta name="twitter:description" content="简介语法糖语法糖指在计算机语言中添加的某种语法，这种语法对语言的功能并没有影响，但是更方便程序员使用。Java中最常用的语法糖主要有泛型、变长参数、条件编译、自动拆装箱、内部类等。虚拟机并不支持这些语法，它们在编译阶段就被还原回了简单的基础语法结构，这个过程成为解语法糖。 泛型的好处 提高安全性: 将运行期的错误转换到编译期. 如果我们在对一个对象所赋的值不符合其泛型的规定, 就会编译报错  避免">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/12/28/javaSE/java泛型/">
+
+
+
+
+
+  <title>java泛型详解 | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/12/28/javaSE/java泛型/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">java泛型详解</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-12-28T17:34:55+08:00">
+                2017-12-28
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/javaSE/" itemprop="url" rel="index">
+                    <span itemprop="name">javaSE</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h3><h4 id="语法糖"><a href="#语法糖" class="headerlink" title="语法糖"></a>语法糖</h4><p>语法糖指在计算机语言中添加的某种语法，这种语法对语言的功能并没有影响，但是更方便程序员使用。Java中最常用的语法糖主要有泛型、变长参数、条件编译、自动拆装箱、内部类等。虚拟机并不支持这些语法，它们在编译阶段就被还原回了简单的基础语法结构，这个过程成为解语法糖。</p>
+<h4 id="泛型的好处"><a href="#泛型的好处" class="headerlink" title="泛型的好处"></a>泛型的好处</h4><ol>
+<li><p>提高安全性: 将运行期的错误转换到编译期. 如果我们在对一个对象所赋的值不符合其泛型的规定, 就会编译报错</p>
+</li>
+<li><p>避免强转: 比如我们在使用List时, 如果我们不使用泛型, 当从List中取出元素时, 其类型会是默认的Object, 我们必须将其向下转型为String才能使用。比如:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">List l = new ArrayList();</span><br><span class="line">l.add(&quot;abc&quot;);</span><br><span class="line">String s = (String) l.get(0);</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>如果使用泛型，就可以保证存入和取出的都是String，不必进行cast<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">List&lt;String&gt; l = new ArrayList&lt;&gt;();</span><br><span class="line">l.add(&quot;abc&quot;);</span><br><span class="line">String s = l.get(0);</span><br></pre></td></tr></table></figure></p>
+<h3 id="泛型的使用"><a href="#泛型的使用" class="headerlink" title="泛型的使用"></a>泛型的使用</h3><h4 id="定义类-接口"><a href="#定义类-接口" class="headerlink" title="定义类/接口"></a>定义类/接口</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">public class Test&lt;T&gt; &#123;</span><br><span class="line"></span><br><span class="line">   private T obj;</span><br><span class="line"></span><br><span class="line">   public T getObj() &#123;</span><br><span class="line">     return obj;</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">    public void setObj(T obj) &#123;</span><br><span class="line">       this.obj = obj;</span><br><span class="line">   &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>注意点：</p>
+<ul>
+<li>变量类型中的泛型，和实例类型中的泛型，必须保证相同（不支持继承关系）</li>
+</ul>
+<p>示例：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">public class Container&lt;K, V&gt; &#123;</span><br><span class="line"></span><br><span class="line">    private K key;</span><br><span class="line">    private V value;</span><br><span class="line"></span><br><span class="line">    public Container(K k, V v) &#123;</span><br><span class="line">        key = k;</span><br><span class="line">        value = v;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">// 使用这些接口、父类派生子类时不能再包含类型形参，需要传入具体的类型。</span><br><span class="line">public class A extends Container&lt;Integer, String&gt;&#123;&#125;</span><br></pre></td></tr></table></figure></p>
+<ul>
+<li>既然有了这个规定, 因此在JDK1.7时就推出了一个新特性叫菱形泛型(The Diamond), 就是说后面的泛型可以省略直接写成&lt;&gt;, 反正前后一致(类型推断)</li>
+</ul>
+<h4 id="定义方法"><a href="#定义方法" class="headerlink" title="定义方法"></a>定义方法</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">修饰符&lt;T, S&gt; 返回值类型 方法名（形参列表）</span><br><span class="line">｛</span><br><span class="line">方法体</span><br><span class="line"> ｝</span><br><span class="line"> </span><br><span class="line"> public class Main&#123;</span><br><span class="line"> // 方形方法与泛型类的方法不同</span><br><span class="line">       public static &lt;T&gt; void out(T t)&#123;</span><br><span class="line">                 System.out.println(t);</span><br><span class="line">       &#125;</span><br><span class="line">       public static void main(String[] args)&#123;</span><br><span class="line">               out(&quot;hansheng&quot;);</span><br><span class="line">               out(123);</span><br><span class="line">       &#125;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+<p>注意点：</p>
+<ul>
+<li>泛型的声明，必须在方法的修饰符（public,static,final,abstract等）之后，返回值声明之前</li>
+<li>方法参数列表，以及方法体中用到的所有泛型变量，都必须声明</li>
+</ul>
+<h4 id="边界符"><a href="#边界符" class="headerlink" title="边界符"></a>边界符</h4><p>现在我们要实现这样一个功能，查找一个泛型数组中大于某个特定元素的个数，我们可以这样实现：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">public static &lt;T&gt; int countGreaterThan(T[] anArray, T elem) &#123;</span><br><span class="line">    int count = 0;</span><br><span class="line">    for (T e : anArray)</span><br><span class="line">        if (e &gt; elem)  // compiler error</span><br><span class="line">            ++count;</span><br><span class="line">    return count;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>但是这样很明显是错误的，因为除了short, int, double, long, float, byte, char等原始类型，其他的类并不一定能使用操作符&gt;，所以编译器报错，那怎么解决这个问题呢？答案是使用边界符。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public interface Comparable&lt;T&gt; &#123;</span><br><span class="line">    public int compareTo(T o);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>做一个类似于下面这样的声明，这样就等于告诉编译器类型参数T代表的都是实现了Comparable接口的类，这样等于告诉编译器它们都至少实现了compareTo方法。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">public static &lt;T extends Comparable&lt;T&gt;&gt; int countGreaterThan(T[] anArray, T elem) &#123;</span><br><span class="line">    int count = 0;</span><br><span class="line">    for (T e : anArray)</span><br><span class="line">        if (e.compareTo(elem) &gt; 0)</span><br><span class="line">            ++count;</span><br><span class="line">    return count;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h4 id="通配符"><a href="#通配符" class="headerlink" title="通配符"></a>通配符</h4><ul>
+<li>作用： 规定只允许某一部分类作为泛型</li>
+<li>分类：<ul>
+<li>无边界的分配符(&lt;?&gt;):无边界的通配符的主要作用就是让泛型能够接受未知类型的数据</li>
+<li>固定上边界通配符(&lt;? extends E&gt;):使用固定上边界的通配符的泛型, 就能够接受指定类及其子类类型的数据。要声明使用该类通配符, 采用&lt;? extends E&gt;的形式, 这里的E就是该泛型的上边界. 注意: 这里虽然用的是extends关键字, 却不仅限于继承了父类E的子类, 也可以代指显现了接口E的类</li>
+<li>固定下边界通配符(&lt;? super E&gt;):使用固定下边界的通配符的泛型, 就能够接受指定类及其父类类型的数据。要声明使用该类通配符, 采用&lt;? super E&gt;的形式, 这里的E就是该泛型的下边界</li>
+</ul>
+</li>
+</ul>
+<h5 id="无边界通配符"><a href="#无边界通配符" class="headerlink" title="无边界通配符"></a>无边界通配符</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">public static void printList(List&lt;?&gt; list) &#123;</span><br><span class="line">for (Object o : list) &#123;</span><br><span class="line">      System.out.println(o);</span><br><span class="line">   &#125;</span><br><span class="line">&#125;</span><br><span class="line"> public static void main(String[] args) &#123;</span><br><span class="line">   List&lt;String&gt; l1 = new ArrayList&lt;&gt;();</span><br><span class="line">   l1.add(&quot;aa&quot;);</span><br><span class="line">    l1.add(&quot;bb&quot;);</span><br><span class="line">   l1.add(&quot;cc&quot;);</span><br><span class="line">   printList(l1);</span><br><span class="line">   List&lt;Integer&gt; l2 = new ArrayList&lt;&gt;();</span><br><span class="line">   l2.add(11);</span><br><span class="line">    l2.add(22);</span><br><span class="line">   l2.add(33);</span><br><span class="line">   printList(l2);</span><br></pre></td></tr></table></figure>
+<p>注意：</p>
+<ul>
+<li>这里的printList方法不能写成public static void printList(List<object> list)的形式。原因在上文提到过，变量类型中的泛型，和实例类型中的泛型，必须保证相同。两者之间不支持继承关系。</object></li>
+<li>我们不能对List&lt;?&gt;使用add，get以及List拥有的其他方法。原因是，我们不确定该List的类型, 也就不知道add，或者get方法的参数类型。但是也有特例：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">public static void addTest(List&lt;?&gt; list) &#123;</span><br><span class="line">    Object o = new Object();</span><br><span class="line">// list.add(o); // 编译报错</span><br><span class="line">// list.add(1); // 编译报错</span><br><span class="line">// list.add(&quot;ABC&quot;); // 编译报错 </span><br><span class="line">   list.add(null); // 特例</span><br><span class="line">// String s = list.get(0); // 编译报错</span><br><span class="line">// Integer i = list.get(1); // 编译报错 </span><br><span class="line">   Object o = list.get(2); // 特例</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>由于参数的泛型不确定，调用者可能会传List<number>，也可能传List<string>。<br>当调用者传过来的参数是List<interger>，执行到list.add(o)以及list.(“ABC”)的时候，系统肯定会抛出异常，使得后面的代码无法执行。</interger></string></number></p>
+<p>所以，编译器其实是把运行时可能出现的异常放在编译阶段来检查，提高了代码的健壮性以及安全性。</p>
+<h5 id="固定上边界通配符-满足是某类型的子类"><a href="#固定上边界通配符-满足是某类型的子类" class="headerlink" title="固定上边界通配符(满足是某类型的子类)"></a>固定上边界通配符(满足是某类型的子类)</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">public static double sumOfList(List&lt;? extends Number&gt; list) &#123;</span><br><span class="line">    double s = 0.0;</span><br><span class="line">    for (Number n : list) &#123;</span><br><span class="line">      // 注意这里得到的n是其上边界类型的, 也就是Number,需要将其转换为double.  </span><br><span class="line">      s += n.doubleValue();</span><br><span class="line">    &#125;</span><br><span class="line">    return s;</span><br><span class="line"> &#125;</span><br><span class="line"> public static void main(String[] args) &#123;</span><br><span class="line">    List&lt;Integer&gt; list1 = Arrays.asList(1, 2, 3, 4);</span><br><span class="line">    System.out.println(sumOfList(list1));</span><br><span class="line">    List&lt;Double&gt; list2 = Arrays.asList(1.1, 2.2, 3.3, 4.4);</span><br><span class="line">    System.out.println(sumOfList(list2));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>注意： </p>
+<ul>
+<li>不能对List&lt;? extends E&gt;使用add方法,原因是不确定该List的类型, 也就不知道add方法的参数类型。但是也有特例：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">public static void addTest2(List&lt;? extends Number&gt; l) &#123;</span><br><span class="line">// l.add(1); // 编译报错</span><br><span class="line">// l.add(1.1); // 编译报错 </span><br><span class="line">   l.add(null);</span><br><span class="line">   Number number = l.get(1); // 正常 </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>目的跟第一种通配符类似，就是编译器其实是把运行时可能出现的异常放在编译阶段来检查。</p>
+<p>但是，我们可以保证不管参数是什么泛型，里面的元素肯定是Number或者其子类，所以，从List中获取一个Number元素的get()方法是允许的。</p>
+<h5 id="固定下边界通配符-满足是某类型的父类"><a href="#固定下边界通配符-满足是某类型的父类" class="headerlink" title="固定下边界通配符(满足是某类型的父类)"></a>固定下边界通配符(满足是某类型的父类)</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">public static void addNumbers(List&lt;? super Integer&gt; list) &#123;</span><br><span class="line">     for (int i = 1; i &lt;= 10; i++) &#123;</span><br><span class="line">         list.add(i);</span><br><span class="line">     &#125;</span><br><span class="line"> &#125;</span><br><span class="line"> public static void main(String[] args) &#123;</span><br><span class="line">     List&lt;Object&gt; list1 = new ArrayList&lt;&gt;();</span><br><span class="line">     addNumbers(list1);</span><br><span class="line">     System.out.println(list1);</span><br><span class="line">     List&lt;Number&gt; list2 = new ArrayList&lt;&gt;();</span><br><span class="line">     addNumbers(list2);</span><br><span class="line">     System.out.println(list2);</span><br><span class="line">     List&lt;Double&gt; list3 = new ArrayList&lt;&gt;();</span><br><span class="line">  // addNumbers(list3); // 编译报错 </span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+<h4 id="通配符总结"><a href="#通配符总结" class="headerlink" title="通配符总结"></a>通配符总结</h4><p>来看一个贯通的例子，首先定义几个类<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">class Fruit &#123;&#125;</span><br><span class="line">class Apple extends Fruit &#123;&#125;</span><br><span class="line">class Orange extends Fruit &#123;&#125;</span><br></pre></td></tr></table></figure></p>
+<p>下面这个例子中，我们创建了一个泛型类Reader，然后在f1()中当我们尝试Fruit f = fruitReader.readExact(apples);编译器会报错，因为List<fruit>与List<apple>之间并没有任何的关系。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">public class GenericReading &#123;</span><br><span class="line">    static List&lt;Apple&gt; apples = Arrays.asList(new Apple());</span><br><span class="line">    static List&lt;Fruit&gt; fruit = Arrays.asList(new Fruit());</span><br><span class="line">    static class Reader&lt;T&gt; &#123;</span><br><span class="line">        T readExact(List&lt;T&gt; list) &#123;</span><br><span class="line">            return list.get(0);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    static void f1() &#123;</span><br><span class="line">        Reader&lt;Fruit&gt; fruitReader = new Reader&lt;Fruit&gt;();</span><br><span class="line">        // 报错: List&lt;Fruit&gt; cannot be applied to List&lt;Apple&gt;.</span><br><span class="line">        // Fruit f = fruitReader.readExact(apples);</span><br><span class="line">    &#125;</span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        f1();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></apple></fruit></p>
+<p>但是按照我们通常的思维习惯，Apple和Fruit之间肯定是存在联系，然而编译器却无法识别，那怎么在泛型代码中解决这个问题呢？我们可以通过使用固定上边界通配符来解决这个问题：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">static class CovariantReader&lt;T&gt; &#123;</span><br><span class="line">    T readCovariant(List&lt;? extends T&gt; list) &#123;</span><br><span class="line">        return list.get(0);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">static void f2() &#123;</span><br><span class="line">    CovariantReader&lt;Fruit&gt; fruitReader = new CovariantReader&lt;Fruit&gt;();</span><br><span class="line">    Fruit f = fruitReader.readCovariant(fruit);</span><br><span class="line">    Fruit a = fruitReader.readCovariant(apples);</span><br><span class="line">&#125;</span><br><span class="line">public static void main(String[] args) &#123;</span><br><span class="line">    f2();</span><br></pre></td></tr></table></figure></p>
+<p>这样就相当与告诉编译器， fruitReader的readCovariant方法接受的参数只要是满足Fruit的子类就行(包括Fruit自身)，这样子类和父类之间的关系也就关联上了。</p>
+<p>上面我们看到了类似&lt;? extends T&gt;的用法，利用它我们可以从list里面get元素，那么我们可不可以往list里面add元素呢？我们来尝试一下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">public class GenericsAndCovariance &#123;</span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        // Wildcards allow covariance:</span><br><span class="line">        List&lt;? extends Fruit&gt; flist = new ArrayList&lt;Apple&gt;();</span><br><span class="line">        // Compile Error: can&apos;t add any type of object:</span><br><span class="line">        // flist.add(new Apple())</span><br><span class="line">        // flist.add(new Orange())</span><br><span class="line">        // flist.add(new Fruit())</span><br><span class="line">        // flist.add(new Object())</span><br><span class="line">        flist.add(null); // 合法但是没什么用</span><br><span class="line">        // We Know that it returns at least Fruit:</span><br><span class="line">        Fruit f = flist.get(0);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>Java编译器不允许我们这样做，为什么呢？对于这个问题我们不妨从编译器的角度去考虑。因为List&lt;? extends Fruit&gt; flist它自身可以有多种含义：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">List&lt;? extends Fruit&gt; flist = new ArrayList&lt;Fruit&gt;();</span><br><span class="line">List&lt;? extends Fruit&gt; flist = new ArrayList&lt;Apple&gt;();</span><br><span class="line">List&lt;? extends Fruit&gt; flist = new ArrayList&lt;Orange&gt;();</span><br></pre></td></tr></table></figure></p>
+<p>当我们add一个orange的时候，flist可能指向一个Apple，其他的也一样，我们只是想要一个固定类型的Fruit，编译器无法识别，所以会报错</p>
+<p>所以对于实现了&lt;? extends T&gt;的集合类只能将它视为Producer向外提供(get)元素，而不能作为Consumer来对外获取(add)元素。</p>
+<p>如果我们要add元素应该怎么做呢？可以使用&lt;? super T&gt;：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">public class GenericWriting &#123;</span><br><span class="line">    static List&lt;Apple&gt; apples = new ArrayList&lt;Apple&gt;();</span><br><span class="line">    static List&lt;Fruit&gt; fruit = new ArrayList&lt;Fruit&gt;();</span><br><span class="line">    static &lt;T&gt; void writeExact(List&lt;T&gt; list, T item) &#123;</span><br><span class="line">        list.add(item);</span><br><span class="line">    &#125;</span><br><span class="line">    static void f1() &#123;</span><br><span class="line">        writeExact(apples, new Apple());</span><br><span class="line">        writeExact(fruit, new Apple());</span><br><span class="line">    &#125;</span><br><span class="line">    // 固定下边界</span><br><span class="line">    static &lt;T&gt; void writeWithWildcard(List&lt;? super T&gt; list, T item) &#123;</span><br><span class="line">        list.add(item)</span><br><span class="line">    &#125;</span><br><span class="line">    static void f2() &#123;</span><br><span class="line">        writeWithWildcard(apples, new Apple());</span><br><span class="line">        writeWithWildcard(fruit, new Apple());</span><br><span class="line">    &#125;</span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        f1(); f2();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这样我们可以往容器里面添加元素了，但是使用super的坏处是以后不能get容器里面的元素了，原因很简单，我们继续从编译器的角度考虑这个问题，对于List&lt;? super Apple&gt; list，它可以有下面几种含义：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">List&lt;? super Apple&gt; list = new ArrayList&lt;Apple&gt;();</span><br><span class="line">List&lt;? super Apple&gt; list = new ArrayList&lt;Fruit&gt;();</span><br><span class="line">List&lt;? super Apple&gt; list = new ArrayList&lt;Object&gt;();</span><br></pre></td></tr></table></figure></p>
+<p>当我们尝试通过list来get一个Apple的时候，可能会get得到一个Fruit，这个Fruit可以是Orange等其他类型的Fruit。</p>
+<p>根据上面的例子，我们可以总结出一条规律，”Producer Extends, Consumer Super”(PECS原则)：</p>
+<ul>
+<li>“Producer Extends” – 如果你需要一个只读List，用它来produce T，那么使用? extends T。</li>
+<li>Consumer Super” – 如果你需要一个只写List，用它来consume T，那么使用? super T。</li>
+<li>如果需要同时读取以及写入，那么我们就不能使用通配符了。</li>
+</ul>
+<p>如果阅读过一些Java集合类的源码，可以发现通常我们会将两者结合起来一起用，比如像下面这样<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">public class Collections &#123;</span><br><span class="line">    public static &lt;T&gt; void copy(List&lt;? super T&gt; dest, List&lt;? extends T&gt; src) &#123;</span><br><span class="line">        for (int i=0; i&lt;src.size(); i++)</span><br><span class="line">            dest.set(i, src.get(i));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="类型擦除"><a href="#类型擦除" class="headerlink" title="类型擦除"></a>类型擦除</h3><p>类型擦除就是说Java泛型只能用于在编译期间的静态类型检查，然后编译器生成的代码会擦除相应的类型信息，这样到了运行期间实际上JVM根本就知道泛型所代表的具体类型。这样做的目的是因为Java泛型是1.5之后才被引入的，为了保持向下的兼容性，所以只能做类型擦除来兼容以前的非泛型代码。对于这一点，如果阅读Java集合框架的源码，可以发现有些类其实并不支持泛型。</p>
+<p>比如：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">public class Node&lt;T&gt; &#123;</span><br><span class="line">    private T data;</span><br><span class="line">    private Node&lt;T&gt; next;</span><br><span class="line">    public Node(T data, Node&lt;T&gt; next) &#123;</span><br><span class="line">        this.data = data;</span><br><span class="line">        this.next = next;</span><br><span class="line">    &#125;</span><br><span class="line">    public T getData() &#123; return data; &#125;</span><br><span class="line">    // ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>编译器做完相应的类型检查之后，实际上到了运行期间上面这段代码实际上将转换成：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">public class Node &#123;</span><br><span class="line">    private Object data;</span><br><span class="line">    private Node next;</span><br><span class="line">    public Node(Object data, Node next) &#123;</span><br><span class="line">        this.data = data;</span><br><span class="line">        this.next = next;</span><br><span class="line">    &#125;</span><br><span class="line">    public Object getData() &#123; return data; &#125;</span><br><span class="line">    // ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这意味着不管我们声明Node<string>还是Node<integer>，到了运行期间，JVM统统视为Node<object>。有没有什么办法可以解决这个问题呢？这就需要我们自己重新设置bounds了，将上面的代码修改成下面这样<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">public class Node&lt;T extends Comparable&lt;T&gt;&gt; &#123;</span><br><span class="line">    private T data;</span><br><span class="line">    private Node&lt;T&gt; next;</span><br><span class="line">    public Node(T data, Node&lt;T&gt; next) &#123;</span><br><span class="line">        this.data = data;</span><br><span class="line">        this.next = next;</span><br><span class="line">    &#125;</span><br><span class="line">    public T getData() &#123; return data; &#125;</span><br><span class="line">    // ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></object></integer></string></p>
+<p>这样编译器就会将T出现的地方替换成Comparable而不再是默认的Object了：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">public class Node &#123;</span><br><span class="line">    private Comparable data;</span><br><span class="line">    private Node next;</span><br><span class="line">    public Node(Comparable data, Node next) &#123;</span><br><span class="line">        this.data = data;</span><br><span class="line">        this.next = next;</span><br><span class="line">    &#125;</span><br><span class="line">    public Comparable getData() &#123; return data; &#125;</span><br><span class="line">    // ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>上面的概念或许还是比较好理解，但其实泛型擦除带来的问题远远不止这些，接下来我们系统地来看一下类型擦除所带来的一些问题，有些问题在C++的泛型中可能不会遇见，但是在Java中却需要格外小心</p>
+<h4 id="不允许创建泛型数组"><a href="#不允许创建泛型数组" class="headerlink" title="不允许创建泛型数组"></a>不允许创建泛型数组</h4><p>在Java中不允许创建泛型数组，类似下面这样的做法编译器会报错：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">List&lt;Integer&gt;[] arrayOfLists = new List&lt;Integer&gt;[2];  // compile-time error</span><br></pre></td></tr></table></figure></p>
+<p>为什么编译器不支持上面这样的做法呢？继续使用逆向思维，我们站在编译器的角度来考虑这个问题。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Object[] strings = new String[2];</span><br><span class="line">strings[0] = &quot;hi&quot;;   // OK</span><br><span class="line">strings[1] = 100;    // An ArrayStoreException is thrown.</span><br></pre></td></tr></table></figure></p>
+<p>对于上面这段代码还是很好理解，字符串数组不能存放整型元素，而且这样的错误往往要等到代码运行的时候才能发现，编译器是无法识别的。接下来我们再来看一下假设Java支持泛型数组的创建会出现什么后果：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Object[] stringLists = new List&lt;String&gt;[];  // compiler error, but pretend it&apos;s allowed</span><br><span class="line">stringLists[0] = new ArrayList&lt;String&gt;();   // OK</span><br><span class="line">// An ArrayStoreException should be thrown, but the runtime can&apos;t detect it.</span><br><span class="line">stringLists[1] = new ArrayList&lt;Integer&gt;();</span><br></pre></td></tr></table></figure></p>
+<p>假设我们支持泛型数组的创建，由于运行时期类型信息已经被擦除，JVM实际上根本就不知道new ArrayList<string>()和new ArrayList<integer>()的区别。类似这样的错误假如出现才实际的应用场景中，将非常难以察觉。</integer></string></p>
+<p>通过如下代码可以证实我们的猜测：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">public class ErasedTypeEquivalence &#123;</span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        Class c1 = new ArrayList&lt;String&gt;().getClass();</span><br><span class="line">        Class c2 = new ArrayList&lt;Integer&gt;().getClass();</span><br><span class="line">        System.out.println(c1 == c2); // true</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h4 id="brige-method"><a href="#brige-method" class="headerlink" title="brige method"></a>brige method</h4><p>继续复用我们上面的Node的类，对于泛型代码，Java编译器实际上还会偷偷帮我们实现一个Bridge method。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">public class Node&lt;T&gt; &#123;</span><br><span class="line">    public T data;</span><br><span class="line">    public Node(T data) &#123; this.data = data; &#125;</span><br><span class="line">    public void setData(T data) &#123;</span><br><span class="line">        System.out.println(&quot;Node.setData&quot;);</span><br><span class="line">        this.data = data;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">public class MyNode extends Node&lt;Integer&gt; &#123;</span><br><span class="line">    public MyNode(Integer data) &#123; super(data); &#125;</span><br><span class="line">    public void setData(Integer data) &#123;</span><br><span class="line">        System.out.println(&quot;MyNode.setData&quot;);</span><br><span class="line">        super.setData(data);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>看完上面的分析之后，你可能会认为在类型擦除后，编译器会将Node和MyNode变成下面这样：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">public class Node &#123;</span><br><span class="line">    public Object data;</span><br><span class="line">    public Node(Object data) &#123; this.data = data; &#125;</span><br><span class="line">    public void setData(Object data) &#123;</span><br><span class="line">        System.out.println(&quot;Node.setData&quot;);</span><br><span class="line">        this.data = data;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">public class MyNode extends Node &#123;</span><br><span class="line">    public MyNode(Integer data) &#123; super(data); &#125;</span><br><span class="line">    public void setData(Integer data) &#123;</span><br><span class="line">        System.out.println(&quot;MyNode.setData&quot;);</span><br><span class="line">        super.setData(data);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>实际上不是这样的，我们先来看一下下面这段代码，这段代码运行的时候会抛出ClassCastException异常，提示String无法转换成Integer：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">MyNode mn = new MyNode(5);</span><br><span class="line">Node n = mn; // A raw type - compiler throws an unchecked warning</span><br><span class="line">n.setData(&quot;Hello&quot;); // Causes a ClassCastException to be thrown.</span><br><span class="line">// Integer x = mn.data;</span><br></pre></td></tr></table></figure></p>
+<p>如果按照我们上面生成的代码，运行到第3行的时候不应该报错，因为MyNode中不存在setData(String data)方法，所以只能调用父类Node的setData(Object data)方法，既然这样上面的第3行代码不应该报错，因为String当然可以转换成Object了，那ClassCastException到底是怎么抛出的？</p>
+<p>实际上Java编译器对上面代码自动还做了一个处理:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">class MyNode extends Node &#123;</span><br><span class="line">    // Bridge method generated by the compiler</span><br><span class="line">    public void setData(Object data) &#123;</span><br><span class="line">        setData((Integer) data);</span><br><span class="line">    &#125;</span><br><span class="line">    public void setData(Integer data) &#123;</span><br><span class="line">        System.out.println(&quot;MyNode.setData&quot;);</span><br><span class="line">        super.setData(data);</span><br><span class="line">    &#125;</span><br><span class="line">    // ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这也就是为什么上面会报错的原因了，setData((Integer) data);的时候String无法转换成Integer。所以上面第2行编译器提示unchecked warning的时候，我们不能选择忽略，不然要等到运行期间才能发现异常。如果我们一开始加上Node<integer> n = mn就好了，这样编译器就可以提前帮我们发现错误</integer></p>
+<h4 id="利用类型参数创建实例"><a href="#利用类型参数创建实例" class="headerlink" title="利用类型参数创建实例"></a>利用类型参数创建实例</h4><p>正如我们上面提到的，Java泛型很大程度上只能提供静态类型检查，然后类型的信息就会被擦除，所以像下面这样利用类型参数创建实例的做法编译器不会通过：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">public static &lt;E&gt; void append(List&lt;E&gt; list) &#123;</span><br><span class="line">    E elem = new E();  // compile-time error</span><br><span class="line">    list.add(elem);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>但是如果某些场景我们想要需要利用类型参数创建实例，我们应该怎么做呢？可以利用反射解决这个问题：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">public static &lt;E&gt; void append(List&lt;E&gt; list, Class&lt;E&gt; cls) throws Exception &#123;</span><br><span class="line">    E elem = cls.newInstance();   // OK</span><br><span class="line">    list.add(elem);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>我们可以像下面这样调用：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">List&lt;String&gt; ls = new ArrayList&lt;&gt;();</span><br><span class="line">append(ls, String.class);</span><br></pre></td></tr></table></figure></p>
+<h4 id="无法对泛型代码直接使用instanceof关键字"><a href="#无法对泛型代码直接使用instanceof关键字" class="headerlink" title="无法对泛型代码直接使用instanceof关键字"></a>无法对泛型代码直接使用instanceof关键字</h4><p>我们无法对泛型代码直接使用instanceof关键字，因为Java编译器在生成代码的时候会擦除所有相关泛型的类型信息，正如我们上面验证过的JVM在运行时期无法识别出ArrayList<integer>和ArrayList<string>的之间的区别：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">public static &lt;E&gt; void rtti(List&lt;E&gt; list) &#123;</span><br><span class="line">    if (list instanceof ArrayList&lt;Integer&gt;) &#123;  // compile-time error</span><br><span class="line">        // ...</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">=&gt; &#123; ArrayList&lt;Integer&gt;, ArrayList&lt;String&gt;, LinkedList&lt;Character&gt;, ... &#125;</span><br></pre></td></tr></table></figure></string></integer></p>
+<p>和上面一样，我们可以使用通配符重新设置bounds来解决这个问题：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">public static void rtti(List&lt;?&gt; list) &#123;</span><br><span class="line">    if (list instanceof ArrayList&lt;?&gt;) &#123;  // OK; instanceof requires a reifiable type</span><br><span class="line">        // ...</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="https://zhuanlan.zhihu.com/p/28242753" target="_blank" rel="noopener">java泛型详解</a></li>
+<li><a href="http://www.importnew.com/24029.html" target="_blank" rel="noopener">importNews java泛型</a></li>
+<li><a href="https://www.jianshu.com/p/c8ee2cfa5b33" target="_blank" rel="noopener">java泛型</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/javaSE/" rel="tag"><i class="fa fa-tag"></i> javaSE</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/12/26/算法/数据结构-树/" rel="next" title="树">
+                <i class="fa fa-chevron-left"></i> 树
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/01/13/网络/http协议/" rel="prev" title="http协议">
+                http协议 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">勿在浮沙筑高台</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">66</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">23</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#简介"><span class="nav-number">1.</span> <span class="nav-text">简介</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#语法糖"><span class="nav-number">1.1.</span> <span class="nav-text">语法糖</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#泛型的好处"><span class="nav-number">1.2.</span> <span class="nav-text">泛型的好处</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#泛型的使用"><span class="nav-number">2.</span> <span class="nav-text">泛型的使用</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#定义类-接口"><span class="nav-number">2.1.</span> <span class="nav-text">定义类/接口</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#定义方法"><span class="nav-number">2.2.</span> <span class="nav-text">定义方法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#边界符"><span class="nav-number">2.3.</span> <span class="nav-text">边界符</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#通配符"><span class="nav-number">2.4.</span> <span class="nav-text">通配符</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#无边界通配符"><span class="nav-number">2.4.1.</span> <span class="nav-text">无边界通配符</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#固定上边界通配符-满足是某类型的子类"><span class="nav-number">2.4.2.</span> <span class="nav-text">固定上边界通配符(满足是某类型的子类)</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#固定下边界通配符-满足是某类型的父类"><span class="nav-number">2.4.3.</span> <span class="nav-text">固定下边界通配符(满足是某类型的父类)</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#通配符总结"><span class="nav-number">2.5.</span> <span class="nav-text">通配符总结</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#类型擦除"><span class="nav-number">3.</span> <span class="nav-text">类型擦除</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#不允许创建泛型数组"><span class="nav-number">3.1.</span> <span class="nav-text">不允许创建泛型数组</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#brige-method"><span class="nav-number">3.2.</span> <span class="nav-text">brige method</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#利用类型参数创建实例"><span class="nav-number">3.3.</span> <span class="nav-text">利用类型参数创建实例</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#无法对泛型代码直接使用instanceof关键字"><span class="nav-number">3.4.</span> <span class="nav-text">无法对泛型代码直接使用instanceof关键字</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">4.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/jquery/2.1.3/jquery.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fastclick/1.0.6/fastclick.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.bootcss.com/jquery_lazyload/1.9.7/jquery.lazyload.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.ui.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

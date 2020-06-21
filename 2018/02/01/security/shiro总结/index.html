@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+  <link href="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.min.js" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+  
+
+<link href="//cdn.staticfile.org/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="shiro,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="概述Apache Shiro是一个安全验证框架，具有认证、授权、加密、会话管理、与Web集成、缓存等功能。 基本功能点如图所示：  Authentication：身份认证/登录，验证用户是不是拥有相应的身份  Authorization：授权，即权限验证，验证某个已认证的用户是否拥有某个权限；即判断用户是否能做事情，常见的如：验证某个用户是否拥有某个角色。或者细粒度的验证某个用户对某个资源是否具有">
+<meta name="keywords" content="shiro">
+<meta property="og:type" content="article">
+<meta property="og:title" content="shiro总结">
+<meta property="og:url" content="http://yoursite.com/2018/02/01/security/shiro总结/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="概述Apache Shiro是一个安全验证框架，具有认证、授权、加密、会话管理、与Web集成、缓存等功能。 基本功能点如图所示：  Authentication：身份认证/登录，验证用户是不是拥有相应的身份  Authorization：授权，即权限验证，验证某个已认证的用户是否拥有某个权限；即判断用户是否能做事情，常见的如：验证某个用户是否拥有某个角色。或者细粒度的验证某个用户对某个资源是否具有">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://dl2.iteye.com/upload/attachment/0093/9788/d59f6d02-1f45-3285-8983-4ea5f18111d5.png">
+<meta property="og:image" content="http://dl2.iteye.com/upload/attachment/0093/9790/5e0e9b41-0cca-367f-8c87-a8398910e7a6.png">
+<meta property="og:image" content="http://dl2.iteye.com/upload/attachment/0093/9792/9b959a65-799d-396e-b5f5-b4fcfe88f53c.png">
+<meta property="og:updated_time" content="2020-06-07T04:32:06.985Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="shiro总结">
+<meta name="twitter:description" content="概述Apache Shiro是一个安全验证框架，具有认证、授权、加密、会话管理、与Web集成、缓存等功能。 基本功能点如图所示：  Authentication：身份认证/登录，验证用户是不是拥有相应的身份  Authorization：授权，即权限验证，验证某个已认证的用户是否拥有某个权限；即判断用户是否能做事情，常见的如：验证某个用户是否拥有某个角色。或者细粒度的验证某个用户对某个资源是否具有">
+<meta name="twitter:image" content="http://dl2.iteye.com/upload/attachment/0093/9788/d59f6d02-1f45-3285-8983-4ea5f18111d5.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/02/01/security/shiro总结/">
+
+
+
+
+
+  <title>shiro总结 | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/02/01/security/shiro总结/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">shiro总结</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-02-01T11:36:05+08:00">
+                2018-02-01
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/security/" itemprop="url" rel="index">
+                    <span itemprop="name">security</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><p>Apache Shiro是一个安全验证框架，具有认证、授权、加密、会话管理、与Web集成、缓存等功能。</p>
+<p>基本功能点如图所示：<br><img src="http://dl2.iteye.com/upload/attachment/0093/9788/d59f6d02-1f45-3285-8983-4ea5f18111d5.png" alt></p>
+<ul>
+<li><p>Authentication：身份认证/登录，验证用户是不是拥有相应的身份</p>
+</li>
+<li><p>Authorization：授权，即权限验证，验证某个已认证的用户是否拥有某个权限；即判断用户是否能做事情，常见的如：验证某个用户是否拥有某个角色。或者细粒度的验证某个用户对某个资源是否具有某个权限</p>
+</li>
+<li><p>Session Manager：会话管理，即用户登录后就是一次会话，在没有退出之前，它的所有信息都在会话中；会话可以是普通JavaSE环境的，也可以是如Web环境的</p>
+</li>
+<li><p>Cryptography：加密，保护数据的安全性，如密码加密存储到数据库，而不是明文存储</p>
+</li>
+<li><p>Web Support：Web支持，可以非常容易的集成到Web环境</p>
+</li>
+<li><p>Caching：缓存，比如用户登录后，其用户信息、拥有的角色/权限不必每次去查，这样可以提高效率</p>
+</li>
+<li><p>Concurrency：shiro支持多线程应用的并发验证，即如在一个线程中开启另一个线程，能把权限自动传播过去</p>
+</li>
+<li><p>Remember Me：记住我，这个是非常常见的功能，即一次登录后，下次再来的话不用登录了</p>
+</li>
+</ul>
+<p>shiro提供了很多好用的API，让我们自己去扩展功能,shiro的流程如下：</p>
+<p><img src="http://dl2.iteye.com/upload/attachment/0093/9790/5e0e9b41-0cca-367f-8c87-a8398910e7a6.png" alt></p>
+<ul>
+<li><p>Subject：主体，代表了当前“用户”，这个用户不一定是一个具体的人，与当前应用交互的任何东西都是Subject，如网络爬虫，机器人等；即一个抽象概念；所有Subject都绑定到SecurityManager，与Subject的所有交互都会委托给SecurityManager；可以把Subject认为是一个门面；SecurityManager才是实际的执行者</p>
+</li>
+<li><p>SecurityManager：安全管理器；即所有与安全有关的操作都会与SecurityManager交互；且它管理着所有Subject；可以看出它是Shiro的核心，它负责与后边介绍的其他组件进行交互，如果学习过SpringMVC，你可以把它看成DispatcherServlet前端控制器</p>
+</li>
+<li><p>Realm：域，Shiro从从Realm获取安全数据（如用户、角色、权限），就是说SecurityManager要验证用户身份，那么它需要从Realm获取相应的用户进行比较以确定用户身份是否合法；也需要从Realm得到用户相应的角色/权限进行验证用户是否能进行操作；可以把Realm看成DataSource，即安全数据源</p>
+</li>
+</ul>
+<p>shiro的内部结构：<br><img src="http://dl2.iteye.com/upload/attachment/0093/9792/9b959a65-799d-396e-b5f5-b4fcfe88f53c.png" alt></p>
+<ul>
+<li><p>Subject：主体，可以看到主体可以是任何可以与应用交互的“用户”</p>
+</li>
+<li><p>SecurityManager：相当于SpringMVC中的DispatcherServlet是Shiro的心脏；所有具体的交互都通过SecurityManager进行控制；它管理着所有Subject、且负责进行认证和授权、及会话、缓存的管理</p>
+</li>
+<li><p>Authenticator：认证器，负责主体认证的，这是一个扩展点，如果用户觉得Shiro默认的不好，可以自定义实现；其需要认证策略（Authentication Strategy），即什么情况下算用户认证通过了</p>
+</li>
+<li><p>Authrizer：授权器，或者访问控制器，用来决定主体是否有权限进行相应的操作；即控制着用户能访问应用中的哪些功能；</p>
+</li>
+<li><p>Realm：可以有1个或多个Realm，可以认为是安全实体数据源，即用于获取安全实体的；可以是JDBC实现，也可以是LDAP实现，或者内存实现等等；由用户提供；注意：Shiro不知道你的用户/权限存储在哪及以何种格式存储；所以我们一般在应用中都需要实现自己的Realm</p>
+</li>
+<li><p>SessionManager：SessionManager用来管理session的生存周期,而Shiro并不仅仅可以用在Web环境，也可以用在如普通的JavaSE环境、EJB等环境；所有呢，Shiro就抽象了一个自己的Session来管理主体与应用之间交互的数据；这样的话，比如我们在Web环境用，刚开始是一台Web服务器；接着又上了台EJB服务器；这时想把两台服务器的会话数据放到一个地方，这个时候就可以实现自己的分布式会话（如把数据放到Memcached服务器）</p>
+</li>
+<li><p>SessionDAO：DAO大家都用过，数据访问对象，用于会话的CRUD，比如我们想把Session保存到数据库，那么可以实现自己的SessionDAO，通过如JDBC写到数据库；比如想把Session放到Memcached中，可以实现自己的Memcached SessionDAO；另外SessionDAO中可以使用Cache进行缓存，以提高性能</p>
+</li>
+<li><p>CacheManager：缓存控制器，来管理如用户、角色、权限等的缓存的；因为这些数据基本上很少去改变，放到缓存中后可以提高访问的性能</p>
+</li>
+<li><p>Cryptography：密码模块，Shiro提高了一些常见的加密组件用于如密码加密/解密的</p>
+</li>
+</ul>
+<h3 id="身份验证"><a href="#身份验证" class="headerlink" title="身份验证"></a>身份验证</h3><h4 id="登录过程示例"><a href="#登录过程示例" class="headerlink" title="登录过程示例"></a>登录过程示例</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">public void testLogin() &#123;  </span><br><span class="line">    //1、获取SecurityManager工厂，此处使用Ini配置文件初始化SecurityManager  </span><br><span class="line">    Factory&lt;org.apache.shiro.mgt.SecurityManager&gt; factory =  </span><br><span class="line">            new IniSecurityManagerFactory(&quot;classpath:shiro.ini&quot;);  </span><br><span class="line">    //2、得到SecurityManager实例 并绑定给SecurityUtils  </span><br><span class="line">    org.apache.shiro.mgt.SecurityManager securityManager = factory.getInstance();  </span><br><span class="line">    SecurityUtils.setSecurityManager(securityManager);  </span><br><span class="line">    //3、得到Subject及创建用户名/密码身份验证Token（即用户身份/凭证）  </span><br><span class="line">    Subject subject = SecurityUtils.getSubject();  </span><br><span class="line">    UsernamePasswordToken token = new UsernamePasswordToken(&quot;zhang&quot;, &quot;123&quot;);  </span><br><span class="line">    try &#123;  </span><br><span class="line">        //4、登录，即身份验证  </span><br><span class="line">        subject.login(token);  </span><br><span class="line">    &#125; catch (AuthenticationException e) &#123;  </span><br><span class="line">        //5、身份验证失败  </span><br><span class="line">    &#125;  </span><br><span class="line">  </span><br><span class="line">    Assert.assertEquals(true, subject.isAuthenticated()); //断言用户已经登录  </span><br><span class="line">  </span><br><span class="line">    //6、退出  </span><br><span class="line">    subject.logout();  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>逻辑流程：</p>
+<ol>
+<li><p>首先通过new IniSecurityManagerFactory并指定一个ini配置文件来创建一个SecurityManager工厂</p>
+</li>
+<li><p>接着获取SecurityManager并绑定到SecurityUtils，这是一个全局设置，设置一次即可</p>
+</li>
+<li><p>通过SecurityUtils得到Subject，其会自动绑定到当前线程；如果在web环境在请求结束时需要解除绑定；然后获取身份验证的Token，如用户名/密码</p>
+</li>
+<li><p>调用subject.login方法进行登录，其会自动委托给SecurityManager.login方法进行登录</p>
+</li>
+<li><p>如果身份验证失败请捕获AuthenticationException或其子类，常见的如： DisabledAccountException（禁用的帐号）、LockedAccountException（锁定的帐号）、UnknownAccountException（错误的帐号）、ExcessiveAttemptsException（登录失败次数过多）、IncorrectCredentialsException （错误的凭证）、ExpiredCredentialsException（过期的凭证）等，具体请查看其继承关系；对于页面的错误消息展示，最好使用如“用户名/密码错误”而不是“用户名错误”/“密码错误”，防止一些恶意用户非法扫描帐号库</p>
+</li>
+<li><p>最后可以调用subject.logout退出，其会自动委托给SecurityManager.logout方法退出</p>
+</li>
+</ol>
+<p>上述过程总结为：</p>
+<ol>
+<li><p>收集用户身份/凭证，即如用户名/密码</p>
+</li>
+<li><p>调用Subject.login进行登录，如果失败将得到相应的AuthenticationException异常，根据异常提示用户错误信息；否则登录成功</p>
+</li>
+<li><p>最后调用Subject.logout进行退出操作</p>
+</li>
+</ol>
+<h4 id="Realm"><a href="#Realm" class="headerlink" title="Realm"></a>Realm</h4><p>Realm：域，Shiro从从Realm获取安全数据（如用户、角色、权限），就是说SecurityManager要验证用户身份，那么它需要从Realm获取相应的用户进行比较以确定用户身份是否合法；也需要从Realm得到用户相应的角色/权限进行验证用户是否能进行操作；可以把Realm看成DataSource，即安全数据源</p>
+<p>一般Reaml继承AuthorizingReaml就好了</p>
+<p>这里演示一下自定义Reaml：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">public class MyRealm extends AuthorizingRealm &#123;  </span><br><span class="line">    @Override  </span><br><span class="line">    protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principals) &#123;  </span><br><span class="line">        SimpleAuthorizationInfo authorizationInfo = new SimpleAuthorizationInfo();  </span><br><span class="line">        authorizationInfo.addRole(&quot;role1&quot;);  </span><br><span class="line">        authorizationInfo.addRole(&quot;role2&quot;);  </span><br><span class="line">        authorizationInfo.addObjectPermission(new BitPermission(&quot;+user1+10&quot;));  </span><br><span class="line">        authorizationInfo.addObjectPermission(new WildcardPermission(&quot;user1:*&quot;));  </span><br><span class="line">        authorizationInfo.addStringPermission(&quot;+user2+10&quot;);  </span><br><span class="line">        authorizationInfo.addStringPermission(&quot;user2:*&quot;);  </span><br><span class="line">        return authorizationInfo;  </span><br><span class="line">    &#125;  </span><br><span class="line">    @Override  </span><br><span class="line">    protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken token) throws AuthenticationException &#123;  </span><br><span class="line">        //和com.github.zhangkaitao.shiro.chapter2.realm.MyRealm1. getAuthenticationInfo代码一样，省略  </span><br><span class="line">&#125;  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<ul>
+<li>AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken token)：表示获取身份验证信息</li>
+</ul>
+<p>首先根据传入的用户名获取User信息；然后如果user为空，那么抛出没找到帐号异常UnknownAccountException；如果user找到但锁定了抛出锁定异常LockedAccountException；最后生成AuthenticationInfo信息，交给间接父类AuthenticatingRealm使用CredentialsMatcher进行判断密码是否匹配，如果不匹配将抛出密码错误异常IncorrectCredentialsException；另外如果密码重试此处太多将抛出超出重试次数异常ExcessiveAttemptsException；在组装SimpleAuthenticationInfo信息时，需要传入：身份信息（用户名）、凭据（密文密码）、盐（username+salt），CredentialsMatcher使用盐加密传入的明文密码和此处的密文密码进行匹配</p>
+<ul>
+<li>AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principals)：表示根据用户身份获取授权信息</li>
+</ul>
+<p>PrincipalCollection是一个身份集合，因为我们现在就一个Realm，所以直接调用getPrimaryPrincipal得到之前传入的用户名即可；然后根据用户名调用UserService接口获取角色及权限信息</p>
+<h3 id="拦截器"><a href="#拦截器" class="headerlink" title="拦截器"></a>拦截器</h3><p>shiro可以与web集成，，其通过一个ShiroFilter入口来拦截需要安全控制的URL，然后进行相应的控制，ShiroFilter类似于如Strut2/SpringMVC这种web框架的前端控制器，其是安全控制的入口点，其负责读取配置（如ini配置文件），然后判断URL是否需要登录、权限等工作</p>
+<h4 id="拦截器链"><a href="#拦截器链" class="headerlink" title="拦截器链"></a>拦截器链</h4><p>Shiro会在servlet容器的FilterChain之前执行自己的FilterChain，可以对URL进行设置进行拦截，一般有几个参数:anon(不需要登录，可以匿名访问)、authc(需要身份认证通过后才能访问,而user模式下rememberMe也可)、user(需要登录或者rememberMe)、logout(退出拦截器)</p>
+<p>配置示例，基于java code：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">   ShiroFilterFactoryBean shiroFilterFactoryBean(SecurityManager securityManager) &#123;</span><br><span class="line">	ShiroFilterFactoryBean shiroFilterFactoryBean = new ShiroFilterFactoryBean();</span><br><span class="line">	shiroFilterFactoryBean.setSecurityManager(securityManager);</span><br><span class="line">	// 登录</span><br><span class="line">	shiroFilterFactoryBean.setLoginUrl(&quot;/login&quot;);</span><br><span class="line">	// 登录成功跳转</span><br><span class="line">	shiroFilterFactoryBean.setSuccessUrl(&quot;/index&quot;);</span><br><span class="line">	// 无权限页面</span><br><span class="line">	shiroFilterFactoryBean.setUnauthorizedUrl(&quot;/403&quot;);</span><br><span class="line">	LinkedHashMap&lt;String, String&gt; filterChainDefinitionMap = new LinkedHashMap&lt;&gt;();</span><br><span class="line">	filterChainDefinitionMap.put(&quot;/logout&quot;, &quot;logout&quot;);</span><br><span class="line">	filterChainDefinitionMap.put(&quot;/&quot;, &quot;anon&quot;);</span><br><span class="line">	filterChainDefinitionMap.put(&quot;/blog/open/**&quot;, &quot;anon&quot;);</span><br><span class="line">	filterChainDefinitionMap.put(&quot;/**&quot;, &quot;authc&quot;);</span><br><span class="line">	shiroFilterFactoryBean.setFilterChainDefinitionMap(filterChainDefinitionMap);</span><br><span class="line">	return shiroFilterFactoryBean;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="会话管理"><a href="#会话管理" class="headerlink" title="会话管理"></a>会话管理</h3><p>会话管理器管理着应用中所有Subject的会话的创建、维护、删除、失效、验证等工作。是Shiro的核心组件，顶层组件SecurityManager直接继承了SessionManager，且提供了SessionsSecurityManager实现直接把会话管理委托给相应的SessionManager，DefaultSecurityManager及DefaultWebSecurityManager默认SecurityManager都继承了SessionsSecurityManager</p>
+<h4 id="会话配置"><a href="#会话配置" class="headerlink" title="会话配置"></a>会话配置</h4><p>这里展示一些DefaultSessionManager的一些配置：</p>
+<ul>
+<li>sessionIdCookie是sessionManager创建会话Cookie的模板：</li>
+<li>sessionIdCookie.name：设置Cookie名字，默认为JSESSIONID；</li>
+<li>sessionIdCookie.domain：设置Cookie的域名，默认空，即当前访问的域名；</li>
+<li>sessionIdCookie.path：设置Cookie的路径，默认空，即存储在域名根下；</li>
+<li>sessionIdCookie.maxAge：设置Cookie的过期时间，秒为单位，默认-1表示关闭浏览器时过期Cookie；</li>
+<li>sessionIdCookie.httpOnly：如果设置为true，则客户端不会暴露给客户端脚本代码，使用HttpOnly cookie有助于减少某些类型的跨站点脚本攻击；此特性需要实现了Servlet 2.5 MR6及以上版本的规范的Servlet容器支持；</li>
+<li>sessionManager.sessionIdCookieEnabled：是否启用/禁用Session Id Cookie，默认是启用的；如果禁用后将不会设置Session Id Cookie，即默认使用了Servlet容器的JSESSIONID，且通过URL重写（URL中的“;JSESSIONID=id”部分）保存Session Id。</li>
+</ul>
+<h4 id="会话持久化"><a href="#会话持久化" class="headerlink" title="会话持久化"></a>会话持久化</h4><p>Shiro提供SessionDAO用于会话的CRUD，即DAO（Data Access Object）模式实现</p>
+<p>如果要自定义SessionDao可以继承AbstractSessionDao</p>
+<h4 id="rememberMe"><a href="#rememberMe" class="headerlink" title="rememberMe"></a>rememberMe</h4><p>rememberMe配置：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">&lt;!-- 会话Cookie模板 --&gt;  </span><br><span class="line">&lt;bean id=&quot;sessionIdCookie&quot; class=&quot;org.apache.shiro.web.servlet.SimpleCookie&quot;&gt;  </span><br><span class="line">    &lt;constructor-arg value=&quot;sid&quot;/&gt;  </span><br><span class="line">    &lt;property name=&quot;httpOnly&quot; value=&quot;true&quot;/&gt;  </span><br><span class="line">    &lt;property name=&quot;maxAge&quot; value=&quot;-1&quot;/&gt;  </span><br><span class="line">&lt;/bean&gt;  </span><br><span class="line">&lt;bean id=&quot;rememberMeCookie&quot; class=&quot;org.apache.shiro.web.servlet.SimpleCookie&quot;&gt;  </span><br><span class="line">    &lt;constructor-arg value=&quot;rememberMe&quot;/&gt;  </span><br><span class="line">    &lt;property name=&quot;httpOnly&quot; value=&quot;true&quot;/&gt;  </span><br><span class="line">    &lt;property name=&quot;maxAge&quot; value=&quot;2592000&quot;/&gt;&lt;!-- 30天 --&gt;  </span><br><span class="line">&lt;/bean&gt;</span><br></pre></td></tr></table></figure></p>
+<h3 id="Spring集成配置"><a href="#Spring集成配置" class="headerlink" title="Spring集成配置"></a>Spring集成配置</h3><p>shiro可以与Spring进行集成，有Spring-xml或者在Spring Boot中通过Java Code的方式进行配置，具体参考网上，或已做项目</p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="http://jinnianshilongnian.iteye.com/blog/2018936" target="_blank" rel="noopener">跟我学Shiro-张开涛</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/shiro/" rel="tag"><i class="fa fa-tag"></i> shiro</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/01/15/spring/Spring-Data-Jpa基础/" rel="next" title="Spring-Data-Jpa基础用法">
+                <i class="fa fa-chevron-left"></i> Spring-Data-Jpa基础用法
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/02/04/架构/微服务介绍/" rel="prev" title="微服务介绍">
+                微服务介绍 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">勿在浮沙筑高台</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">66</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">23</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#身份验证"><span class="nav-number">2.</span> <span class="nav-text">身份验证</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#登录过程示例"><span class="nav-number">2.1.</span> <span class="nav-text">登录过程示例</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Realm"><span class="nav-number">2.2.</span> <span class="nav-text">Realm</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#拦截器"><span class="nav-number">3.</span> <span class="nav-text">拦截器</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#拦截器链"><span class="nav-number">3.1.</span> <span class="nav-text">拦截器链</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#会话管理"><span class="nav-number">4.</span> <span class="nav-text">会话管理</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#会话配置"><span class="nav-number">4.1.</span> <span class="nav-text">会话配置</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#会话持久化"><span class="nav-number">4.2.</span> <span class="nav-text">会话持久化</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#rememberMe"><span class="nav-number">4.3.</span> <span class="nav-text">rememberMe</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Spring集成配置"><span class="nav-number">5.</span> <span class="nav-text">Spring集成配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">6.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/jquery/2.1.3/jquery.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fastclick/1.0.6/fastclick.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.bootcss.com/jquery_lazyload/1.9.7/jquery.lazyload.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.ui.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

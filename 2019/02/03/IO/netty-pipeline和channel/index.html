@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+  <link href="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.min.js" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+  
+
+<link href="//cdn.staticfile.org/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="netty,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="pipline 和 channelHandler无论是从服务端来看，还是客户端来看，在 Netty 整个框架里面，一条连接对应着一个 Channel，这条 Channel 所有的处理逻辑都在一个叫做 ChannelPipeline 的对象里面，ChannelPipeline 是一个双向链表结构，他和 Channel 之间是一对一的关系。  ChannelPipeline 里面每个节点都是一个 Ch">
+<meta name="keywords" content="netty">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netty-pipeline和channel">
+<meta property="og:url" content="http://yoursite.com/2019/02/03/IO/netty-pipeline和channel/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="pipline 和 channelHandler无论是从服务端来看，还是客户端来看，在 Netty 整个框架里面，一条连接对应着一个 Channel，这条 Channel 所有的处理逻辑都在一个叫做 ChannelPipeline 的对象里面，ChannelPipeline 是一个双向链表结构，他和 Channel 之间是一对一的关系。  ChannelPipeline 里面每个节点都是一个 Ch">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/images/netty/pipeline.png">
+<meta property="og:image" content="http://yoursite.com/images/netty/channel_handler.png">
+<meta property="og:image" content="http://yoursite.com/images/netty/channelHandler_lifecycle.png">
+<meta property="og:updated_time" content="2020-06-07T04:32:06.981Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="netty-pipeline和channel">
+<meta name="twitter:description" content="pipline 和 channelHandler无论是从服务端来看，还是客户端来看，在 Netty 整个框架里面，一条连接对应着一个 Channel，这条 Channel 所有的处理逻辑都在一个叫做 ChannelPipeline 的对象里面，ChannelPipeline 是一个双向链表结构，他和 Channel 之间是一对一的关系。  ChannelPipeline 里面每个节点都是一个 Ch">
+<meta name="twitter:image" content="http://yoursite.com/images/netty/pipeline.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2019/02/03/IO/netty-pipeline和channel/">
+
+
+
+
+
+  <title>netty-pipeline和channel | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/02/03/IO/netty-pipeline和channel/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">netty-pipeline和channel</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-02-03T21:39:14+08:00">
+                2019-02-03
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IO/" itemprop="url" rel="index">
+                    <span itemprop="name">IO</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="pipline-和-channelHandler"><a href="#pipline-和-channelHandler" class="headerlink" title="pipline 和 channelHandler"></a>pipline 和 channelHandler</h3><p>无论是从服务端来看，还是客户端来看，在 Netty 整个框架里面，一条连接对应着一个 Channel，这条 Channel 所有的处理逻辑都在一个叫做 ChannelPipeline 的对象里面，ChannelPipeline 是一个双向链表结构，他和 Channel 之间是一对一的关系。</p>
+<p><img src="/images/netty/pipeline.png" alt></p>
+<p><code>ChannelPipeline</code> 里面每个节点都是一个 <code>ChannelHandlerContext</code> 对象，这个对象能够拿到和 Channel 相关的所有的上下文信息，然后这个对象包着一个重要的对象，那就是逻辑处理器 <code>ChannelHandler</code>。</p>
+<h4 id="channelHandler"><a href="#channelHandler" class="headerlink" title="channelHandler"></a>channelHandler</h4><p><img src="/images/netty/channel_handler.png" alt></p>
+<p>可以看到 <code>ChannelHandler</code> 有两大子接口：</p>
+<ul>
+<li><p><code>ChannelInboundHandler</code>:处理读数据的逻辑。它的一个最重要的方法就是 <code>channelRead()</code>,我们可以在这个方法中解析读到的数据，并且组装响应的数据</p>
+</li>
+<li><p><code>ChannelOutBoundHandler</code>:是处理写数据的逻辑，它是定义我们一端在组装完响应之后，把数据写到对端的逻辑。比如，我们封装好一个 response 对象，接下来我们有可能对这个 response<br>做一些其他的特殊逻辑，然后，再编码成 ByteBuf，最终写到对端，它里面最核心的一个方法就是 <code>write()</code>（或者是<code>writeAndFlush</code>）</p>
+</li>
+</ul>
+<p>ChannelHandler链处理数据的流程与TCP处理数据的流程很相似， 读数据时， 数据包从物理层一层层解析到应用层； 写数据时， 数据包从应用层一层层封装发再到物理层发出去。</p>
+<h4 id="Inbound-和-Outbound"><a href="#Inbound-和-Outbound" class="headerlink" title="Inbound 和 Outbound"></a>Inbound 和 Outbound</h4><p>在 Netty 中，IO 事件被分为 Inbound 事件和 Outbound 事件。</p>
+<p>Outbound 的 out 指的是 出去，比如 connect、write、flush 这些 IO 操作是往外部方向进行的，它们就属于 Outbound 事件</p>
+<p> Inbound 是接收。如 accept、read 这种就属于 Inbound 事件</p>
+<p> 比如服务端的childHandler中有如下代码:<br> <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">1. pipeline.addLast(new StringDecoder());</span><br><span class="line">2. pipeline.addLast(new StringEncoder());</span><br><span class="line">3. pipeline.addLast(new BizHandler());</span><br></pre></td></tr></table></figure></p>
+<p>最开始接触这个肯定会很不理解，应该是先 decode 客户端过来的数据，然后用 BizHandler 处理业务逻辑，最后再 encode 数据然后返回给客户端，所以添加的顺序应该是 1 -&gt; 3 -&gt; 2 才对。</p>
+<p>其实这里的三个 handler 是分组的，分为 Inbound（1 和 3） 和 Outbound（2）：</p>
+<ul>
+<li>客户端连接进来的时候，读取（read）客户端请求数据的操作是 Inbound 的，所以会先使用 1，然后是 3 对处理进行处理；</li>
+<li>处理完数据后，返回给客户端数据的 write 操作是 Outbound 的，此时使用的是 2。</li>
+</ul>
+<p>所以虽然添加顺序有点怪，但是执行顺序其实是按照 1 -&gt; 3 -&gt; 2 进行的</p>
+<p>如果在上面的基础上，新增一个<code>OutboundHandler</code>：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">4. pipeline.addLast(new OutboundHandlerA());</span><br></pre></td></tr></table></figure></p>
+<p>此时可能将执行顺序理解成  1 -&gt; 3 -&gt; 2 -&gt; 4 。 其实并非如此</p>
+<blockquote>
+<p>对于 Inbound 操作，按照添加顺序执行每个 Inbound 类型的 handler；而对于 Outbound 操作，是反着来的，从后往前，顺次执行 Outbound 类型的 handler。</p>
+</blockquote>
+<p>所以上面的顺序应该是 1 -&gt; 3 -&gt; 4 -&gt; 2</p>
+<p>这就是<code>channelHandler</code>的事件传播顺序</p>
+<h4 id="ChannelInboundHandlerAdapter-与-ChannelOutboundHandlerAdapter"><a href="#ChannelInboundHandlerAdapter-与-ChannelOutboundHandlerAdapter" class="headerlink" title="ChannelInboundHandlerAdapter 与 ChannelOutboundHandlerAdapter"></a>ChannelInboundHandlerAdapter 与 ChannelOutboundHandlerAdapter</h4><p><code>ChannelInboundHandlerAdapter</code> ，这个适配器主要用于实现其接口 <code>ChannelInboundHandler</code> 的所有方法，这样我们在编写自己的 handler 的时候就不需要实现 handler 里面的每一种方法，而只需要实现我们所关心的方法，默认情况下，对于 <code>ChannelInboundHandlerAdapter</code>，我们比较关心的是他的如下方法:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception &#123;</span><br><span class="line">    ctx.fireChannelRead(msg);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>他的作用就是接收上一个 handler 的输出，这里的 msg 就是上一个 handler 的输出。默认情况下 adapter 会通过 <code>fireChannelRead()</code> 方法直接把上一个 handler 的输出结果传递到下一个 handler。</p>
+<p><code>ChannelOutboundHandlerAdapter</code>，它的核心方法如下:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception &#123;</span><br><span class="line">    ctx.write(msg, promise);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>默认情况下，这个 adapter 也会把对象传递到下一个 outBound 节点，它的传播顺序与 inboundHandler 相反</p>
+<h4 id="netty中的解码-ByteToMessageDecoder"><a href="#netty中的解码-ByteToMessageDecoder" class="headerlink" title="netty中的解码(ByteToMessageDecoder)"></a>netty中的解码(ByteToMessageDecoder)</h4><p>通常情况下，无论我们是在客户端还是服务端，当我们收到数据之后，首先要做的事情就是把二进制数据转换到我们的一个 Java 对象，所以 Netty 提供了一个父类，来专门做这个事情。使用如下:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">public class PacketDecoder extends ByteToMessageDecoder &#123;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List out) &#123;</span><br><span class="line">        out.add(PacketCodeC.INSTANCE.decode(in));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>当我们继承了 <code>ByteToMessageDecoder</code> 这个类之后，我们只需要实现一下 <code>decode()</code> 方法，这里的 in 大家可以看到，传递进来的时候就已经是 <code>ByteBuf</code> 类型，所以我们不再需要强转，第三个参数是 List 类型，我们通过往这个 List 里面添加解码后的结果对象，就可以自动实现结果往下一个 handler 进行传递，这样，我们就实现了解码的逻辑 handler。</p>
+<p>另外，值得注意的一点，对于 Netty 里面的 ByteBuf，默认情况下用的是堆外内存，堆外内存我们需要自行释放，随着程序运行越来越久，内存泄露的问题就慢慢暴露出来了， 而这里我们使用 <code>ByteToMessageDecoder</code>，Netty 会自动进行内存的释放，我们不用操心太多的内存管理方面的逻辑</p>
+<h4 id="netty中的编码-MessageToByteEncoder"><a href="#netty中的编码-MessageToByteEncoder" class="headerlink" title="netty中的编码(MessageToByteEncoder)"></a>netty中的编码(MessageToByteEncoder)</h4><p>在处理完了指令逻辑之后，我们总是需要进行编码(转出二进制的<code>ByteBuf</code>)，然后调用<code>writeAndFlush</code>将数据写到客户端，这有是个重复的逻辑。Netty 提供了一个特殊的 channelHandler 来专门处理编码逻辑，我们不需要每一次将响应写到对端的时候调用一次编码逻辑进行编码，也不需要自行创建 ByteBuf，这个类叫做 <code>MessageToByteEncoder</code>，从字面意思也可以看出，它的功能就是将对象转换到二进制数据。</p>
+<p>使用如下:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">public class PacketEncoder extends MessageToByteEncoder&lt;Packet&gt; &#123;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    protected void encode(ChannelHandlerContext ctx, Packet packet, ByteBuf out) &#123;</span><br><span class="line">        PacketCodeC.INSTANCE.encode(out, packet);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p><code>PacketEncoder</code> 继承自 <code>MessageToByteEncoder</code>，泛型参数 <code>Packet</code> 表示这个类的作用是实现 <code>Packet</code> 类型对象到二进制的转换。这里我们只需要实现 encode() 方法：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">// PacketCodeC.java</span><br><span class="line">public void encode(ByteBuf byteBuf, Packet packet) &#123;</span><br><span class="line">    // 1. 序列化 java 对象</span><br><span class="line"></span><br><span class="line">    // 2. 实际编码过程</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h4 id="优化代码中过多的判断"><a href="#优化代码中过多的判断" class="headerlink" title="优化代码中过多的判断"></a>优化代码中过多的判断</h4><p>通常情况下， 我们需要对不同的指令对象， 来进行不同的逻辑处理(登录、发送消息等)， 当指令越来越多的时候，代码会很臃肿，类似如下:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">if (packet instanceof LoginRequestPacket) &#123;</span><br><span class="line">    // ...</span><br><span class="line">&#125; else if (packet instanceof MessageRequestPacket) &#123;</span><br><span class="line">    // ...</span><br><span class="line">&#125; else if ...</span><br></pre></td></tr></table></figure></p>
+<p>Netty 基于这种考虑抽象出了一个 <code>SimpleChannelInboundHandler</code> 对象，类型判断和对象传递的活都自动帮我们实现了，而我们可以专注于处理我们所关心的指令即可, 假如处理登录逻辑:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">public class LoginRequestHandler extends SimpleChannelInboundHandler&lt;LoginRequestPacket&gt; &#123;</span><br><span class="line">    @Override</span><br><span class="line">    protected void channelRead0(ChannelHandlerContext ctx, LoginRequestPacket loginRequestPacket) &#123;</span><br><span class="line">        // 登录逻辑</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p><code>SimpleChannelInboundHandler</code> 从字面意思也可以看到，使用它非常简单，我们在继承这个类的时候，给他传递一个泛型参数，然后在 <code>channelRead0()</code> 方法里面，我们不用再通过 if 逻辑来判断当前对象是否是本 handler 可以处理的对象，也不用强转，不用往下传递本 handler 处理不了的对象，这一切都已经交给父类 <code>SimpleChannelInboundHandler</code>来实现了，我们只需要专注于我们要处理的业务逻辑即可。</p>
+<h3 id="Netty中的拆包-粘包"><a href="#Netty中的拆包-粘包" class="headerlink" title="Netty中的拆包/粘包"></a>Netty中的拆包/粘包</h3><p>粘包半包现象:</p>
+<p>尽管我们在应用层面使用了 Netty，但是对于操作系统来说，只认 TCP 协议，尽管我们的应用层是按照 ByteBuf 为<br>单位来发送数据，但是到了底层操作系统仍然是按照字节流发送数据，因此，数据到了服务端，也是按照字节流的方式读入，然后到了 Netty 应用层面，重新拼装成 ByteBuf，而这里的 ByteBuf 与客户端按顺序发送的 ByteBuf<br>可能是不对等的。因此，我们需要在客户端根据自定义协议来组装我们应用层的数据包，然后在服务端根据我们的应用层的协议来解码数据包，这个过程通常在服务端称为拆包，而在客户端称为粘包。</p>
+<p>拆包和粘包是相对的，一端粘了包，另外一端就需要将粘过的包拆开，举个栗子，发送端将三个数据包粘成两个 TCP 数据包发送到接收端，接收端就需要根据应用协议将两个数据包重新组装成三个数据包。</p>
+<h4 id="Netty中自带拆包工具"><a href="#Netty中自带拆包工具" class="headerlink" title="Netty中自带拆包工具"></a>Netty中自带拆包工具</h4><p>在没有 Netty 的情况下，用户如果自己需要拆包，基本原理就是不断从 TCP 缓冲区中读取数据，每次读取完都需要判断是否是一个完整的数据包， 处理情况如下:</p>
+<ol>
+<li>如果当前读取的数据不足以拼接成一个完整的业务数据包，那就保留该数据，继续从 TCP 缓冲区中读取，直到得到一个完整的数据包</li>
+<li>如果当前读到的数据加上已经读取的数据足够拼接成一个数据包，那就将已经读取的数据拼接上本次读取的数据，构成一个完整的业务数据包传递到业务逻辑，多余的数据仍然保留，以便和下次读到的数据尝试拼接。</li>
+</ol>
+<p>如果我们自己实现拆包，对于我们定义的每一种协议都要自己实现，这样很麻烦，netty提供了一些拆包器</p>
+<h5 id="固定长度的拆包器-FixedLengthFrameDecoder"><a href="#固定长度的拆包器-FixedLengthFrameDecoder" class="headerlink" title="固定长度的拆包器 FixedLengthFrameDecoder"></a>固定长度的拆包器 FixedLengthFrameDecoder</h5><p>如果你的应用层协议非常简单，每个数据包的长度都是固定的，比如 100，那么只需要把这个拆包器加到 pipeline 中，Netty 会把一个个长度为 100 的数据包 (ByteBuf) 传递到下一个 channelHandler。</p>
+<h5 id="行拆包器-LineBasedFrameDecoder"><a href="#行拆包器-LineBasedFrameDecoder" class="headerlink" title="行拆包器 LineBasedFrameDecoder"></a>行拆包器 LineBasedFrameDecoder</h5><p>从字面意思来看，发送端发送数据包的时候，每个数据包之间以换行符作为分隔，接收端通过 LineBasedFrameDecoder 将粘过的 ByteBuf 拆分成一个个完整的应用层数据包。</p>
+<h5 id="分隔符拆包器-DelimiterBasedFrameDecoder"><a href="#分隔符拆包器-DelimiterBasedFrameDecoder" class="headerlink" title="分隔符拆包器 DelimiterBasedFrameDecoder"></a>分隔符拆包器 DelimiterBasedFrameDecoder</h5><p>DelimiterBasedFrameDecoder 是行拆包器的通用版本，只不过我们可以自定义分隔符。</p>
+<h5 id="基于长度域拆包器-LengthFieldBasedFrameDecoder"><a href="#基于长度域拆包器-LengthFieldBasedFrameDecoder" class="headerlink" title="基于长度域拆包器 LengthFieldBasedFrameDecoder"></a>基于长度域拆包器 LengthFieldBasedFrameDecoder</h5><p>最后一种拆包器是最通用的一种拆包器，只要你的自定义协议中包含长度域字段，均可以使用这个拆包器来实现应用层拆包。</p>
+<h3 id="channelHandler的生命周期"><a href="#channelHandler的生命周期" class="headerlink" title="channelHandler的生命周期"></a>channelHandler的生命周期</h3><p>建立连接channelHandler的各个回调方法的执行顺序是:</p>
+<blockquote>
+<p>handlerAdded() -&gt; channelRegistered() -&gt; channelActive() -&gt; channelRead() -&gt; channelReadComplete()</p>
+</blockquote>
+<ul>
+<li><code>handlerAdded()</code>: 当前channel中已经成功添加该handler处理器</li>
+<li><code>channelRegistered()</code>: 表示当前的 channel 的所有的逻辑处理已经和某个 NIO 线程建立了绑定关系,类似BIO中accept到了新的连接，然后创建了一个线程去处理这个连接的读写。</li>
+<li><code>channelActive()</code>: 当 channel 的所有的业务逻辑链准备完毕（也就是说 channel 的 pipeline 中已经添加完所有的 handler）以及绑定好一个 NIO 线程之后，这条连接算是真正激活了，接下来就会回调到此方法</li>
+<li><code>channelRead()</code>:客户端向服务端发来数据，每次都会回调此方法，表示有数据可读</li>
+<li><code>channelReadComplete()</code>: 服务端每次读完一次完整的数据之后，回调该方法，表示数据读取完毕。</li>
+</ul>
+<p>关闭连接回调方法的顺序是:</p>
+<blockquote>
+<p>channelInactive() -&gt; channelUnregistered() -&gt; handlerRemoved()</p>
+</blockquote>
+<ul>
+<li><code>channelInactive()</code>:  表面这条连接已经被关闭了，这条连接在 TCP 层面已经不再是 ESTABLISH 状态了</li>
+<li><code>channelUnregistered()</code>:  既然连接已经被关闭，那么与这条连接绑定的线程就不需要对这条连接负责了，这个回调就表明与这条连接对应的 NIO 线程移除掉对这条连接的处理</li>
+<li><code>handlerRemoved()</code>: 这条连接上添加的所有的业务逻辑处理器都给移除掉</li>
+</ul>
+<p>channelHandler的生命周期用图表示:</p>
+<p><img src="/images/netty/channelHandler_lifecycle.png" alt></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/netty/" rel="tag"><i class="fa fa-tag"></i> netty</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/01/17/IO/Linux零拷贝和Netty零拷贝(ByteBuffer)/" rel="next" title="Linux零拷贝和Netty零拷贝(ByteBuffer)">
+                <i class="fa fa-chevron-left"></i> Linux零拷贝和Netty零拷贝(ByteBuffer)
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/02/13/中间件/es工作原理/" rel="prev" title="es工作原理">
+                es工作原理 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">勿在浮沙筑高台</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">66</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">23</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#pipline-和-channelHandler"><span class="nav-number">1.</span> <span class="nav-text">pipline 和 channelHandler</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#channelHandler"><span class="nav-number">1.1.</span> <span class="nav-text">channelHandler</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Inbound-和-Outbound"><span class="nav-number">1.2.</span> <span class="nav-text">Inbound 和 Outbound</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ChannelInboundHandlerAdapter-与-ChannelOutboundHandlerAdapter"><span class="nav-number">1.3.</span> <span class="nav-text">ChannelInboundHandlerAdapter 与 ChannelOutboundHandlerAdapter</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#netty中的解码-ByteToMessageDecoder"><span class="nav-number">1.4.</span> <span class="nav-text">netty中的解码(ByteToMessageDecoder)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#netty中的编码-MessageToByteEncoder"><span class="nav-number">1.5.</span> <span class="nav-text">netty中的编码(MessageToByteEncoder)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#优化代码中过多的判断"><span class="nav-number">1.6.</span> <span class="nav-text">优化代码中过多的判断</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Netty中的拆包-粘包"><span class="nav-number">2.</span> <span class="nav-text">Netty中的拆包/粘包</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Netty中自带拆包工具"><span class="nav-number">2.1.</span> <span class="nav-text">Netty中自带拆包工具</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#固定长度的拆包器-FixedLengthFrameDecoder"><span class="nav-number">2.1.1.</span> <span class="nav-text">固定长度的拆包器 FixedLengthFrameDecoder</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#行拆包器-LineBasedFrameDecoder"><span class="nav-number">2.1.2.</span> <span class="nav-text">行拆包器 LineBasedFrameDecoder</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#分隔符拆包器-DelimiterBasedFrameDecoder"><span class="nav-number">2.1.3.</span> <span class="nav-text">分隔符拆包器 DelimiterBasedFrameDecoder</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#基于长度域拆包器-LengthFieldBasedFrameDecoder"><span class="nav-number">2.1.4.</span> <span class="nav-text">基于长度域拆包器 LengthFieldBasedFrameDecoder</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#channelHandler的生命周期"><span class="nav-number">3.</span> <span class="nav-text">channelHandler的生命周期</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/jquery/2.1.3/jquery.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fastclick/1.0.6/fastclick.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.bootcss.com/jquery_lazyload/1.9.7/jquery.lazyload.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.ui.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

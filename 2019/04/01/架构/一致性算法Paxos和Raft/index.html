@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+  <link href="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.min.js" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+  
+
+<link href="//cdn.staticfile.org/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="Hexo, NexT">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="Paxos算法在常见的 分布式系统 中，总会发生 节点宕机 或 网络异常 (包括消息的 重复、丢失、延迟、乱序、网络分区) 等情况。 Paxos 算法主要就是解决如何在一个 发生如上故障 的分布式系统中，快速正确的在集群内 对某个值达成一致，并且保证 整个系统的一致性。 角色与规则提案：提案=编号+Value。 暂定提案=P, Value=V 在整个系统中，一共有三种角色：  Proposer:">
+<meta property="og:type" content="article">
+<meta property="og:title" content="一致性算法(Paxos、Raft、ZAB)">
+<meta property="og:url" content="http://yoursite.com/2019/04/01/架构/一致性算法Paxos和Raft/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="Paxos算法在常见的 分布式系统 中，总会发生 节点宕机 或 网络异常 (包括消息的 重复、丢失、延迟、乱序、网络分区) 等情况。 Paxos 算法主要就是解决如何在一个 发生如上故障 的分布式系统中，快速正确的在集群内 对某个值达成一致，并且保证 整个系统的一致性。 角色与规则提案：提案=编号+Value。 暂定提案=P, Value=V 在整个系统中，一共有三种角色：  Proposer:">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/images/arch/paxos-1.png">
+<meta property="og:image" content="http://yoursite.com/images/arch/paxos-2.png">
+<meta property="og:image" content="http://yoursite.com/images/arch/paxos.png">
+<meta property="og:image" content="http://yoursite.com/images/arch/raft-node.png">
+<meta property="og:image" content="http://yoursite.com/images/arch/raft-vote.png">
+<meta property="og:image" content="http://yoursite.com/images/arch/raft-follower-vote.png">
+<meta property="og:image" content="http://yoursite.com/images/arch/raft-become-leader.png">
+<meta property="og:image" content="http://yoursite.com/images/arch/raft-leader-dataflow.png">
+<meta property="og:updated_time" content="2020-06-07T04:32:06.992Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="一致性算法(Paxos、Raft、ZAB)">
+<meta name="twitter:description" content="Paxos算法在常见的 分布式系统 中，总会发生 节点宕机 或 网络异常 (包括消息的 重复、丢失、延迟、乱序、网络分区) 等情况。 Paxos 算法主要就是解决如何在一个 发生如上故障 的分布式系统中，快速正确的在集群内 对某个值达成一致，并且保证 整个系统的一致性。 角色与规则提案：提案=编号+Value。 暂定提案=P, Value=V 在整个系统中，一共有三种角色：  Proposer:">
+<meta name="twitter:image" content="http://yoursite.com/images/arch/paxos-1.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2019/04/01/架构/一致性算法Paxos和Raft/">
+
+
+
+
+
+  <title>一致性算法(Paxos、Raft、ZAB) | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/04/01/架构/一致性算法Paxos和Raft/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">一致性算法(Paxos、Raft、ZAB)</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-04-01T09:44:31+08:00">
+                2019-04-01
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/分布式/" itemprop="url" rel="index">
+                    <span itemprop="name">分布式</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="Paxos算法"><a href="#Paxos算法" class="headerlink" title="Paxos算法"></a>Paxos算法</h2><p>在常见的 分布式系统 中，总会发生 节点宕机 或 网络异常 (包括消息的 重复、丢失、延迟、乱序、网络分区) 等情况。</p>
+<p>Paxos 算法主要就是解决如何在一个 发生如上故障 的分布式系统中，快速正确的在集群内 对某个值达成一致，并且保证 整个系统的一致性。</p>
+<h3 id="角色与规则"><a href="#角色与规则" class="headerlink" title="角色与规则"></a>角色与规则</h3><p>提案：提案=编号+Value。 暂定提案=P, Value=V</p>
+<p>在整个系统中，一共有三种角色：</p>
+<ul>
+<li>Proposer: Proposer 可以 提出提案</li>
+<li>Acceptor: Acceptor 可以 接受提案</li>
+<li>Learner: Acceptor 告诉 Learner 哪个提案被选定了，那么 Learner 就学习这个被选择的 value</li>
+</ul>
+<p>在具体的实现中，一个进程即可能是Proposer,也可能是Acceptor，也可能是Learner</p>
+<p><code>Paxos</code>一致性算法有些规则约束:</p>
+<ol>
+<li>提出的P中， 只有一个V被选中</li>
+<li>如果没有 P 被提出，就没有 V 被选中</li>
+<li>在 P 被选定后，进程都可以学习被选中的 P</li>
+</ol>
+<h3 id="算法推导过程"><a href="#算法推导过程" class="headerlink" title="算法推导过程"></a>算法推导过程</h3><p>多个Proposer和多个Acceptor的情况，选定一个值, 氛围两个阶段： 约定P1 和 约定P2</p>
+<h4 id="约定P1"><a href="#约定P1" class="headerlink" title="约定P1"></a>约定P1</h4><blockquote>
+<p>P1:一个 Acceptor 必须接受一个它收到的第一个 P</p>
+</blockquote>
+<p>这个约定会导致的情况是，不同的 Acceptor 会收到不同的 P ，导致不同的V被选定:</p>
+<p><img src="/images/arch/paxos-1.png" alt></p>
+<p>对于这个情况，需要一个额外的约定:</p>
+<blockquote>
+<p>一个提案 P 被选定，需要被半数以上 Acceptor 接受</p>
+</blockquote>
+<p>这样就需要一个一个Acceptor必须接受不止一个提案， 也就是提案是 <code>[提案P=提案编号+Value]</code>(也记作[M, V])</p>
+<h4 id="约定P2"><a href="#约定P2" class="headerlink" title="约定P2"></a>约定P2</h4><blockquote>
+<p>P2 : 如果提案 P[M0,V0] 被选定了，那么所有比 M0 编号更高的，且被选定的 P，其 value 的值也是 V0</p>
+</blockquote>
+<p><img src="/images/arch/paxos-2.png" alt></p>
+<p>假设有 5 个 Acceptor。Proposer2 提出 [M1,V1]的提案，Acceptor2~5（半数以上）均接受了该提案，于是对于 Acceptor2~5 和 Proposer2 来讲，它们都认为 V1 被选定。Acceptor1 刚刚从 宕机状态 恢复过来（之前 Acceptor1 没有收到过任何提案），此时 Proposer1 向 Acceptor1 发送了 [M2,V2] 的提案 （V2≠V1且M2&gt;M1）。对于 Acceptor1 来讲，这是它收到的 第一个提案。根据 P1（一个 Acceptor 必须接受它收到的 第一个提案），Acceptor1 必须接受该提案。同时 Acceptor1 认为 V2 被选定</p>
+<p>这样就导致了不一致的和违反P2约定的情况出现:</p>
+<ol>
+<li>Acceptor1 认为 V2 被选定，Acceptor2~5 和Proposer2 认为 V1 被选定。出现了不一致</li>
+<li>V1 被选定了，但是 编号更高 的被 Acceptor1 接受的提案 [M2,V2] 的 value 为 V2，且 V2≠V1。这就跟 P2a（如果某个 value 为 v的提案被选定了，那么每个 编号更高 的被 Acceptor 接受的提案的 value 必须也是 v）矛盾了</li>
+</ol>
+<p>基于上述问题，就有了P2的补充:</p>
+<blockquote>
+<p>P2b : 如果 P[M0,V0] 被选定后，任何 Proposer 产生的 P，其值也是 V0</p>
+</blockquote>
+<p>如果要满足P2b， 保证任何Proposer产生的P，其值也是V0， 需要满足P2c:</p>
+<blockquote>
+<p>对于任意的 M、V，如果 [M,V] 被提出，那么存在一个半数以上的 Acceptor 组成的组合 S，满足以下两个条件中的任何一个：</p>
+<pre><code>1. S 中没有一个接受过编号小于 M 的提案。
+2. S 中的 Acceptor 接受过的最大编号的提案的 value 为 V。
+</code></pre></blockquote>
+<h3 id="算法流程"><a href="#算法流程" class="headerlink" title="算法流程"></a>算法流程</h3><p><img src="/images/arch/paxos.png" alt></p>
+<h4 id="Proposer-提出提案"><a href="#Proposer-提出提案" class="headerlink" title="Proposer 提出提案"></a>Proposer 提出提案</h4><p>(1). 学习阶段：Prepare请求</p>
+<p>Proposer 选择一个新的提案 P[MN,?] 向 Acceptor 集合 S（数目在半数以上）发送请求，要求 S 中的每一个 Acceptor 做出如下响应：</p>
+<ol>
+<li>如果 Acceptor 没有接受过提案，则向 Proposer 保证 不再接受编号小于N的提案</li>
+<li>如果 Acceptor 接受过请求，则向 Proposer 返回 已经接受过的编号小于N的编号最大的提案</li>
+</ol>
+<p>(2). 接受阶段：Acceptor请求</p>
+<ol>
+<li>如果 Proposer 收到 半数以上 的 Acceptor 响应，则 生成编号为 N，value 为 V 的提案 [MN,V]，V 为所有响应中 编号最大 的提案的 value</li>
+<li>如果 Proposer 收到的响应中 没有提案，那么 value 由 Proposer 自己生成，生成后将此提案发给 S，并期望 Acceptor 能接受此提案</li>
+</ol>
+<h4 id="Acceptor接受提案"><a href="#Acceptor接受提案" class="headerlink" title="Acceptor接受提案"></a>Acceptor接受提案</h4><p>一个 Acceptor 需要遵守, 并记住:</p>
+<ol>
+<li>已接受的编号最大的提案</li>
+<li>已响应的请求的最大编号</li>
+</ol>
+<h2 id="Raft算法"><a href="#Raft算法" class="headerlink" title="Raft算法"></a>Raft算法</h2><p>Raft也是一种一致性算法，但比paxos更易于理解。Raft的选举过程与paxos有一些区别</p>
+<h3 id="Raft角色与规则"><a href="#Raft角色与规则" class="headerlink" title="Raft角色与规则"></a>Raft角色与规则</h3><p>Raft有三种角色：Leader，Candidate，Follower。一个 Server 进程在某一时刻，只能是其中 一种类型，但这不是固定的。不同的时刻，它可能拥有不同的类型。</p>
+<ol>
+<li>Leader(主节点)</li>
+<li>Follower(从节点)</li>
+<li>Candidate(参与投票竞争的节点)</li>
+</ol>
+<h3 id="Leader选举流程"><a href="#Leader选举流程" class="headerlink" title="Leader选举流程"></a>Leader选举流程</h3><p>一个最小的 Raft 民主集群需要 三个参与者， 这样才能投出多数票。</p>
+<p>(1). 在最初，还没有一个主节点的时候，所有节点的身份都是Follower。每一个节点都有自己的计时器，当计时达到了超时时间（Election Timeout），该节点会转变为Candidate</p>
+<p><img src="/images/arch/raft-node.png" alt></p>
+<p>(2). 成为Candidate的节点，会首先给自己投票，然后向集群中其他所有的节点发起请求，要求大家都给自己投票</p>
+<p><img src="/images/arch/raft-vote.png" alt></p>
+<p>(3). 其他收到投票请求且还未投票的Follower节点会向发起者投票，发起者收到反馈通知后，票数增加。</p>
+<p><img src="/images/arch/raft-follower-vote.png" alt></p>
+<p>(4).当得票数超过了集群节点数量的一半，该节点晋升为Leader节点。Leader节点会立刻向其他节点发出通知，告诉大家自己才是老大。收到通知的节点全部变为Follower，并且各自的计时器清零</p>
+<p><img src="/images/arch/raft-become-leader.png" alt></p>
+<p>这里需要说明一点，如果每个节点得票一样，没有任何一方获得多数票，则本轮投票无效。每个参与方随机休息一阵(Election Timeout), 然后重新发起投票。每个节点的超时时间都是不一样的。比如A节点的超时时间是3秒，B节点的超时时间是5秒，C节点的超时时间是4。这样一来，A节点将会最先发起投票请求，而不是所有节点同时发起。很快就会达成一致</p>
+<p>Leader节点需要每隔一段时间向集群其他节点发送心跳通知，表明存活。一旦Leader节点挂掉，发不出通知，那么计时达到了超时时间的Follower节点会转变为Candidate节点，发起选主投票，周而复始……</p>
+<h3 id="Leader对数据一致性的影响"><a href="#Leader对数据一致性的影响" class="headerlink" title="Leader对数据一致性的影响"></a>Leader对数据一致性的影响</h3><p>Raft 协议 强依赖 Leader 节点的 可用性，以确保集群 数据的一致性。数据的流向 只能从 Leader 节点向 Follower 节点转移。具体过程如下：</p>
+<p><img src="/images/arch/raft-leader-dataflow.png" alt></p>
+<ol>
+<li>当 Client 向集群 Leader 节点提交数据后，Leader 节点接收到的数据处于未提交状态(这个过程是写入leader的log)</li>
+<li>接着 Leader 节点会并发地向所有 Follower 节点复制数据并等待接收响应(follower读入leader的log)</li>
+<li>集群中至少超过半数的节点已接收到数据后， Leader 再向 Client 确认数据已接收(leader提交log，并通知follower)</li>
+<li>一旦向 Client 发出数据接收 Ack 响应后，表明此时数据状态进入已提交（Committed），Leader 节点再向 Follower 节点发通知告知该数据状态已提交(follower提交log)</li>
+</ol>
+<p>在这个过程中，leader可能随时挂掉， Raft针对不同阶段保障数据一致性</p>
+<h4 id="数据到达Leader前，Leader挂掉"><a href="#数据到达Leader前，Leader挂掉" class="headerlink" title="数据到达Leader前，Leader挂掉"></a>数据到达Leader前，Leader挂掉</h4><p>这个阶段对一致性无影响</p>
+<h4 id="数据到达-Leader-节点，但未复制到-Follower-节点"><a href="#数据到达-Leader-节点，但未复制到-Follower-节点" class="headerlink" title="数据到达 Leader 节点，但未复制到 Follower 节点"></a>数据到达 Leader 节点，但未复制到 Follower 节点</h4><p>这个阶段 Leader 挂掉，数据属于 未提交状态，Client 不会收到 Ack 会认为超时失败可安全发起重试。</p>
+<p>Follower 节点上没有该数据，重新选主后 Client 重试重新提交可成功。原来的 Leader 节点恢复后作为 Follower 加入集群，重新从当前任期的新 Leader 处同步数据，强制保持和 Leader 数据一致。</p>
+<h4 id="数据到达-Leader-节点，成功复制到-Follower-所有节点，但-Follower-还未向-Leader-响应接收"><a href="#数据到达-Leader-节点，成功复制到-Follower-所有节点，但-Follower-还未向-Leader-响应接收" class="headerlink" title="数据到达 Leader 节点，成功复制到 Follower 所有节点，但 Follower 还未向 Leader 响应接收"></a>数据到达 Leader 节点，成功复制到 Follower 所有节点，但 Follower 还未向 Leader 响应接收</h4><p>这个阶段 Leader 挂掉，虽然数据在 Follower 节点处于未提交状态，但是还是保持一致的。重新选出 Leader 后可完成数据提交。</p>
+<p>此时 Client 由于不知到底提交成功没有，可重试提交。针对这种情况 Raft 要求 RPC 请求实现 幂等性，也就是要实现内部去重机制</p>
+<h4 id="网络分区导致的脑裂情况，出现双-Leader-的现象"><a href="#网络分区导致的脑裂情况，出现双-Leader-的现象" class="headerlink" title="网络分区导致的脑裂情况，出现双 Leader 的现象"></a>网络分区导致的脑裂情况，出现双 Leader 的现象</h4><p>原先的 Leader 独自在一个区，向它提交数据不可能复制到多数节点所以永远提交不成功。向新的 Leader 提交数据可以提交成功。<br>网络恢复 后，旧的 Leader 发现集群中有 更新任期（Term）的新 Leader ，则 自动降级 为 Follower 并从新 Leader 处 同步数据 达成集群 数据一致</p>
+<h2 id="ZAB协议"><a href="#ZAB协议" class="headerlink" title="ZAB协议"></a>ZAB协议</h2><p>ZAB(原子广播)是zookeeper用来保证数据一致性的协议， 基于该协议，zookeeper实现了主从模式的系统架构中各个副本之间的数据一致性。</p>
+<p>根据ZAB协议，所有的写操作都必须通过Leader完成，Leader写入本地日志后再复制到所有的Follower节点。</p>
+<p>具体ZAB协议的流程(广播模式、恢复模式)在我另一篇博客里面有详细的描述:<a href="https://haobinaa.github.io/2019/01/03/%E4%B8%AD%E9%97%B4%E4%BB%B6/zookeeper%E5%88%86%E5%B8%83%E5%BC%8F%E5%8D%8F%E8%B0%83%E8%AF%A6%E8%A7%A3/" target="_blank" rel="noopener">zookeeper分布式协调详解</a></p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="https://juejin.im/post/5b2664bd51882574874d8a76" target="_blank" rel="noopener">一致性算法Paxos</a></li>
+<li><a href="https://juejin.im/post/5b2664e2f265da59584d8c90" target="_blank" rel="noopener">一致性算法Raft</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/25664121" target="_blank" rel="noopener">比较raft、basic paxos、multi paxos区别</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/03/28/架构/分布式理论与分布式事务/" rel="next" title="分布式理论与分布式事务">
+                <i class="fa fa-chevron-left"></i> 分布式理论与分布式事务
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/04/22/中间件/activeMQ的producer发送和consumer消费/" rel="prev" title="activeMQ的producer发送和consumer消费">
+                activeMQ的producer发送和consumer消费 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">勿在浮沙筑高台</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">66</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">23</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Paxos算法"><span class="nav-number">1.</span> <span class="nav-text">Paxos算法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#角色与规则"><span class="nav-number">1.1.</span> <span class="nav-text">角色与规则</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#算法推导过程"><span class="nav-number">1.2.</span> <span class="nav-text">算法推导过程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#约定P1"><span class="nav-number">1.2.1.</span> <span class="nav-text">约定P1</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#约定P2"><span class="nav-number">1.2.2.</span> <span class="nav-text">约定P2</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#算法流程"><span class="nav-number">1.3.</span> <span class="nav-text">算法流程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Proposer-提出提案"><span class="nav-number">1.3.1.</span> <span class="nav-text">Proposer 提出提案</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Acceptor接受提案"><span class="nav-number">1.3.2.</span> <span class="nav-text">Acceptor接受提案</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Raft算法"><span class="nav-number">2.</span> <span class="nav-text">Raft算法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Raft角色与规则"><span class="nav-number">2.1.</span> <span class="nav-text">Raft角色与规则</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Leader选举流程"><span class="nav-number">2.2.</span> <span class="nav-text">Leader选举流程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Leader对数据一致性的影响"><span class="nav-number">2.3.</span> <span class="nav-text">Leader对数据一致性的影响</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#数据到达Leader前，Leader挂掉"><span class="nav-number">2.3.1.</span> <span class="nav-text">数据到达Leader前，Leader挂掉</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#数据到达-Leader-节点，但未复制到-Follower-节点"><span class="nav-number">2.3.2.</span> <span class="nav-text">数据到达 Leader 节点，但未复制到 Follower 节点</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#数据到达-Leader-节点，成功复制到-Follower-所有节点，但-Follower-还未向-Leader-响应接收"><span class="nav-number">2.3.3.</span> <span class="nav-text">数据到达 Leader 节点，成功复制到 Follower 所有节点，但 Follower 还未向 Leader 响应接收</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#网络分区导致的脑裂情况，出现双-Leader-的现象"><span class="nav-number">2.3.4.</span> <span class="nav-text">网络分区导致的脑裂情况，出现双 Leader 的现象</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ZAB协议"><span class="nav-number">3.</span> <span class="nav-text">ZAB协议</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">3.1.</span> <span class="nav-text">参考资料</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/jquery/2.1.3/jquery.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fastclick/1.0.6/fastclick.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.bootcss.com/jquery_lazyload/1.9.7/jquery.lazyload.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.ui.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

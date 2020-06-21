@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+  <link href="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.min.js" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+  
+
+<link href="//cdn.staticfile.org/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="mysql,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="数据类型创建mysql数据表的时候，通常会指定类型和长度，那么到底代表什么意思呢，每种类型最大长度又是多少，经过我的查阅资料和实验，把结果记录一下 tinyint、smallint等整型对于tinyint、smallint、mediumint、int、bigint等指定长度是没有意义的，后面那个length只是影响显示字符的个数，比如int(10)，如果不足十位会补足0(zerofill)，如果超">
+<meta name="keywords" content="mysql">
+<meta property="og:type" content="article">
+<meta property="og:title" content="mysql基础">
+<meta property="og:url" content="http://yoursite.com/2017/12/07/mysql/mysql基础/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="数据类型创建mysql数据表的时候，通常会指定类型和长度，那么到底代表什么意思呢，每种类型最大长度又是多少，经过我的查阅资料和实验，把结果记录一下 tinyint、smallint等整型对于tinyint、smallint、mediumint、int、bigint等指定长度是没有意义的，后面那个length只是影响显示字符的个数，比如int(10)，如果不足十位会补足0(zerofill)，如果超">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2020-06-07T04:32:06.984Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="mysql基础">
+<meta name="twitter:description" content="数据类型创建mysql数据表的时候，通常会指定类型和长度，那么到底代表什么意思呢，每种类型最大长度又是多少，经过我的查阅资料和实验，把结果记录一下 tinyint、smallint等整型对于tinyint、smallint、mediumint、int、bigint等指定长度是没有意义的，后面那个length只是影响显示字符的个数，比如int(10)，如果不足十位会补足0(zerofill)，如果超">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/12/07/mysql/mysql基础/">
+
+
+
+
+
+  <title>mysql基础 | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/12/07/mysql/mysql基础/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">mysql基础</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-12-07T10:49:21+08:00">
+                2017-12-07
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mysql/" itemprop="url" rel="index">
+                    <span itemprop="name">mysql</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="数据类型"><a href="#数据类型" class="headerlink" title="数据类型"></a>数据类型</h3><p>创建mysql数据表的时候，通常会指定类型和长度，那么到底代表什么意思呢，每种类型最大长度又是多少，经过我的查阅资料和实验，把结果记录一下</p>
+<h4 id="tinyint、smallint等整型"><a href="#tinyint、smallint等整型" class="headerlink" title="tinyint、smallint等整型"></a>tinyint、smallint等整型</h4><p>对于tinyint、smallint、mediumint、int、bigint等指定长度是没有意义的，后面那个length只是影响显示字符的个数，比如int(10)，如果不足十位会补足0(zerofill)，如果超过了宽度则不受此限制。</p>
+<h4 id="float-double-decimal等实数"><a href="#float-double-decimal等实数" class="headerlink" title="float,double,decimal等实数"></a>float,double,decimal等实数</h4><p>值得注意的是decimal(十六个字节)一般用于精度高的存储，decimal(4,1)指的是一共四位，小数点后1位，如果插入1234，则显示999.9</p>
+<p>长度表：</p>
+<table>
+<thead>
+<tr>
+<th>type</th>
+<th>length</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>tinyint</td>
+<td>1 字节</td>
+</tr>
+<tr>
+<td>smallint</td>
+<td>2 字节</td>
+</tr>
+<tr>
+<td>mediumint</td>
+<td>3 字节</td>
+</tr>
+<tr>
+<td>int</td>
+<td>4 字节</td>
+</tr>
+<tr>
+<td>bigint</td>
+<td>8 字节</td>
+</tr>
+<tr>
+<td>float(length, decimals)</td>
+<td>4 字节</td>
+</tr>
+<tr>
+<td>double (length, decimals)</td>
+<td>8 字节</td>
+</tr>
+<tr>
+<td>decimal (length, decimals)</td>
+<td>16 字节</td>
+</tr>
+</tbody>
+</table>
+<h4 id="日期和时间类型"><a href="#日期和时间类型" class="headerlink" title="日期和时间类型"></a>日期和时间类型</h4><p>timestamp比datatime空间效率更高</p>
+<table>
+<thead>
+<tr>
+<th>type</th>
+<th>length</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>date</td>
+<td>3 字节</td>
+<td>YYYY-MM-DD 格式</td>
+</tr>
+<tr>
+<td>time</td>
+<td>3 字节</td>
+<td>HH:MM:SS 格式</td>
+</tr>
+<tr>
+<td>datetime</td>
+<td>8 字节</td>
+<td>YYYY-MM-DD HH:MM:SS</td>
+</tr>
+<tr>
+<td>TIMESTAMP</td>
+<td>4 字节</td>
+<td>YYYYMMDDHHMMSS</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>注：一般 mysql 的每个表都会设置两个 datatime 的字段： gmtCreate(创建时间)、gmtModified(更新时间)。 默认值是 mysql 函数 : CURRENT_TIMESTAMP。 并且 gmtModified 根据当前时间更新</p>
+</blockquote>
+<h4 id="char和varchar"><a href="#char和varchar" class="headerlink" title="char和varchar"></a>char和varchar</h4><p>对于char来说，长度是固定的，最大为255字符，最大长度=255*每个字符占用的字节数，由编码来决定的。</p>
+<p>对于varchar来说，长度不是固定的，最大长度为65535个字节，但是varchar需要用额外的字节来存储长度信息，小于255时一个字节来存储，大于255需要两个字节。varchar(length)这个length实际上是字符数，最大长度也是根据编码来决定的，比如utf8一个字符占三个字节，那么varchar的最大长度=65535/3约为21485个字符。</p>
+<p>但是！！！！varchar的最大长度可不是这么算的，干货来了！</p>
+<p>mysql有个限制规则</p>
+<h5 id="限制规则"><a href="#限制规则" class="headerlink" title="限制规则"></a>限制规则</h5><ul>
+<li>存储限制：varchar 字段是将实际内容单独存储在聚簇索引之外，内容开头用1到2个字节表示实际长度（长度超过255时需要2个字节），因此最大长度不能超过65535</li>
+<li><p>编码长度限制：</p>
+<ul>
+<li>字符类型若为gbk，每个字符最多占2个字节，最大长度不能超过32766;</li>
+<li>字符类型若为utf8，每个字符最多占3个字节，最大长度不能超过21845<br>若定义的时候超过上述限制，则varchar字段会被强行转为text类型，并产生warning</li>
+</ul>
+</li>
+<li><p>行长度限制</p>
+</li>
+</ul>
+<p>导致实际应用中varchar长度限制的是一个行定义的长度。 MySQL要求一个行的定义长度不能超过65535。</p>
+<p>举个例子：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">create table t4(c int, c2 char(30), c3 varchar(N)) charset=utf8;</span><br></pre></td></tr></table></figure></p>
+<p>此刻N =  (65535-1-2-4-30*3)/3=21812</p>
+<p>减1的原因是实际行存储从第二个字节开始’;</p>
+<p>减2的原因是varchar头部的2个字节表示长度;</p>
+<p>减的4原因是字符编码是int占4个字节。</p>
+<p>减30*3的原因是char(30)占90个字节</p>
+<p>除3的原因是utf8一个字符占三个字节</p>
+<h3 id="索引"><a href="#索引" class="headerlink" title="索引"></a>索引</h3><p>mysql主要有以下索引类型：</p>
+<ol>
+<li>普通索引</li>
+<li>唯一索引</li>
+<li>主键索引</li>
+<li>组合索引</li>
+<li>全文索引</li>
+</ol>
+<p>创建方式</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">CREATE TABLE table_name[col_name data type]</span><br><span class="line">[unique|fulltext][index|key][index_name](col_name[length])[asc|desc]</span><br></pre></td></tr></table></figure>
+<h4 id="普通索引"><a href="#普通索引" class="headerlink" title="普通索引"></a>普通索引</h4><p>最基本的索引，没有任何限制</p>
+<p>1.创建索引<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">CREATE INDEX index_name ON table(column(length))</span><br></pre></td></tr></table></figure></p>
+<p>2.删除索引<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">DROP INDEX index_name ON table</span><br></pre></td></tr></table></figure></p>
+<h4 id="唯一索引"><a href="#唯一索引" class="headerlink" title="唯一索引"></a>唯一索引</h4><p>索引列的值必须唯一，但允许有空值。如果是组合索引，则列值的组合必须唯一</p>
+<p>1.创建索引<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">CREATE UNIQUE INDEX indexName ON table(column(length))</span><br></pre></td></tr></table></figure></p>
+<h4 id="主键索引"><a href="#主键索引" class="headerlink" title="主键索引"></a>主键索引</h4><p>一个表只能有一个主键，不允许有空值,一般是建表的时候创建的<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">CREATE TABLE `table` (</span><br><span class="line">    `id` int(11) NOT NULL AUTO_INCREMENT ,</span><br><span class="line">    `title` char(255) NOT NULL ,</span><br><span class="line">    PRIMARY KEY (`id`)</span><br><span class="line">);</span><br></pre></td></tr></table></figure></p>
+<h4 id="组合索引"><a href="#组合索引" class="headerlink" title="组合索引"></a>组合索引</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ALTER TABLE `table` ADD INDEX name_city_age (name,city,age);</span><br></pre></td></tr></table></figure>
+<p><strong><em>mysql执行查询中，只会使用到一个索引</em></strong>  </p>
+<blockquote>
+<p>最左前缀：意思是使用组合索引的时候，从左到右依次匹配，否则不会使用组合索引。<br>例如<code>ALTER TABLE people ADD INDEX lname_fname_age (lame,fname,age);</code>其实我们是建立了三个索引，分别是：单列索引lame，组合索引（lame，fname），组合索引（lame，fname，age），mysql索引的时候只会使用其中一个索引。所以创建组合索引的时候，尽量把使用频繁的放在左边</p>
+</blockquote>
+<h4 id="全文索引"><a href="#全文索引" class="headerlink" title="全文索引"></a>全文索引</h4><p>主要用来查找文本中的关键字，而不是直接与索引中的值相比较。fulltext索引跟其它索引大不相同，它更像是一个搜索引擎，而不是简单的where语句的参数匹配。fulltext索引配合match against操作使用，而不是一般的where语句加like。它可以在create table，alter table ，create index使用，不过目前只有char、varchar，text 列上可以创建全文索引。值得一提的是，在数据量较大时候，现将数据放入一个没有全局索引的表中，然后再用CREATE index创建fulltext索引，要比先为一张表建立fulltext然后再将数据写入的速度快很多</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">CREATE FULLTEXT INDEX index_content ON article(content)</span><br></pre></td></tr></table></figure>
+<h4 id="索引创建的原则和注意事项"><a href="#索引创建的原则和注意事项" class="headerlink" title="索引创建的原则和注意事项"></a>索引创建的原则和注意事项</h4><ol>
+<li>最适合创建索引的是出现在where子句中的列或是出现在连接子句中的列</li>
+<li>对字符串类型进行索引的时候，应该指定一个前缀长度，比如索引前多少个字符  </li>
+<li>根据业务情况创建组合索引（比如某个业务需要查询两个列）</li>
+<li>组合索引遵循前缀原则（最左前缀原则）TODO  </li>
+<li>like查询，%不能在前，可以使用全文检索引擎</li>
+</ol>
+<blockquote>
+<p>例如： where name like ‘%wang%’，查询姓名中有wang的，此时索引不会生效，还是会全表扫描，因为前面有个%，如果是like ‘wang%’这样会使用到索引，但是没有前缀匹配了，如果想达到索引的效果，可以使用全文检索引擎，例如es（Elasticsearch）</p>
+</blockquote>
+<p>6.如果mysql觉得全表扫描比索引扫描快，他会自动放弃使用索引</p>
+<p>7.mysql查询只使用一个索引，如果where子句中使用了索引，那么order by中的列是不会使用索引的</p>
+<p>8.列中包含null值是不会使用索引的，如果column_name is null还是会使用索引，但是建表的时候尽量设置一个非null的默认值。</p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="http://www.voidcn.com/article/p-qbqrcutb-kq.html" target="_blank" rel="noopener">varchar最大长度的计算</a></li>
+<li>高性能MySQL</li>
+<li><a href="https://tech.meituan.com/mysql-index.html" target="_blank" rel="noopener">mysql索引原理以及慢查询</a></li>
+<li><a href="http://www.cnblogs.com/luyucheng/p/6289714.html" target="_blank" rel="noopener">mysql索引类型</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/mysql/" rel="tag"><i class="fa fa-tag"></i> mysql</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/11/30/spring/springAOP基本使用/" rel="next" title="springAOP的基本使用">
+                <i class="fa fa-chevron-left"></i> springAOP的基本使用
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/12/08/orm/mybatis基础使用/" rel="prev" title="mybatis使用(配置入门)">
+                mybatis使用(配置入门) <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">勿在浮沙筑高台</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">66</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">23</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#数据类型"><span class="nav-number">1.</span> <span class="nav-text">数据类型</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#tinyint、smallint等整型"><span class="nav-number">1.1.</span> <span class="nav-text">tinyint、smallint等整型</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#float-double-decimal等实数"><span class="nav-number">1.2.</span> <span class="nav-text">float,double,decimal等实数</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#日期和时间类型"><span class="nav-number">1.3.</span> <span class="nav-text">日期和时间类型</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#char和varchar"><span class="nav-number">1.4.</span> <span class="nav-text">char和varchar</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#限制规则"><span class="nav-number">1.4.1.</span> <span class="nav-text">限制规则</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#索引"><span class="nav-number">2.</span> <span class="nav-text">索引</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#普通索引"><span class="nav-number">2.1.</span> <span class="nav-text">普通索引</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#唯一索引"><span class="nav-number">2.2.</span> <span class="nav-text">唯一索引</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#主键索引"><span class="nav-number">2.3.</span> <span class="nav-text">主键索引</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#组合索引"><span class="nav-number">2.4.</span> <span class="nav-text">组合索引</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#全文索引"><span class="nav-number">2.5.</span> <span class="nav-text">全文索引</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#索引创建的原则和注意事项"><span class="nav-number">2.6.</span> <span class="nav-text">索引创建的原则和注意事项</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">3.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/jquery/2.1.3/jquery.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fastclick/1.0.6/fastclick.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.bootcss.com/jquery_lazyload/1.9.7/jquery.lazyload.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.ui.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

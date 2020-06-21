@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+  <link href="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.min.js" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+  
+
+<link href="//cdn.staticfile.org/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="Hexo, NexT">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="CAP理论CAP理论又称为布鲁尔定理， 它指出对于一个分布式计算系统来说，不可能同时满足以下三点：  一致性（Consistency） （等同于所有节点访问同一份最新的数据副本） 可用性（Availability）（每次请求都能获取到非错的响应——但是不保证获取的数据为最新数据） 分区容错性（Partition tolerance）（以实际效果而言，分区相当于对通信的时限要求。系统如果不能在时限内">
+<meta property="og:type" content="article">
+<meta property="og:title" content="分布式理论与分布式事务">
+<meta property="og:url" content="http://yoursite.com/2019/03/28/架构/分布式理论与分布式事务/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="CAP理论CAP理论又称为布鲁尔定理， 它指出对于一个分布式计算系统来说，不可能同时满足以下三点：  一致性（Consistency） （等同于所有节点访问同一份最新的数据副本） 可用性（Availability）（每次请求都能获取到非错的响应——但是不保证获取的数据为最新数据） 分区容错性（Partition tolerance）（以实际效果而言，分区相当于对通信的时限要求。系统如果不能在时限内">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/images/arch/2pc.png">
+<meta property="og:image" content="http://yoursite.com/images/arch/2pc-2.png">
+<meta property="og:image" content="http://yoursite.com/images/arch/2pc-3.png">
+<meta property="og:image" content="http://yoursite.com/images/arch/3pc.png">
+<meta property="og:image" content="http://yoursite.com/images/arch/tcc.png">
+<meta property="og:image" content="http://yoursite.com/images/arch/transcation-message-table.png">
+<meta property="og:image" content="http://yoursite.com/images/arch/mq-transcation-1.png">
+<meta property="og:image" content="http://yoursite.com/images/arch/mq-transcation-2.png">
+<meta property="og:updated_time" content="2020-06-07T04:32:06.992Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="分布式理论与分布式事务">
+<meta name="twitter:description" content="CAP理论CAP理论又称为布鲁尔定理， 它指出对于一个分布式计算系统来说，不可能同时满足以下三点：  一致性（Consistency） （等同于所有节点访问同一份最新的数据副本） 可用性（Availability）（每次请求都能获取到非错的响应——但是不保证获取的数据为最新数据） 分区容错性（Partition tolerance）（以实际效果而言，分区相当于对通信的时限要求。系统如果不能在时限内">
+<meta name="twitter:image" content="http://yoursite.com/images/arch/2pc.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2019/03/28/架构/分布式理论与分布式事务/">
+
+
+
+
+
+  <title>分布式理论与分布式事务 | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/03/28/架构/分布式理论与分布式事务/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">分布式理论与分布式事务</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-03-28T18:16:38+08:00">
+                2019-03-28
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/分布式/" itemprop="url" rel="index">
+                    <span itemprop="name">分布式</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="CAP理论"><a href="#CAP理论" class="headerlink" title="CAP理论"></a>CAP理论</h2><p>CAP理论又称为布鲁尔定理， 它指出对于一个分布式计算系统来说，不可能同时满足以下三点：</p>
+<ul>
+<li>一致性（Consistency） （等同于所有节点访问同一份最新的数据副本）</li>
+<li>可用性（Availability）（每次请求都能获取到非错的响应——但是不保证获取的数据为最新数据）</li>
+<li>分区容错性（Partition tolerance）（以实际效果而言，分区相当于对通信的时限要求。系统如果不能在时限内达成数据一致性，就意味着发生了分区的情况，必须就当前操作在C和A之间做出选择）</li>
+</ul>
+<h3 id="Consistency-一致性"><a href="#Consistency-一致性" class="headerlink" title="Consistency 一致性"></a>Consistency 一致性</h3><p>一致性指更新操作成功并返回客户端完成后，所有节点在同一时间的数据完全一致，所以说的就是数据一致性</p>
+<p>对于一致性，可以分为从客户端和服务端两个不同的视角。从客户端来看，一致性主要指的是多并发访问时更新过的数据如何获取的问题。从服务端来看，则是更新如何复制分布到整个系统，以保证数据最终一致。</p>
+<p>三种一致性策略:</p>
+<ol>
+<li>对于关系型数据库，要求更新过的数据能被后续的访问都能看到，这是强一致性</li>
+<li>如果能容忍后续的部分或者全部访问不到，则是弱一致性。</li>
+<li>如果经过一段时间后要求能访问到更新后的数据，则是最终一致性</li>
+</ol>
+<p>CAP中说，不可能同时满足的这个一致性指的是强一致性</p>
+<h3 id="Availability-可用性"><a href="#Availability-可用性" class="headerlink" title="Availability 可用性"></a>Availability 可用性</h3><p>可用性指服务一直可用，而且是正常响应时间</p>
+<p>对于一个分布式系统，可用性一般都是通过停机时间来衡量的(常说的是系统的可用性是几个9)</p>
+<h3 id="Partition-Tolerance-分区容错性"><a href="#Partition-Tolerance-分区容错性" class="headerlink" title="Partition Tolerance 分区容错性"></a>Partition Tolerance 分区容错性</h3><p>分区容错性指分布式系统在遇到某节点或网络分区故障的时候，仍然能够对外提供满足一致性和可用性的服务。</p>
+<h3 id="CAP权衡"><a href="#CAP权衡" class="headerlink" title="CAP权衡"></a>CAP权衡</h3><p>在分布式系统中，CAP三者目前是无法同时满足的，所以我们要在不同的业务场景中做不同的权衡</p>
+<h4 id="CA"><a href="#CA" class="headerlink" title="CA"></a>CA</h4><p>这个情况基本上是不会选择的，因为分布式系统下，网络分区是一个必然的选项。如果要舍弃P，那就要舍弃分布式系统， 所以我们一般都是在CP和AP上做选择</p>
+<h4 id="CP"><a href="#CP" class="headerlink" title="CP"></a>CP</h4><p>如果系统选择不要可用性，即容许系统停机或者长时间无响应的话，就可以在CAP三者中保障CP而舍弃A。一个保证了CP而一个舍弃了A的分布式系统，一旦发生网络故障或者消息丢失等情况，就要牺牲用户的体验，等待所有数据全部一致了之后再让用户访问系统。</p>
+<p>设计成CP的系统其实也不少，其中最典型的就是很多分布式数据库，他们都是设计成CP的。在发生极端情况时，优先保证数据的强一致性，代价就是舍弃系统的可用性。如Redis、HBase等，还有分布式系统中常用的Zookeeper也是在CAP三者之中选择优先保证CP的。</p>
+<h4 id="AP"><a href="#AP" class="headerlink" title="AP"></a>AP</h4><p>要高可用并允许分区，则需放弃一致性。一旦网络问题发生，节点之间可能会失去联系。为了保证高可用，需要在用户访问时可以马上得到返回，则每个节点只能用本地数据提供服务，而这样会导致全局数据的不一致性。</p>
+<p>我们这里说的舍弃一致性，其实舍弃的是强一致性，退而求其次保证最终一致性</p>
+<h2 id="BASE理论"><a href="#BASE理论" class="headerlink" title="BASE理论"></a>BASE理论</h2><p>BASE是对CAP中一致性和可用性权衡的结果，其来源于对大规模互联网分布式系统实践的总结，是基于CAP定律逐步演化而来。其核心思想是即使无法做到强一致性，但每个应用都可以根据自身业务特点，才用适当的方式来使系统打到最终一致性。</p>
+<p>BASE理论是Basically Available(基本可用)，Soft State（软状态）和Eventually Consistent（最终一致性）三个短语的缩写。</p>
+<h3 id="基本可用-Basically-Available"><a href="#基本可用-Basically-Available" class="headerlink" title="基本可用 Basically Available"></a>基本可用 Basically Available</h3><p>基本可用指的是，系统出现了不可预知的故障，但还是能用，但相对于正常的系统来说：</p>
+<ol>
+<li>响应时间上的损失， 会比正常响应慢</li>
+<li>功能上的损失，高峰期间，采取一些措施，部分用户会得不到正常完整功能(限流、降级)</li>
+</ol>
+<h3 id="软状态-Soft-State"><a href="#软状态-Soft-State" class="headerlink" title="软状态 Soft State"></a>软状态 Soft State</h3><p>相对于原子性而言，要求多个节点的数据副本都是一致的，这是一种“硬状态”。</p>
+<p>软状态指的是：允许系统中的数据存在中间状态，并认为该状态不影响系统的整体可用性，即允许系统在多个不同节点的数据副本存在数据延时。</p>
+<h3 id="最终一致性-Monotonic-write-consistency"><a href="#最终一致性-Monotonic-write-consistency" class="headerlink" title="最终一致性 Monotonic write consistency"></a>最终一致性 Monotonic write consistency</h3><p>上文的软状态只是一个中间状态，必须要有个时间期限，期限过后，应当保证所有副本保持数据一致性，从而达到最终一致性。这个期限取决于网络延时、系统负载、数据复制方案等</p>
+<h2 id="分布式事务"><a href="#分布式事务" class="headerlink" title="分布式事务"></a>分布式事务</h2><h3 id="2PC-2-Phase-Commitment-Protocol-两段式提交协议"><a href="#2PC-2-Phase-Commitment-Protocol-两段式提交协议" class="headerlink" title="2PC(2 Phase Commitment Protocol) 两段式提交协议"></a>2PC(2 Phase Commitment Protocol) 两段式提交协议</h3><p>2PC协议，分为两个阶段提交一个事务，通过协调者和各个参与者的配合，实现分布式一致性。</p>
+<p>两个阶段指的是:</p>
+<ol>
+<li>第一阶段： 准备阶段</li>
+<li>提交阶段</li>
+</ol>
+<h4 id="XA规范"><a href="#XA规范" class="headerlink" title="XA规范"></a>XA规范</h4><p>XA规范是一个分布式事务处理模型，包括:</p>
+<ul>
+<li>应用程序(AP)</li>
+<li>事务管理器(TM): 交易中间件等</li>
+<li>资源管理器(RM): 关系数据库等</li>
+<li>通信资源管理器(CRM): 消息中间件等</li>
+</ul>
+<p>XA规范定义了交易中间件和数据库之间的接口规范，交易中间件用它来通知数据库事务的开始、结束以及提交、回滚等。而XA接口函数由数据库厂商提供。</p>
+<h4 id="1-准备阶段"><a href="#1-准备阶段" class="headerlink" title="1.准备阶段"></a>1.准备阶段</h4><p>准备阶段分为三个步骤:</p>
+<ol>
+<li>事务询问：协调者向所有的参与者询问，是否准备好了执行事务，并开始等待各参与者的响应</li>
+<li>执行事务：各参与者节点执行事务操作。如果本地事务成功，将Undo和Redo信息记入事务日志中，但不提交；否则，直接返回失败，退出执行。</li>
+<li>各个参与者向协调者反馈事务询问的响应:如果参与者成功执行了事务操作，那么就反馈给协调者 Yes响应，表示事务可以执行提交；如果参与者没有成功执行事务，就返回No给协调者，表示事务不可以执行提交</li>
+</ol>
+<p><img src="/images/arch/2pc.png" alt></p>
+<h4 id="2-提交阶段"><a href="#2-提交阶段" class="headerlink" title="2.提交阶段"></a>2.提交阶段</h4><ol>
+<li>发送提交请求： 协调者向所有参与者发出commit请求。</li>
+<li>事务提交： 参与者收到commit请求后，会正式执行事务提交操作，并在完成提交之后，释放整个事务执行期间占用的事务资源</li>
+<li>反馈事务提交结果： 参与者在完成事务提交之后，向协调者发送Ack信息</li>
+<li>事务提交确认： 协调者接收到所有参与者反馈的Ack信息后，完成事务</li>
+</ol>
+<p><img src="/images/arch/2pc-2.png" alt></p>
+<p>中断事务的流程如下:</p>
+<ol>
+<li>发送回滚请求： 协调者向所有参与者发出Rollback请求</li>
+<li>事务回滚： 参与者接收到Rollback请求后，会利用其在提交阶段种记录的Undo信息，来执行事务回滚操作。在完成回滚之后，释放在整个事务执行期间占用的资源</li>
+<li>反馈事务回滚结果： 参与者在完成事务回滚之后，想协调者发送Ack信息</li>
+<li>事务中断确认： 协调者接收到所有参与者反馈的Ack信息后，完成事务中断。</li>
+</ol>
+<p><img src="/images/arch/2pc-3.png" alt></p>
+<h4 id="两阶段提交的优缺点"><a href="#两阶段提交的优缺点" class="headerlink" title="两阶段提交的优缺点"></a>两阶段提交的优缺点</h4><p>优点： 原理简单，实现方便</p>
+<p>缺点：</p>
+<ul>
+<li>同步阻塞：在第二阶段提交过程中，所有节点都在等其他节点响应，无法进行其他操作，这种同步阻塞限制了分布式系统的性能</li>
+<li>单点问题：协调者如果出现了问题，整个流程就无法进行</li>
+<li>数据不一致：协调者向所有的参与者发送commit请求之后，发生了局部网络异常，或者是协调者在尚未发送完所有 commit请求之前自身发生了崩溃，导致最终只有部分参与者收到了commit请求。这将导致严重的数据不一致问题。</li>
+<li>容错性不好：如果在二阶段提交的提交询问阶段中，参与者出现故障，导致协调者始终无法获取到所有参与者的确认信息，这时协调者只能依靠其自身的超时机制，判断是否需要中断事务。显然，这种策略过于保守。换句话说，二阶段提交协议没有设计较为完善的容错机制，任意一个节点是失败都会导致整个事务的失败。</li>
+</ul>
+<h3 id="3PC"><a href="#3PC" class="headerlink" title="3PC"></a>3PC</h3><p>由于2PC存在的单点、阻塞等问题， 在2PC的基础上做了改进， 提出了三阶段提交， 与两阶段提交不同的是，三阶段提交有两个改动点。</p>
+<ol>
+<li>引入超时机制 - 同时在协调者和参与者中都引入超时机制</li>
+<li>在第一阶段和第二阶段中插入一个准备阶段，保证了在最后提交阶段之前各参与节点的状态是一致的</li>
+</ol>
+<p><img src="/images/arch/3pc.png" alt></p>
+<ol>
+<li>第一阶段： CanCommit(询问阶段)</li>
+<li>第二阶段： PreCommit(预提交，锁定资源)</li>
+<li>第三阶段:  Do Commit(提交)</li>
+</ol>
+<h4 id="1-Can-Commit（询问"><a href="#1-Can-Commit（询问" class="headerlink" title="1. Can Commit（询问)"></a>1. Can Commit（询问)</h4><ol>
+<li>事务询问： 协调者向参与者发送CanCommit请求。询问是否可以执行事务提交操作。然后开始等待参与者的响应。</li>
+<li>响应反馈： 参与者接到CanCommit请求之后，正常情况下，如果其自身认为可以顺利执行事务，则返回Yes响应，并进入预备状态；否则反馈No。</li>
+</ol>
+<h4 id="2-Pre-Commit-预提交"><a href="#2-Pre-Commit-预提交" class="headerlink" title="2. Pre Commit(预提交)"></a>2. Pre Commit(预提交)</h4><ol>
+<li>发送预提交请求：协调者向所有参与者节点发出 preCommit 的请求，并进入 prepared 状态。</li>
+<li>事务预提交： 参与者受到 preCommit 请求后，会执行事务操作，对应 2PC 准备阶段中的 “执行事务”，也会 Undo 和 Redo 信息记录到事务日志中</li>
+<li>参与者反馈： 如果参与者成功执行了事务，就反馈 ACK 响应，同时等待指令：提交（commit） 或终止（abort）。</li>
+</ol>
+<h4 id="3-Do-Commit"><a href="#3-Do-Commit" class="headerlink" title="3. Do Commit"></a>3. Do Commit</h4><ol>
+<li>发送提交请求：协调者接收到各参与者发送的ACK响应，那么他将从预提交状态进入到提交状态。并向所有参与者发送 doCommit 请求。</li>
+<li>事务提交： 参与者接收到 doCommit 请求之后，执行正式的事务提交。并在完成事务提交之后释放所有事务资源。</li>
+<li>响应反馈： 事务提交完之后，向协调者发送 ACK 响应。</li>
+<li>完成事务： 协调者接收到所有参与者的 ACK 响应之后，完成事务</li>
+</ol>
+<p>协调者没有接收到参与者发送的 ACK 响应（可能是接受者发送的不是ACK响应，也可能响应超时），那么就会执行中断事务</p>
+<ol>
+<li>发送中断请求： 协调者向所有参与者发送 abort 请求。</li>
+<li>事务回滚： 参与者接收到 abort 请求之后，利用其在阶段二记录的 undo 信息来执行事务的回滚操作，并在完成回滚之后释放所有的事务资源</li>
+<li>反馈结果： 参与者完成事务回滚之后，向协调者发送 ACK 消息。</li>
+<li>中断事务： 协调者接收到参与者反馈的 ACK 消息之后，完成事务的中断。</li>
+</ol>
+<h3 id="TCC"><a href="#TCC" class="headerlink" title="TCC"></a>TCC</h3><p>TCC相较于XA(2PC或3PC)机制，解决了几个问题：</p>
+<ol>
+<li>解决了协调者单点问题， 由由主业务方发起并完成这个业务活动。业务活动管理器也变成多点，引入集群</li>
+<li>同步阻塞:引入超时，超时后进行补偿，并且不会锁定整个资源，将资源转换为业务逻辑形式，粒度变小</li>
+<li>数据一致性，有了补偿机制之后，由业务活动管理器控制一致性</li>
+</ol>
+<p>一个由两台服务器一起参与的事务，服务器A发起事务，服务器B参与事务。务器A的事务如果执行顺利，那么事务A就先行提交，如果事务B也执行顺利，则事务B也提交，整个事务就算完成。但是如果事务B执行失败，事务B本身回滚，这时事务A已经被提交，所以需要执行一个补偿操作，将已经提交的事务A执行的操作作反操作，恢复到未执行前事务A的状态。</p>
+<p><img src="/images/arch/tcc.png" alt></p>
+<h4 id="TCC过程"><a href="#TCC过程" class="headerlink" title="TCC过程"></a>TCC过程</h4><ul>
+<li>Try: <ul>
+<li>完成所有业务检查(一致性)</li>
+<li>预留必须业务资源(准隔离性，冻结操作) </li>
+</ul>
+</li>
+<li>Confirm<ul>
+<li>真正执行业务</li>
+<li>不作任何业务检查</li>
+<li>只使用Try阶段预留的业务资源 </li>
+<li>Confirm操作要满足幂等性</li>
+</ul>
+</li>
+<li>Cancel:<ul>
+<li>释放Try阶段预留的业务资源</li>
+<li>Cancel操作要满足幂等性</li>
+</ul>
+</li>
+</ul>
+<h4 id="TCC总结"><a href="#TCC总结" class="headerlink" title="TCC总结"></a>TCC总结</h4><p>TCC事务的使用严格依赖业务人员写的代码来回滚和补偿，很复杂， 使用的场景也不是很多。主要是在支付、交易相关的强一致性场景。</p>
+<h3 id="本地消息表"><a href="#本地消息表" class="headerlink" title="本地消息表"></a>本地消息表</h3><p>本地消息表是eBay设计的一种最终一致性的分布式事务处理方案， 适用于不需要强一致性的场景。</p>
+<p><img src="/images/arch/transcation-message-table.png" alt></p>
+<ol>
+<li>A 系统操作自己本地事务的时候，同时插入一个消息到消息表</li>
+<li>接着A系统把这个消息发送到MQ中</li>
+<li>B系统接收到MQ中的消息，先写入B系统的消息表，然后执行事务，事务执行成功后，更新B系统和A消息表的状态。</li>
+<li>A系统会定时扫描自己的消息表，如果有未处理的消息，将再次发送到mq让b系统处理</li>
+</ol>
+<p>这种方案验证依赖于数据的消息表，在高并发场景下则不适用，数据库承受不了这么大的并发量</p>
+<h3 id="可靠消息最终一致性方案-MQ处理"><a href="#可靠消息最终一致性方案-MQ处理" class="headerlink" title="可靠消息最终一致性方案(MQ处理)"></a>可靠消息最终一致性方案(MQ处理)</h3><p>这种方案不需要本地消息表了， 直接基于MQ来实现事务， 例如RocketMQ就支持消息事务</p>
+<p>第一阶段：上游应用执行业务并发送MQ消息</p>
+<p><img src="/images/arch/mq-transcation-1.png" alt></p>
+<ol>
+<li>上游应用发送待确认消息到可靠消息系统</li>
+<li>可靠消息系统保存待确认消息并返回</li>
+<li>上游应用执行本地业务</li>
+<li>上游应用通知可靠消息系统确认业务已执行并发送消息。</li>
+</ol>
+<p>第二阶段：下游应用监听 MQ 消息并执行业务</p>
+<p><img src="/images/arch/mq-transcation-2.png" alt></p>
+<ol>
+<li>下游应用监听 MQ 消息组件并获取消息</li>
+<li>下游应用根据 MQ 消息体信息处理本地业务</li>
+<li>下游应用向 MQ</li>
+<li>确认消息被消费</li>
+<li>下游应用通知可靠消息系统消息被成功消费，可靠消息将该消息状态更改为已完成</li>
+</ol>
+<p>这种方案依赖于一种可靠的消息队列，确保消息被成功消息</p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="https://juejin.im/post/5c9c30535188251e161868ea" target="_blank" rel="noopener">分布式事务框架Fescar</a></li>
+<li><a href="https://juejin.im/post/5b5a0bf9f265da0f6523913b" target="_blank" rel="noopener">分布式事务</a></li>
+<li><a href="https://juejin.im/post/5bf201f7f265da610f63528a" target="_blank" rel="noopener">TCC分布式事务</a></li>
+<li><a href="https://www.ibm.com/developerworks/cn/cloud/library/cl-manage-cloud-transactions_1/index.html" target="_blank" rel="noopener">事务基础与分布式事务</a></li>
+<li><a href="https://juejin.im/post/5b2663fcf265da59a401e6f8" target="_blank" rel="noopener">分布式理论BASE</a></li>
+<li><a href="https://juejin.im/post/5b2664446fb9a00e4a53136e" target="_blank" rel="noopener">2PC协议</a></li>
+<li><a href="https://juejin.im/post/5b26648e5188257494641b9f" target="_blank" rel="noopener">3PC协议</a></li>
+<li><a href="https://my.oschina.net/fileoptions/blog/899991" target="_blank" rel="noopener">TCC型分布式事务原理和实现</a></li>
+<li><a href="https://www.cnblogs.com/linkstar/p/9784243.html" target="_blank" rel="noopener">用MQ来保证分布式事务的最终一致性</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/03/11/大数据/hbase基本使用/" rel="next" title="hbase基本介绍">
+                <i class="fa fa-chevron-left"></i> hbase基本介绍
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/04/01/架构/一致性算法Paxos和Raft/" rel="prev" title="一致性算法(Paxos、Raft、ZAB)">
+                一致性算法(Paxos、Raft、ZAB) <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">勿在浮沙筑高台</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">66</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">23</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#CAP理论"><span class="nav-number">1.</span> <span class="nav-text">CAP理论</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Consistency-一致性"><span class="nav-number">1.1.</span> <span class="nav-text">Consistency 一致性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Availability-可用性"><span class="nav-number">1.2.</span> <span class="nav-text">Availability 可用性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Partition-Tolerance-分区容错性"><span class="nav-number">1.3.</span> <span class="nav-text">Partition Tolerance 分区容错性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CAP权衡"><span class="nav-number">1.4.</span> <span class="nav-text">CAP权衡</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#CA"><span class="nav-number">1.4.1.</span> <span class="nav-text">CA</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#CP"><span class="nav-number">1.4.2.</span> <span class="nav-text">CP</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AP"><span class="nav-number">1.4.3.</span> <span class="nav-text">AP</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#BASE理论"><span class="nav-number">2.</span> <span class="nav-text">BASE理论</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#基本可用-Basically-Available"><span class="nav-number">2.1.</span> <span class="nav-text">基本可用 Basically Available</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#软状态-Soft-State"><span class="nav-number">2.2.</span> <span class="nav-text">软状态 Soft State</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#最终一致性-Monotonic-write-consistency"><span class="nav-number">2.3.</span> <span class="nav-text">最终一致性 Monotonic write consistency</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#分布式事务"><span class="nav-number">3.</span> <span class="nav-text">分布式事务</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2PC-2-Phase-Commitment-Protocol-两段式提交协议"><span class="nav-number">3.1.</span> <span class="nav-text">2PC(2 Phase Commitment Protocol) 两段式提交协议</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#XA规范"><span class="nav-number">3.1.1.</span> <span class="nav-text">XA规范</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-准备阶段"><span class="nav-number">3.1.2.</span> <span class="nav-text">1.准备阶段</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-提交阶段"><span class="nav-number">3.1.3.</span> <span class="nav-text">2.提交阶段</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#两阶段提交的优缺点"><span class="nav-number">3.1.4.</span> <span class="nav-text">两阶段提交的优缺点</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3PC"><span class="nav-number">3.2.</span> <span class="nav-text">3PC</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-Can-Commit（询问"><span class="nav-number">3.2.1.</span> <span class="nav-text">1. Can Commit（询问)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-Pre-Commit-预提交"><span class="nav-number">3.2.2.</span> <span class="nav-text">2. Pre Commit(预提交)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-Do-Commit"><span class="nav-number">3.2.3.</span> <span class="nav-text">3. Do Commit</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#TCC"><span class="nav-number">3.3.</span> <span class="nav-text">TCC</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#TCC过程"><span class="nav-number">3.3.1.</span> <span class="nav-text">TCC过程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#TCC总结"><span class="nav-number">3.3.2.</span> <span class="nav-text">TCC总结</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#本地消息表"><span class="nav-number">3.4.</span> <span class="nav-text">本地消息表</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#可靠消息最终一致性方案-MQ处理"><span class="nav-number">3.5.</span> <span class="nav-text">可靠消息最终一致性方案(MQ处理)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">3.6.</span> <span class="nav-text">参考资料</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/jquery/2.1.3/jquery.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fastclick/1.0.6/fastclick.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.bootcss.com/jquery_lazyload/1.9.7/jquery.lazyload.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.ui.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

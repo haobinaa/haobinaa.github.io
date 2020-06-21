@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+  <link href="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.min.js" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+  
+
+<link href="//cdn.staticfile.org/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="springframework,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="spring中存在三种循环依赖:  构造器循环依赖: 这种情况 spring 无法处理，将抛出BeanCurrentlylnCreationException异常 单例 Bean setter 循环依赖， 通过三级缓存来解决， 这也是本篇博客描述的地方 非单例循环依赖(如 propertype), 无法提前暴露 Bean， 无法解决  spring 单例对象的初始化过程spring 单例对象的实例">
+<meta name="keywords" content="springframework">
+<meta property="og:type" content="article">
+<meta property="og:title" content="spring解决循环依赖">
+<meta property="og:url" content="http://yoursite.com/2019/09/08/spring/spring解决循环依赖/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="spring中存在三种循环依赖:  构造器循环依赖: 这种情况 spring 无法处理，将抛出BeanCurrentlylnCreationException异常 单例 Bean setter 循环依赖， 通过三级缓存来解决， 这也是本篇博客描述的地方 非单例循环依赖(如 propertype), 无法提前暴露 Bean， 无法解决  spring 单例对象的初始化过程spring 单例对象的实例">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2020-06-07T04:32:06.987Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="spring解决循环依赖">
+<meta name="twitter:description" content="spring中存在三种循环依赖:  构造器循环依赖: 这种情况 spring 无法处理，将抛出BeanCurrentlylnCreationException异常 单例 Bean setter 循环依赖， 通过三级缓存来解决， 这也是本篇博客描述的地方 非单例循环依赖(如 propertype), 无法提前暴露 Bean， 无法解决  spring 单例对象的初始化过程spring 单例对象的实例">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2019/09/08/spring/spring解决循环依赖/">
+
+
+
+
+
+  <title>spring解决循环依赖 | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/09/08/spring/spring解决循环依赖/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">spring解决循环依赖</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-09-08T17:20:13+08:00">
+                2019-09-08
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/spring/" itemprop="url" rel="index">
+                    <span itemprop="name">spring</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>spring中存在三种循环依赖:</p>
+<ol>
+<li>构造器循环依赖: 这种情况 spring 无法处理，将抛出<code>BeanCurrentlylnCreationException</code>异常</li>
+<li>单例 Bean setter 循环依赖， 通过三级缓存来解决， 这也是本篇博客描述的地方</li>
+<li>非单例循环依赖(如 propertype), 无法提前暴露 Bean， 无法解决</li>
+</ol>
+<h3 id="spring-单例对象的初始化过程"><a href="#spring-单例对象的初始化过程" class="headerlink" title="spring 单例对象的初始化过程"></a>spring 单例对象的初始化过程</h3><p>spring 单例对象的实例化、初始化过程是在<code>doCreateBean</code>中(之前仅仅是注册好了BeanDefenition)， 大概分为三步:</p>
+<ol>
+<li>createBeanInstance: 实例化， 调用对象的构造方法来实例化对象</li>
+<li>populationBean: 填充对象的属性</li>
+<li>initializeBean: 回调Bean的方法(<code>postProcessBeforeInitialization-&gt;init-&gt;postProcessAfterInitialization</code>)</li>
+</ol>
+<h3 id="构造器循环依赖"><a href="#构造器循环依赖" class="headerlink" title="构造器循环依赖"></a>构造器循环依赖</h3><p><code>this.singletonsCurrentlylnCreation.add(beanName</code> 将当前正要创建的bean 记录在缓存中<br>Spring 容器将每一个正在创建的bean 标识符放在一个”当前创建 bean 池”中,在创建过程中将一直保持在这个池中，因此如果在创建bean 过程中发现自己已经在”当前创建bean 池” 里时，将抛出<code>BeanCurrentlylnCreationException</code>异常表示循环依赖；而对于创建完毕的bean 将从”当前创建bean 池”中清除掉</p>
+<h3 id="setter循环依赖的处理"><a href="#setter循环依赖的处理" class="headerlink" title="setter循环依赖的处理"></a>setter循环依赖的处理</h3><p>spring 使用三级缓存来解决单例 setter 循环依赖：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">private final Map singletonObjects = new ConcurrentHashMap(256);</span><br><span class="line">private final Map&gt; singletonFactories = new HashMap&gt;(16);</span><br><span class="line">private final Map earlySingletonObjects = new HashMap(16);</span><br></pre></td></tr></table></figure></p>
+<ul>
+<li>singletonObjects：完成初始化的单例对象的cache（一级缓存）</li>
+<li>earlySingletonObjects ：完成实例化但是尚未初始化的，提前暴光的单例对象的Cache （二级缓存）</li>
+<li>singletonFactories ： 进入实例化阶段的单例对象工厂的cache （三级缓存）</li>
+</ul>
+<p>我们在创建bean的时候，会首先从cache中获取这个bean，这个缓存就是sigletonObjects。主要的调用方法是：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">protected Object getSingleton(String beanName, boolean allowEarlyReference) &#123;</span><br><span class="line">    Object singletonObject = this.singletonObjects.get(beanName);</span><br><span class="line">    //isSingletonCurrentlyInCreation()判断当前单例bean是否正在创建中</span><br><span class="line">    if (singletonObject == null &amp;&amp; isSingletonCurrentlyInCreation(beanName)) &#123;</span><br><span class="line">        synchronized (this.singletonObjects) &#123;</span><br><span class="line">            // 从二级缓存中获取</span><br><span class="line">            singletonObject = this.earlySingletonObjects.get(beanName);</span><br><span class="line">            // allowEarlyReference 是否允许从singletonFactories中通过getObject拿到对象</span><br><span class="line">            if (singletonObject == null &amp;&amp; allowEarlyReference) &#123;</span><br><span class="line">                ObjectFactory&lt;?&gt; singletonFactory = this.singletonFactories.get(beanName);</span><br><span class="line">                if (singletonFactory != null) &#123;</span><br><span class="line">                    singletonObject = singletonFactory.getObject();</span><br><span class="line">                    //从singletonFactories中移除，并放入earlySingletonObjects中。</span><br><span class="line">                    //其实也就是从三级缓存移动到了二级缓存</span><br><span class="line">                    this.earlySingletonObjects.put(beanName, singletonObject);</span><br><span class="line">                    this.singletonFactories.remove(beanName);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return (singletonObject != NULL_OBJECT ? singletonObject : null);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>结合 <code>doCreateBean</code>中处理循环依赖的代码一起看一下:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">boolean earlySingletonExposure = (mbd.isSingleton() &amp;&amp; this.allowCircularReferences &amp;&amp;</span><br><span class="line">        isSingletonCurrentlyInCreation(beanName));</span><br><span class="line">if (earlySingletonExposure) &#123;</span><br><span class="line">    if (logger.isDebugEnabled()) &#123;</span><br><span class="line">        logger.debug(&quot;Eagerly caching bean &apos;&quot; + beanName +</span><br><span class="line">                &quot;&apos; to allow for resolving potential circular references&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">    addSingletonFactory(beanName, () -&gt; getEarlyBeanReference(beanName, mbd, bean));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// addSingletonFactory</span><br><span class="line">protected void addSingletonFactory(String beanName, ObjectFactory&lt;?&gt; singletonFactory) &#123;</span><br><span class="line">    Assert.notNull(singletonFactory, &quot;Singleton factory must not be null&quot;);</span><br><span class="line">    synchronized (this.singletonObjects) &#123;</span><br><span class="line">        if (!this.singletonObjects.containsKey(beanName)) &#123;</span><br><span class="line">            // 放入singletonFactories</span><br><span class="line">            this.singletonFactories.put(beanName, singletonFactory);</span><br><span class="line">            this.earlySingletonObjects.remove(beanName);</span><br><span class="line">            this.registeredSingletons.add(beanName);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">// bean 可以通过 SmartInstantiationAwareBeanPostProcessor 进行扩展</span><br><span class="line">// 所以采用了三级缓存而不是两级缓存</span><br><span class="line">// 这里参考 https://blog.csdn.net/weixin_42228338/article/details/97163101</span><br><span class="line">protected Object getEarlyBeanReference(String beanName, RootBeanDefinition mbd, Object bean) &#123;</span><br><span class="line">    Object exposedObject = bean;</span><br><span class="line">    if (!mbd.isSynthetic() &amp;&amp; hasInstantiationAwareBeanPostProcessors()) &#123;</span><br><span class="line">        for (BeanPostProcessor bp : getBeanPostProcessors()) &#123;</span><br><span class="line">            if (bp instanceof SmartInstantiationAwareBeanPostProcessor) &#123;</span><br><span class="line">                SmartInstantiationAwareBeanPostProcessor ibp = (SmartInstantiationAwareBeanPostProcessor) bp;</span><br><span class="line">                exposedObject = ibp.getEarlyBeanReference(exposedObject, beanName);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return exposedObject;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p><code>addSingletonFactory</code>这段代码发生在<code>createBeanInstance</code>之后，<code>populateBean</code>之前，也就是说单例对象此时已经被创建出来(调用了构造器)。这个对象已经被生产出来了，此时将这个对象提前曝光出来，让大家使用。</p>
+<p>举例说明一下这样做的用意，假如A依赖了B， B也同时依赖于A:</p>
+<ol>
+<li>A首先完成了初始化的第一步，并且将自己提前曝光到<code>singletonFactories</code>中，此时进行初始化的第二步(populateBean填充属性)，发现自己依赖对象B，此时就尝试去get(B)，发现B还没有被create<br>，所以走create流程</li>
+<li>B在初始化第一步的时候发现自己依赖了对象A，于是尝试get(A)，尝试一级缓存singletonObjects(肯定没有，因为A还没初始化完全)，尝试二级缓存earlySingletonObjects（也没有），尝试三级缓存singletonFactories，由于A通过ObjectFactory将自己提前曝光了，所以B能够通过ObjectFactory.getObject拿到A对象</li>
+<li>B拿到A对象后顺利完成了初始化三个阶段,完全初始化之后将自己放入到一级缓存singletonObjects中。此时返回A中，A此时能拿到B的对象顺利完成自己的初始化阶段2、3，最终A也完成了初始化，进去了一级缓存singletonObjects中</li>
+</ol>
+<p>这样就是整个解决 setter 循环依赖的过程</p>
+<h3 id="propertype-类型的Bean无法解决循环引用"><a href="#propertype-类型的Bean无法解决循环引用" class="headerlink" title="propertype 类型的Bean无法解决循环引用"></a>propertype 类型的Bean无法解决循环引用</h3><p>代码也在创建bean的时候体现:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">// 创建过了此 beanName 的 prototype 类型的 bean，那么抛异常</span><br><span class="line">if (isPrototypeCurrentlyInCreation(beanName)) &#123;</span><br><span class="line">    throw new BeanCurrentlyInCreationException(beanName);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/springframework/" rel="tag"><i class="fa fa-tag"></i> springframework</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/09/02/mysql/mysql事务隔离级别与MVCC/" rel="next" title="mysql事务隔离级别与MVCC">
+                <i class="fa fa-chevron-left"></i> mysql事务隔离级别与MVCC
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/09/11/架构/幂等和防重/" rel="prev" title="幂等和防重">
+                幂等和防重 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">勿在浮沙筑高台</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">66</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">23</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#spring-单例对象的初始化过程"><span class="nav-number">1.</span> <span class="nav-text">spring 单例对象的初始化过程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#构造器循环依赖"><span class="nav-number">2.</span> <span class="nav-text">构造器循环依赖</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#setter循环依赖的处理"><span class="nav-number">3.</span> <span class="nav-text">setter循环依赖的处理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#propertype-类型的Bean无法解决循环引用"><span class="nav-number">4.</span> <span class="nav-text">propertype 类型的Bean无法解决循环引用</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/jquery/2.1.3/jquery.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fastclick/1.0.6/fastclick.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.bootcss.com/jquery_lazyload/1.9.7/jquery.lazyload.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.ui.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

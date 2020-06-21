@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+  <link href="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.min.js" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+  
+
+<link href="//cdn.staticfile.org/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="hystrix,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="简介在分布式架构中，一个应用依赖多个服务是非常常见的，如果其中一个依赖由于延迟过高发生阻塞，调用该依赖服务的线程就会阻塞，如果相关业务的QPS较高，就可能产生大量阻塞，从而导致该应用/服务由于服务器资源被耗尽而拖垮。 另外，故障也会在应用之间传递，如果故障服务的上游依赖较多，可能会引起服务的雪崩效应。就跟数据瘫痪，会引起依赖该数据库的应用瘫痪是一个道理。 hystrix 是 netflix 开发的">
+<meta name="keywords" content="hystrix">
+<meta property="og:type" content="article">
+<meta property="og:title" content="hystrix原理应用">
+<meta property="og:url" content="http://yoursite.com/2020/06/07/hystrix原理应用/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="简介在分布式架构中，一个应用依赖多个服务是非常常见的，如果其中一个依赖由于延迟过高发生阻塞，调用该依赖服务的线程就会阻塞，如果相关业务的QPS较高，就可能产生大量阻塞，从而导致该应用/服务由于服务器资源被耗尽而拖垮。 另外，故障也会在应用之间传递，如果故障服务的上游依赖较多，可能会引起服务的雪崩效应。就跟数据瘫痪，会引起依赖该数据库的应用瘫痪是一个道理。 hystrix 是 netflix 开发的">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/images/spring-cloud/hystrix-work-flow.png">
+<meta property="og:image" content="http://yoursite.com/images/spring-cloud/hystrix-circuit.png">
+<meta property="og:image" content="http://yoursite.com/images/spring-cloud/hystrix-break.png">
+<meta property="og:updated_time" content="2020-06-21T09:52:13.139Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="hystrix原理应用">
+<meta name="twitter:description" content="简介在分布式架构中，一个应用依赖多个服务是非常常见的，如果其中一个依赖由于延迟过高发生阻塞，调用该依赖服务的线程就会阻塞，如果相关业务的QPS较高，就可能产生大量阻塞，从而导致该应用/服务由于服务器资源被耗尽而拖垮。 另外，故障也会在应用之间传递，如果故障服务的上游依赖较多，可能会引起服务的雪崩效应。就跟数据瘫痪，会引起依赖该数据库的应用瘫痪是一个道理。 hystrix 是 netflix 开发的">
+<meta name="twitter:image" content="http://yoursite.com/images/spring-cloud/hystrix-work-flow.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2020/06/07/hystrix原理应用/">
+
+
+
+
+
+  <title>hystrix原理应用 | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/07/hystrix原理应用/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">hystrix原理应用</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-06-07T21:17:16+08:00">
+                2020-06-07
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/架构/" itemprop="url" rel="index">
+                    <span itemprop="name">架构</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h3><p>在分布式架构中，一个应用依赖多个服务是非常常见的，如果其中一个依赖由于延迟过高发生阻塞，调用该依赖服务的线程就会阻塞，如果相关业务的QPS较高，就可能产生大量阻塞，从而导致该应用/服务由于服务器资源被耗尽而拖垮。</p>
+<p>另外，故障也会在应用之间传递，如果故障服务的上游依赖较多，可能会引起服务的雪崩效应。就跟数据瘫痪，会引起依赖该数据库的应用瘫痪是一个道理。</p>
+<p>hystrix 是 netflix 开发的在 <code>SOA/微服务架构</code> 中提供服务隔离、熔断、降级机,制的工具/框架，用于保障微服务架构中的高可用。</p>
+<h4 id="hystrix-设计的目标与原则"><a href="#hystrix-设计的目标与原则" class="headerlink" title="hystrix 设计的目标与原则"></a>hystrix 设计的目标与原则</h4><p>设计目标：</p>
+<ol>
+<li>对来自依赖的延迟和故障进行防护和控制——这些依赖通常都是通过网络访问的。</li>
+<li>阻止故障的连锁反应。</li>
+<li>快速失败并迅速恢复。</li>
+<li>回退并优雅降级。</li>
+<li>提供近实时的监控与告警</li>
+</ol>
+<p>设计原则：</p>
+<ol>
+<li>防止任何单独的依赖耗尽资源（线程）</li>
+<li>过载立即切断并快速失败，防止排队</li>
+<li>尽可能提供回退以保护用户免受故障</li>
+<li>使用隔离技术（例如线程池、信号量和熔断器模式）来限制任何一个依赖的影响</li>
+<li>通过近实时的指标，监控和告警，确保故障被及时发现</li>
+<li>通过动态修改配置属性，确保故障及时恢复</li>
+<li>防止整个依赖客户端执行失败，而不仅仅是网络通信</li>
+</ol>
+<h4 id="hystrix-防止雪崩的实现方式"><a href="#hystrix-防止雪崩的实现方式" class="headerlink" title="hystrix 防止雪崩的实现方式"></a>hystrix 防止雪崩的实现方式</h4><ol>
+<li>使用命令模式将所有对外部服务（或依赖关系）的调用包装在HystrixCommand或HystrixObservableCommand对象中，并将该对象放在单独的线程中执行；</li>
+<li>每个依赖都维护着一个线程池（或信号量），线程池被耗尽则拒绝请求（而不是让请求排队）。即线程隔离。</li>
+<li>记录请求成功，失败，超时和线程拒绝。</li>
+<li>服务错误百分比超过了阈值，熔断器开关自动打开，一段时间内停止对该服务的所有请求。</li>
+<li>请求失败，被拒绝，超时或熔断时执行降级逻辑。</li>
+<li>近实时地监控指标和配置的修改。</li>
+</ol>
+<h3 id="hystrix-运行机制"><a href="#hystrix-运行机制" class="headerlink" title="hystrix 运行机制"></a>hystrix 运行机制</h3><h4 id="工作流程"><a href="#工作流程" class="headerlink" title="工作流程"></a>工作流程</h4><p>hystrix 工作流程流程:</p>
+<p><img src="/images/spring-cloud/hystrix-work-flow.png" alt></p>
+<ol>
+<li><p>创建 <code>HystrixCommand</code> 或者 <code>HystrixObservableCommand</code> 对象</p>
+</li>
+<li><p>执行命令execute()、queue()、observe()、toObservable()</p>
+<ul>
+<li><code>execute</code>: 阻塞方法， 从依赖请求中接收单个响应或出错抛出异常</li>
+<li><code>queue</code>: 从依赖请求中返回一个包含单个响应的 <code>Future</code> 对象</li>
+<li><code>observe</code>: 订阅一个从依赖请求中返回的代表响应的 <code>Observable</code> 对象</li>
+<li><code>toObservalbe</code>: 返回一个 <code>Observable</code> 对象，只有当你订阅它时，它才会执行Hystrix命令并发射响应</li>
+<li>需要注意的是： 同步调用方法<code>execute()</code>实际上就是调用<code>queue().get()</code>，<code>queue()</code>调用的是<code>toObservable().toBlocking().toFuture()</code>.也就是说，最终每一个 HystrixCommand 都是通过 <code>Observable</code> 来实现的，即使这些命令仅仅是返回一个简单的值</li>
+</ul>
+</li>
+<li><p>如果请求结果缓存这个特性被启用，并且缓存命中，则缓存的回应会立即通过一个 <code>Observable</code> 对象的形式返回</p>
+</li>
+<li><p>检查回路是否打开，如果被打开(tripped)，Hystrix 将不会执行这个命令，而是直接执行 <code>getFallback</code></p>
+</li>
+<li><p>如果线程池、信号量、队列已满，Hystrix 将不会执行这个命令，而是直接执行 <code>getFallback</code></p>
+</li>
+<li><p>执行 <code>HystrixCommand.run()</code> 或 <code>HystrixObservableCommand.construct()</code>，如果这两个方法执行超时或者执行失败，则执行getFallback()</p>
+<ul>
+<li><code>HystrixCommand.run()</code> 返回单个响应或者抛出异常</li>
+<li><code>HystrixObservableCommand.construct()</code> 返回一个发射响应的<code>Observable</code>或者发送一个 <code>onError</code> 的通知</li>
+<li>如果执行run()方法或者construct方法的执行时间大于命令所设置的超时时间值，那么该线程将会抛出一个<code>TimeoutException</code>异并执行 <code>fallback</code>,并且如果run()或者construct()方法没有被取消或者中断，会丢弃这两个方法最终返回的结果。(注意：没有任何方式可以强制终止一个潜在线程[latent thread]的运行，Hystrix能够做的最好的方式是让JVM抛出一个InterruptedException异常.如果你的任务被Hystrix所包装，并不意味着会抛出一个<code>InterruptedExceptions</code>异常，该线程在Hystrix的线程池内会进行执行，虽然在客户端已经接收到了<code>TimeoutException</code>异常.)</li>
+</ul>
+</li>
+<li><p>Hystrix 会将请求成功，失败，被拒绝或超时信息报告给熔断器，熔断器维护一些用于统计数据用的计数器。</p>
+<ul>
+<li>Hystrix会报告成功、失败、拒绝和超时的指标给回路器，回路器包含了一系列的滑动窗口数据，并通过该数据进行统计。</li>
+<li>它使用这些统计数据来决定回路器是否应该熔断，如果需要熔断，将在一定的时间内不在请求依赖[短路请求]（这个一定的时间可以通过配置指定），当再一次检查请求的健康的话会重新关闭回路器。</li>
+</ul>
+</li>
+</ol>
+<h4 id="几个组件的描述"><a href="#几个组件的描述" class="headerlink" title="几个组件的描述"></a>几个组件的描述</h4><h5 id="熔断器-HystrixCircuitBreaker"><a href="#熔断器-HystrixCircuitBreaker" class="headerlink" title="熔断器(HystrixCircuitBreaker)"></a>熔断器(HystrixCircuitBreaker)</h5><p><code>HystrixCircuitBreaker</code>工作流程:</p>
+<p><img src="/images/spring-cloud/hystrix-circuit.png" alt></p>
+<ol>
+<li>调用 <code>allowRequest()</code> 判断是否允许将请求提交到线程池<br> 1) 如果熔断器强制打开(<code>circuitBreaker.forceOpen</code> 为 true)， 不允许放行， 返回<br> 2) 如果熔断器强制关闭(<code>circuitBreaker.forceClosed</code> 为 true)，允许放行。这种情况下不必关注熔断器实际状态，也就是说熔断器仍然会维护统计数据和开关状态，只是不生效</li>
+<li>调用 <code>isOpen()</code> 判断熔断器开关是否打开<br> 1) 如果开关打开， 则进入第三步， 否则继续流程<br> 2) 如果一个周期内总请求数小于 <code>circuitBreaker.requestVolumeThreshold</code>， 允许请求放行， 否则继续判断<br> 3) 如果一个周期错误率小于 <code>circuitBreaker.errorThresholdPercentage</code>， 允许放行。否则打开熔断器开关，进入第三步</li>
+<li>调用 <code>allowSingleTest()</code> 判断是否允许单个请求通行， 检查依赖服务是否恢复<br> 1）如果熔断器打开， 且距离熔断器打开的时间或上一次试探请求放行的时间超过<code>circuitBreaker.sleepWindowInMilliseconds</code>的值时，熔断器器进入半开状态，允许放行一个试探请求；否则，不允许放行<br> 2）为了提供决策依据，每个熔断器默认维护了10个bucket，每秒一个bucket，当新的bucket被创建时，最旧的bucket会被抛弃。其中每个blucket维护了请求成功、失败、超时、拒绝的计数器，Hystrix负责收集并统计这些计数器<br> 3） <code>服务的健康状况 = 请求失败数 / 请求总数</code>, 熔断器开关由关闭到打开的状态转换是通过当前服务健康状况和设定阈值比较决定的。熔断器的开关能保证服务调用者在调用异常服务时，快速返回结果，避免大量的同步等待。并且熔断器能在一段时间后继续侦测请求执行结果, 提供恢复服务调用的可能</li>
+</ol>
+<p>熔断器开关转换过程图:</p>
+<p><img src="/images/spring-cloud/hystrix-break.png" alt></p>
+<h5 id="资源隔离"><a href="#资源隔离" class="headerlink" title="资源隔离"></a>资源隔离</h5><p>Hystrix通过将每个依赖服务分配独立的线程池进行资源隔离, 从而避免服务雪崩。</p>
+<p>客户端(第三方包，网络调用等)会在单独的线程里面执行(把逻辑包装成 Command)， 会与调用该任务的线程进行隔离， 以此防止调用者依赖的服务消耗时间</p>
+<p>通过单独线程池隔离隔离调用的优点:</p>
+<ol>
+<li>不受失控的客户端的影响， 即使某一个依赖的线程池满了也不会影响其他依赖的调用</li>
+<li>降低了接收客户端数据的风险，如果发生问题，它会与出问题的客户端所隔离， 不会影响其他依赖的内容</li>
+<li>如果一个客户端库的配置错误，线程池可以很快的感知这一错误（通过增加错误比例，延迟，超时，拒绝等），并可以在不影响应用程序的功能情况下来处理这些问题（可以通过动态配置来进行实时的改变）</li>
+<li>如果一个客户端服务的性能变差，可以通过改变线程池的指标（错误、延迟、超时、拒绝）来进行属性的调整，并且这些调整可以不影响其他的客户端请求</li>
+</ol>
+<p>线程池的缺点:</p>
+<ol>
+<li>增加了CPU的开销，每个命令都在单独的线程池上执行，这种涉及到命令的排队、调度和上下文切换</li>
+<li>一般情况下线程池的引入开销小，不会造成重大的性能影响。但是访问一些延迟比较低的服务(如只依赖内存的服务)，引入线程池就开销比较大了。这个时候可以考虑更加轻量级的实现，如信号量隔离</li>
+</ol>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="https://github.com/Netflix/Hystrix/wiki" target="_blank" rel="noopener">官网</a></li>
+<li><a href="https://www.cnblogs.com/aiqiqi/p/11405783.html" target="_blank" rel="noopener">hystrix 原理以及应用</a></li>
+<li><a href="https://www.cnblogs.com/rickiyang/p/11853315.html" target="_blank" rel="noopener">spring cloud hystrix 基本原理</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/hystrix/" rel="tag"><i class="fa fa-tag"></i> hystrix</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/03/30/限流算法/" rel="next" title="限流算法(Guava RateLimiter)">
+                <i class="fa fa-chevron-left"></i> 限流算法(Guava RateLimiter)
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/06/21/hystrix源码分析/" rel="prev" title="hystrix源码分析">
+                hystrix源码分析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">勿在浮沙筑高台</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">66</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">23</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#简介"><span class="nav-number">1.</span> <span class="nav-text">简介</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#hystrix-设计的目标与原则"><span class="nav-number">1.1.</span> <span class="nav-text">hystrix 设计的目标与原则</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#hystrix-防止雪崩的实现方式"><span class="nav-number">1.2.</span> <span class="nav-text">hystrix 防止雪崩的实现方式</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#hystrix-运行机制"><span class="nav-number">2.</span> <span class="nav-text">hystrix 运行机制</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#工作流程"><span class="nav-number">2.1.</span> <span class="nav-text">工作流程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#几个组件的描述"><span class="nav-number">2.2.</span> <span class="nav-text">几个组件的描述</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#熔断器-HystrixCircuitBreaker"><span class="nav-number">2.2.1.</span> <span class="nav-text">熔断器(HystrixCircuitBreaker)</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#资源隔离"><span class="nav-number">2.2.2.</span> <span class="nav-text">资源隔离</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">3.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/jquery/2.1.3/jquery.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fastclick/1.0.6/fastclick.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.bootcss.com/jquery_lazyload/1.9.7/jquery.lazyload.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.ui.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

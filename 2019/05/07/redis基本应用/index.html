@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+  <link href="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.min.js" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+  
+
+<link href="//cdn.staticfile.org/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="redis,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="redis中基本数据结构redis包含五种数据结构： string,list,hash,set,zset 容器类型通用规则list/set/hash/zset 这四种数据结构是容器型数据结构，它们共享下面两条通用规则：  create if not exists  如果容器不存在，那就创建一个，再进行操作。  drop if no elements  如果容器里元素没有了，那么立即删除元素，释放内">
+<meta name="keywords" content="redis">
+<meta property="og:type" content="article">
+<meta property="og:title" content="redis基本应用">
+<meta property="og:url" content="http://yoursite.com/2019/05/07/redis基本应用/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="redis中基本数据结构redis包含五种数据结构： string,list,hash,set,zset 容器类型通用规则list/set/hash/zset 这四种数据结构是容器型数据结构，它们共享下面两条通用规则：  create if not exists  如果容器不存在，那就创建一个，再进行操作。  drop if no elements  如果容器里元素没有了，那么立即删除元素，释放内">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/images/redis/bloomfilter.png">
+<meta property="og:updated_time" content="2020-06-07T04:32:06.985Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="redis基本应用">
+<meta name="twitter:description" content="redis中基本数据结构redis包含五种数据结构： string,list,hash,set,zset 容器类型通用规则list/set/hash/zset 这四种数据结构是容器型数据结构，它们共享下面两条通用规则：  create if not exists  如果容器不存在，那就创建一个，再进行操作。  drop if no elements  如果容器里元素没有了，那么立即删除元素，释放内">
+<meta name="twitter:image" content="http://yoursite.com/images/redis/bloomfilter.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2019/05/07/redis基本应用/">
+
+
+
+
+
+  <title>redis基本应用 | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/05/07/redis基本应用/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">redis基本应用</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-05-07T11:48:16+08:00">
+                2019-05-07
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/中间件/" itemprop="url" rel="index">
+                    <span itemprop="name">中间件</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="redis中基本数据结构"><a href="#redis中基本数据结构" class="headerlink" title="redis中基本数据结构"></a>redis中基本数据结构</h3><p>redis包含五种数据结构： string,list,hash,set,zset</p>
+<h4 id="容器类型通用规则"><a href="#容器类型通用规则" class="headerlink" title="容器类型通用规则"></a>容器类型通用规则</h4><p>list/set/hash/zset 这四种数据结构是容器型数据结构，它们共享下面两条通用规则：</p>
+<ol>
+<li>create if not exists</li>
+</ol>
+<p>如果容器不存在，那就创建一个，再进行操作。</p>
+<ol start="2">
+<li>drop if no elements</li>
+</ol>
+<p>如果容器里元素没有了，那么立即删除元素，释放内存。</p>
+<h3 id="分布式锁"><a href="#分布式锁" class="headerlink" title="分布式锁"></a>分布式锁</h3><h4 id="setnx-基本使用"><a href="#setnx-基本使用" class="headerlink" title="setnx 基本使用"></a>setnx 基本使用</h4><p>redis提供<code>setnx</code>(set if not exist)指令来使用分布式锁功能：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">// lock: 后是一个普通字符串，锁的标识</span><br><span class="line">&gt; setnx lock:lock-something true</span><br><span class="line">OK</span><br><span class="line"></span><br><span class="line">// 业务逻辑</span><br><span class="line">... do something critical ...</span><br><span class="line"></span><br><span class="line">// 释放锁</span><br><span class="line">&gt; del lock:lock-something</span><br><span class="line">(integer) 1</span><br></pre></td></tr></table></figure></p>
+<p>为了防止业务逻辑的执行过程中出现异常，导致锁一直得不到释放，就会造成死锁。redis提供了锁的过期时间，到期后锁会自动释放：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&gt; set lock:lock-something true ex 5 nx</span><br><span class="line">OK</span><br><span class="line">// 业务逻辑</span><br><span class="line">... do something critical ...</span><br><span class="line">&gt; del lock:lock-something</span><br></pre></td></tr></table></figure>
+<h4 id="超时问题"><a href="#超时问题" class="headerlink" title="超时问题"></a>超时问题</h4><p>Redis 的分布式锁不能解决超时问题，如果在加锁和释放锁之间的逻辑执行的太长，以至于超出了锁的超时限制，就会出现问题。因为这时候第一个线程持有的锁过期了，临界区的逻辑还没有执行完，这个时候第二个线程就提前重新持有了这把锁，导致临界区代码不能得到严格的串行执行。</p>
+<p>所以redis分布式锁尽量不要用于长时间的任务，用来避免超时问题。如果出现了数据小范围的错乱，就需要人工介入来解决来。</p>
+<h4 id="可重入性"><a href="#可重入性" class="headerlink" title="可重入性"></a>可重入性</h4><p>可重入性是指线程在持有锁的情况下再次请求加锁，如果一个锁支持同一个线程的多次加锁，那么这个锁就是可重入的。类似<code>ReentrantLock</code>,redis要支持可重入锁需要对客户端set方法包装，使线程ThreadLocal变量存储当前锁对计数，Java实现如下:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><span class="line">public class RedisWithReentrantLock &#123;</span><br><span class="line"></span><br><span class="line">  private ThreadLocal&lt;Map&lt;String, Integer&gt;&gt; lockers = new ThreadLocal&lt;&gt;();</span><br><span class="line"></span><br><span class="line">  private Jedis jedis;</span><br><span class="line"></span><br><span class="line">  public RedisWithReentrantLock(Jedis jedis) &#123;</span><br><span class="line">    this.jedis = jedis;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  private boolean _lock(String key) &#123;</span><br><span class="line">    return jedis.set(key, &quot;&quot;, &quot;nx&quot;, &quot;ex&quot;, 5L) != null;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  private void _unlock(String key) &#123;</span><br><span class="line">    jedis.del(key);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  private Map&lt;String, Integer&gt; currentLockers() &#123;</span><br><span class="line">    Map&lt;String, Integer&gt; refs = lockers.get();</span><br><span class="line">    if (refs != null) &#123;</span><br><span class="line">      return refs;</span><br><span class="line">    &#125;</span><br><span class="line">    lockers.set(new HashMap&lt;&gt;());</span><br><span class="line">    return lockers.get();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public boolean lock(String key) &#123;</span><br><span class="line">    Map&lt;String, Integer&gt; refs = currentLockers();</span><br><span class="line">    Integer refCnt = refs.get(key);</span><br><span class="line">    if (refCnt != null) &#123;</span><br><span class="line">      refs.put(key, refCnt + 1);</span><br><span class="line">      return true;</span><br><span class="line">    &#125;</span><br><span class="line">    boolean ok = this._lock(key);</span><br><span class="line">    if (!ok) &#123;</span><br><span class="line">      return false;</span><br><span class="line">    &#125;</span><br><span class="line">    refs.put(key, 1);</span><br><span class="line">    return true;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public boolean unlock(String key) &#123;</span><br><span class="line">    Map&lt;String, Integer&gt; refs = currentLockers();</span><br><span class="line">    Integer refCnt = refs.get(key);</span><br><span class="line">    if (refCnt == null) &#123;</span><br><span class="line">      return false;</span><br><span class="line">    &#125;</span><br><span class="line">    refCnt -= 1;</span><br><span class="line">    if (refCnt &gt; 0) &#123;</span><br><span class="line">      refs.put(key, refCnt);</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">      refs.remove(key);</span><br><span class="line">      this._unlock(key);</span><br><span class="line">    &#125;</span><br><span class="line">    return true;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public static void main(String[] args) &#123;</span><br><span class="line">    Jedis jedis = new Jedis();</span><br><span class="line">    RedisWithReentrantLock redis = new RedisWithReentrantLock(jedis);</span><br><span class="line">    System.out.println(redis.lock(&quot;codehole&quot;));</span><br><span class="line">    System.out.println(redis.lock(&quot;codehole&quot;));</span><br><span class="line">    System.out.println(redis.unlock(&quot;codehole&quot;));</span><br><span class="line">    System.out.println(redis.unlock(&quot;codehole&quot;));</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="延时队列"><a href="#延时队列" class="headerlink" title="延时队列"></a>延时队列</h3><p>Redis 的 <code>list</code> 数据结构常用来作为异步消息队列使用，使用rpush/lpush操作入队，使用lpop 和 rpop 来出队， 这种消息队列没有专业消息中间价的高级特性，比如ack保证，所以不太适用于消息可靠性要求高的场景。</p>
+<h4 id="队列的延时"><a href="#队列的延时" class="headerlink" title="队列的延时"></a>队列的延时</h4><p>客户端使用pop来获取消息，但是如果队列空了，客户端就会陷入 pop 的死循环，不停地 pop。这样不但拉高了客户端的 CPU，redis 的 QPS 也会被拉高，如果这样空轮询的客户端有几十来个，Redis 的慢查询可能会显著增多。可以用sleep来解决这个问题，让线程停一会儿，这样客户端的cpu和redis的qps都会下降下来。</p>
+<p>用睡眠的办法可以解决问题。但是有个小问题，那就是睡眠会导致消息的延迟增大。如果只有 1 个消费者，那么这个延迟就是 1s。如果有多个消费者，这个延迟会有所下降，因为每个消费者的睡觉时间是岔开来的。</p>
+<p>更好的解决方法是<code>blpop/brpop</code>，b代表着blocking，也就是阻塞读。阻塞读在队列没有数据的时候，会立即进入休眠状态，一旦数据到来，则立刻醒过来。消息的延迟几乎为零。用<code>blpop/brpop</code>替代前面的<code>lpop/rpop</code>，就完美解决了上面的问题</p>
+<p>但是使用阻塞读会导致空闲断开的问题，如果线程一直阻塞在哪里，Redis 的客户端连接就成了闲置连接，闲置过久，服务器一般会主动断开连接，减少闲置资源占用。这个时候<code>blpop/brpop</code>会抛出异常来。</p>
+<p>所以编写客户端消费者的时候要小心，注意捕获异常，还要重试。</p>
+<h4 id="延时队列的实现"><a href="#延时队列的实现" class="headerlink" title="延时队列的实现"></a>延时队列的实现</h4><p>处理异步消息的时候，需要使用延时队列。</p>
+<p>redis中延时队列可以用zset实现，将消息序列化成一个字符串作为 zset 的value，这个消息的到期处理时间作为score，然后用多个线程轮询 zset 获取到期的任务进行处理，多个线程是为了保障可用性，万一挂了一个线程还有其它线程可以继续处理。因为有多个线程，所以需要考虑并发争抢任务，确保任务不能被多次执行。</p>
+<p>Redis 的 zrem 方法是多线程多进程争抢任务的关键，它的返回值决定了当前实例有没有抢到任务，因为 loop 方法可能会被多个线程、多个进程调用，同一个任务可能会被多个进程线程抢到，通过 zrem 来决定唯一的属主。java的实现如下:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br></pre></td><td class="code"><pre><span class="line">public class RedisDelayingQueue&lt;T&gt; &#123;</span><br><span class="line"></span><br><span class="line">  static class TaskItem&lt;T&gt; &#123;</span><br><span class="line">    public String id;</span><br><span class="line">    public T msg;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  // fastjson 序列化对象中存在 generic 类型时，需要使用 TypeReference</span><br><span class="line">  private Type TaskType = new TypeReference&lt;TaskItem&lt;T&gt;&gt;() &#123;</span><br><span class="line">  &#125;.getType();</span><br><span class="line"></span><br><span class="line">  private Jedis jedis;</span><br><span class="line">  private String queueKey;</span><br><span class="line"></span><br><span class="line">  public RedisDelayingQueue(Jedis jedis, String queueKey) &#123;</span><br><span class="line">    this.jedis = jedis;</span><br><span class="line">    this.queueKey = queueKey;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public void delay(T msg) &#123;</span><br><span class="line">    TaskItem&lt;T&gt; task = new TaskItem&lt;T&gt;();</span><br><span class="line">    task.id = UUID.randomUUID().toString(); // 分配唯一的 uuid</span><br><span class="line">    task.msg = msg;</span><br><span class="line">    String s = JSON.toJSONString(task); // fastjson 序列化</span><br><span class="line">    jedis.zadd(queueKey, System.currentTimeMillis() + 5000, s); // 塞入延时队列 ,5s 后再试</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public void loop() &#123;</span><br><span class="line">    while (!Thread.interrupted()) &#123;</span><br><span class="line">      // 只取一条</span><br><span class="line">      Set&lt;String&gt; values = jedis.zrangeByScore(queueKey, 0, System.currentTimeMillis(), 0, 1);</span><br><span class="line">      if (values.isEmpty()) &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">          Thread.sleep(500); // 歇会继续</span><br><span class="line">        &#125; catch (InterruptedException e) &#123;</span><br><span class="line">          break;</span><br><span class="line">        &#125;</span><br><span class="line">        continue;</span><br><span class="line">      &#125;</span><br><span class="line">      String s = values.iterator().next();</span><br><span class="line">      if (jedis.zrem(queueKey, s) &gt; 0) &#123; // 抢到了</span><br><span class="line">        TaskItem&lt;T&gt; task = JSON.parseObject(s, TaskType); // fastjson 反序列化</span><br><span class="line">        this.handleMsg(task.msg);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public void handleMsg(T msg) &#123;</span><br><span class="line">    System.out.println(msg);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public static void main(String[] args) &#123;</span><br><span class="line">    Jedis jedis = new Jedis();</span><br><span class="line">    RedisDelayingQueue&lt;String&gt; queue = new RedisDelayingQueue&lt;&gt;(jedis, &quot;q-demo&quot;);</span><br><span class="line">    Thread producer = new Thread() &#123;</span><br><span class="line"></span><br><span class="line">      public void run() &#123;</span><br><span class="line">        for (int i = 0; i &lt; 10; i++) &#123;</span><br><span class="line">          queue.delay(&quot;codehole&quot; + i);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">    &#125;;</span><br><span class="line">    Thread consumer = new Thread() &#123;</span><br><span class="line"></span><br><span class="line">      public void run() &#123;</span><br><span class="line">        queue.loop();</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">    &#125;;</span><br><span class="line">    producer.start();</span><br><span class="line">    consumer.start();</span><br><span class="line">    try &#123;</span><br><span class="line">      producer.join();</span><br><span class="line">      Thread.sleep(6000);</span><br><span class="line">      consumer.interrupt();</span><br><span class="line">      consumer.join();</span><br><span class="line">    &#125; catch (InterruptedException e) &#123;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="位图-bitmap"><a href="#位图-bitmap" class="headerlink" title="位图(bitmap)"></a>位图(bitmap)</h3><p>位图（Bitmap）是通过一个 bit 来表示某个元素对应的值或者状态。它并不是什么新的数据结构。它的内容其实就是普通的字符串。我们可以通过 get/set 获取位图的内容，也可以使用<br><code>getbit/setbit</code> 操作 bit 值（0 或者 1）</p>
+<h4 id="bitmap使用"><a href="#bitmap使用" class="headerlink" title="bitmap使用"></a>bitmap使用</h4><ol>
+<li><p>setbit 对某个key的某位赋值。 返回原来存储的位</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">redis&gt; setbit bit-key 106 1</span><br><span class="line">(integer) 0</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>getbit 获取某key某位的值， 返回某位的值，当offset长于key长度或key不存在返回0</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">redis&gt; setbit bit-key 106 1</span><br><span class="line">(integer) 0</span><br><span class="line"></span><br><span class="line">redis&gt; getbit bit-key 106</span><br><span class="line">(integer) 1</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>bitop 对多个键进行位操作。 op值得是operation。</p>
+</li>
+</ol>
+<p>用法：<code>bitop operation destkey key1 key2 [key ...]</code></p>
+<ul>
+<li>destkey: 运算结果保存当值</li>
+<li>operation: and,or,not,xor(异或)</li>
+</ul>
+<ol start="4">
+<li>bitcount 计算给定字符串上，位为1的个数。 返回位为1的数量</li>
+</ol>
+<p>用法： <code>bitcount key [start] [end]</code></p>
+<ol start="5">
+<li><p>bittop 获取某个键第一位被设置为 0 或 1 位的位置。</p>
+</li>
+<li><p>魔术指令,bitfield 。一次对多个位范围进行操作。bitfield 有三个子指令，分别是 get/set/incrby。每个指令都可以对指定片段做操作</p>
+</li>
+</ol>
+<p>用法：<code>bitfield key [GET type offset] [SET type offset value] [INCRBY type offset increment] [OVERFLOW WRAP|SAT|FAIL]</code></p>
+<p>返回值：返回一个数组作为回复， 数组中的每个元素就是对应操作的执行结果</p>
+<h4 id="bitmap应用场景示例"><a href="#bitmap应用场景示例" class="headerlink" title="bitmap应用场景示例"></a>bitmap应用场景示例</h4><ol>
+<li>统计用户上线次数</li>
+</ol>
+<p>每当用户在某一天上线的时候，我们就使用 <code>setbit</code>，以用户名作为 key ，将那天所代表的网站的上线日作为 offset 参数，并将这个 offset 上的位设置为 1</p>
+<p>然后通过<code>bitcount</code>可得到用户总共上线次数</p>
+<ol start="2">
+<li>统计用户签到次数</li>
+</ol>
+<p>原理同上线次数</p>
+<ol start="3">
+<li>统计活跃用户</li>
+</ol>
+<p>统计某天或者某连续几天，活跃用户数。</p>
+<p>方案：若某用户上线，则以日期为KEY，以用户user_id为偏移量（若ID不为整数，则将ID hash化为唯一ID），设置位为 1。 然后bitcount 日期即可得到某天活跃用户数。</p>
+<p>某连续两天活跃用户数示例:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">int status = 1;</span><br><span class="line">int user_id = 100;</span><br><span class="line">redis.setBit(&apos;20180820&apos;, user_id, status);</span><br><span class="line">redis.setBit(&apos;20180821&apos;, user_id, status);</span><br><span class="line">// 将20180820号与20180821日进行和运算，得出两天都上线的结果。并存入KEY—— dest_201808_20_21</span><br><span class="line">redis.bitOp(&apos;AND&apos;, &apos;dest_201808_20_21&apos;, &apos;active_20180820&apos;, &apos;active_20180821&apos;);</span><br><span class="line">redis.bitCount(&apos;dest_201808_20_21&apos;);</span><br></pre></td></tr></table></figure></p>
+<h3 id="HyperLogLog统计大量数据"><a href="#HyperLogLog统计大量数据" class="headerlink" title="HyperLogLog统计大量数据"></a>HyperLogLog统计大量数据</h3><p>如果要统计网页当PV，这个需求很好实现，给每个网页增加一个redis计数器，每个请求就incrby一下就好了</p>
+<p>如果要统计UV，同一个用户一天之内的多次访问只算做一次，所以要做去重。可以用一个set存储当天访问过某个网页的用户id，当一个请求过来时，我们使用 sadd 将用户 ID 塞进去就可以了。通过 scard 可以取出这个集合的大小，这个数字就是这个页面的 UV 数据。</p>
+<p>但是当页面的访问量非常大，比如几千万的UV的时候，这个set集合就非常大，会占据很多内存空间。其实我们对UV只是需要一个大概的数字， 100W和101W差别其实不大，redis 提供了 HyperLogLog 数据结构就是用来解决这种统计问题的。HyperLogLog 提供不精确的去重计数方案，虽然不精确但是也不是非常不精确，标准误差是 0.81%，这样的精确度已经可以满足上面的 UV 统计需求了</p>
+<h4 id="使用方法"><a href="#使用方法" class="headerlink" title="使用方法"></a>使用方法</h4><p>HyperLogLog提供了两个指令：<code>pfadd/pfcount</code>,增加计数和获取计数。比如上述统计UV的功能，只需要将用户id,pfadd进去，最后使用pfcount来获取结果就好了。这个结果是带有去重功能的</p>
+<p>HyperLogLog还提供了一个<code>pfmerge</code>的指令，用于将多个<code>pfcount</code>的结果合并。</p>
+<p>值得注意的是一个HyperLogLog数据结构就占据了12K的空间，所以不太适用于统计范围较小的数据，对于大量数据，HyperLogLog就可以省去很多内存空间</p>
+<h3 id="布隆过滤器"><a href="#布隆过滤器" class="headerlink" title="布隆过滤器"></a>布隆过滤器</h3><p>布隆过滤器可以理解为一个不怎么精确的 set 结构，当你使用它的 contains 方法判断某个对象是否存在时，它可能会误判。但是布隆过滤器也不是特别不精确，只要参数设置的合理，它的精确度可以控制的相对足够精确，只会有小小的误判概率。当布隆过滤器说某个值存在时，这个值可能不存在；当它说不存在时，那就肯定不存在。</p>
+<p>它的使用场景可以归纳为：判断大量数据是否在一个池子里</p>
+<p>有如下特点：</p>
+<ul>
+<li>空间效率和查询效率高</li>
+<li>不会漏判，但是有一定的误判率（哈希表是精确匹配）</li>
+</ul>
+<h4 id="布隆过滤器原理"><a href="#布隆过滤器原理" class="headerlink" title="布隆过滤器原理"></a>布隆过滤器原理</h4><p>想快速找到一个元素，以hash的方式是最快的，常用的有hashmap等结构，但是对于大量数据，使用hashmap显然会占据很多内存。</p>
+<p>布隆过滤器优于hashmap的地方就是占用空间很小。实现原理如下：</p>
+<p><img src="/images/redis/bloomfilter.png" alt></p>
+<ol>
+<li>布隆过滤器是一个bit向量，或者说是bit数组</li>
+<li>针对一个值，使用多个hash函数，每个hash值指向的地方设置为1</li>
+</ol>
+<p>所以当一个数据，通过不同的hash函数映射到的位都有值时，他可能存在。但是任何一位没有值，就代表这个数据必然不存在</p>
+<h4 id="redis中布隆过滤器的基本使用"><a href="#redis中布隆过滤器的基本使用" class="headerlink" title="redis中布隆过滤器的基本使用"></a>redis中布隆过滤器的基本使用</h4><p>redis可以安装布隆过滤器插件来使用布隆过滤器。</p>
+<p>布隆过滤器有两个基本指令：<code>bf.add</code> 添加元素，<code>bf.exists</code> 查询元素是否存在</p>
+<h3 id="限流"><a href="#限流" class="headerlink" title="限流"></a>限流</h3><h4 id="简单限流"><a href="#简单限流" class="headerlink" title="简单限流"></a>简单限流</h4><p>使用 <code>zset</code> 这个数据结构的 <code>score</code> 来充当滑动窗口，保证value唯一即可，Java实现如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">public class SimpleRateLimiter &#123;</span><br><span class="line"></span><br><span class="line">  private Jedis jedis;</span><br><span class="line"></span><br><span class="line">  public SimpleRateLimiter(Jedis jedis) &#123;</span><br><span class="line">    this.jedis = jedis;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public boolean isActionAllowed(String userId, String actionKey, int period, int maxCount) &#123;</span><br><span class="line">    String key = String.format(&quot;hist:%s:%s&quot;, userId, actionKey);</span><br><span class="line">    long nowTs = System.currentTimeMillis();</span><br><span class="line">    Pipeline pipe = jedis.pipelined();</span><br><span class="line">    pipe.multi();</span><br><span class="line">    pipe.zadd(key, nowTs, &quot;&quot; + nowTs);</span><br><span class="line">    pipe.zremrangeByScore(key, 0, nowTs - period * 1000);</span><br><span class="line">    Response&lt;Long&gt; count = pipe.zcard(key);</span><br><span class="line">    pipe.expire(key, period + 1);</span><br><span class="line">    pipe.exec();</span><br><span class="line">    pipe.close();</span><br><span class="line">    return count.get() &lt;= maxCount;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public static void main(String[] args) &#123;</span><br><span class="line">    Jedis jedis = new Jedis();</span><br><span class="line">    SimpleRateLimiter limiter = new SimpleRateLimiter(jedis);</span><br><span class="line">    for(int i=0;i&lt;20;i++) &#123;</span><br><span class="line">      System.out.println(limiter.isActionAllowed(&quot;laoqian&quot;, &quot;reply&quot;, 60, 5));</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="漏斗限流"><a href="#漏斗限流" class="headerlink" title="漏斗限流"></a>漏斗限流</h4><p>漏斗限流又叫漏桶限流，漏斗以一定速率往下滴水(响应请求), 往漏斗上方灌水(接受请求)，如果漏斗满了，就拒绝请求。 以 redis 提供的限流模块： <code>redis-cell</code>实现。</p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="http://zhangtielei.com/posts/blog-redlock-reasoning.html" target="_blank" rel="noopener">Redis分布式锁到底安全吗</a></li>
+<li><a href="https://juejin.im/book/5afc2e5f6fb9a07a9b362527/section/5afc35fb6fb9a07abf72b477" target="_blank" rel="noopener">Redis分布式锁</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/redis/" rel="tag"><i class="fa fa-tag"></i> redis</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/04/27/中间件/elastic-job失效转移和错过补偿/" rel="next" title="elastic-job失效转移和错过补偿">
+                <i class="fa fa-chevron-left"></i> elastic-job失效转移和错过补偿
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/05/16/中间件/kafka参数使用/" rel="prev" title="kafka参数使用">
+                kafka参数使用 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">勿在浮沙筑高台</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">66</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">23</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#redis中基本数据结构"><span class="nav-number">1.</span> <span class="nav-text">redis中基本数据结构</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#容器类型通用规则"><span class="nav-number">1.1.</span> <span class="nav-text">容器类型通用规则</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#分布式锁"><span class="nav-number">2.</span> <span class="nav-text">分布式锁</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#setnx-基本使用"><span class="nav-number">2.1.</span> <span class="nav-text">setnx 基本使用</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#超时问题"><span class="nav-number">2.2.</span> <span class="nav-text">超时问题</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#可重入性"><span class="nav-number">2.3.</span> <span class="nav-text">可重入性</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#延时队列"><span class="nav-number">3.</span> <span class="nav-text">延时队列</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#队列的延时"><span class="nav-number">3.1.</span> <span class="nav-text">队列的延时</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#延时队列的实现"><span class="nav-number">3.2.</span> <span class="nav-text">延时队列的实现</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#位图-bitmap"><span class="nav-number">4.</span> <span class="nav-text">位图(bitmap)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#bitmap使用"><span class="nav-number">4.1.</span> <span class="nav-text">bitmap使用</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#bitmap应用场景示例"><span class="nav-number">4.2.</span> <span class="nav-text">bitmap应用场景示例</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#HyperLogLog统计大量数据"><span class="nav-number">5.</span> <span class="nav-text">HyperLogLog统计大量数据</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#使用方法"><span class="nav-number">5.1.</span> <span class="nav-text">使用方法</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#布隆过滤器"><span class="nav-number">6.</span> <span class="nav-text">布隆过滤器</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#布隆过滤器原理"><span class="nav-number">6.1.</span> <span class="nav-text">布隆过滤器原理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#redis中布隆过滤器的基本使用"><span class="nav-number">6.2.</span> <span class="nav-text">redis中布隆过滤器的基本使用</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#限流"><span class="nav-number">7.</span> <span class="nav-text">限流</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#简单限流"><span class="nav-number">7.1.</span> <span class="nav-text">简单限流</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#漏斗限流"><span class="nav-number">7.2.</span> <span class="nav-text">漏斗限流</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">8.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/jquery/2.1.3/jquery.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fastclick/1.0.6/fastclick.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.bootcss.com/jquery_lazyload/1.9.7/jquery.lazyload.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.ui.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

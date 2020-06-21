@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+  <link href="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.min.js" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+  
+
+<link href="//cdn.staticfile.org/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="mysql,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="事务（Transaction）及其ACID属性 原子性(Atomicity)：事务是一个原子操作单元，其对数据的修改，要么全都执行，要么全都不执行 一致性(Consistent):在事务开始和完成时，数据都必须保持一致状态。这意味着所有相关的数据规则都必须应用于事务的修改，以保持数据的完整性；事务结束时，所有的内部数据结构（如B树索引或双向链表）也都必须是正确的 隔离性(Isolation):数据">
+<meta name="keywords" content="mysql">
+<meta property="og:type" content="article">
+<meta property="og:title" content="mysql事务隔离级别与MVCC">
+<meta property="og:url" content="http://yoursite.com/2019/09/02/mysql/mysql事务隔离级别与MVCC/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="事务（Transaction）及其ACID属性 原子性(Atomicity)：事务是一个原子操作单元，其对数据的修改，要么全都执行，要么全都不执行 一致性(Consistent):在事务开始和完成时，数据都必须保持一致状态。这意味着所有相关的数据规则都必须应用于事务的修改，以保持数据的完整性；事务结束时，所有的内部数据结构（如B树索引或双向链表）也都必须是正确的 隔离性(Isolation):数据">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/images/mysql/roll_pointer_undo.png">
+<meta property="og:image" content="http://yoursite.com/images/mysql/version-chain-1.png">
+<meta property="og:image" content="http://yoursite.com/images/mysql/version-chain-2.png">
+<meta property="og:updated_time" content="2020-06-07T04:32:06.984Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="mysql事务隔离级别与MVCC">
+<meta name="twitter:description" content="事务（Transaction）及其ACID属性 原子性(Atomicity)：事务是一个原子操作单元，其对数据的修改，要么全都执行，要么全都不执行 一致性(Consistent):在事务开始和完成时，数据都必须保持一致状态。这意味着所有相关的数据规则都必须应用于事务的修改，以保持数据的完整性；事务结束时，所有的内部数据结构（如B树索引或双向链表）也都必须是正确的 隔离性(Isolation):数据">
+<meta name="twitter:image" content="http://yoursite.com/images/mysql/roll_pointer_undo.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2019/09/02/mysql/mysql事务隔离级别与MVCC/">
+
+
+
+
+
+  <title>mysql事务隔离级别与MVCC | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/09/02/mysql/mysql事务隔离级别与MVCC/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">mysql事务隔离级别与MVCC</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-09-02T21:25:21+08:00">
+                2019-09-02
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mysql/" itemprop="url" rel="index">
+                    <span itemprop="name">mysql</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="事务（Transaction）及其ACID属性"><a href="#事务（Transaction）及其ACID属性" class="headerlink" title="事务（Transaction）及其ACID属性"></a>事务（Transaction）及其ACID属性</h3><ol>
+<li>原子性(Atomicity)：事务是一个原子操作单元，其对数据的修改，要么全都执行，要么全都不执行</li>
+<li>一致性(Consistent):在事务开始和完成时，数据都必须保持一致状态。这意味着所有相关的数据规则都必须应用于事务的修改，以保持数据的完整性；事务结束时，所有的内部数据结构（如B树索引或双向链表）也都必须是正确的</li>
+<li>隔离性(Isolation):数据库系统提供一定的隔离机制，保证事务在不受外部并发操作影响的“独立”环境执行。这意味着事务处理过程中的中间状态对外部是不可见的，反之亦然</li>
+<li>持久性(Durable): 事务完成之后，它对于数据的修改是永久性的，即使出现系统故障也能够保持</li>
+</ol>
+<h3 id="并发事务带来的问题"><a href="#并发事务带来的问题" class="headerlink" title="并发事务带来的问题"></a>并发事务带来的问题</h3><h4 id="更新丢失-lost-update，-又叫脏写"><a href="#更新丢失-lost-update，-又叫脏写" class="headerlink" title="更新丢失(lost update， 又叫脏写)"></a>更新丢失(lost update， 又叫脏写)</h4><p>一个事务修改到了另一个未提交事务修改过的数据</p>
+<p>事务A和事务B都读取了同一行数据， 比如原数据行的值是100，事务A是将数值读取出来+1并更新， 事务B是读取数值+2并更新。当事务A和事务B都读取到了100,事务A首先完成并更新为101，事务B随后完成更新成了102。这样事务B就把事务A的结果覆盖了。</p>
+<h4 id="脏读-dirty-read"><a href="#脏读-dirty-read" class="headerlink" title="脏读(dirty read)"></a>脏读(dirty read)</h4><p>一个事务读取到了另一个未提交事务修改过的数据</p>
+<p>事务A正在对一条记录做修改，但未提交。这时，事务B也来读取同一条记录，如果不加控制，第二个事务读取了这些“脏”数据，并据此做进一步的处理，就会产生未提交的数据依赖关系。这种现象被形象地叫做”脏读”</p>
+<h4 id="不可重复读-Non-Repeatable-Read"><a href="#不可重复读-Non-Repeatable-Read" class="headerlink" title="不可重复读(Non-Repeatable Read)"></a>不可重复读(Non-Repeatable Read)</h4><p>一个事务只能读到另一个已经提交的事务修改过的数据，并且其他事务每对该数据进行一次修改并提交后，该事务都能查询得到最新值(注重的是update和delete操作)。</p>
+<p>换句话说个事务从开始直到提交之前，所做的任何修改对其他事务都是不可见的。但是两次执行同样的查询，可能会得到不一样的结果(读到了其他事务的修改结果)。</p>
+<h4 id="幻读-Phantom-Read"><a href="#幻读-Phantom-Read" class="headerlink" title="幻读(Phantom Read)"></a>幻读(Phantom Read)</h4><p>一个事务先根据某些条件查询出一些记录，之后另一个事务又向表中插入了符合这些条件的记录，原先的事务再次按照该条件查询时，能把另一个事务插入的记录也读出来，那就意味着发生了幻读(注重的是insert操作)</p>
+<blockquote>
+<p>备注： 那对于先前已经读到的记录，之后又读取不到这种情况，算啥呢？其实这相当于对每一条记录都发生了不可重复读的现象。幻读只是重点强调了读取到了之前读取没有获取到的记录。如果按照相同的条件查询，读到的记录变少了(另一个事务删除了一些记录),这种情况不算幻读，幻读强调的是按照相同条件查询出了之前没有读到的记录 </p>
+</blockquote>
+<h3 id="事务隔离级别"><a href="#事务隔离级别" class="headerlink" title="事务隔离级别"></a>事务隔离级别</h3><p>在上面讲到的并发事务处理带来的问题中，“脏写”通常是应该完全避免的。在Mysql的隔离级别中，脏写是完全杜绝的</p>
+<p>“脏读”、“不可重复读”和“幻读”，其实都是数据库读一致性问题，必须由数据库提供一定的事务隔离机制来解决。数据库实现事务隔离的方式，基本上可分为以下两种：</p>
+<p>1.在读取数据前，对其加锁，阻止其他事务对数据进行修改</p>
+<p>2.不用加任何锁，通过一定机制生成一个数据请求时间点的一致性数据快照（Snapshot)，并用这个快照来提供一定级别（语句级或事务级）的一致性读取。从用户的角度来看，好像是数据库可以提供同一数据的多个版本，因此，这种技术叫做数据多版本并发控制（MultiVersion Concurrency Control，简称MVCC）</p>
+<h4 id="mysql四个隔离级别"><a href="#mysql四个隔离级别" class="headerlink" title="mysql四个隔离级别"></a>mysql四个隔离级别</h4><table>
+<thead>
+<tr>
+<th>隔离级别</th>
+<th style="text-align:left">脏读</th>
+<th style="text-align:left">不可重复读</th>
+<th style="text-align:left">幻读</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>未提交读(Read uncommited)</td>
+<td style="text-align:left">Y</td>
+<td style="text-align:left">Y</td>
+<td style="text-align:left">Y</td>
+</tr>
+<tr>
+<td>已提交读(Read commited)</td>
+<td style="text-align:left">N</td>
+<td style="text-align:left">Y</td>
+<td style="text-align:left">Y</td>
+</tr>
+<tr>
+<td>可重复读(Repeatable Read)</td>
+<td style="text-align:left">N</td>
+<td style="text-align:left">N</td>
+<td style="text-align:left">Y</td>
+</tr>
+<tr>
+<td>串行执行(Serializable)</td>
+<td style="text-align:left">N</td>
+<td style="text-align:left">N</td>
+<td style="text-align:left">N</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><p><code>READ UNCOMMITTED</code>隔离级别下，可能发生脏读、不可重复读和幻读问题。</p>
+</li>
+<li><p><code>READ COMMITTED</code>隔离级别下，可能发生不可重复读和幻读问题，但是不可以发生脏读问题。</p>
+</li>
+<li><p><code>REPEATABLE READ</code>隔离级别下，可能发生幻读问题，但是不可以发生脏读和不可重复读的问题(这也是mysql的默认隔离级别)。</p>
+</li>
+<li><p><code>SERIALIZABLE</code>隔离级别下，各种问题都不可以发生。</p>
+</li>
+</ul>
+<p>注意: 脏写是很严重的情况，无论哪种隔离级别都不允许发生脏写</p>
+<h3 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h3><ul>
+<li><p>默认隔离级别<br>innodb默认是可重复读(repeatable read)，在my.ini可配置：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">transaction-isolation = &#123;READ-UNCOMMITTED | READ-COMMITTED | REPEATABLE-READ | SERIALIZABLE&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>设置隔离级别</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SET [SESSION | GLOBAL] TRANSACTION ISOLATION LEVEL &#123;READ UNCOMMITTED | READ COMMITTED | REPEATABLE READ | SERIALIZABLE&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>默认的行为（不带session和global）是为下一个（未开始）事务设置隔离级别。如果你使用GLOBAL关键字，语句在全局对从那点开始创建的所有新连接（除了不存在的连接）设置默认事务级别。你需要SUPER权限来做这个。使用SESSION 关键字为将来在当前连接上执行的事务设置默认事务级别。 任何客户端都能自由改变会话隔离级别（甚至在事务的中间），或者为下一个事务设置隔离级别</p>
+<p>首先我建了一个测试表<code>book_table</code>,带有bookid和bookname两个字段</p>
+<h4 id="read-uncommitted下将出现脏读"><a href="#read-uncommitted下将出现脏读" class="headerlink" title="read uncommitted下将出现脏读"></a><code>read uncommitted</code>下将出现脏读</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"># 隔离级别改成 read uncommitted</span><br><span class="line">set session transaction isolation level read uncommitted;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">select @@session.tx_isolation;</span><br><span class="line">+------------------------+</span><br><span class="line">| @@session.tx_isolation |</span><br><span class="line">+------------------------+</span><br><span class="line">| READ-UNCOMMITTED       |</span><br><span class="line">+------------------------+</span><br><span class="line"></span><br><span class="line">##############  session1 插入一条记录，并不提交</span><br><span class="line">start transacton;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line">insert into book_table(bookname) values(&apos;math&apos;);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line">select * from book_table;</span><br><span class="line">+----------+--------+</span><br><span class="line">| bookname | bookid |</span><br><span class="line">+----------+--------+</span><br><span class="line">| math     |      1 |</span><br><span class="line">+----------+--------+</span><br><span class="line">1 row in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">######### session2 读取到了 session1 未提交的记录</span><br><span class="line"></span><br><span class="line"> select * from book_table;</span><br><span class="line">+----------+--------+</span><br><span class="line">| bookname | bookid |</span><br><span class="line">+----------+--------+</span><br><span class="line">| math     |      1 |</span><br><span class="line">+----------+--------+</span><br></pre></td></tr></table></figure>
+<h4 id="read-committed-将出现不可重复读"><a href="#read-committed-将出现不可重复读" class="headerlink" title="read committed 将出现不可重复读"></a><code>read committed</code> 将出现不可重复读</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"># 隔离级别改成 read committed</span><br><span class="line">set session transaction isolation level read uncommitted;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">select @@session.tx_isolation;</span><br><span class="line">+------------------------+</span><br><span class="line">| @@session.tx_isolation |</span><br><span class="line">+------------------------+</span><br><span class="line">| READ-COMMITTED       |</span><br><span class="line">+------------------------+</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">########## session1  查询bookid=1的数据是 math,此时并未提交事务</span><br><span class="line"></span><br><span class="line"> select * from book_table where bookid = 1;</span><br><span class="line">+----------+--------+</span><br><span class="line">| bookname | bookid |</span><br><span class="line">+----------+--------+</span><br><span class="line">| math     |      1 |</span><br><span class="line">+----------+--------+</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">######## session2 将bookid=1的数据更新为 english 并提交</span><br><span class="line"></span><br><span class="line">start transaction;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">update book_table set bookname = &apos;english&apos; where id = 1;</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">commit;</span><br><span class="line">Query OK, 0 rows affected (0.07 sec)</span><br><span class="line"></span><br><span class="line">############# session1 再次查询同样的条件，确查出来不同的结果</span><br><span class="line">select * from book_table where bookid = 1;</span><br><span class="line">+----------+--------+</span><br><span class="line">| bookname | bookid |</span><br><span class="line">+----------+--------+</span><br><span class="line">| english     |      1 |</span><br><span class="line">+----------+--------+</span><br><span class="line">1 rows in set (0.00 sec)</span><br></pre></td></tr></table></figure>
+<h4 id="REPEATABLE-READ-将出现幻读"><a href="#REPEATABLE-READ-将出现幻读" class="headerlink" title="REPEATABLE-READ 将出现幻读"></a><code>REPEATABLE-READ</code> 将出现幻读</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"># 隔离级别默认是 repeatable read</span><br><span class="line">select @@session.tx_isolation;</span><br><span class="line">+------------------------+</span><br><span class="line">| @@session.tx_isolation |</span><br><span class="line">+------------------------+</span><br><span class="line">| REPEATABLE READ      |</span><br><span class="line">+------------------------+</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">########## session1  查询bookid&gt;1的数据只有1条</span><br><span class="line">   </span><br><span class="line">select * from book_table where bookid = 1;</span><br><span class="line">+----------+--------+</span><br><span class="line">| bookname | bookid |</span><br><span class="line">+----------+--------+</span><br><span class="line">| math     |      1 |</span><br><span class="line">+----------+--------+</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">########## session2  插入了一条数据</span><br><span class="line"></span><br><span class="line"> insert into book_table values(&apos;english&apos;, 2);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">########## session1  以同样的条件查询却查出了两条记录</span><br><span class="line"></span><br><span class="line">+----------+--------+</span><br><span class="line">| bookname | bookid |</span><br><span class="line">+----------+--------+</span><br><span class="line">| math     |      1 |</span><br><span class="line">| english  |      2 |</span><br><span class="line">+----------+--------+</span><br></pre></td></tr></table></figure>
+<h4 id="不可重复读和幻读的区别"><a href="#不可重复读和幻读的区别" class="headerlink" title="不可重复读和幻读的区别"></a>不可重复读和幻读的区别</h4><p>不可重复读和幻读，确实这两者有些相似。但不可重复读重点在于update和delete，而幻读的重点在于insert。</p>
+<p>如果使用锁机制来实现这两种隔离级别，在可重复读中，该sql第一次读取到数据后，就将这些数据加锁，其它事务无法修改这些数据，就可以实现可重复读了。但这种方法却无法锁住insert的数据，所以当事务A先前读取了数据，或者修改了全部数据，事务B还是可以insert数据提交，这时事务A就会发现莫名其妙多了一条之前没有的数据，这就是幻读，不能通过行锁来避免。需要Serializable隔离级别 ，读用读锁，写用写锁，读锁和写锁互斥，这么做可以有效的避免幻读、不可重复读、脏读等问题，但会极大的降低数据库的并发能力。</p>
+<h3 id="InnoDB-中-MVCC-原理"><a href="#InnoDB-中-MVCC-原理" class="headerlink" title="InnoDB 中 MVCC 原理"></a>InnoDB 中 MVCC 原理</h3><h4 id="版本链"><a href="#版本链" class="headerlink" title="版本链"></a>版本链</h4><p>innodb记录都会包含两个隐藏列:</p>
+<ul>
+<li><code>trx_id</code>：每次一个事务对某条记录进行改动时，都会把该事务的<code>事务id</code>赋值给<code>trx_id</code>隐藏列</li>
+<li><code>roll_pointer</code>：每次对某条记录进行改动时，都会把旧的版本写入到undo日志中，然后这个隐藏列就相当于一个指针，可以通过它来找到该记录修改前的信息</li>
+</ul>
+<p>当对一条记录多次更新后，所有的版本都会被roll_pointer属性连接成一个链表(insert操作对应的undo log没有该属性，因为该记录没有更早的版本)，我们把这个链表称之为版本链，版本链的头节点就是当前记录最新的值。版本链的头节点就是当前记录最新的值。另外，每个版本中还包含生成该版本时对应的事务id，类似:</p>
+<p><img src="/images/mysql/roll_pointer_undo.png" alt></p>
+<h4 id="ReadView"><a href="#ReadView" class="headerlink" title="ReadView"></a>ReadView</h4><p>对于使用<code>READ UNCOMMITTED</code>隔离级别的事务来说，由于可以读到未提交事务修改过的记录，所以直接读取记录的最新版本就好了；<br>对于使用<code>SERIALIZABLE</code>隔离级别的事务来说，InnoDB使用加锁的方式来访问记录；<br>对于使用<code>READ COMMITTED</code>和<code>REPEATABLE READ</code>隔离级别的事务来说，都必须保证读到已经提交了的事务修改过的记录，也就是说假如另一个事务已经修改了记录但是尚未提交，是不能直接读取最新版本的记录的，核心问题就是：需要判断一下版本链中的哪个版本是当前事务可见的。为此，InnoDB提出了一个<code>ReadView</code>的概念，这个ReadView中主要包含4个比较重要的内容：</p>
+<ol>
+<li><p><code>m_ids</code>：表示在生成<code>ReadView</code>时当前系统中活跃的读写事务的事务id列表。</p>
+</li>
+<li><p><code>min_trx_id</code>：表示在生成<code>ReadView</code>时当前系统中活跃的读写事务中最小的事务id，也就是m_ids中的最小值。</p>
+</li>
+<li><p><code>max_trx_id</code>：表示生成<code>ReadView</code>时系统中应该分配给下一个事务的id值(max_trx_id并不是m_ids中的最大值。事务id是递增分配的，假如现在有id为1，2，3这三个事务，之后id为3的事务提交了。那么一个新的读事务在生成ReadView时，m_ids就包括1和2，min_trx_id的值就是1，max_trx_id的值就是4)。</p>
+</li>
+<li><p><code>creator_trx_id</code>：表示生成该<code>ReadView</code>的事务的事务id</p>
+</li>
+</ol>
+<p>有了<code>ReadView</code>，这样在访问某条记录时，只需要按照下边的步骤判断记录的某个版本是否可见:</p>
+<ol>
+<li><p>如果被访问版本的<code>trx_id</code>与<code>ReadView中</code>的<code>creator_trx_id</code>值相同，意味着当前事务在访问它自己修改过的记录，所以该版本可以被当前事务访问。</p>
+</li>
+<li><p>如果被访问版本的<code>trx_id</code>小于<code>ReadView</code>中的<code>min_trx_id</code>值，表明生成该版本的事务在当前事务生成<code>ReadView</code>前已经提交，所以该版本可以被当前事务访问</p>
+</li>
+<li><p>如果被访问版本的<code>trx_id</code>大于<code>ReadView</code>中的<code>max_trx_id</code>值，表明生成该版本的事务在当前事务生成<code>ReadView</code>后才开启，所以该版本不可以被当前事务访问</p>
+</li>
+<li><p>如果被访问版本的<code>trx_id</code>在<code>ReadView</code>的<code>min_trx_id</code>和<code>max_trx_id之</code>间，那就需要判断一下<code>trx_id</code>属性值是不是在<code>m_ids</code>列表中，如果在，说明创建<code>ReadView</code>时生成该版本的事务还是活跃的，该版本不可以被访问；如果不在，说明创建<code>ReadView</code>时生成该版本的事务已经被提交，该版本可以被访问</p>
+</li>
+</ol>
+<p>如果某个版本的数据对当前事务不可见的话，那就顺着版本链找到下一个版本的数据，继续按照上边的步骤判断可见性，依此类推，直到版本链中的最后一个版本。如果最后一个版本也不可见的话，那么就意味着该条记录对该事务完全不可见，查询结果就不包含该记录</p>
+<h4 id="READ-COMMITTED和-REPEATABLE-READ生成-RAED-VIEW的时机"><a href="#READ-COMMITTED和-REPEATABLE-READ生成-RAED-VIEW的时机" class="headerlink" title="READ COMMITTED和 REPEATABLE READ生成 RAED VIEW的时机"></a>READ COMMITTED和 REPEATABLE READ生成 RAED VIEW的时机</h4><p>在MySQL中，READ COMMITTED和REPEATABLE READ隔离级别的的一个非常大的区别就是它们生成ReadView的时机不同。假设现在表hero中只有一条由事务id为80的事务插入的一条记录：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; SELECT * FROM hero;</span><br><span class="line">+--------+--------+---------+</span><br><span class="line">| number | name   | country |</span><br><span class="line">+--------+--------+---------+</span><br><span class="line">|      1 | 刘备   | 蜀      |</span><br><span class="line">+--------+--------+---------+</span><br></pre></td></tr></table></figure></p>
+<h5 id="READ-COMMITTED-——-每次读取数据前都生成一个ReadView"><a href="#READ-COMMITTED-——-每次读取数据前都生成一个ReadView" class="headerlink" title="READ COMMITTED —— 每次读取数据前都生成一个ReadView"></a>READ COMMITTED —— 每次读取数据前都生成一个ReadView</h5><p>对于使用REPEATABLE READ隔离级别的事务来说，只会在第一次执行查询语句时生成一个<code>ReadView</code>，之后的查询就不会重复生成了</p>
+<p>假如现在系统里有两个事务id分别为100、200的事务在执行：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">########### Transaction 100</span><br><span class="line">BEGIN;</span><br><span class="line">UPDATE hero SET name = &apos;关羽&apos; WHERE number = 1;</span><br><span class="line">UPDATE hero SET name = &apos;张飞&apos; WHERE number = 1;</span><br><span class="line"></span><br><span class="line">########### Transaction 200</span><br><span class="line">BEGIN;</span><br><span class="line"># 更新了一些别的表的记录</span><br><span class="line">...</span><br></pre></td></tr></table></figure></p>
+<p>备注: 事务执行过程中，只有在第一次真正修改记录时（INSERT、DELETE、UPDATE,SELECT默认生成的事务id是0），才会被分配一个单独的事务id，这个事务id是递增的。所以我们才在Transaction 200<br> 中更新一些别的表的记录，目的是让它分配事务id。</p>
+<p>这个时候版本链如下:</p>
+<p><img src="/images/mysql/version-chain-1.png" alt></p>
+<p>现在有一个<code>READ COMMITTED</code>级别的事务开始执行:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">BEGIN;</span><br><span class="line"># 此时Transaction 100、200未提交， 执行 SELECT1:</span><br><span class="line">SELECT * FROM hero WHERE number = 1; # 得到的列name的值为&apos;刘备</span><br></pre></td></tr></table></figure></p>
+<p>这个SELECT1的执行过程如下：</p>
+<ol>
+<li><p>在执行SELECT语句时会先生成一个<code>ReadView</code>，<code>ReadView</code>的m_ids列表的内容就是[100, 200]，<code>min_trx_id</code>为<code>100</code>，<code>max_trx_id</code>为<code>201</code>，creator_trx_id为0。</p>
+</li>
+<li><p>然后从版本链中挑选可见的记录，从图中可以看出，最新版本的列name的内容是’张飞’，该版本的<code>trx_id</code>值为100，在m_ids列表内，所以不符合可见性要求，根据roll_pointer跳到下一个版本。</p>
+</li>
+<li><p>下一个版本的列name的内容是’关羽’，该版本的<code>trx_id</code>值也为100，也在<code>m_ids</code>列表内，所以也不符合要求，继续跳到下一个版本。</p>
+</li>
+<li><p>下一个版本的列name的内容是’刘备’，该版本的<code>trx_id</code>值为80，小于ReadView中的<code>min_trx_id</code>值100，所以这个版本是符合要求的，最后返回给用户的版本就是这条列name为’刘备’的记录。</p>
+</li>
+</ol>
+<p>然后提交一下事务id为100的事务:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># Transaction 100</span><br><span class="line">BEGIN;</span><br><span class="line">UPDATE hero SET name = &apos;关羽&apos; WHERE number = 1;</span><br><span class="line">UPDATE hero SET name = &apos;张飞&apos; WHERE number = 1;</span><br><span class="line">## 这个时候提交这个事务</span><br><span class="line">COMMIT;</span><br></pre></td></tr></table></figure></p>
+<p>然后再到事务id为200的事务中更新一下表hero中number为1的记录：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"># Transaction 200</span><br><span class="line">BEGIN;</span><br><span class="line"></span><br><span class="line"># 更新了一些别的表的记录</span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">#### 更新 number 为 1 的记录， 前面的更新操作只是为了之前生成一个新的事务id</span><br><span class="line">UPDATE hero SET name = &apos;赵云&apos; WHERE number = 1;</span><br><span class="line">UPDATE hero SET name = &apos;诸葛亮&apos; WHERE number = 1;</span><br></pre></td></tr></table></figure></p>
+<p>这个时候版本链就是这样:<br><img src="/images/mysql/version-chain-2.png" alt></p>
+<p>然后再到刚才使用<code>READ COMMITTED</code>隔离级别的事务中继续查找这个number为1的记录，如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"># 使用READ COMMITTED隔离级别的事务</span><br><span class="line">BEGIN;</span><br><span class="line"></span><br><span class="line"># SELECT1：Transaction 100、200均未提交</span><br><span class="line">SELECT * FROM hero WHERE number = 1; # 得到的列name的值为&apos;刘备&apos;</span><br><span class="line"></span><br><span class="line"># SELECT2：Transaction 100提交，Transaction 200未提交</span><br><span class="line">SELECT * FROM hero WHERE number = 1; # 得到的列name的值为&apos;张飞&apos;</span><br></pre></td></tr></table></figure></p>
+<p>这个SELECT2的执行过程如下：</p>
+<ol>
+<li><p>在执行SELECT语句时会又会单独生成一个<code>ReadView</code>，该<code>ReadView</code>的<code>m_ids</code>列表的内容就是[200]（事务id为100的那个事务已经提交了，所以再次生成快照时就没有它了），<code>min_trx_id</code>为200，<code>max_trx_id为</code>201，<code>creator_trx_id</code>为0。</p>
+</li>
+<li><p>然后从版本链中挑选可见的记录，从图中可以看出，最新版本的列name的内容是’诸葛亮’，该版本的<code>trx_id</code>值为200，在<code>m_ids</code>列表内，所以不符合可见性要求，根据roll_pointer跳到下一个版本。</p>
+</li>
+<li><p>下一个版本的列name的内容是’赵云’，该版本的<code>trx_id</code>值为200，也在<code>m_ids</code>列表内，所以也不符合要求，继续跳到下一个版本。</p>
+</li>
+<li><p>下一个版本的列name的内容是’张飞’，该版本的<code>trx_id</code>值为100，小于<code>ReadView</code>中的<code>min_trx_id</code>值200，所以这个版本是符合要求的，最后返回给用户的版本就是这条列name为’张飞’的记录。</p>
+</li>
+</ol>
+<h5 id="REPEATABLE-READ-——-在第一次读取数据时生成一个ReadView"><a href="#REPEATABLE-READ-——-在第一次读取数据时生成一个ReadView" class="headerlink" title="REPEATABLE READ —— 在第一次读取数据时生成一个ReadView"></a>REPEATABLE READ —— 在第一次读取数据时生成一个ReadView</h5><p>对于使用<code>REPEATABLE READ</code>隔离级别的事务来说，只会在第一次执行查询语句时生成一个<code>ReadView</code>，之后的查询就不会重复生成了。</p>
+<p>还是使用上个例子，对于<code>REPEATABLE READ</code>来说， 执行 SELECT1 的时候:</p>
+<ol>
+<li><p>在执行SELECT语句时会先生成一个<code>ReadView</code>，<code>ReadView</code>的<code>m_ids</code>列表的内容就是[100, 200]，<code>min_trx_id</code>为100，<code>max_trx_id</code>为201，<code>creator_trx_id</code>为0。</p>
+</li>
+<li><p>然后从版本链中挑选可见的记录，从图中可以看出，最新版本的列name的内容是’张飞’，该版本的<code>trx_id</code>值为100，在<code>m_ids</code>列表内，所以不符合可见性要求，根据roll_pointer跳到下一个版本。</p>
+</li>
+<li><p>下一个版本的列name的内容是’关羽’，该版本的<code>trx_id</code>值也为100，也在<code>m_ids</code>列表内，所以也不符合要求，继续跳到下一个版本。</p>
+</li>
+<li><p>下一个版本的列name的内容是’刘备’，该版本的<code>trx_id</code>值为80，小于ReadView中的<code>min_trx_id</code>值100，所以这个版本是符合要求的，最后返回给用户的版本就是这条列name为’刘备’的记录。</p>
+</li>
+</ol>
+<p>对于这个<code>REPEATABLE READ</code>的事务，在执行 SELECT2 的时候:</p>
+<ol>
+<li><p>因为当前事务的隔离级别为<code>REPEATABLE READ</code>，而之前在执行SELECT1时已经生成过<code>ReadView</code>了，所以此时直接复用之前的<code>ReadView</code>，之前的<code>ReadView</code>的<code>m_ids</code>列表的内容就是[100, 200]，<code>min_trx_id</code>为100，<code>max_trx_id</code>为201，<code>creator_trx_id</code>为0。</p>
+</li>
+<li><p>然后从版本链中挑选可见的记录，从图中可以看出，最新版本的列name的内容是’诸葛亮’，该版本的<code>trx_id</code>值为200，在<code>m_ids</code>列表内，所以不符合可见性要求，根据roll_pointer跳到下一个版本。</p>
+</li>
+<li><p>下一个版本的列name的内容是’赵云’，该版本的<code>trx_id</code>值为200，也在<code>m_ids</code>列表内，所以也不符合要求，继续跳到下一个版本。</p>
+</li>
+<li><p>下一个版本的列name的内容是’张飞’，该版本的<code>trx_id</code>值为100，而m_ids列表中是包含值为100的事务id的，所以该版本也不符合要求，同理下一个列name的内容是’关羽’的版本也不符合要求。继续跳到下一个版本。</p>
+</li>
+<li><p>下一个版本的列name的内容是’刘备’，该版本的trx_id值为80，小于ReadView中的<code>min_trx_id</code>值100，所以这个版本是符合要求的，最后返回给用户的版本就是这条列c为’刘备’的记录</p>
+</li>
+</ol>
+<p>也就是说两次SELECT查询得到的结果是重复的，记录的列c值都是’刘备’，这就是可重复读的含义。如果我们之后再把事务id为200的记录提交了，然后再到刚才使用REPEATABLE READ隔离级别的事务中继续查找这个number为1的记录，得到的结果还是’刘备’</p>
+<h4 id="mvcc总结"><a href="#mvcc总结" class="headerlink" title="mvcc总结"></a>mvcc总结</h4><p>所谓的<code>MVCC</code>（Multi-Version Concurrency Control ，多版本并发控制）指的就是在使用<code>READ COMMITTD</code>、<code>REPEATABLE READ</code>这两种隔离级别的事务在执行普通的SEELCT操作时访问记录的版本链的过程，这样子可以使不同事务的读-写、写-读操作并发执行，从而提升系统性能。<code>READ COMMITTD</code>、<code>REPEATABLE READ</code>这两个隔离级别的一个很大不同就是：生成<code>ReadView</code>的时机不同，<code>READ COMMITTD</code>在每一次进行普通SELECT操作前都会生成一个<code>ReadView</code>，而<code>REPEATABLE READ</code>只在第一次进行普通SELECT操作前生成一个<code>ReadView</code>，之后的查询操作都重复使用这个<code>ReadView</code>就好了。</p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="http://www.cnblogs.com/luyucheng/p/6297480.html" target="_blank" rel="noopener">mysql事务</a></li>
+<li><a href="http://www.cnblogs.com/zhoujinyi/p/3437475.html" target="_blank" rel="noopener">mysql的四种隔离级别</a></li>
+<li><a href="http://www.jianshu.com/p/4e3edbedb9a8" target="_blank" rel="noopener">五分钟搞懂mysql事务隔离级别</a></li>
+<li><a href="https://tech.meituan.com/2014/08/20/innodb-lock.html" target="_blank" rel="noopener">innodb中的事务隔离级别和锁</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/mysql/" rel="tag"><i class="fa fa-tag"></i> mysql</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/09/02/mysql/mysql-redo-undo-log/" rel="next" title="mysql事务-redo/undo log">
+                <i class="fa fa-chevron-left"></i> mysql事务-redo/undo log
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/09/08/spring/spring解决循环依赖/" rel="prev" title="spring解决循环依赖">
+                spring解决循环依赖 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">勿在浮沙筑高台</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">66</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">23</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#事务（Transaction）及其ACID属性"><span class="nav-number">1.</span> <span class="nav-text">事务（Transaction）及其ACID属性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#并发事务带来的问题"><span class="nav-number">2.</span> <span class="nav-text">并发事务带来的问题</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#更新丢失-lost-update，-又叫脏写"><span class="nav-number">2.1.</span> <span class="nav-text">更新丢失(lost update， 又叫脏写)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#脏读-dirty-read"><span class="nav-number">2.2.</span> <span class="nav-text">脏读(dirty read)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#不可重复读-Non-Repeatable-Read"><span class="nav-number">2.3.</span> <span class="nav-text">不可重复读(Non-Repeatable Read)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#幻读-Phantom-Read"><span class="nav-number">2.4.</span> <span class="nav-text">幻读(Phantom Read)</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#事务隔离级别"><span class="nav-number">3.</span> <span class="nav-text">事务隔离级别</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#mysql四个隔离级别"><span class="nav-number">3.1.</span> <span class="nav-text">mysql四个隔离级别</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#验证"><span class="nav-number">4.</span> <span class="nav-text">验证</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#read-uncommitted下将出现脏读"><span class="nav-number">4.1.</span> <span class="nav-text">read uncommitted下将出现脏读</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#read-committed-将出现不可重复读"><span class="nav-number">4.2.</span> <span class="nav-text">read committed 将出现不可重复读</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#REPEATABLE-READ-将出现幻读"><span class="nav-number">4.3.</span> <span class="nav-text">REPEATABLE-READ 将出现幻读</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#不可重复读和幻读的区别"><span class="nav-number">4.4.</span> <span class="nav-text">不可重复读和幻读的区别</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#InnoDB-中-MVCC-原理"><span class="nav-number">5.</span> <span class="nav-text">InnoDB 中 MVCC 原理</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#版本链"><span class="nav-number">5.1.</span> <span class="nav-text">版本链</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ReadView"><span class="nav-number">5.2.</span> <span class="nav-text">ReadView</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#READ-COMMITTED和-REPEATABLE-READ生成-RAED-VIEW的时机"><span class="nav-number">5.3.</span> <span class="nav-text">READ COMMITTED和 REPEATABLE READ生成 RAED VIEW的时机</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#READ-COMMITTED-——-每次读取数据前都生成一个ReadView"><span class="nav-number">5.3.1.</span> <span class="nav-text">READ COMMITTED —— 每次读取数据前都生成一个ReadView</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#REPEATABLE-READ-——-在第一次读取数据时生成一个ReadView"><span class="nav-number">5.3.2.</span> <span class="nav-text">REPEATABLE READ —— 在第一次读取数据时生成一个ReadView</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#mvcc总结"><span class="nav-number">5.4.</span> <span class="nav-text">mvcc总结</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">6.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/jquery/2.1.3/jquery.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fastclick/1.0.6/fastclick.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.bootcss.com/jquery_lazyload/1.9.7/jquery.lazyload.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.ui.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

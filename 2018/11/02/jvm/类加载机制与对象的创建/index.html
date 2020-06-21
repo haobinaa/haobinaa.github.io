@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+  <link href="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.min.js" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+  
+
+<link href="//cdn.staticfile.org/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="Hexo, NexT">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="类的生命周期 加载查找并加载类的二进制数据加载时类加载过程的第一个阶段，在加载阶段，虚拟机需要完成以下三件事情：  通过一个类的全限定名来获取其定义的二进制字节流。 将这个字节流所代表的静态存储结构转化为方法区的运行时数据结构。 在Java堆中生成一个代表这个类的 java.lang.Class对象，作为对方法区中这些数据的访问入口注：jvm中classloader类加载器加载class发送在此阶">
+<meta property="og:type" content="article">
+<meta property="og:title" content="类加载机制与对象的创建">
+<meta property="og:url" content="http://yoursite.com/2018/11/02/jvm/类加载机制与对象的创建/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="类的生命周期 加载查找并加载类的二进制数据加载时类加载过程的第一个阶段，在加载阶段，虚拟机需要完成以下三件事情：  通过一个类的全限定名来获取其定义的二进制字节流。 将这个字节流所代表的静态存储结构转化为方法区的运行时数据结构。 在Java堆中生成一个代表这个类的 java.lang.Class对象，作为对方法区中这些数据的访问入口注：jvm中classloader类加载器加载class发送在此阶">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/images/class_life.png">
+<meta property="og:image" content="http://yoursite.com/images/class_loader.png">
+<meta property="og:image" content="http://yoursite.com/images/ClassLoader.jpg">
+<meta property="og:image" content="http://yoursite.com/images/jvm/object-in-heap.png">
+<meta property="og:image" content="http://yoursite.com/images/jvm/ObjectHead.png">
+<meta property="og:image" content="http://yoursite.com/images/jvm/compress-oops.jpg">
+<meta property="og:updated_time" content="2020-06-07T04:32:06.983Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="类加载机制与对象的创建">
+<meta name="twitter:description" content="类的生命周期 加载查找并加载类的二进制数据加载时类加载过程的第一个阶段，在加载阶段，虚拟机需要完成以下三件事情：  通过一个类的全限定名来获取其定义的二进制字节流。 将这个字节流所代表的静态存储结构转化为方法区的运行时数据结构。 在Java堆中生成一个代表这个类的 java.lang.Class对象，作为对方法区中这些数据的访问入口注：jvm中classloader类加载器加载class发送在此阶">
+<meta name="twitter:image" content="http://yoursite.com/images/class_life.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/11/02/jvm/类加载机制与对象的创建/">
+
+
+
+
+
+  <title>类加载机制与对象的创建 | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/11/02/jvm/类加载机制与对象的创建/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">类加载机制与对象的创建</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-11-02T21:44:58+08:00">
+                2018-11-02
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/jvm/" itemprop="url" rel="index">
+                    <span itemprop="name">jvm</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="类的生命周期"><a href="#类的生命周期" class="headerlink" title="类的生命周期"></a>类的生命周期</h3><p><img src="/images/class_life.png" alt></p>
+<h4 id="加载"><a href="#加载" class="headerlink" title="加载"></a>加载</h4><p>查找并加载类的二进制数据加载时类加载过程的第一个阶段，在加载阶段，虚拟机需要完成以下三件事情：</p>
+<ul>
+<li>通过一个类的全限定名来获取其定义的二进制字节流。</li>
+<li>将这个字节流所代表的静态存储结构转化为方法区的运行时数据结构。</li>
+<li>在Java堆中生成一个代表这个类的 java.lang.Class对象，作为对方法区中这些数据的访问入口<br>注：jvm中classloader类加载器加载class发送在此阶段，这个阶段也是可控性很强的一个阶段，开发人员可以自定义classloader来完成加载</li>
+</ul>
+<h4 id="连接"><a href="#连接" class="headerlink" title="连接"></a>连接</h4><h5 id="1-验证：-确保被加载类的正确性"><a href="#1-验证：-确保被加载类的正确性" class="headerlink" title="1) 验证： 确保被加载类的正确性"></a>1) 验证： 确保被加载类的正确性</h5><p>验证是连接阶段的第一步，这一阶段的目的是为了确保Class文件的字节流中包含的信息符合当前虚拟机的要求，并且不会危害虚拟机自身的安全。验证阶段大致会完成4个阶段的检验动作：</p>
+<ul>
+<li>文件格式校验：验证字节流是否符合Class文件格式，例如是否以0XCAFEBABYE开头(class文件的开头校验字节， 称为魔数数)、常量池是否有常量的类型不被支持</li>
+<li>元数据验证： 对字节码描述的信息进行语义分析（注意：对比javac编译阶段的语义分析），以保证其描述的信息符合Java语言规范的要求</li>
+<li>字节码校验： 通过数据流和控制流分析，确定程序语义是合法的、符合逻辑的(语义分析)</li>
+<li>符号引用验证： 保证解析动作能正确执行</li>
+</ul>
+<p>注：验证阶段是非常重要的，但不是必须的，它对程序运行期没有影响，如果所引用的类经过反复验证，那么可以考虑采用 <code>-Xverifynone</code>参数来关闭大部分的类验证措施，以缩短虚拟机类加载的时间。</p>
+<h5 id="2-准备：-为类的静态变量分配内存，并将其初始化为默认值"><a href="#2-准备：-为类的静态变量分配内存，并将其初始化为默认值" class="headerlink" title="2) 准备： 为类的静态变量分配内存，并将其初始化为默认值"></a>2) 准备： 为类的静态变量分配内存，并将其初始化为默认值</h5><p>准备阶段是正式为类变量分配内存并设置类变量初始值的阶段，这些内存都将在方法区中分配。对于该阶段有以下几点需要注意：</p>
+<ul>
+<li>这个时候分配的只有static变量，实例变量会在对象实例化的时候分配在堆中</li>
+<li>分配的初始值是指的类型默认的零值(0、0L、null、false等)</li>
+<li>如果类字段中存在被static和final同时修饰的(ConstantValue)，那么在准备阶段变量value就会被初始化为显示的赋值</li>
+</ul>
+<h5 id="3）-解析：-把类中的符号引用转换为直接引用"><a href="#3）-解析：-把类中的符号引用转换为直接引用" class="headerlink" title="3） 解析： 把类中的符号引用转换为直接引用"></a>3） 解析： 把类中的符号引用转换为直接引用</h5><p>解析阶段是虚拟机将常量池内的符号引用替换为直接引用的过程，解析动作主要针对类或接口、字段、类方法、接口方法、方法类型、方法句柄和调用点限定符7类符号引用进行。符号引用就是一组符号来描述目标，可以是任何字面量</p>
+<ul>
+<li>符号引用：目标的描述符，与虚拟机内存无关的表述(jvm内存结构中有描述)</li>
+<li>直接引用：直接指向目标的指针、相对偏移量或一个间接定位到目标的句柄</li>
+</ul>
+<h4 id="初始化"><a href="#初始化" class="headerlink" title="初始化"></a>初始化</h4><p>初始化，为类的静态变量赋予正确的初始值，JVM负责对类进行初始化，主要对类变量进行初始化。在Java中对类变量进行初始值设定有两种方式：</p>
+<h5 id="1）-类初始化步骤"><a href="#1）-类初始化步骤" class="headerlink" title="1） 类初始化步骤"></a>1） 类初始化步骤</h5><ul>
+<li>假如这个类还没有被加载和连接，则程序先加载并连接该类</li>
+<li>假如该类的直接父类还没有被初始化，则先初始化其直接父类</li>
+<li>假如类中有初始化语句，则系统依次执行这些初始化语句</li>
+</ul>
+<h5 id="2-类初始化时机"><a href="#2-类初始化时机" class="headerlink" title="2) 类初始化时机"></a>2) 类初始化时机</h5><p>只有当对类的主动使用的时候才会导致类的初始化，类的主动使用包括以下六种：</p>
+<ol>
+<li>创建类的实例，也就是new的方式</li>
+<li>访问某个类或接口的静态变量，或者对该静态变量赋值</li>
+<li>调用类的静态方法</li>
+<li>反射（如 <code>Class.forName(“com.shengsiyuan.Test”)</code>）</li>
+<li>初始化某个类的子类，则其父类也会被初始化</li>
+<li>Java虚拟机启动时被标明为启动类的类（ JavaTest），直接使用 java.exe命令来运行某个主类</li>
+</ol>
+<h4 id="结束生命周期"><a href="#结束生命周期" class="headerlink" title="结束生命周期"></a>结束生命周期</h4><p>在如下几种情况下，Java虚拟机将结束生命周期：</p>
+<ul>
+<li>执行了<code>System.exit()</code>方法</li>
+<li>程序正常执行结束</li>
+<li>程序在执行过程中遇到了异常或错误而异常终止</li>
+<li>由于操作系统出现错误而导致Java虚拟机进程终止</li>
+</ul>
+<h3 id="类加载器"><a href="#类加载器" class="headerlink" title="类加载器"></a>类加载器</h3><p><img src="/images/class_loader.png" alt></p>
+<h4 id="1-加载器类型"><a href="#1-加载器类型" class="headerlink" title="1)  加载器类型"></a>1)  加载器类型</h4><ul>
+<li><p>启动类加载器： <code>BootstrapClassLoader</code>，负责加载存放在 <code>JDK\jre\lib</code>下，或被 <code>-Xbootclasspath</code>参数指定的路径中的，并且能被虚拟机识别的类库（如rt.jar，所有的java.开头的类均被BootstrapClassLoader加载）。启动类加载器是无法被Java程序直接引用的(由C++实现)。</p>
+</li>
+<li><p>扩展类加载器：<code>ExtensionClassLoader</code>，该加载器由 <code>sun.misc.Launcher$ExtClassLoader</code>实现，它负责加载 <code>JDK\jre\lib\ext</code>目录中，或者由 java.ext.dirs系统变量指定的路径中的所有类库（如javax.开头的类），开发者可以直接使用扩展类加载器。</p>
+</li>
+<li><p>应用程序类加载器： <code>ApplicationClassLoader</code>，该类加载器由 <code>sun.misc.Launcher$AppClassLoader</code>来实现，它负责加载用户类路径（ClassPath）所指定的类，开发者可以直接使用该类加载器，如果应用程序中没有自定义过自己的类加载器，一般情况下这个就是程序中默认的类加载器。</p>
+</li>
+</ul>
+<h4 id="2-JVM类加载机制"><a href="#2-JVM类加载机制" class="headerlink" title="2) JVM类加载机制"></a>2) JVM类加载机制</h4><ul>
+<li><p>全盘负责： 当一个类加载器负责加载某个Class时，该Class所依赖的和引用的其他Class也将由该类加载器负责载入，除非显示使用另外一个类加载器来载入</p>
+</li>
+<li><p>父类委托(双亲委派模型)： 先让父类加载器试图加载该类，只有在父类加载器无法加载该类时才尝试从自己的类路径中加载该类</p>
+</li>
+<li><p>缓存机制： 缓存机制将会保证所有加载过的Class都会被缓存，当程序中需要使用某个Class时，类加载器先从缓存区寻找该Class，只有缓存区不存在，系统才会读取该类对应的二进制数据，并将其转换成Class<br>对象，存入缓存区。这就是为什么修改了Class后，必须重启JVM，程序的修改才会生效</p>
+</li>
+</ul>
+<h4 id="3）-类的加载"><a href="#3）-类的加载" class="headerlink" title="3） 类的加载"></a>3） 类的加载</h4><p>类加载有三种方式：</p>
+<ul>
+<li>命令行启动应用时候由JVM初始化加载</li>
+<li>通过Class.forName()方法动态加载</li>
+<li>通过ClassLoader.loadClass()方法动态加载</li>
+</ul>
+<p>Class.forName和ClassLoader.loadClass的区别：</p>
+<ul>
+<li>Class.forName()：将类的.class文件加载到jvm中之外，还会对类进行解释，执行类中的static块</li>
+<li>ClassLoader.loadClass()：只干一件事情，就是将.class文件加载到jvm中，不会执行static中的内容,只有在newInstance才会去执行static块</li>
+</ul>
+<h4 id="4-如何破坏双亲委派机制"><a href="#4-如何破坏双亲委派机制" class="headerlink" title="4) 如何破坏双亲委派机制"></a>4) 如何破坏双亲委派机制</h4><p>有时候我们需要自定义<code>ClassLoader</code>来加载我们自己写的类文件，只需要继承<code>ClassLoader</code>类重写<code>findClass</code>方法，如下:<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MyClassLoader</span> <span class="keyword">extends</span> <span class="title">ClassLoader</span> </span>&#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 重写父类方法，返回一个Class对象</span></span><br><span class="line"><span class="comment">     * ClassLoader中对于这个方法的注释是:</span></span><br><span class="line"><span class="comment">     * This method should be overridden by class loader implementations</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">protected</span> Class&lt;?&gt; findClass(String name) <span class="keyword">throws</span> ClassNotFoundException &#123;</span><br><span class="line">        Class clazz = <span class="keyword">null</span>;</span><br><span class="line">        String classFilename = name + <span class="string">".class"</span>;</span><br><span class="line">        File classFile = <span class="keyword">new</span> File(classFilename);</span><br><span class="line">        <span class="keyword">if</span> (classFile.exists()) &#123;</span><br><span class="line">            <span class="keyword">try</span> (FileChannel fileChannel = <span class="keyword">new</span> FileInputStream(classFile)</span><br><span class="line">                    .getChannel();) &#123;</span><br><span class="line">                MappedByteBuffer mappedByteBuffer = fileChannel</span><br><span class="line">                        .map(MapMode.READ_ONLY, <span class="number">0</span>, fileChannel.size());</span><br><span class="line">                <span class="keyword">byte</span>[] b = mappedByteBuffer.array();</span><br><span class="line">                clazz = defineClass(name, b, <span class="number">0</span>, b.length);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (clazz == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> ClassNotFoundException(name);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> clazz;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>然后，通过调用<code>MyClassLoader</code>的<code>loadClass</code>就可以加载类了</p>
+<p>但这个类是遵循双亲委托机制(BootStrapClassLoader-&gt;ExtClassLoader-&gt;AppClassLoader-&gt;MyClassLoader),如下：</p>
+<p><img src="/images/ClassLoader.jpg" alt></p>
+<p>如何破坏双亲委托机制了，看一下<code>ClassLoader</code>的<code>loadClass</code>方法:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">protected Class&lt;?&gt; loadClass(String name, boolean resolve)</span><br><span class="line">    throws ClassNotFoundException</span><br><span class="line">&#123;</span><br><span class="line">    synchronized (getClassLoadingLock(name)) &#123;</span><br><span class="line">        // 检查类是否已经被加载</span><br><span class="line">        Class&lt;?&gt; c = findLoadedClass(name);</span><br><span class="line">        if (c == null) &#123;</span><br><span class="line">            long t0 = System.nanoTime();</span><br><span class="line">            try &#123;</span><br><span class="line">                // 如果有父加载器，则使用父加载器来加载</span><br><span class="line">                if (parent != null) &#123;</span><br><span class="line">                    c = parent.loadClass(name, false);</span><br><span class="line">                &#125; else &#123;</span><br><span class="line">                // BootStrap加载器去加载</span><br><span class="line">                    c = findBootstrapClassOrNull(name);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; catch (ClassNotFoundException e) &#123;</span><br><span class="line">                // ClassNotFoundException thrown if class not found</span><br><span class="line">                // from the non-null parent class loader</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            if (c == null) &#123;</span><br><span class="line">                // If still not found, then invoke findClass in order</span><br><span class="line">                // to find the class.</span><br><span class="line">                long t1 = System.nanoTime();</span><br><span class="line">                c = findClass(name);</span><br><span class="line"></span><br><span class="line">                // this is the defining class loader; record the stats</span><br><span class="line">                sun.misc.PerfCounter.getParentDelegationTime().addTime(t1 - t0);</span><br><span class="line">                sun.misc.PerfCounter.getFindClassTime().addElapsedTimeFrom(t1);</span><br><span class="line">                sun.misc.PerfCounter.getFindClasses().increment();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        if (resolve) &#123;</span><br><span class="line">            resolveClass(c);</span><br><span class="line">        &#125;</span><br><span class="line">        return c;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>我们可以看到，调用父加载器去加载类的逻辑是在<code>loadClass</code>里面实现的，所以我们要破坏双亲委托模型，只需要重写<code>loadClass</code>方法就可以</p>
+<h3 id="常量的本质和数组创建"><a href="#常量的本质和数组创建" class="headerlink" title="常量的本质和数组创建"></a>常量的本质和数组创建</h3><p>这样一个例子：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Test1</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span></span>&#123;</span><br><span class="line">      System.out.println(Test2.str);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Test2</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> String str = <span class="string">"hello world"</span>;</span><br><span class="line">    <span class="keyword">static</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">"static block init"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p><code>Test2</code> 如果用final修饰，则只会打印<code>hello world</code>, 如果去掉final则会将静态代码块的内容也打印出来。</p>
+<p>这说明如果使用final时并没有初始化<code>Test2</code>，这里说一个原理：</p>
+<blockquote>
+<p>常量在编译阶段会存入调用这个常量的方法所在的常量池当中，本质上调用类并没有直接引用到定义常量所在的类，因此并不会触发定义产量的类的初始化。</p>
+</blockquote>
+<h4 id="编译期常量和运行期常量"><a href="#编译期常量和运行期常量" class="headerlink" title="编译期常量和运行期常量"></a>编译期常量和运行期常量</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Test1</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span></span>&#123;</span><br><span class="line">      System.out.println(Test3.str);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Test3</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> String str = UUID.randomUUID.toString();</span><br><span class="line">    <span class="keyword">static</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">"static block init"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上述例子运行，确可以输出Test3的静态代码块的内容，这跟上一个例子有些不同，关键在于Test1所定义的常量str在编译期间无法确定，只有在运行期间才能确定，这样就导致了目标类的初始化：</p>
+<blockquote>
+<p>当编译期无法确定具体值的常量，那么其值不会放到调用类的常量池，就会导致主动使用这个常量所在的类，就会导致这个类的初始化</p>
+</blockquote>
+<h4 id="数组创建的区别"><a href="#数组创建的区别" class="headerlink" title="数组创建的区别"></a>数组创建的区别</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Test1</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span></span>&#123;</span><br><span class="line">      Test4[]  test = <span class="keyword">new</span> Test4[<span class="number">1</span>];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Test4</span> </span>&#123;</span><br><span class="line">    <span class="keyword">static</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">"static block init"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>运行上述代码，并没有输出Test4的静态代码块。这与之前说的new会触发类初始化相违背，这是因为：数组不通过类加载器创建，它是由java虚拟机动态生成一种类型，如上述例子生成的就是<code>[Test4]</code>这种形式,数组要去掉一个维度才是具体的元素类型。</p>
+<h3 id="对象的创建与内存布局"><a href="#对象的创建与内存布局" class="headerlink" title="对象的创建与内存布局"></a>对象的创建与内存布局</h3><p>虚拟机遇到一条new指令时,大体分为三个部分，如下:</p>
+<ol>
+<li>分配内存空间</li>
+<li>初始化对象</li>
+<li>将内存空间的地址赋值给对应的引用</li>
+</ol>
+<p>但是由于重排序的缘故，步骤2、3可能会发生重排序。所以写单例模式的时候要注意（DCL双重锁）。</p>
+<h4 id="对象创建详细过程"><a href="#对象创建详细过程" class="headerlink" title="对象创建详细过程"></a>对象创建详细过程</h4><h5 id="1-检验"><a href="#1-检验" class="headerlink" title="1).检验"></a>1).检验</h5><p>当虚拟机执行到new时，会先去常量池中查找这个类的符号引用。如果能找到符号引用，说明此类已经被加载到方法区（方法区存储虚拟机已经加载的类的信息），可以继续执行；如果找不到符号引用，就会使用类加载器执行类的加载过程，类加载完成后继续执行。</p>
+<h5 id="2-为对象分配内存"><a href="#2-为对象分配内存" class="headerlink" title="2).为对象分配内存"></a>2).为对象分配内存</h5><p>对象所需内存的大小在类加载完成后便可完全确定,为对象分配空间的任务具体便等同于一块确定大小的内存从Java堆中划分出来, 有两种划分方法：</p>
+<ol>
+<li><p>指针碰撞: 对于内存绝对规整的情况相对简单一些，虚拟机只需要在被占用的内存和可用空间之间移动指针即可</p>
+</li>
+<li><p>空闲列表: 对于内存不规整的情况稍微复杂一点，这时候虚拟机需要维护一个列表，来记录哪些内存是可用的。分配内存的时候需要找到一个可用的内存空间，然后在列表上记录下已被分配，这种方式成为空闲列表</p>
+</li>
+</ol>
+<p>分配的时候也要考虑并发情况下线程安全问题。比如在并发情况下，可能出现正在给对象A分配内存，指针还没来得及修改，对象B又同时使用了原来的指针来分配内存。解决这个问题有两个方案：</p>
+<ol>
+<li>同步的方法： 虚拟机是采用CAS配上失败重试的方式保证更新操作的原子性；</li>
+<li>另一种是每个线程分配内存都在自己的空间内进行，即是每个线程都在堆中预先分配一小块内存，称为本地线程分配缓冲（TLAB），分配内存的时候再TLAB上分配，互不干扰。</li>
+</ol>
+<h5 id="3-内存空间初始化为0"><a href="#3-内存空间初始化为0" class="headerlink" title="3).内存空间初始化为0"></a>3).内存空间初始化为0</h5><p>内存分配完成之后，虚拟机需要将分配到的内存空间都初始化为零值（不包括对象头）</p>
+<h5 id="4-对象头的设置"><a href="#4-对象头的设置" class="headerlink" title="4).对象头的设置"></a>4).对象头的设置</h5><p>接下来，虚拟机要对对象进行必要的设置，例如这个对象是哪个类的实例、如何才能找到类的元数据信息、对象的哈希码、对象的GC分代年龄等信息。这些信息存放在对象的对象头（Object Header）之中。根据虚拟机当前的运行状态的不同，如是否启用偏向锁等，对象头会有不同的设置方式。</p>
+<h5 id="6-执行init-方法"><a href="#6-执行init-方法" class="headerlink" title="6). 执行init()方法"></a>6). 执行init()方法</h5><p>在上面工作都完成之后，在虚拟机的视角来看，一个新的对象已经产生了。但是在Java程序的视角看来，对象创建才刚刚开始——&lt; init&gt;方法还没有执行，所有的字段都为零呢。所以一般来说（由字节码中是否跟随有invokespecial指令所决定），new指令之后会接着就是执行&lt; init&gt;方法，把对象按照程序员的意愿进行初始化。</p>
+<h4 id="对象的内存布局"><a href="#对象的内存布局" class="headerlink" title="对象的内存布局"></a>对象的内存布局</h4><p>HotSpot虚拟机中，对象在内存中存储的布局可以分为三块区域：</p>
+<ul>
+<li>对象头（Header): 对象头又包含 <code>Mark Word</code> 和 <code>Class 对象指针</code></li>
+<li>实例数据（Instance Data）: 对象实际数据</li>
+<li>对齐填充（Padding）: 按 8 个字节对齐</li>
+</ul>
+<p><img src="/images/jvm/object-in-heap.png" alt></p>
+<h5 id="对象头"><a href="#对象头" class="headerlink" title="对象头"></a>对象头</h5><p>如果对象是数组类型，则虚拟机用3个字宽（Word）存储对象头，如果对象是非数组类型，则用2字宽存储对象头。(字宽也称虚拟机的字，32位虚拟机为32bit, 64位则为 64 bit)</p>
+<p>HotSpot虚拟机的对象头包括两部分信息：</p>
+<ol>
+<li>第一部分叫<code>Mark Word</code>，存储如哈希码（HashCode）、GC分代年龄、锁状态标志、线程持有的锁、偏向线程ID、偏向时间戳等等，长度为 32 bit(一个字宽，64位虚拟机则为64bit)</li>
+</ol>
+<p>在 32 位虚拟机中，对象不同状态时，mark world 如下图所示:</p>
+<p><img src="/images/jvm/ObjectHead.png" alt></p>
+<ol start="2">
+<li><p>类型指针(<code>kclass pointer</code>)，该指针指向它的类元数据。这部分也占一个字宽（32位系统就是32bit）</p>
+</li>
+<li><p>如果是数组类型，还有一个字宽来表示数组长度</p>
+</li>
+</ol>
+<h6 id="Klass-Word-指针压缩"><a href="#Klass-Word-指针压缩" class="headerlink" title="Klass Word 指针压缩"></a>Klass Word 指针压缩</h6><p>Klass Word 这里其实是虚拟机设计的一个oop-klass model模型，这里的OOP是指Ordinary Object Pointer（普通对象指针），看起来像个指针实际上是藏在指针里的对象。而 klass 则包含 元数据和方法信息，用来描述 Java 类。它在64位虚拟机开启压缩指针的环境下占用 32bits 空间。</p>
+<p>这样存储对象指针的时候，这样 jvm 可以将一个 35 位指针压缩成 32 位，意味着使用32位引用的情况下最多可以使用<code>2^(32+3)=32 GB</code>空间。当要去 jvm内存中找到一个对象的时候，只需要左移三位就可以找到真正的对象,如图所示:<br> <img src="/images/jvm/compress-oops.jpg" alt></p>
+<p> <code>-XX:+UseCompressedOops</code> 允许对象指针压缩。</p>
+<h5 id="实例数据"><a href="#实例数据" class="headerlink" title="实例数据"></a>实例数据</h5><p>这部分数据存储对象真正的有效信息，包括:</p>
+<ul>
+<li>longs/doubles</li>
+<li>ints</li>
+<li>shorts/chars</li>
+<li>bytes/booleans</li>
+<li>oops(Ordinary Object Pointers)</li>
+</ul>
+<h5 id="对齐填充"><a href="#对齐填充" class="headerlink" title="对齐填充"></a>对齐填充</h5><p>由于HotSpot VM的自动内存管理系统要求对象起始地址必须是8字节的整数倍，换句话说就是对象的大小必须是8字节的整数倍。对象头部分正好是8字节的倍数（1倍或者2倍），因此当对象实例数据部分没有对齐的话，就需要通过对齐填充来补全。</p>
+<p>也可以通过 jvm 参数来修改对齐填充的字节数,比如设置为16：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-XX:ObjectAlignmentInBytes=16</span><br></pre></td></tr></table></figure></p>
+<p>再计算对象头大小的时候，因为有对其填充的存在，就不能直接是MarkWord+KlassWord了。需要按着操作系统的位数进行填充，比如32位就是4个字节。对象的大小应该是4个字节的倍数，64位也是同样道理，对象的大小是8<br>字节的倍数(想想对象指针压缩)</p>
+<h5 id="对象的逃逸分析"><a href="#对象的逃逸分析" class="headerlink" title="对象的逃逸分析"></a>对象的逃逸分析</h5><p>逃逸分析（Escape Analysis）简单来讲就是，Java Hotspot 虚拟机可以分析新创建对象的使用范围，并决定是否在 Java 堆上分配内存的一项技术。</p>
+<p>逃逸分析的JVM参数:</p>
+<ul>
+<li>开启逃逸分析：-XX:+DoEscapeAnalysis(默认是开启的)</li>
+<li>关闭逃逸分析：-XX:-DoEscapeAnalysis</li>
+<li>显示分析结果：-XX:+PrintEscapeAnalysis</li>
+</ul>
+<h6 id="对象逃逸状态"><a href="#对象逃逸状态" class="headerlink" title="对象逃逸状态"></a>对象逃逸状态</h6><ol>
+<li>全局逃逸</li>
+</ol>
+<p>一个对象的作用范围超出了当前方法或当前线程, 如以下几种情况:</p>
+<ul>
+<li>对象是一个静态变量</li>
+<li>对象是一个已经发生逃逸的对象</li>
+<li>对象作为当前方法的返回值</li>
+</ul>
+<ol start="2">
+<li>参数逃逸</li>
+</ol>
+<p>即一个对象被作为方法参数传递或者被参数引用，作为调用参数传递到其他地方</p>
+<ol start="3">
+<li>无逃逸</li>
+</ol>
+<p>即对象没有发生逃逸</p>
+<h6 id="逃逸分析优化"><a href="#逃逸分析优化" class="headerlink" title="逃逸分析优化"></a>逃逸分析优化</h6><p>当分析出一个对象没有发生逃逸的时候，可以有几种优化:</p>
+<ol>
+<li>锁消除</li>
+</ol>
+<p>当编译器确定当前对象只有当前线程使用，那么就会移除该对象的同步锁(synchronize)。</p>
+<p>锁消除的 JVM 参数:<br>开启锁消除：-XX:+EliminateLocks(JDK8 默认是开启的)<br>关闭锁消除：-XX:-EliminateLocks</p>
+<ol start="2">
+<li>标量替换</li>
+</ol>
+<p>标量替换(scalar replacement)。Java中的原始类型无法再分解，可以看作标量（scalar）；指向对象的引用也是标量；而对象本身则是聚合量（aggregate），可以包含任意个数的标量。如果把一个Java<br>对象拆散，将其成员变量恢复为分散的变量，这就叫做标量替换。拆散后的变量便可以被单独分析与优化，可以各自分别在活动记录（栈帧或寄存器）上分配空间；原本的对象就无需整体分配空间了。</p>
+<p>这样一个对象没有发生逃逸，那压根就不用创建它，只会在栈或者寄存器上创建它用到的成员标量，节省了内存空间，也提升了应用程序性能。</p>
+<ol start="3">
+<li>栈上分配</li>
+</ol>
+<p>并非所有的对象都是分配在上的。当对象没有发生逃逸时，该对象就可以通过标量替换分解成成员标量分配在栈内存中，和方法的生命周期一致，随着栈帧出栈时销毁，减少了 GC 压力，提高了应用程序性能。</p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li>[深入理解java虚拟机-周志明]</li>
+<li><a href="https://blog.csdn.net/u013310517/article/details/80895516" target="_blank" rel="noopener">java类加载机制-破坏双亲委派模型</a></li>
+<li><a href="https://my.oschina.net/xpbob/blog/761436" target="_blank" rel="noopener">如何快速写一个破坏双亲委托机制的classLoader</a></li>
+<li><a href="https://juejin.im/post/5b90cd7c5188255c877e20c8" target="_blank" rel="noopener">synchronized原理</a></li>
+<li><a href="https://www.iteye.com/blog/rednaxelafx-659108" target="_blank" rel="noopener">参考资料：R大博客标量替换</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/10/20/jvm/jvm内存结构/" rel="next" title="jvm内存结构">
+                <i class="fa fa-chevron-left"></i> jvm内存结构
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/11/11/jvm/GC算法和垃圾收集器/" rel="prev" title="GC算法和垃圾收集器">
+                GC算法和垃圾收集器 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">勿在浮沙筑高台</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">66</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">23</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#类的生命周期"><span class="nav-number">1.</span> <span class="nav-text">类的生命周期</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#加载"><span class="nav-number">1.1.</span> <span class="nav-text">加载</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#连接"><span class="nav-number">1.2.</span> <span class="nav-text">连接</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-验证：-确保被加载类的正确性"><span class="nav-number">1.2.1.</span> <span class="nav-text">1) 验证： 确保被加载类的正确性</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-准备：-为类的静态变量分配内存，并将其初始化为默认值"><span class="nav-number">1.2.2.</span> <span class="nav-text">2) 准备： 为类的静态变量分配内存，并将其初始化为默认值</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3）-解析：-把类中的符号引用转换为直接引用"><span class="nav-number">1.2.3.</span> <span class="nav-text">3） 解析： 把类中的符号引用转换为直接引用</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#初始化"><span class="nav-number">1.3.</span> <span class="nav-text">初始化</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1）-类初始化步骤"><span class="nav-number">1.3.1.</span> <span class="nav-text">1） 类初始化步骤</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-类初始化时机"><span class="nav-number">1.3.2.</span> <span class="nav-text">2) 类初始化时机</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#结束生命周期"><span class="nav-number">1.4.</span> <span class="nav-text">结束生命周期</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#类加载器"><span class="nav-number">2.</span> <span class="nav-text">类加载器</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-加载器类型"><span class="nav-number">2.1.</span> <span class="nav-text">1)  加载器类型</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-JVM类加载机制"><span class="nav-number">2.2.</span> <span class="nav-text">2) JVM类加载机制</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3）-类的加载"><span class="nav-number">2.3.</span> <span class="nav-text">3） 类的加载</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-如何破坏双亲委派机制"><span class="nav-number">2.4.</span> <span class="nav-text">4) 如何破坏双亲委派机制</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#常量的本质和数组创建"><span class="nav-number">3.</span> <span class="nav-text">常量的本质和数组创建</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#编译期常量和运行期常量"><span class="nav-number">3.1.</span> <span class="nav-text">编译期常量和运行期常量</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#数组创建的区别"><span class="nav-number">3.2.</span> <span class="nav-text">数组创建的区别</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#对象的创建与内存布局"><span class="nav-number">4.</span> <span class="nav-text">对象的创建与内存布局</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#对象创建详细过程"><span class="nav-number">4.1.</span> <span class="nav-text">对象创建详细过程</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-检验"><span class="nav-number">4.1.1.</span> <span class="nav-text">1).检验</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-为对象分配内存"><span class="nav-number">4.1.2.</span> <span class="nav-text">2).为对象分配内存</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-内存空间初始化为0"><span class="nav-number">4.1.3.</span> <span class="nav-text">3).内存空间初始化为0</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-对象头的设置"><span class="nav-number">4.1.4.</span> <span class="nav-text">4).对象头的设置</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#6-执行init-方法"><span class="nav-number">4.1.5.</span> <span class="nav-text">6). 执行init()方法</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#对象的内存布局"><span class="nav-number">4.2.</span> <span class="nav-text">对象的内存布局</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#对象头"><span class="nav-number">4.2.1.</span> <span class="nav-text">对象头</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#Klass-Word-指针压缩"><span class="nav-number">4.2.1.1.</span> <span class="nav-text">Klass Word 指针压缩</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#实例数据"><span class="nav-number">4.2.2.</span> <span class="nav-text">实例数据</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#对齐填充"><span class="nav-number">4.2.3.</span> <span class="nav-text">对齐填充</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#对象的逃逸分析"><span class="nav-number">4.2.4.</span> <span class="nav-text">对象的逃逸分析</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#对象逃逸状态"><span class="nav-number">4.2.4.1.</span> <span class="nav-text">对象逃逸状态</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#逃逸分析优化"><span class="nav-number">4.2.4.2.</span> <span class="nav-text">逃逸分析优化</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">5.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/jquery/2.1.3/jquery.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fastclick/1.0.6/fastclick.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.bootcss.com/jquery_lazyload/1.9.7/jquery.lazyload.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.ui.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

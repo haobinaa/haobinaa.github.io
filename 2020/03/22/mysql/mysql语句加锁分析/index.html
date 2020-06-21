@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+  <link href="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.min.js" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+  
+
+<link href="//cdn.staticfile.org/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="mysql,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="普通Select语句情况 READ UNCOMMITTED隔离级别下，不加锁，直接读取记录的最新版本，可能发生脏读、不可重复读和幻读问题。  READ COMMITTED隔离级别下，不加锁，在每次执行普通的SELECT语句时都会生成一个ReadView，这样解决了脏读问题，但没有解决不可重复读和幻读问题。  REPEATABLE READ隔离级别下，不加锁，只在第一次执行普通的SELECT语句时生">
+<meta name="keywords" content="mysql">
+<meta property="og:type" content="article">
+<meta property="og:title" content="mysql语句加锁分析">
+<meta property="og:url" content="http://yoursite.com/2020/03/22/mysql/mysql语句加锁分析/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="普通Select语句情况 READ UNCOMMITTED隔离级别下，不加锁，直接读取记录的最新版本，可能发生脏读、不可重复读和幻读问题。  READ COMMITTED隔离级别下，不加锁，在每次执行普通的SELECT语句时都会生成一个ReadView，这样解决了脏读问题，但没有解决不可重复读和幻读问题。  REPEATABLE READ隔离级别下，不加锁，只在第一次执行普通的SELECT语句时生">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2020-06-07T04:32:06.984Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="mysql语句加锁分析">
+<meta name="twitter:description" content="普通Select语句情况 READ UNCOMMITTED隔离级别下，不加锁，直接读取记录的最新版本，可能发生脏读、不可重复读和幻读问题。  READ COMMITTED隔离级别下，不加锁，在每次执行普通的SELECT语句时都会生成一个ReadView，这样解决了脏读问题，但没有解决不可重复读和幻读问题。  REPEATABLE READ隔离级别下，不加锁，只在第一次执行普通的SELECT语句时生">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2020/03/22/mysql/mysql语句加锁分析/">
+
+
+
+
+
+  <title>mysql语句加锁分析 | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/03/22/mysql/mysql语句加锁分析/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">mysql语句加锁分析</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-03-22T13:35:18+08:00">
+                2020-03-22
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mysql/" itemprop="url" rel="index">
+                    <span itemprop="name">mysql</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="普通Select语句情况"><a href="#普通Select语句情况" class="headerlink" title="普通Select语句情况"></a>普通Select语句情况</h3><ul>
+<li><p><code>READ UNCOMMITTED</code>隔离级别下，不加锁，直接读取记录的最新版本，可能发生脏读、不可重复读和幻读问题。</p>
+</li>
+<li><p><code>READ COMMITTED</code>隔离级别下，不加锁，在每次执行普通的SELECT语句时都会生成一个ReadView，这样解决了脏读问题，但没有解决不可重复读和幻读问题。</p>
+</li>
+<li><p><code>REPEATABLE READ</code>隔离级别下，不加锁，只在第一次执行普通的SELECT语句时生成一个ReadView，这样把脏读、不可重复读和幻读问题都解决了。</p>
+</li>
+<li><p><code>SERIALIZABLE</code>隔离级别下，需要分为两种情况讨论：</p>
+<ol>
+<li>在系统变量autocommit=0时，也就是禁用自动提交时，普通的SELECT语句会被转为<code>SELECT ... LOCK IN SHARE MODE</code>这样的语句，也就是在读取记录前需要先获得记录的S锁</li>
+<li>在系统变量autocommit=1时，也就是启用自动提交时，普通的SELECT语句并不加锁，只是利用MVCC来生成一个ReadView去读取记录。因为在自动提交的情况下一条语句就是一个事务，也没有什么不可重复读，幻读这个说法了。</li>
+</ol>
+</li>
+</ul>
+<h3 id="锁定读的语句"><a href="#锁定读的语句" class="headerlink" title="锁定读的语句"></a>锁定读的语句</h3><ol>
+<li><code>SELECT .. LOCK IN SHARE MODE</code></li>
+<li><code>SELECT * FROM UPDATE</code></li>
+<li><code>UPDATE ....</code><br>4 <code>DELETE ...</code></li>
+</ol>
+<p>这几种情况都属于锁定读，虽然最后两种是更新和删除但是都要先锁定到对应的记录才能操作</p>
+<h4 id="READ-UNCOMMITTED-READ-COMMITTED隔离级别下"><a href="#READ-UNCOMMITTED-READ-COMMITTED隔离级别下" class="headerlink" title="READ UNCOMMITTED/READ COMMITTED隔离级别下"></a>READ UNCOMMITTED/READ COMMITTED隔离级别下</h4><p>在READ UNCOMMITTED下语句的加锁方式和READ COMMITTED隔离级别下语句的加锁方式基本一致。如果采用加锁的方式，脏读和不可重复读在任何一个隔离级别下都不会发生（因为读-写操作需要排队进行）。</p>
+<h5 id="1-对于使用主键进行等值查询的情况"><a href="#1-对于使用主键进行等值查询的情况" class="headerlink" title="(1) 对于使用主键进行等值查询的情况"></a>(1) 对于使用主键进行等值查询的情况</h5><ul>
+<li>使用<code>SELECT ... LOCK IN SHARE MODE</code>来为记录加锁，比方说：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">-- number 是主键(聚簇索引)</span><br><span class="line">SELECT * FROM hero WHERE number = 8 LOCK IN SHARE MODE;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>这条语句只需要访问 number 为8的记录，只给这个记录加普通的S锁</p>
+<ul>
+<li>使用<code>SELECT ... FOR UPDATE</code>来为记录加锁，比方说：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT * FROM hero WHERE number = 8 FOR UPDATE;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>这种情况也只访问 number 为 8 的记录，只给这个记录加普通的X锁</p>
+<ul>
+<li>使用<code>UPDATE ...</code>来为记录加锁，分两个情况，比方说：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">-- country 列上无索引</span><br><span class="line">UPDATE hero SET country = &apos;汉&apos; WHERE number = 8;</span><br><span class="line">-- name 列上是二级索引</span><br><span class="line">UPDATE hero SET name = &apos;cao曹操&apos; WHERE number = 8;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>如果没有对二级索引进行更新，跟<code>Select .. for update</code>一样，只锁定聚簇索引记录<br>如果对二级索引进行了更新(第二条sql),这里的步骤就是</p>
+<ol>
+<li>为number值为8的聚簇索引记录加上普通X锁</li>
+<li>为该聚簇索引记录对应的idx_name二级索引记录（也就是name值为’c曹操’，number值为8的那条二级索引记录）加普通X锁</li>
+</ol>
+<ul>
+<li>使用<code>DELETE ...</code>来为记录加锁，比方说：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">DELETE FROM hero WHERE number = 8;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>DELETE表中的一条记录意味着对聚簇索引和所有的二级索引中对应的记录做DELETE操作。加锁跟UPDATE语句一样，然后对聚簇索引和所有二级索引进行删除</p>
+<h5 id="2-使用主键进行范围查询"><a href="#2-使用主键进行范围查询" class="headerlink" title="(2) 使用主键进行范围查询"></a>(2) 使用主键进行范围查询</h5><ul>
+<li>使用<code>SELECT ... LOCK IN SHARE MODE</code>来为记录加锁，比方说：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT * FROM hero WHERE number &lt;= 8 LOCK IN SHARE MODE;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<ol>
+<li>先到聚簇索引中定位到满足number &lt;= 8的第一条记录，然后为其加锁</li>
+<li>判断该记录是否符合ICP(索引条件下推)。需要注意的是，ICP只是把查询中与被使用索引有关的查询条件下推到存储引擎中判断，而不是返回到server层再判断，这样是为了减少回表次数，但是对于聚簇索引来说不需要回表(本身就包括了全部的列),这里Number是聚簇索引，不需要判断是否符合ICP</li>
+<li>判断一下该记录是否符合范围查的边界条件(如果不符合条件就直接返回了)</li>
+<li>沿着符合第一条符合条件的记录向下查找，直到满足所有条件就返回。这个过程会给满足条件的记录加普通S锁.(这里有个点需要注意，假如number为8后面还有一条记录number=9，找到了number=8后还会往后找一条记录，为其加上锁，然后判断不符合条件，在释放这条记录的锁)</li>
+</ol>
+<ul>
+<li><p>使用<code>SELECT ... FOR UPDATE</code>语句。与上面过程类似，不过加的是X锁</p>
+</li>
+<li><p>使用<code>UPDATE ...</code>来为记录加锁。这里还是分是否有更新二级索引的情况，如果不更新就只往符合条件的聚簇索引加锁</p>
+</li>
+<li><p>使用<code>DELETE ...来为记录</code>加锁, 与UPDATE一样</p>
+</li>
+</ul>
+<h5 id="3-二级索引等值查询"><a href="#3-二级索引等值查询" class="headerlink" title="(3) 二级索引等值查询"></a>(3) 二级索引等值查询</h5><p>这里的分析流程和主键索引等值查询基本一致，不过是先通过二级索引找到符合条件的记录，对二级索引记录加锁然后通过回表找到聚簇索引对应记录在加上锁。</p>
+<h5 id="4-二级索引范围查询"><a href="#4-二级索引范围查询" class="headerlink" title="(4) 二级索引范围查询"></a>(4) 二级索引范围查询</h5><p>同样与主键索引类似</p>
+<h5 id="5-全表扫描情况"><a href="#5-全表扫描情况" class="headerlink" title="(5) 全表扫描情况"></a>(5) 全表扫描情况</h5><p>全表扫描会遍历每一条记录，并且为记录加上锁，然后判断是否符合查询条件，不符合就释放锁</p>
+<h4 id="REPEATABLE-READ隔离级别下"><a href="#REPEATABLE-READ隔离级别下" class="headerlink" title="REPEATABLE READ隔离级别下"></a>REPEATABLE READ隔离级别下</h4><p>REPEATABLE READ隔离级别与READ UNCOMMITTED和READ COMMITTED这两个隔离级别相比，最主要的就是要解决幻读问题，幻读问题的解决还得靠gap锁(间隙锁)。</p>
+<h5 id="1-对于使用主键进行等值查询的情况-1"><a href="#1-对于使用主键进行等值查询的情况-1" class="headerlink" title="(1)对于使用主键进行等值查询的情况"></a>(1)对于使用主键进行等值查询的情况</h5><ul>
+<li>使用<code>SELECT ... LOCK IN SHARE MODE</code>来为记录加锁，比方说：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT * FROM hero WHERE number = 8 LOCK IN SHARE MODE;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>由于主键具有唯一性，这种情况只需要为这条number值为8的记录加一个普通S锁就好了，并不会产生幻读，不可重复读的情况</p>
+<p>但是要查询主键值不存在的情况，比如:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">-- 数据库没有 number=7 这条记录</span><br><span class="line">SELECT * FROM hero WHERE number = 7 LOCK IN SHARE MODE;</span><br></pre></td></tr></table></figure></p>
+<p>由于number值为7的记录不存在，为了禁止幻读现象（也就是避免在同一事务中下一次执行相同语句时得到的结果集中包含number值为7的记录），在当前事务提交前我们需要预防别的事务插入number值为7的新记录，所以需要在number值为7的下一条记录记录上加一个gap锁(假设是number=8是下一条记录，number=3是上一条记录，就是在(3,8)之间加上间隙锁)</p>
+<p>因为 READ UNCOMMITTED／READ COMMITTED 不会禁止幻读，所以之前是不加间隙锁</p>
+<ul>
+<li>其余三种情况与 <code>READ UNCOMMITTED／READ COMMITTED</code> 是一样的</li>
+</ul>
+<h5 id="2-对于使用主键进行范围查询的情况"><a href="#2-对于使用主键进行范围查询的情况" class="headerlink" title="(2) 对于使用主键进行范围查询的情况"></a>(2) 对于使用主键进行范围查询的情况</h5><ul>
+<li>使用<code>SELECT ... LOCK IN SHARE MODE</code>语句来为记录加锁，比方：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT * FROM hero WHERE number &gt;= 8 LOCK IN SHARE MODE;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>因为要解决幻读问题，所以需要禁止别的事务插入number值符合number &gt;= 8的记录，又因为主键本身就是唯一的，所以我们不用担心在number值为8的前边有新记录插入，只需要保证不要让新记录插入到number值为8<br>的后边就好了，所以：</p>
+<ol>
+<li>为number值为8的聚簇索引记录加一个普通S锁。</li>
+<li>为number值大于8的所有聚簇索引记录(是每一条记录)都加一个S型next-key锁（包括Supremum伪记录）。</li>
+</ol>
+<p>在之前说过，会对number=8后面的一条记录先加锁在释放锁，而在 REPEATABLE READ 级别下是不会释放后面一条记录的锁的。</p>
+<ul>
+<li><p>使用<code>SELECT ... FOR UPDATE</code>语句,与上面基本一样，只不过需要将上边提到的S型next-key锁替换成X型next-key锁。</p>
+</li>
+<li><p>使用<code>UPDATE ...</code>来为记录加锁，也要区分是否更新二级索引的场景:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">-- country 没有索引</span><br><span class="line">UPDATE hero SET country = &apos;汉&apos; WHERE number &gt;= 8;</span><br><span class="line">-- name 是二级索引</span><br><span class="line">UPDATE hero SET name = &apos;cao曹操&apos; WHERE number &gt;= 8;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<ol>
+<li>如果不需要更新二级索引，那么就和<code>SELECT..FOR UPDATE</code>一样</li>
+<li>如果需要更新二级索引，对于聚簇索引的加锁和<code>SELECT..FOR UPDATE</code>一样，然后再给对应的二级索引加上普通X锁</li>
+</ol>
+<ul>
+<li>使用<code>DELETE ...</code>来为记录加锁的情况和UPDATE一致</li>
+</ul>
+<h5 id="3-使用唯一二级索引进行等值查询"><a href="#3-使用唯一二级索引进行等值查询" class="headerlink" title="(3) 使用唯一二级索引进行等值查询"></a>(3) 使用唯一二级索引进行等值查询</h5><ul>
+<li>使用<code>SELECT ... LOCK IN SHARE MODE</code>语句来为记录加锁，比方说：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">-- 这里给 name 列加了一个唯一索引 uk_name(name)</span><br><span class="line">SELECT * FROM hero WHERE name = &apos;c曹操&apos; LOCK IN SHARE MODE;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>由于是唯一二级索引，那么肯定也不会有重复插入的情况，这种也是只需要给对应的二级索引加个普通S锁，然后对聚簇索引对应记录加个普通S锁</p>
+<p>但是如果唯一索引查询的记录并不存在的情况，跟主键索引一样，就要对查询记录与下一条记录之间加个间隙锁，值得注意的是，这里只需要对二级索引加锁就好了，不需要还另外对主键索引加锁</p>
+<ul>
+<li><p>使用<code>SELECT ... FOR UPDATE</code>语句来为记录加锁,这里和上面过程一样，不过这里加的是普通X锁</p>
+</li>
+<li><p>使用<code>UPDATE ...</code>来为记录加锁，这里与<code>SELECT .. FOR UPDATE</code>类似，不过如果更新的列还有别的二级索引，对应的二级索引也要加锁</p>
+</li>
+<li><p><code>DELETE ...</code> 与上面 update 一样</p>
+</li>
+</ul>
+<h5 id="4-使用唯一二级索引进行范围查询"><a href="#4-使用唯一二级索引进行范围查询" class="headerlink" title="(4) 使用唯一二级索引进行范围查询"></a>(4) 使用唯一二级索引进行范围查询</h5><ul>
+<li>使用<code>SELECT ... LOCK IN SHARE MODE</code>语句来为记录加锁，比方说：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT * FROM hero FORCE INDEX(uk_name) WHERE name &gt;= &apos;c曹操&apos; LOCK IN SHARE MODE;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>这个语句的执行过程其实是先到二级索引中定位到满足name &gt;= ‘c曹操’的第一条记录，也就是name值为c曹操的记录，然后就可以沿着由记录组成的单向链表一路向后找。对于所有满足条件的记录都会被加上<code>S型next-key
+锁</code>，包括二级索引的最后一条<code>Supremum</code>。对二级索引加锁完，还会对聚簇索引记录加锁，聚簇索引加的是<code>普通S锁</code></p>
+<ul>
+<li><p><code>SELECT ... FOR UPDATE</code> 和上面基本类似，不过加的是<code>X型next-key锁</code>和<code>普通X锁</code></p>
+</li>
+<li><p><code>UPDATE ...</code>的情况，比方说：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">UPDATE hero SET country = &apos;汉&apos; WHERE name &gt;= &apos;c曹操&apos;;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>这里其实跟上面<code>SELECT .. for UPDATE</code>基本一样，只不过如果更新了其他的二级索引，需要对其他的二级索引对应加锁。</p>
+<ul>
+<li><code>DELETE</code> 和 上面 update情况一样</li>
+</ul>
+<h5 id="5-使用普通二级索引进行等值查询"><a href="#5-使用普通二级索引进行等值查询" class="headerlink" title="(5) 使用普通二级索引进行等值查询"></a>(5) 使用普通二级索引进行等值查询</h5><ul>
+<li><code>SELECT ... LOCK IN SHARE MODE</code> 语句，比如:<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT * FROM hero WHERE name = &apos;c曹操&apos; LOCK IN SHARE MODE;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>由于普通二级索引没有唯一性，要阻止其他事务插入name=’c曹操’的记录，这里加锁方式是:</p>
+<ol>
+<li>对所有name值为’c曹操’的二级索引记录加S型next-key锁，它们对应的聚簇索引记录加普通S锁</li>
+<li>对最后一个name值为’c曹操’的二级索引记录的下一条二级索引记录加gap锁</li>
+</ol>
+<ul>
+<li><p>其他三种情况分析都一样了</p>
+</li>
+<li><p>另外如果是普通二级索引进行范围查询，跟其他分析也是一样的</p>
+</li>
+</ul>
+<h5 id="6-全表扫描的情况"><a href="#6-全表扫描的情况" class="headerlink" title="(6) 全表扫描的情况"></a>(6) 全表扫描的情况</h5><p>这里需要说明一下，再<code>REPEATABLE READ</code>隔离级别下，如果是全表扫描的方式，表里面的所有记录都会被加上<code>next-key</code>锁，直到事务提交才释放。这样会极大的影响该表的并发事务处理能力，如果遇到这个情况，还是尽量对表建立合适的索引</p>
+<h3 id="insert-语句"><a href="#insert-语句" class="headerlink" title="insert 语句"></a>insert 语句</h3><p>INSERT语句一般情况下不加锁，不过当前事务在插入一条记录前需要先定位到该记录在B+树中的位置，如果该位置的下一条记录已经被加了gap锁（next-key锁也包含gap锁），那么当前事务会在该记录上加上一种类型为插入意向锁的锁，并且事务进入等待状态。</p>
+<p>这里有一些 insert 语句的特殊情况</p>
+<h4 id="重复键-duplicate-key"><a href="#重复键-duplicate-key" class="headerlink" title="重复键(duplicate key)"></a>重复键(duplicate key)</h4><p>在插入一条新记录时，首先要做的事情其实是定位到这条新记录应该插入到B+树的哪个位置。如果定位位置时发现了有已存在记录的主键或者唯一二级索引列与待插入记录的主键或者唯一二级索引列相同，那么此时此时是会报错.在生成报错信息前，其实还需要做一件非常重要的事情 —— 对聚簇索引中那条记录加S锁。不过具体的行锁类型在不同隔离级别下是不一样的：</p>
+<ul>
+<li>在READ UNCOMMITTED/READ COMMITTED隔离级别下，加的是普通S锁</li>
+<li>在REPEATABLE READ/SERIALIZABLE隔离级别下，加的是S型next-key锁</li>
+</ul>
+<h4 id="外键检查"><a href="#外键检查" class="headerlink" title="外键检查"></a>外键检查</h4><p>外键的情况也是特殊处理，再插入子表的时候，也要对相应关联的父表做一些加锁的操作</p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li>[掘金小册-从根上理解MySQL]</li>
+<li>[公众号:我们都是小青蛙 - MySQL加锁分析三部曲]</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/mysql/" rel="tag"><i class="fa fa-tag"></i> mysql</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/03/14/并发/ReentrantReadWriteLock读写锁/" rel="next" title="ReentrantReadWriteLock读写锁">
+                <i class="fa fa-chevron-left"></i> ReentrantReadWriteLock读写锁
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/03/30/限流算法/" rel="prev" title="限流算法(Guava RateLimiter)">
+                限流算法(Guava RateLimiter) <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">勿在浮沙筑高台</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">66</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">23</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#普通Select语句情况"><span class="nav-number">1.</span> <span class="nav-text">普通Select语句情况</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#锁定读的语句"><span class="nav-number">2.</span> <span class="nav-text">锁定读的语句</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#READ-UNCOMMITTED-READ-COMMITTED隔离级别下"><span class="nav-number">2.1.</span> <span class="nav-text">READ UNCOMMITTED/READ COMMITTED隔离级别下</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-对于使用主键进行等值查询的情况"><span class="nav-number">2.1.1.</span> <span class="nav-text">(1) 对于使用主键进行等值查询的情况</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-使用主键进行范围查询"><span class="nav-number">2.1.2.</span> <span class="nav-text">(2) 使用主键进行范围查询</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-二级索引等值查询"><span class="nav-number">2.1.3.</span> <span class="nav-text">(3) 二级索引等值查询</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-二级索引范围查询"><span class="nav-number">2.1.4.</span> <span class="nav-text">(4) 二级索引范围查询</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#5-全表扫描情况"><span class="nav-number">2.1.5.</span> <span class="nav-text">(5) 全表扫描情况</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#REPEATABLE-READ隔离级别下"><span class="nav-number">2.2.</span> <span class="nav-text">REPEATABLE READ隔离级别下</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-对于使用主键进行等值查询的情况-1"><span class="nav-number">2.2.1.</span> <span class="nav-text">(1)对于使用主键进行等值查询的情况</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-对于使用主键进行范围查询的情况"><span class="nav-number">2.2.2.</span> <span class="nav-text">(2) 对于使用主键进行范围查询的情况</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-使用唯一二级索引进行等值查询"><span class="nav-number">2.2.3.</span> <span class="nav-text">(3) 使用唯一二级索引进行等值查询</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-使用唯一二级索引进行范围查询"><span class="nav-number">2.2.4.</span> <span class="nav-text">(4) 使用唯一二级索引进行范围查询</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#5-使用普通二级索引进行等值查询"><span class="nav-number">2.2.5.</span> <span class="nav-text">(5) 使用普通二级索引进行等值查询</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#6-全表扫描的情况"><span class="nav-number">2.2.6.</span> <span class="nav-text">(6) 全表扫描的情况</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#insert-语句"><span class="nav-number">3.</span> <span class="nav-text">insert 语句</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#重复键-duplicate-key"><span class="nav-number">3.1.</span> <span class="nav-text">重复键(duplicate key)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#外键检查"><span class="nav-number">3.2.</span> <span class="nav-text">外键检查</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">4.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/jquery/2.1.3/jquery.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fastclick/1.0.6/fastclick.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.bootcss.com/jquery_lazyload/1.9.7/jquery.lazyload.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.ui.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

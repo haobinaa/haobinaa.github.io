@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+  <link href="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.min.js" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+  
+
+<link href="//cdn.staticfile.org/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="网络IO,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="IO数据传输过程 概念 当某个程序或已存在的进程需要某段数据时，它只能在用户空间中属于它自己的内存中访问、修改，这段内存暂且称之为app  buffer 正常情况下，数据只能从磁盘(或其他外部设备)加载到内核的缓冲区，且称之为kernel buffer  TCP/IP协议栈维护着两个缓冲区：send buffer 和 recv buffer ，它们合称为 socket buffer  程序读取数据">
+<meta name="keywords" content="网络IO">
+<meta property="og:type" content="article">
+<meta property="og:title" content="javaIO网络编程参考">
+<meta property="og:url" content="http://yoursite.com/2018/08/08/IO/javaIO网络编程概述/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="IO数据传输过程 概念 当某个程序或已存在的进程需要某段数据时，它只能在用户空间中属于它自己的内存中访问、修改，这段内存暂且称之为app  buffer 正常情况下，数据只能从磁盘(或其他外部设备)加载到内核的缓冲区，且称之为kernel buffer  TCP/IP协议栈维护着两个缓冲区：send buffer 和 recv buffer ，它们合称为 socket buffer  程序读取数据">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/images/io_process.png">
+<meta property="og:image" content="http://yoursite.com/images/block_io.png">
+<meta property="og:updated_time" content="2020-06-07T04:32:06.980Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="javaIO网络编程参考">
+<meta name="twitter:description" content="IO数据传输过程 概念 当某个程序或已存在的进程需要某段数据时，它只能在用户空间中属于它自己的内存中访问、修改，这段内存暂且称之为app  buffer 正常情况下，数据只能从磁盘(或其他外部设备)加载到内核的缓冲区，且称之为kernel buffer  TCP/IP协议栈维护着两个缓冲区：send buffer 和 recv buffer ，它们合称为 socket buffer  程序读取数据">
+<meta name="twitter:image" content="http://yoursite.com/images/io_process.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/08/08/IO/javaIO网络编程概述/">
+
+
+
+
+
+  <title>javaIO网络编程参考 | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/08/08/IO/javaIO网络编程概述/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">javaIO网络编程参考</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-08-08T17:16:12+08:00">
+                2018-08-08
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IO/" itemprop="url" rel="index">
+                    <span itemprop="name">IO</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="IO数据传输过程"><a href="#IO数据传输过程" class="headerlink" title="IO数据传输过程"></a>IO数据传输过程</h3><p><img src="/images/io_process.png" alt></p>
+<h4 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h4><ul>
+<li>当某个程序或已存在的进程需要某段数据时，它只能在用户空间中属于它自己的内存中访问、修改，这段内存暂且称之为<code>app 
+buffer</code></li>
+<li>正常情况下，数据只能从磁盘(或其他外部设备)加载到内核的缓冲区，且称之为<code>kernel buffer</code> </li>
+<li>TCP/IP协议栈维护着两个缓冲区：<code>send buffer</code> 和 <code>recv buffer</code> ，它们合称为 <code>socket buffer</code></li>
+</ul>
+<h4 id="程序读取数据"><a href="#程序读取数据" class="headerlink" title="程序读取数据"></a>程序读取数据</h4><ol>
+<li>进程发起系统调用，通知内核将磁盘的文件加载到 kernel buffer(DMA直接内存拷贝)</li>
+<li>将kernel buffer 的数据拷贝到 app buffer</li>
+</ol>
+<p>这个过程中进行了两次上下文切换(用户态和内核态之间)， 两次IO拷贝(DMA加载到内核，内核copy到用户空间)</p>
+<h4 id="程序发送和读取网络数据"><a href="#程序发送和读取网络数据" class="headerlink" title="程序发送和读取网络数据"></a>程序发送和读取网络数据</h4><p>当数据要通过TCP发送出去的时候：</p>
+<ol>
+<li>app buffer 的数据复制到 send buffer(socket buffer)</li>
+<li>socket buffer 的数据通过DMA拷贝到网卡通过网络传输出去</li>
+</ol>
+<p>数据接收TCP数据时:</p>
+<ol>
+<li>数据从网卡(NIC)拷贝到 recv buffer(socket buffer)</li>
+<li>socket buffer 的数据再拷贝到 app buffer</li>
+</ol>
+<p>这个过程也发生了两次上下文切换和IO拷贝:</p>
+<ol>
+<li>将用户区的缓存拷贝到内核区的socket buffer， 同时从用户态切换到内核态</li>
+<li>将socket buffer的数据通过DMA拷贝到TCP协议网卡中(IO拷贝), 然后返回系统调用结果给用户空间(上下文切换)</li>
+</ol>
+<h4 id="零拷贝"><a href="#零拷贝" class="headerlink" title="零拷贝"></a>零拷贝</h4><p>我们可以看到，要将磁盘上的数据发送到网络上要经过四次转换:</p>
+<ol>
+<li>数据从磁盘读取到内核的 kernel buffer</li>
+<li>数据从内核缓冲区拷贝到用户缓冲区</li>
+<li>数据从用户缓冲区拷贝到内核的socket buffer</li>
+<li>数据从内核的socket buffer拷贝到网卡接口的缓冲区</li>
+</ol>
+<p>但是如果我们进程不需要修改数据，则第二步和第三步是没有必要的。 操作系统直接将磁盘上的数据拷贝到 kernel buffer 后， 直接拷贝到网卡缓存区， 这就是零拷贝技术(两次拷贝都不需要CPU参与)</p>
+<p>备注： 这里的零拷贝跟netty的零拷贝不是一个概念， netty的零拷贝可以看我另一篇博客</p>
+<h3 id="Blocking-IO-阻塞模式IO"><a href="#Blocking-IO-阻塞模式IO" class="headerlink" title="Blocking IO(阻塞模式IO)"></a>Blocking IO(阻塞模式IO)</h3><p>也叫 <strong>同步阻塞IO</strong> ， 请求数据的进程需要一直阻塞等待读取完成才能返回，同时整个读取的动作也是要同步等待I/O操作的完成才返回。</p>
+<p><img src="/images/block_io.png" alt></p>
+<p>Java中的实现即是最原始的SocketChannel然后accept</p>
+<h4 id="BIO编程模型"><a href="#BIO编程模型" class="headerlink" title="BIO编程模型"></a>BIO编程模型</h4><p>传统BIO编程模型实现如下:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line"> ExecutorService executor = Excutors.newFixedThreadPollExecutor(100);//线程池</span><br><span class="line"></span><br><span class="line"> ServerSocket serverSocket = new ServerSocket();</span><br><span class="line"> serverSocket.bind(8088);</span><br><span class="line"> while(!Thread.currentThread.isInturrupted())&#123;//主线程死循环等待新连接到来</span><br><span class="line"> Socket socket = serverSocket.accept();</span><br><span class="line"> executor.submit(new ConnectIOnHandler(socket));//为新的连接创建新的线程</span><br><span class="line"> &#125;</span><br><span class="line"></span><br><span class="line">class ConnectIOnHandler extends Thread&#123;</span><br><span class="line">    private Socket socket;</span><br><span class="line">    public ConnectIOnHandler(Socket socket)&#123;</span><br><span class="line">       this.socket = socket;</span><br><span class="line">    &#125;</span><br><span class="line">    public void run()&#123;</span><br><span class="line">      while(!Thread.currentThread.isInturrupted()&amp;&amp;!socket.isClosed())&#123;死循环处理读写事件</span><br><span class="line">          String someThing = socket.read()....//读取数据</span><br><span class="line">          if(someThing!=null)&#123;</span><br><span class="line">             ......//处理数据</span><br><span class="line">             socket.write()....//写数据</span><br><span class="line">          &#125;</span><br><span class="line"></span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>socket.accept()、socket.read()、socket.write()<br>三个主要函数都是同步阻塞的，当一个连接在处理I/O的时候，系统是阻塞的，如果是单线程的话必然就挂死在那里；但CPU是被释放出来的，开启多线程，就可以让CPU去处理更多的事情。</p>
+<p>这也是所有使用多线程的本质：</p>
+<ol>
+<li>利用多核</li>
+<li>当I/O阻塞系统，但CPU空闲的时候，可以利用多线程使用CPU资源</li>
+</ol>
+<p>BIO模型最本质的问题在于，严重依赖于线程，但线程资源是宝贵的，主要表现于:</p>
+<ul>
+<li>线程的创建和销毁成本很高，在Linux这样的操作系统中，线程本质上就是一个进程（Linux中线程并没有定义特殊的数据结构）。创建和销毁都是重量级的系统函数</li>
+<li>线程本身占用较大内存，像Java的线程栈，一般至少分配512K～1M的空间，如果系统中的线程数过千，恐怕整个JVM的内存都会被吃掉一半</li>
+<li>线程的切换成本是很高的。操作系统发生线程切换的时候，需要保留线程的上下文，然后执行系统调用。如果线程数过高，可能执行线程切换的时间甚至会大于线程执行的时间，这时候带来的表现往往是系统load偏高、CPU sy使用率特别高（超过20%以上)，导致系统几乎陷入不可用的状态</li>
+<li>容易造成锯齿状的系统负载。因为系统负载是用活动线程数或CPU核心数，一旦线程数量高但外部网络环境不是很稳定，就很容易造成大量请求的结果同时返回，激活大量阻塞线程从而使系统负载压力过大</li>
+</ul>
+<p>当连接数过大的时候，BIO模型是无法应对的</p>
+<h3 id="Nonblocking-IO-非阻塞IO"><a href="#Nonblocking-IO-非阻塞IO" class="headerlink" title="Nonblocking IO(非阻塞IO)"></a>Nonblocking IO(非阻塞IO)</h3><p>非阻塞 IO 的核心在于使用一个 Selector 来管理多个通道，可以是 SocketChannel，也可以是 ServerSocketChannel，将各个通道注册到 Selector 上，指定监听的事件。</p>
+<p>之后可以只用一个线程来轮询这个 Selector，看看上面是否有通道是准备好的，当通道准备好可读或可写，然后才去开始真正的读写，这样速度就很快了。我们就完全没有必要给每个通道都起一个线程</p>
+<p>Java中我们将SocketChannel注册到Selector上，即是这种模式</p>
+<p>NIO 中 Selector 是对底层操作系统实现的一个抽象，管理通道状态其实都是底层系统实现的，这里简单介绍下在不同系统下的实现：</p>
+<ul>
+<li><p>select：最早的NIO模型，但是只支持注册1024个socket</p>
+</li>
+<li><p>poll：poll 是 select 的代替者， poll 不在限制socket的数量， 但是他与 select 一样， 它们都只会告诉你有几个通道准备好了，但是不会告诉你具体是哪几个通道， 需要自己进行一次扫描，这样当通道数量很大的时候，扫描一次的时间都很长。</p>
+</li>
+<li><p>epoll：epoll 能直接返回准备好的通道。</p>
+</li>
+</ul>
+<h4 id="NIO编程模型"><a href="#NIO编程模型" class="headerlink" title="NIO编程模型"></a>NIO编程模型</h4><p>在JDK　NIO　中，我们只需要面向　Selector　编程即可:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line">public class SelectorServer &#123;</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) throws IOException &#123;</span><br><span class="line">        Selector selector = Selector.open();</span><br><span class="line"></span><br><span class="line">        ServerSocketChannel server = ServerSocketChannel.open();</span><br><span class="line">        server.socket().bind(new InetSocketAddress(8080));</span><br><span class="line"></span><br><span class="line">        // 将其注册到 Selector 中，监听 OP_ACCEPT 事件</span><br><span class="line">        server.configureBlocking(false);</span><br><span class="line">        server.register(selector, SelectionKey.OP_ACCEPT);</span><br><span class="line"></span><br><span class="line">        while (true) &#123;</span><br><span class="line">            int readyChannels = selector.select();</span><br><span class="line">            if (readyChannels == 0) &#123;</span><br><span class="line">                continue;</span><br><span class="line">            &#125;</span><br><span class="line">            Set&lt;SelectionKey&gt; readyKeys = selector.selectedKeys();</span><br><span class="line">            // 遍历</span><br><span class="line">            Iterator&lt;SelectionKey&gt; iterator = readyKeys.iterator();</span><br><span class="line">            while (iterator.hasNext()) &#123;</span><br><span class="line">                SelectionKey key = iterator.next();</span><br><span class="line">                iterator.remove();</span><br><span class="line"></span><br><span class="line">                if (key.isAcceptable()) &#123;</span><br><span class="line">                    // 有已经接受的新的到服务端的连接</span><br><span class="line">                    SocketChannel socketChannel = server.accept();</span><br><span class="line"></span><br><span class="line">                    // 有新的连接并不代表这个通道就有数据，</span><br><span class="line">                    // 这里将这个新的 SocketChannel 注册到 Selector，监听 OP_READ 事件，等待数据</span><br><span class="line">                    socketChannel.configureBlocking(false);</span><br><span class="line">                    socketChannel.register(selector, SelectionKey.OP_READ);</span><br><span class="line">                &#125; else if (key.isReadable()) &#123;</span><br><span class="line">                    // 有数据可读</span><br><span class="line">                    // 上面一个 if 分支中注册了监听 OP_READ 事件的 SocketChannel</span><br><span class="line">                    SocketChannel socketChannel = (SocketChannel) key.channel();</span><br><span class="line">                    ByteBuffer readBuffer = ByteBuffer.allocate(1024);</span><br><span class="line">                    int num = socketChannel.read(readBuffer);</span><br><span class="line">                    if (num &gt; 0) &#123;</span><br><span class="line">                        // 处理进来的数据...</span><br><span class="line">                        System.out.println(&quot;收到数据：&quot; + new String(readBuffer.array()).trim());</span><br><span class="line">                        ByteBuffer buffer = ByteBuffer.wrap(&quot;返回给客户端的数据...&quot;.getBytes());</span><br><span class="line">                        socketChannel.write(buffer);</span><br><span class="line">                    &#125; else if (num == -1) &#123;</span><br><span class="line">                        // -1 代表连接已经关闭</span><br><span class="line">                        socketChannel.close();</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="异步IO-NIO-2"><a href="#异步IO-NIO-2" class="headerlink" title="异步IO(NIO.2)"></a>异步IO(NIO.2)</h3><h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="https://tech.meituan.com/nio.html" target="_blank" rel="noopener">java nio浅析</a></li>
+<li><a href="https://juejin.im/post/58bbaee6ac502e006b02f607" target="_blank" rel="noopener">IO模型到netty</a></li>
+<li><a href="https://juejin.im/post/59f9c6d66fb9a0450e75713f" target="_blank" rel="noopener">IO多路复用原理剖析</a></li>
+<li><a href="https://blog.csdn.net/u013933870/article/details/51693484" target="_blank" rel="noopener">进程、线程及其在Linux中的实现</a></li>
+<li><a href="https://www.cnblogs.com/f-ck-need-u/p/7624733.html" target="_blank" rel="noopener">Linux五种IO模型分析</a></li>
+<li><a href="https://segmentfault.com/a/1190000003063859" target="_blank" rel="noopener">Linux IO模式及 select、poll、epoll详解</a></li>
+<li><a href="https://cloud.tencent.com/developer/article/1005481" target="_blank" rel="noopener">大话Linux Select、poll、epoll</a></li>
+<li><a href="https://juejin.im/post/58ea47cbda2f60005f070a70" target="_blank" rel="noopener">IO模型到netty</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/网络IO/" rel="tag"><i class="fa fa-tag"></i> 网络IO</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/06/28/并发/ReentrantLock与AQS/" rel="next" title="ReentrantLock与AQS">
+                <i class="fa fa-chevron-left"></i> ReentrantLock与AQS
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/08/15/并发/ThreadLocal详解/" rel="prev" title="ThreadLocal详解">
+                ThreadLocal详解 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">勿在浮沙筑高台</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">66</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">23</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#IO数据传输过程"><span class="nav-number">1.</span> <span class="nav-text">IO数据传输过程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#概念"><span class="nav-number">1.1.</span> <span class="nav-text">概念</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#程序读取数据"><span class="nav-number">1.2.</span> <span class="nav-text">程序读取数据</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#程序发送和读取网络数据"><span class="nav-number">1.3.</span> <span class="nav-text">程序发送和读取网络数据</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#零拷贝"><span class="nav-number">1.4.</span> <span class="nav-text">零拷贝</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Blocking-IO-阻塞模式IO"><span class="nav-number">2.</span> <span class="nav-text">Blocking IO(阻塞模式IO)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#BIO编程模型"><span class="nav-number">2.1.</span> <span class="nav-text">BIO编程模型</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Nonblocking-IO-非阻塞IO"><span class="nav-number">3.</span> <span class="nav-text">Nonblocking IO(非阻塞IO)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#NIO编程模型"><span class="nav-number">3.1.</span> <span class="nav-text">NIO编程模型</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#异步IO-NIO-2"><span class="nav-number">4.</span> <span class="nav-text">异步IO(NIO.2)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">5.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/jquery/2.1.3/jquery.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fastclick/1.0.6/fastclick.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.bootcss.com/jquery_lazyload/1.9.7/jquery.lazyload.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.ui.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

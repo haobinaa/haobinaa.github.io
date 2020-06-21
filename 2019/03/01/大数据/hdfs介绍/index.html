@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+  <link href="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.min.js" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+  
+
+<link href="//cdn.staticfile.org/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="Hexo, NexT">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="HDFS在了解大数据的组件之前，首先需要了解HDFS架构。 HDFS(Hadoop Distributed File System)是 Apache Hadoop的一个子项目， 是分布式计算中数据存储管理的基础，是基于流数据模式访问和处理超大文件的需求而开发的。  HDFS 与其他分布式文件系统有许多相似点，但也有几个不同点。一个明显的区别是 HDFS 的 “一次写入、多次读取（write-onc">
+<meta property="og:type" content="article">
+<meta property="og:title" content="hdfs介绍">
+<meta property="og:url" content="http://yoursite.com/2019/03/01/大数据/hdfs介绍/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="HDFS在了解大数据的组件之前，首先需要了解HDFS架构。 HDFS(Hadoop Distributed File System)是 Apache Hadoop的一个子项目， 是分布式计算中数据存储管理的基础，是基于流数据模式访问和处理超大文件的需求而开发的。  HDFS 与其他分布式文件系统有许多相似点，但也有几个不同点。一个明显的区别是 HDFS 的 “一次写入、多次读取（write-onc">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/images/bigdata/hdfs-architecture.jpg">
+<meta property="og:image" content="http://yoursite.com/images/bigdata/hdfs-datablock.jpg">
+<meta property="og:image" content="http://yoursite.com/images/bigdata/hdfs-read.jpg">
+<meta property="og:image" content="http://yoursite.com/images/bigdata/hdfs-write.jpg">
+<meta property="og:updated_time" content="2020-06-07T04:32:06.989Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="hdfs介绍">
+<meta name="twitter:description" content="HDFS在了解大数据的组件之前，首先需要了解HDFS架构。 HDFS(Hadoop Distributed File System)是 Apache Hadoop的一个子项目， 是分布式计算中数据存储管理的基础，是基于流数据模式访问和处理超大文件的需求而开发的。  HDFS 与其他分布式文件系统有许多相似点，但也有几个不同点。一个明显的区别是 HDFS 的 “一次写入、多次读取（write-onc">
+<meta name="twitter:image" content="http://yoursite.com/images/bigdata/hdfs-architecture.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2019/03/01/大数据/hdfs介绍/">
+
+
+
+
+
+  <title>hdfs介绍 | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/03/01/大数据/hdfs介绍/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">hdfs介绍</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-03-01T18:32:13+08:00">
+                2019-03-01
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index">
+                    <span itemprop="name">bigdata</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="HDFS"><a href="#HDFS" class="headerlink" title="HDFS"></a>HDFS</h3><p>在了解大数据的组件之前，首先需要了解HDFS架构。</p>
+<p>HDFS(Hadoop Distributed File System)是 Apache Hadoop的一个子项目， 是分布式计算中数据存储管理的基础，是基于流数据模式访问和处理超大文件的需求而开发的。</p>
+<ol>
+<li><p>HDFS 与其他分布式文件系统有许多相似点，但也有几个不同点。一个明显的区别是 HDFS 的 “一次写入、多次读取（write-once-read-many）” 模型，该模型降低了并发性控制要求，简化了数据聚合性，支持高吞吐量访问。</p>
+</li>
+<li><p>HDFS 的另一个独特的特性是下面这个观点：将处理逻辑放置到数据附近通常比将数据移向应用程序空间更好。</p>
+</li>
+<li><p>HDFS 将数据写入严格限制为一次一个写入程序。字节总是被附加到一个流的末尾，字节流总是以写入顺序存储。</p>
+</li>
+</ol>
+<p>HDFS设计构想和目标如下:</p>
+<ul>
+<li>通过检测故障和应用快速、自动的恢复实现容错性</li>
+<li>通过 MapReduce 流进行数据访问</li>
+<li>简单可靠的聚合模型</li>
+<li>处理逻辑接近数据，而不是数据接近处理逻辑</li>
+<li>跨异构普通硬件和操作系统的可移植性</li>
+<li>可靠存储和处理大量数据的可伸缩性</li>
+<li>通过跨多个普通个人计算机集群分布数据和处理来节约成本</li>
+<li>通过分布数据和逻辑到数据所在的多个节点上进行平行处理来提高效率</li>
+<li>通过自动维护多个数据副本和在故障发生时自动重新部署处理逻辑来实现可靠性</li>
+</ul>
+<p>HDFS的局限性:</p>
+<ul>
+<li>不适合低延迟的访问(适用于大规模的批量数据而不是某个特定数据)</li>
+<li>无法高效存储大量小文件(hdfs是通过nameNode保存文件元信息，文件数量越多，元数据检索越慢)</li>
+<li>不支持多用户写入， 及任意修改文件(HDFS设计理念就是只允许追加不允许修改)</li>
+</ul>
+<h3 id="HDFS架构"><a href="#HDFS架构" class="headerlink" title="HDFS架构"></a>HDFS架构</h3><p>HDFS是主从（master/slave）架构。一个HDFS集群包含一个NameNode，作为管理文件系统名称空间（file system namespace）和管理客户端访问HDFS的主服务器。此外，还有一组DataNode节点，通常群集中的每个节点都是一个DataNode，用于管理自己节点上的存储。HDFS开放文件系统名称空间，并允许用户把数据存储在文件中。</p>
+<p><img src="/images/bigdata/hdfs-architecture.jpg" alt></p>
+<h3 id="HDFS概念"><a href="#HDFS概念" class="headerlink" title="HDFS概念"></a>HDFS概念</h3><h4 id="NameNode"><a href="#NameNode" class="headerlink" title="NameNode"></a>NameNode</h4><p> Namenode 上保存着 HDFS 的名字空间。对于任何对文件系统元数据产生修改的操作， Namenode 都会使用一种称为 EditLog 的事务日志记录下来。例如，在 HDFS 中创建一个文件， Namenode 就会在 Editlog 中插入一条记录来表示；同样地，修改文件的副本系数也将往 Editlog 插入一条记录。 Namenode 在本地操作系统的文件系统中存储这个 Editlog 。整个文件系统的名 字空间，包括数据块到文件的映射、文件的属性等，都存储在一个称为 FsImage 的文件中，这 个文件也是放在 Namenode 所在的本地文件系统上。 </p>
+<p>  Namenode 在内存中保存着整个文件系统的名字空间和文件数据块映射 (Blockmap) 的映像 。这个关键的元数据结构设计得很紧凑，因而一个有 4G 内存的 Namenode 足够支撑大量的文件 和目录。当 Namenode 启动时，它从硬盘中读取 Editlog 和 FsImage ，将所有 Editlog 中的事务作 用在内存中的 FsImage 上，并将这个新版本的 FsImage 从内存中保存到本地磁盘上，然后删除 旧的 Editlog ，因为这个旧的 Editlog 的事务都已经作用在 FsImage 上了。这个过程称为一个检查点 (checkpoint) 。在当前实现中，检查点只发生在 Namenode 启动时，在不久的将来将实现支持周期性的检查点</p>
+<p>EditLog会随着系统的运行不断的增大，HDFS的NameNode会有一个备份节点(second NameNode)。备份节点会定期的和主名称节点通信，通信期间主名称节点editLog不能写入并生成一个新的 edit.new ，新到达的更新会写入 edit.new ，原来的editLog会被备份节点会把主节点的FsImage和editLog都拖过去合并成一个新的FsImage。然后发送给主节点把fsImage更新为这个合并过后的fsImage，并把edit.new更名为新的editLog</p>
+<p>NameNode存储着HDFS的元数据，这里主要指的是:</p>
+<ul>
+<li>FsImage: 保存系统文件树<ul>
+<li>文件的复制等级</li>
+<li>块大小以及组成这个文件的块</li>
+<li>修改和访问时间</li>
+<li>访问权限  </li>
+</ul>
+</li>
+<li>EditLog: 记录对数据进行的创建、删除、重命名等操作</li>
+</ul>
+<h4 id="DataNode"><a href="#DataNode" class="headerlink" title="DataNode"></a>DataNode</h4><p>  Datanode 将 HDFS 数据以文件的形式存储在本地的文件系统中，它并不知道有 关 HDFS 文件的信息。它把每个 HDFS 数据块存储在本地文件系统的一个单独的文件 中。 Datanode 并不在同一个目录创建所有的文件，实际上，它用试探的方法来确定 每个目录的最佳文件数目，并且在适当的时候创建子目录。在同一个目录中创建所 有的本地文件并不是最优的选择，这是因为本地文件系统可能无法高效地在单个目 录中支持大量的文件。 </p>
+<p>当一个 Datanode 启动时，它会扫描本地文件系统，产生一个这些本地文件对应 的所有 HDFS 数据块的列表，然后作为报告发送到 Namenode ，这个报告就是块状态 报告。 </p>
+<h4 id="文件系统Namespace"><a href="#文件系统Namespace" class="headerlink" title="文件系统Namespace"></a>文件系统Namespace</h4><p>HDFS支持传统的分层文件组织。用户或应用程序可以在这些目录内创建目录并存储文件。文件系统名称空间层次与大多数其他现有文件系统类似;可以创建和删除文件，将文件从一个目录移动到另一个目录，或者重命名文件。HDFS支持用户配额（user quotas）和访问权限（access permissions）。</p>
+<h3 id="数据存储"><a href="#数据存储" class="headerlink" title="数据存储"></a>数据存储</h3><h4 id="数据副本"><a href="#数据副本" class="headerlink" title="数据副本"></a>数据副本</h4><p>HDFS设计宗旨是可靠的存储着超大型文件，运行在大规模的集群机器上。它将每个文件存储为一系列的块（block）。文件的块被复制，是用来实现容错。块大小（block size ，默认是64MB）和复制因子（replication factor， 默认是3）可以针对每个文件进行配置</p>
+<p>一个文件中，除了最后一个数据块（blocks）之外，其他所有的数据块都具有相同的大小。当用户可以在将可变长度块的配置加到append和hsync后，可以在不填写最后一个块的情况下，写入到新的数据块中。</p>
+<p>应用程序可以在文件创建时指定文件的副本数量，也可以在后面进行修改。HDFS中的文件是一次性写入的（追加和截断除外），并且在任何时候都严格的限定一个文件只能有一个写入线程。</p>
+<p>NameNode决定着数据块的复制。它定期从集群中的每个DataNode接收心跳（Heartbeat）和数据块报告（Blockreport）。能接收到Heartbeat意味着DataNode运行正常。 而Blockreport包含DataNode上所有块的列表信息。</p>
+<p><img src="/images/bigdata/hdfs-datablock.jpg" alt></p>
+<h3 id="读写流程"><a href="#读写流程" class="headerlink" title="读写流程"></a>读写流程</h3><h4 id="HDFS文件读取"><a href="#HDFS文件读取" class="headerlink" title="HDFS文件读取"></a>HDFS文件读取</h4><p><img src="/images/bigdata/hdfs-read.jpg" alt></p>
+<ol>
+<li>使用HDFS提供的客户端开发库Client，向远程的Namenode发起RPC请求</li>
+<li>Namenode会视情况返回文件的部分或者全部block列表，对于每个block，Namenode都会返回有该block拷贝的DataNode地址； </li>
+<li>客户端开发库Client会选取离客户端最接近的DataNode来读取block；如果客户端本身就是DataNode,那么将从本地直接获取数据.</li>
+<li>读取完当前block的数据后，关闭与当前的DataNode连接，并为读取下一个block寻找最佳的DataNode； </li>
+<li>当读完列表的block后，且文件读取还没有结束，客户端开发库会继续向Namenode获取下一批的block列表。</li>
+<li>读取完一个block都会进行checksum验证，如果读取datanode时出现错误，客户端会通知Namenode，然后再从下一个拥有该block拷贝的datanode继续读。 </li>
+</ol>
+<h4 id="HDFS文件写入"><a href="#HDFS文件写入" class="headerlink" title="HDFS文件写入"></a>HDFS文件写入</h4><p><img src="/images/bigdata/hdfs-write.jpg" alt></p>
+<ol>
+<li>使用HDFS提供的客户端开发库Client，向远程的Namenode发起RPC请求</li>
+<li>Namenode会检查要创建的文件是否已经存在，创建者是否有权限进行操作，成功则会为文件 创建一个记录，否则会让客户端抛出异常</li>
+<li>当客户端开始写入文件的时候，会将文件切分成多个packets，并在内部以数据队列”data queue”的形式管理这些packets，并向Namenode申请新的blocks，获取用来存储replicas的合适的datanodes列表，列表的大小根据在Namenode中对replication的设置而定</li>
+<li>开始以pipeline（管道）的形式将packet写入所有的replicas中。把packet以流的方式写入第一个datanode，该datanode把该packet存储之后，再将其传递给在此pipeline中的下一个datanode，直到最后一个datanode，这种写数据的方式呈流水线的形式。最后一个datanode成功存储之后会返回一个ack packet，在pipeline里传递至客户端，在客户端的开发库内部维护着”ack queue”，成功收到datanode返回的ack packet后会从”ack queue”移除相应的packet</li>
+<li>如果传输过程中，有某个datanode出现了故障，那么当前的pipeline会被关闭，出现故障的datanode会从当前的pipeline中移除，剩余的block会继续剩下的datanode中继续以pipeline的形式传输，同时Namenode会分配一个新的datanode，保持replicas设定的数量</li>
+</ol>
+<h3 id="备份和安全"><a href="#备份和安全" class="headerlink" title="备份和安全"></a>备份和安全</h3><h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="https://hadoop.apache.org/docs/r1.2.1/hdfs_design.html#Introduction" target="_blank" rel="noopener">hdfs官方文档</a></li>
+<li><a href="https://my.oschina.net/leejun2005/blog/151872" target="_blank" rel="noopener">hdfs架构原理</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/02/13/中间件/es工作原理/" rel="next" title="es工作原理">
+                <i class="fa fa-chevron-left"></i> es工作原理
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/03/08/大数据/hive基本使用/" rel="prev" title="hive基本使用">
+                hive基本使用 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">勿在浮沙筑高台</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">66</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">23</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#HDFS"><span class="nav-number">1.</span> <span class="nav-text">HDFS</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#HDFS架构"><span class="nav-number">2.</span> <span class="nav-text">HDFS架构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#HDFS概念"><span class="nav-number">3.</span> <span class="nav-text">HDFS概念</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#NameNode"><span class="nav-number">3.1.</span> <span class="nav-text">NameNode</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#DataNode"><span class="nav-number">3.2.</span> <span class="nav-text">DataNode</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#文件系统Namespace"><span class="nav-number">3.3.</span> <span class="nav-text">文件系统Namespace</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#数据存储"><span class="nav-number">4.</span> <span class="nav-text">数据存储</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#数据副本"><span class="nav-number">4.1.</span> <span class="nav-text">数据副本</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#读写流程"><span class="nav-number">5.</span> <span class="nav-text">读写流程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#HDFS文件读取"><span class="nav-number">5.1.</span> <span class="nav-text">HDFS文件读取</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#HDFS文件写入"><span class="nav-number">5.2.</span> <span class="nav-text">HDFS文件写入</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#备份和安全"><span class="nav-number">6.</span> <span class="nav-text">备份和安全</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">7.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/jquery/2.1.3/jquery.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fastclick/1.0.6/fastclick.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.bootcss.com/jquery_lazyload/1.9.7/jquery.lazyload.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.ui.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

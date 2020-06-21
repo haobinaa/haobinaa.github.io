@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+  <link href="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.min.js" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+  
+
+<link href="//cdn.staticfile.org/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="Hexo, NexT">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="JVM内存结构概览先来看一张图：  jvm主要分，堆、方法区、java栈、本地方法栈、程序计数器五个区域，其中方法区和堆区是线程共享的 堆区域堆内存是JVM中最大的一块由新生代和老年代组成，而新生代内存又被分成三部分，Eden空间、From Survivor空间、To Survivor空间,默认情况下 新生代(young):老年代(old)=1:2 在新生代中 eden:from:to = 8:1">
+<meta property="og:type" content="article">
+<meta property="og:title" content="jvm内存结构">
+<meta property="og:url" content="http://yoursite.com/2018/10/20/jvm/jvm内存结构/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="JVM内存结构概览先来看一张图：  jvm主要分，堆、方法区、java栈、本地方法栈、程序计数器五个区域，其中方法区和堆区是线程共享的 堆区域堆内存是JVM中最大的一块由新生代和老年代组成，而新生代内存又被分成三部分，Eden空间、From Survivor空间、To Survivor空间,默认情况下 新生代(young):老年代(old)=1:2 在新生代中 eden:from:to = 8:1">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/images/jvm_structure.png">
+<meta property="og:image" content="http://yoursite.com/images/jvm/heap-gen.png">
+<meta property="og:image" content="http://yoursite.com/images/TLAB.png">
+<meta property="og:updated_time" content="2020-06-07T04:32:06.983Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="jvm内存结构">
+<meta name="twitter:description" content="JVM内存结构概览先来看一张图：  jvm主要分，堆、方法区、java栈、本地方法栈、程序计数器五个区域，其中方法区和堆区是线程共享的 堆区域堆内存是JVM中最大的一块由新生代和老年代组成，而新生代内存又被分成三部分，Eden空间、From Survivor空间、To Survivor空间,默认情况下 新生代(young):老年代(old)=1:2 在新生代中 eden:from:to = 8:1">
+<meta name="twitter:image" content="http://yoursite.com/images/jvm_structure.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/10/20/jvm/jvm内存结构/">
+
+
+
+
+
+  <title>jvm内存结构 | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/10/20/jvm/jvm内存结构/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">jvm内存结构</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-10-20T22:37:28+08:00">
+                2018-10-20
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/jvm/" itemprop="url" rel="index">
+                    <span itemprop="name">jvm</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="JVM内存结构概览"><a href="#JVM内存结构概览" class="headerlink" title="JVM内存结构概览"></a>JVM内存结构概览</h3><p>先来看一张图：</p>
+<p><img src="/images/jvm_structure.png" alt></p>
+<p>jvm主要分，堆、方法区、java栈、本地方法栈、程序计数器五个区域，其中方法区和堆区是线程共享的</p>
+<h4 id="堆区域"><a href="#堆区域" class="headerlink" title="堆区域"></a>堆区域</h4><p>堆内存是JVM中最大的一块由新生代和老年代组成，而新生代内存又被分成三部分，Eden空间、From Survivor空间、To Survivor空间,默认情况下</p>
+<p>新生代(young):老年代(old)=1:2</p>
+<p>在新生代中 eden:from:to = 8:1:1</p>
+<p><img src="/images/jvm/heap-gen.png" alt></p>
+<h5 id="新生代（young"><a href="#新生代（young" class="headerlink" title="新生代（young)"></a>新生代（young)</h5><p>普通对象直接分配在新生代的 eden 区域</p>
+<p>新生代是大部分对象创建和销毁的区域，在通常的 Java 应用中，绝大部分对象生命周期都是很短暂的。其内部又分为 <code>Eden</code> 作为对象初始化分配的区域， 两个<code>survivor</code>区域 s1 和 s2， 分别为from和to，用来放置从<code>Minor GC</code>中保留下来的对象。JVM会随意选取一个Survivor作为to区域，然后会在GC过程中，将Eden中存活下来的对象和from中的对象拷贝到to这个区域， 防止内存碎片化，进一步清理无用对象</p>
+<p>对Eden区域继续划分， Hotspot JVM还有一个概念叫<code>Thread Local Allocation Buffer(TLAB)</code>, 这是JVM对每个线程分配的一个私有缓存区域，避免多线程同时分配的时候操作同一个地址时可能需要加锁等机制而影响分配速度。TLAB仍然分配在堆上，结构比较简单，start、end就是起止地址，top表示已经分配到那里了，top与end相遇的时候，代表该缓存已经满了，JVM会试图再从Eden中分配一块</p>
+<p><img src="/images/TLAB.png" alt></p>
+<h5 id="老年代-old"><a href="#老年代-old" class="headerlink" title="老年代 (old)"></a>老年代 (old)</h5><ul>
+<li>达到年龄阈值的对象(通过设置<code>-XX:MaxTenuringThreshold</code>设置)</li>
+<li>大对象(通过设置 <code>-XX:PretenureSizeThreshold</code>来设置阈值)</li>
+</ul>
+<p>老年代放置长生命周期的对象，通常是从Survivor区域拷贝过来的对象(达到年龄阈值后晋升到老年代的对象)。当然也有特殊情况，我们知道普通对象会被分配在TLAB上，如果对象较大，JVM会试图直接分配在Eden其他位置上，如果对象太大，无法在新生代找到足够长的连续空间，JVM会直接分配在老年代</p>
+<h5 id="过早提升-Premature-Promotion"><a href="#过早提升-Premature-Promotion" class="headerlink" title="过早提升(Premature Promotion)"></a>过早提升(Premature Promotion)</h5><p>在Minor GC过程中，Survivor 可能不足以容纳Eden和另一个Survivor中的存活对象。如果Survivor中的存活对象溢出，多余的对象将被移到老年代，这称为过早提升(Premature Promotion)，这会导致老年代中短期存活对象的增长，可能会引发严重的性能问题。再进一步说，在Minor GC过程中，如果老年代满了而无法容纳更多的对象，Minor GC 之后通常就会进行Full GC,这将导致遍历整个Java堆，这称为提升失败(Promotion Failure)</p>
+<h5 id="堆参数设置"><a href="#堆参数设置" class="headerlink" title="堆参数设置"></a>堆参数设置</h5><ul>
+<li>-Xmx: 最大堆体积</li>
+<li>-Xms: 最小堆体积</li>
+<li>-XX:NewRatio=value 老年代和新生代的比例(默认是2，即新生代是堆区域的 1/3)</li>
+<li>-XX:XX:SurvivorRatio=value 新生代 eden 和 survivor 的比例，默认是8，也就是说 eden 是 from 或 to 的8倍</li>
+</ul>
+<h4 id="监控和诊断堆内存的工具和方法"><a href="#监控和诊断堆内存的工具和方法" class="headerlink" title="监控和诊断堆内存的工具和方法"></a>监控和诊断堆内存的工具和方法</h4><ul>
+<li>Jconsole 图形化分析</li>
+<li>命令行工具： jstat、 jmap 等命令配合参数进行运行时查询</li>
+<li>使用 Eclipse MAT 来分析 jmap 堆转储的文件</li>
+<li>gc 日志分析</li>
+</ul>
+<h4 id="方法区"><a href="#方法区" class="headerlink" title="方法区"></a>方法区</h4><p>方法区和Java堆一样，是各个线程共享的内存区域。用于存储已被虚拟机加载的：</p>
+<ol>
+<li>类信息(class metadata)</li>
+<li>常量(包括interned Strings)</li>
+<li>静态变量（类变量 class static variables）</li>
+<li>即时编译器编译后的代码等</li>
+</ol>
+<p>对于使用HotSpot VM的程序员来说，很多人把方法区称之为“永久代（Permanent Generation）”（备注：永久代为HotSpot特有,但现已经被移除）.永久代的垃圾回收和老年代的垃圾回收是绑定的，一旦其中一个区域被占满，这两个区都要进行垃圾回收。</p>
+<h5 id="永久代-PermGen"><a href="#永久代-PermGen" class="headerlink" title="永久代(PermGen)"></a>永久代(PermGen)</h5><p>方法区是JVM的一种规范，永久代是它的一种实现。</p>
+<p>永久代是早期hotspot JVM方法区的实现方式，存储Java的元数据、常量池等， JDK8之后就不存在永久代了</p>
+<p>JDK8之后，原先永久代中类的元信息会被放入本地内存（元数据区，metaspace），将类的静态变量和内部字符串放入到java堆中。原理上metaspace属于堆外内存，只受限于系统物理内存大小。设置<code>metaspace</code>的参数：</p>
+<ul>
+<li>-XX:MetaspaceSize, Metaspace扩容时触发FullGC的初始化阈值。</li>
+<li>-XX:MaxMetaspaceSize, Metaspace最大值。</li>
+</ul>
+<h5 id="运行时常量池"><a href="#运行时常量池" class="headerlink" title="运行时常量池"></a>运行时常量池</h5><p>运行时常量池其实是方法区的一部分。</p>
+<p>class文件中有一项信息是常量池表（constant_pool table），用于存放编译期生成的“字面量”和“符号引用”，这部分内容将在类加载后进入方法区的运行时常量池中（Run-Time Constant Pool）存放</p>
+<ul>
+<li>字面量相当于Java语言层面常量的概念，如文本字符串、final等常量  </li>
+<li>符号引用属于编译原理方面的概念，包括了如下三种类型的常量：<ol>
+<li>类和接口的全限定名</li>
+<li>字段名称和描述符</li>
+<li>方法名称和描述符</li>
+</ol>
+</li>
+</ul>
+<p>也就是说：每一个class都会根据constant_pool table 来1：1创建一个此class对应的Run-Time Constant Pool</p>
+<p>总结：</p>
+<ul>
+<li>就是运行时所需要的常量数据的容器</li>
+<li>JVM规范对class文件的每一部分（包括constant_pool table）都有严格的规范，但是对于运行时常量池却没有做任何细节要求，不过一般来说，除了class文件中的符号引用外，直接引用也会存储在运行时常量池中</li>
+<li>运行时常量池具备动态性，Java语言并没有要求常量一定只能编译期产生，运行期也可以将新常量放入池中。这个特性用的较多的便是String类的intern()方法</li>
+</ul>
+<p>当运行时常量池无法再申请到内存时，将抛出OutOfMemoryError异常</p>
+<h5 id="方法区的回收"><a href="#方法区的回收" class="headerlink" title="方法区的回收"></a>方法区的回收</h5><p>方法区中的垃圾回收主要是：废弃常量及无用类。</p>
+<p>判断常量是否废弃与判断堆中对象十分相似。例如，若常量池中存在字符串“abc”，而系统中并没有任何String对象的值为“abc”的，也就是没有任何对象引用它，那么它就可以被回收了。</p>
+<p>无用类的判定稍微复杂点，需要满足：</p>
+<ol>
+<li>该类的所有对象实例已经被回收，也就是Java堆中不存在该类的任何实例</li>
+<li>加载该类的ClassLoader已经被回收</li>
+<li>该类的类对象Class没有在任何地方被引用，无法使用反射来访问该类的方法</li>
+</ol>
+<p>当方法区中的类满足以上条件时，就可以对无用类进行回收了，这里说的仅仅是“可以”，而并不是和对象一样，不使用了就必然会回收。是否对类进行回收，HotSpot虚拟机提供了各种配置，这里不多讲。</p>
+<p>在大量使用反射、动态代理、CGLIB等ByteCode框架、动态生成JSP以及OSGI这类频繁自定义ClassLoader的场景都需要虚拟机具备类卸载的功能，以保存永久代不会溢出。</p>
+<h4 id="程序计数器"><a href="#程序计数器" class="headerlink" title="程序计数器"></a>程序计数器</h4><p>程序计数器（Program Counter Register）是一块较小的内存空间，它的作用可以看做是当前线程所执行的字节码的行号指示器</p>
+<h4 id="JVM栈"><a href="#JVM栈" class="headerlink" title="JVM栈"></a>JVM栈</h4><p>与程序计数器一样，也是线程私有的，其生命周期和线程一样，每个Java线程有一个虚拟机栈。平常我们讲的“栈内存”就是虚拟机栈，或者说是虚拟机栈中局部变量表部分。</p>
+<p>虚拟机栈描述的是Java方法执行的内存模型, 每一个方法被调用直至执行完成的过程，就对应着一个栈帧在虚拟机栈中从入栈到出栈的过程。栈帧中存储：</p>
+<ul>
+<li>1）局部变量表</li>
+</ul>
+<p>存放了编译期就可知的：各种基本数据类型（8个基本数据类型）、对象引用(reference类型)、returnAddress类型（指向一条字节码指令地址）。其中64位长度的long和double类型的数据会占用2个局部变量空间<br>(Slot)，其余的数据类型只占用1个。局部变量表所需的内存大小在编译期就完成了分配，也就是说当进入一个方法时，此方法需要在栈帧中分配多大的局部变量表空间时完全确定的，运行期不会改变</p>
+<ul>
+<li>2)操作数栈（指令的压栈和出栈来操作）</li>
+<li>3)动态链接</li>
+</ul>
+<p>每个栈帧都包含一个指向运行时常量池中该栈帧所属性方法的引用，持有这个引用是为了支持方法调用过程中的动态连接。在Class文件的常量池中存有大量的符号引用，字节码中的方法调用指令就以常量池中指向方法的符号引用为参数。这些符号引用一部分会在类加载阶段或第一次使用的时候转化为直接引用，这种转化称为静态解析。另外一部分将在每一次的运行期期间转化为直接引用，这部分称为动态连接。</p>
+<ul>
+<li>4)方法出口等</li>
+</ul>
+<p>方法从调用到执行完成的过程，就对应了，一个栈帧在虚拟机栈中的入栈和出栈的过程</p>
+<p>有两种异常：</p>
+<ol>
+<li>如果线程请求的栈深度大于JVM所允许的深度，将抛出StackOverflowError异常</li>
+<li>如果栈扩展时无法申请到足够的内存，将抛出OutOfMemoryError(OOM)异常</li>
+</ol>
+<h4 id="本地方法栈"><a href="#本地方法栈" class="headerlink" title="本地方法栈"></a>本地方法栈</h4><p>本地方法栈（Native Method Stacks）与虚拟机栈所发挥的作用是非常相似的，其区别不过是虚拟机栈为虚拟机执行Java方法（也就是字节码）服务，而本地方法栈则是为虚拟机使用到的Native方法服务</p>
+<h3 id="直接内存"><a href="#直接内存" class="headerlink" title="直接内存"></a>直接内存</h3><p>直接内存并不是虚拟机运行时数据区的一部分， 也不是虚拟规范中定义的内存区域， 但这部分内存也被频繁使用。</p>
+<p>NIO引入一种基于通道(Channel)和缓冲(buffer)的I/O方式， 他使用<code>Native函数库</code>直接分配堆外内存， 然后通过存在java堆中的<code>DirectByteBuffer对象</code>作为对这块内存的引用进行操作，<br>这样在一些场景中显著提升内存， 避免了在java堆和native堆中来回复制数据</p>
+<p>直接内存的分配不受java堆大小的限制， 但是配置虚拟机参数的时候要考虑到直接内存的存在， 不能让各个内存区域的总和大于物理机的内存， 从而导致动态扩展的时候出现OOM</p>
+<h3 id="内存溢出"><a href="#内存溢出" class="headerlink" title="内存溢出"></a>内存溢出</h3><h4 id="java堆溢出"><a href="#java堆溢出" class="headerlink" title="java堆溢出"></a>java堆溢出</h4><p>Java堆用于存储对象实例，只要不断地创建对象，并且保证GC Roots到对象之间有可达路径来避免垃圾回收机制清除这些对象，那么在对象数量到达最大堆的容量限制后就会产生内存溢出异常。</p>
+<p><code>-XX:+HeapDumpOnOutOfMemoryError</code> 可以让虚拟机在出现内存溢出异常时Dump出当前的内存堆栈转储快照以便事后进行分析。</p>
+<p>例子：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">//VM Args: -Xms20m -Xmx20m -XX:+HeapDumpOnOutOfMemoryError</span><br><span class="line">//Java堆溢出异常测试</span><br><span class="line">public class HeapOOM &#123;</span><br><span class="line">    static class OOMObject &#123;&#125;</span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        List&lt;OOMObject&gt; list = new ArrayList&lt;OOMObject&gt;();</span><br><span class="line">        while (true) &#123;</span><br><span class="line">            list.add(new OOMObject());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>将会抛出异常:<code>Exception in thread “main” java.lang.OutOfMemoryError: Java heap space</code></p>
+<h5 id="内存溢出和内存泄露"><a href="#内存溢出和内存泄露" class="headerlink" title="内存溢出和内存泄露"></a>内存溢出和内存泄露</h5><ul>
+<li><p>内存溢出：out of memory，是指程序在申请内存时，没有足够的内存空间供其使用，出现out of memory；比如申请了一个integer,但给它存了long才能存下的数，那就是内存溢出。</p>
+</li>
+<li><p>内存泄露： memory leak，是指程序在申请内存后，无法释放已申请的内存空间，一次内存泄露危害可以忽略，但内存泄露堆积后果很严重，无论多少内存,迟早会被占光</p>
+</li>
+</ul>
+<h5 id="内存泄露处理方式"><a href="#内存泄露处理方式" class="headerlink" title="内存泄露处理方式"></a>内存泄露处理方式</h5><p>如果是内存泄露，可用Eclipse Memory Analyzer工具查看泄露对象到GC Roots的引用链。于是就能找到泄露对象是通过怎样的路径与GC Roots相关联并导致垃圾收集器无法自动回收他们的。掌握了泄露对象的类型信息及GC Roots引用链的信息，就可以比较准确地定位出泄露代码的位置。</p>
+<p>具体可以参考<a href="https://blog.csdn.net/ZYC88888/article/details/80487391" target="_blank" rel="noopener">分析内存泄露的一般办法</a></p>
+<h5 id="内存溢出的处理方式"><a href="#内存溢出的处理方式" class="headerlink" title="内存溢出的处理方式"></a>内存溢出的处理方式</h5><p>如果内存不泄露，也就是说，就是内存中的对象确实都还必须都活着，则：</p>
+<ol>
+<li>检查虚拟机的堆参数（-Xmx与-Xms），与机器物理内存对比看是否还可以调大。</li>
+<li>从代码上检查是否存在某些对象生命周期过长、持有状态时间过长的情况，尝试减少程序运行期的内存消耗。</li>
+</ol>
+<h4 id="虚拟机和本地方法栈溢出"><a href="#虚拟机和本地方法栈溢出" class="headerlink" title="虚拟机和本地方法栈溢出"></a>虚拟机和本地方法栈溢出</h4><p>由于在HotSpot虚拟机中并不区分虚拟机栈和本地方法栈，因此，对于HotSpot来说，虽然-Xoss参数（设置本地方法栈大小）存在，但实际上是无效的，栈容量只由-Xss参数设定。关于虚拟机栈和本地方法栈，在Java虚拟机规划中描述了两种异常：</p>
+<ol>
+<li>如果线程请求的栈深度大于虚拟机所允许的最大尝试，将抛出抛出StackOverflowError异常</li>
+<li>如果虚拟机在扩展栈时无法申请到足够的内存空间，则抛出OutOfMemoryError异常</li>
+</ol>
+<p>虽然分了两种情况，其实存在互相重叠的地方：当栈空间无法继续分配时，到底是内存太小，还是已使用的栈空间太大，其本质只是对同一件事情的两种描述而已。</p>
+<p>例子：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * VM Args: -Xss128k</span><br><span class="line"> *</span><br><span class="line"> * 1.使用-Xss参数减少栈内存容量。结果：抛出StackOverflowError，</span><br><span class="line"> *   异常出现时输出的堆栈尝试相应缩小。</span><br><span class="line"> * 2.定义了大量的本地变量，增大此方法帧中本地变量表的长度。</span><br><span class="line"> *   结果：抛出StackOverflowError，异常出现时输出的堆栈尝试相应缩小。</span><br><span class="line"> */</span><br><span class="line">public class JavaVMStackSOF &#123;</span><br><span class="line">    private int stackLength = 1;</span><br><span class="line">    public void stackLeak() &#123;</span><br><span class="line">        stackLength++;</span><br><span class="line">        stackLeak();</span><br><span class="line">    &#125;</span><br><span class="line">    public static void main(String[] args) throws Throwable &#123;</span><br><span class="line">        JavaVMStackSOF oom = new JavaVMStackSOF();</span><br><span class="line">        try &#123;</span><br><span class="line">            oom.stackLeak();</span><br><span class="line">        &#125; catch (Throwable e)&#123;</span><br><span class="line">            System.out.println(&quot;stack length:&quot; + oom.stackLength);</span><br><span class="line">            throw e;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">#####################运行结果</span><br><span class="line">stack length:11411Exception in thread “main” java.lang.StackOverflowError</span><br><span class="line">at com.changwen.javabase.JVM.OutOfMemoryError.JavaVMStackSOF.stackLeak(JavaVMStackSOF.java:12)</span><br><span class="line">at com.changwen.javabase.JVM.OutOfMemoryError.JavaVMStackSOF.stackLeak(JavaVMStackSOF.java:13)</span><br><span class="line">at com.changwen.javabase.JVM.OutOfMemoryError.JavaVMStackSOF.stackLeak(JavaVMStackSOF.java:13)…….(最后程序还是会停止的）</span><br></pre></td></tr></table></figure></p>
+<p>在单线程下，无论是由于栈帧太大还是虚拟机容量太小，当内存无法分配时，虚拟机都是抛出StackOverflowError异常。<br>　　如果测试时不限于单线程，通过不断地建立线程的方式倒是可以产生内存溢出异常。但是这样产生的内存溢出异常与栈空间是否足够大并不存在任何联系，准确地说，在这种情况下，为每个线程的栈分配的内存越大，反而越容易产生内存溢出异常。所以在多线程开发的应用时需要特别注意，如果出现StackOverflowError异常时有错误堆栈可以阅读，相对来说，比较容易找到错误问题所在。</p>
+<p>例子：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * VM Args: -Xss2M（这时候不妨设置大些）</span><br><span class="line"> *</span><br><span class="line"> * 如果要尝试运行上面这段代码，记得要先保存当前的工作。</span><br><span class="line"> * 由于在Windows平台的虚拟机中，Java的线程是映射到操作系统的内核线程上的，</span><br><span class="line"> * 因此上述代码执行时有较大的风险，可能会导致操作系统假死。</span><br><span class="line"> */</span><br><span class="line">public class JavaVMStackOOM &#123;</span><br><span class="line">    private void dontStop() &#123;</span><br><span class="line">        while(true)&#123;&#125;</span><br><span class="line">    &#125;</span><br><span class="line">    public void stackLeakByThread() &#123;</span><br><span class="line">        while(true) &#123;</span><br><span class="line">            Thread thread = new Thread(new Runnable() &#123;</span><br><span class="line">                public void run() &#123;</span><br><span class="line">                    dontStop();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        JavaVMStackOOM oom = new JavaVMStackOOM();</span><br><span class="line">        oom.stackLeakByThread();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>则，此时会<code>Exception in thread “main” java.lang.OutOfMemoryError: unable to create new native method</code></p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li>[周志明-深入理解java虚拟机]</li>
+<li><a href="http://www.ityouknow.com/jvm/2017/08/25/jvm-memory-structure.html" target="_blank" rel="noopener">纯洁的微笑博客</a></li>
+<li>[杨晓峰-如何监控java堆内和堆外的内存]</li>
+<li><a href="http://liucw.cn/2017/09/28/jvm/JVM%E8%87%AA%E5%8A%A8%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E6%9C%BA%E5%88%B6/" target="_blank" rel="noopener">JVM自动内存管理机制</a></li>
+<li><a href="https://droidyue.com/blog/2015/08/22/where-has-the-java-permgen-gone/" target="_blank" rel="noopener">Java永久代去哪儿了</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/09/28/并发/CAS解析/" rel="next" title="CAS解析">
+                <i class="fa fa-chevron-left"></i> CAS解析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/11/02/jvm/类加载机制与对象的创建/" rel="prev" title="类加载机制与对象的创建">
+                类加载机制与对象的创建 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">勿在浮沙筑高台</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">66</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">23</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#JVM内存结构概览"><span class="nav-number">1.</span> <span class="nav-text">JVM内存结构概览</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#堆区域"><span class="nav-number">1.1.</span> <span class="nav-text">堆区域</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#新生代（young"><span class="nav-number">1.1.1.</span> <span class="nav-text">新生代（young)</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#老年代-old"><span class="nav-number">1.1.2.</span> <span class="nav-text">老年代 (old)</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#过早提升-Premature-Promotion"><span class="nav-number">1.1.3.</span> <span class="nav-text">过早提升(Premature Promotion)</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#堆参数设置"><span class="nav-number">1.1.4.</span> <span class="nav-text">堆参数设置</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#监控和诊断堆内存的工具和方法"><span class="nav-number">1.2.</span> <span class="nav-text">监控和诊断堆内存的工具和方法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#方法区"><span class="nav-number">1.3.</span> <span class="nav-text">方法区</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#永久代-PermGen"><span class="nav-number">1.3.1.</span> <span class="nav-text">永久代(PermGen)</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#运行时常量池"><span class="nav-number">1.3.2.</span> <span class="nav-text">运行时常量池</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#方法区的回收"><span class="nav-number">1.3.3.</span> <span class="nav-text">方法区的回收</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#程序计数器"><span class="nav-number">1.4.</span> <span class="nav-text">程序计数器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#JVM栈"><span class="nav-number">1.5.</span> <span class="nav-text">JVM栈</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#本地方法栈"><span class="nav-number">1.6.</span> <span class="nav-text">本地方法栈</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#直接内存"><span class="nav-number">2.</span> <span class="nav-text">直接内存</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#内存溢出"><span class="nav-number">3.</span> <span class="nav-text">内存溢出</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#java堆溢出"><span class="nav-number">3.1.</span> <span class="nav-text">java堆溢出</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#内存溢出和内存泄露"><span class="nav-number">3.1.1.</span> <span class="nav-text">内存溢出和内存泄露</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#内存泄露处理方式"><span class="nav-number">3.1.2.</span> <span class="nav-text">内存泄露处理方式</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#内存溢出的处理方式"><span class="nav-number">3.1.3.</span> <span class="nav-text">内存溢出的处理方式</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#虚拟机和本地方法栈溢出"><span class="nav-number">3.2.</span> <span class="nav-text">虚拟机和本地方法栈溢出</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">4.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/jquery/2.1.3/jquery.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fastclick/1.0.6/fastclick.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.bootcss.com/jquery_lazyload/1.9.7/jquery.lazyload.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.ui.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

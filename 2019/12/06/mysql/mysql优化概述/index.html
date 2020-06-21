@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+  <link href="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.min.js" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+  
+
+<link href="//cdn.staticfile.org/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="mysql,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="MySQL参数设置通用配置 max_connections : MySQL能创建的最大连接数，如果数据库的并发量比较大，建议调高此值，以增加并行连接数量，当然连接数越多，由于MySQL会为每个连接创建连接缓冲区，连接数越多会消耗更多内存  open_files_limit : MySQL打开的文件描述符限制，默认最小1024  key_buffer_size : key_buffer_size指定">
+<meta name="keywords" content="mysql">
+<meta property="og:type" content="article">
+<meta property="og:title" content="mysql优化概述">
+<meta property="og:url" content="http://yoursite.com/2019/12/06/mysql/mysql优化概述/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="MySQL参数设置通用配置 max_connections : MySQL能创建的最大连接数，如果数据库的并发量比较大，建议调高此值，以增加并行连接数量，当然连接数越多，由于MySQL会为每个连接创建连接缓冲区，连接数越多会消耗更多内存  open_files_limit : MySQL打开的文件描述符限制，默认最小1024  key_buffer_size : key_buffer_size指定">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2020-06-07T04:32:06.984Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="mysql优化概述">
+<meta name="twitter:description" content="MySQL参数设置通用配置 max_connections : MySQL能创建的最大连接数，如果数据库的并发量比较大，建议调高此值，以增加并行连接数量，当然连接数越多，由于MySQL会为每个连接创建连接缓冲区，连接数越多会消耗更多内存  open_files_limit : MySQL打开的文件描述符限制，默认最小1024  key_buffer_size : key_buffer_size指定">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2019/12/06/mysql/mysql优化概述/">
+
+
+
+
+
+  <title>mysql优化概述 | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/12/06/mysql/mysql优化概述/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">mysql优化概述</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-12-06T15:27:51+08:00">
+                2019-12-06
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mysql/" itemprop="url" rel="index">
+                    <span itemprop="name">mysql</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="MySQL参数设置"><a href="#MySQL参数设置" class="headerlink" title="MySQL参数设置"></a>MySQL参数设置</h3><h4 id="通用配置"><a href="#通用配置" class="headerlink" title="通用配置"></a>通用配置</h4><ol>
+<li><p><code>max_connections</code> : MySQL能创建的最大连接数，如果数据库的并发量比较大，建议调高此值，以增加并行连接数量，当然连接数越多，由于MySQL会为每个连接创建连接缓冲区，连接数越多会消耗更多内存</p>
+</li>
+<li><p><code>open_files_limit</code> : MySQL打开的文件描述符限制，默认最小1024</p>
+</li>
+<li><p><code>key_buffer_size</code> : key_buffer_size指定索引缓冲区的大小，它决定索引处理的速度，尤其是索引读的速度。</p>
+</li>
+<li><p><code>query_cache_size</code> : 使用查询缓冲，MySQL将查询结果存放在缓冲区中，今后对于同样的SELECT语句（区分大小写），将直接从缓冲区中读取结果。</p>
+</li>
+<li><p><code>wait_timeout</code> : 一个请求的最大连接时间</p>
+</li>
+</ol>
+<h4 id="InnoDB相关配置"><a href="#InnoDB相关配置" class="headerlink" title="InnoDB相关配置"></a>InnoDB相关配置</h4><ol>
+<li><p>sync_binlog</p>
+<p><code>binlog</code>的刷新写入方式，这个参数不仅影响到<code>binlog</code>对MySQL所带来的性能损耗，而且还影响到MySQL中数据的完整性。参数设置说明如下：<br>1).  <code>sync_binlog=0</code><br>当事务提交之后，MySQL不做fsync之类的磁盘同步指令刷新binlog_cache中的信息到磁盘，而让文件系统自行决定什么时候来做同步，或者cache满了之后才同步到磁盘。如果没刷新到磁盘前系统宕机，则会丢失最后的binlog内容，但是此参数性能最佳<br>2).  <code>sync_binlog=n</code><br>当每进行n次事务提交之后，MySQL将进行一次fsync之类的磁盘同步指令来将binlog_cache中的数据强制写入磁盘。</p>
+</li>
+</ol>
+<ol start="2">
+<li><p>innodb_flush_logs_at_trx_commit</p>
+<p>InnoDB事务日志（redo log）的刷新写入方式，这个参数对InnoDB的写入性能来说非常重要，有以下3种设置：</p>
+<p>1) <code>innodb_flush_logs_at_trx_commit=0</code>， 日志缓冲(<code>log buffer</code>)由后台线程每秒一次地被写到日志文件(这里可以理解成操作系统的<code>page cache</code>并没有落到磁盘上)，并且对日志文件做到磁盘操作的刷新。任何mysqld进程的崩溃会导致丢失一秒的事务数据</p>
+<p>2) <code>innodb_flush_logs_at_trx_commit=1</code>，在每个事务提交时，日志缓冲被写到日志文件，对日志文件做到磁盘操作的刷新。这是默认的值， 最安全的方式，但是速度最慢。<br>3)  <code>innodb_flush_logs_at_trx_commit=2</code>，在每个事务提交时，日志缓冲被写到文件，但不对日志文件做到磁盘操作的刷新，操作系统来决定何时刷盘(<code>page cache</code>刷盘策略)。只有操作系统崩溃或掉电会丢失事务数据，不然不会丢失事务。</p>
+</li>
+</ol>
+<ol start="3">
+<li><p>innodb_buffer_pool_size</p>
+<p>这是Innodb最重要的一个配置参数，这个参数控制Innodb本身的缓大小，也影响到，多少数据能在缓存中。建议该参数的配置在<code>物理内存的70％－80％</code>之间</p>
+</li>
+<li><p>innodb_log_file_size</p>
+<p>这个参数是设置 <code>redo log</code>大小。规则很简单:小日志文件写入慢，恢复快；大日志文件写入快，恢复慢。目前设置的是<code>128M</code></p>
+</li>
+</ol>
+<h3 id="SQL性能分析"><a href="#SQL性能分析" class="headerlink" title="SQL性能分析"></a>SQL性能分析</h3><p>(1). 查看<code>mysql</code>系统状态，分析系统是否正常等:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">#显示状态信息（扩展show status like ‘XXX’）</span><br><span class="line">Mysql&gt; show status;</span><br><span class="line">#显示系统变量（扩展show variables like ‘XXX’）</span><br><span class="line">Mysql&gt; show variables\G;</span><br><span class="line">#显示InnoDB存储引擎的状态</span><br><span class="line">Mysql&gt; show engine innodb status;</span><br><span class="line">#查看当前SQL执行，包括执行状态、是否锁表等(当执行大SQL时，这个命令可以看到执行进度)</span><br><span class="line">Mysql&gt; show processlist ;</span><br></pre></td></tr></table></figure>
+<p>(2). 系统慢SQL记录，使用 <code>slowLog</code>记录，开启慢查询日志:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"># 检查是否开启慢查询日志</span><br><span class="line">show variables like &apos;%slow%&apos;;</span><br><span class="line"># 如果没有开启，也可以在运行时动态开启这个参数</span><br><span class="line">set global slow_query_log=ON;</span><br><span class="line"># 设置慢查询记录查询耗时多长的SQL,这里设置成100毫秒</span><br><span class="line">set long_query_time = 0.1;</span><br><span class="line"># 设置慢查询日志路径</span><br><span class="line">set slow_query_log_file = /data/log/mysql/slow_query.log</span><br></pre></td></tr></table></figure>
+<p>这里在慢查询日志中找到了慢SQL后，就需要用执行计划来查看SQL语句是否命中索引，根据具体情况来优化SQL</p>
+<h3 id="explain-执行计划分析"><a href="#explain-执行计划分析" class="headerlink" title="explain 执行计划分析"></a>explain 执行计划分析</h3><p>一条查询语句在经过<code>MySQL</code>查询优化器的各种基于成本和规则的优化会后生成一个<code>执行计划</code>，这个执行计划展示了接下来具体执行查询的方式，比如多表连接的顺序是什么，对于每个表采用什么访问方法来具体执行查询等等。大概使用如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; EXPLAIN SELECT 1;</span><br><span class="line">+----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+----------------+</span><br><span class="line">| id | select_type | table | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra          |</span><br><span class="line">+----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+----------------+</span><br><span class="line">|  1 | SIMPLE      | NULL  | NULL       | NULL | NULL          | NULL | NULL    | NULL | NULL |     NULL | No tables used |</span><br><span class="line">+----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+----------------+</span><br></pre></td></tr></table></figure>
+<p>每个列的作用:</p>
+<table>
+<thead>
+<tr>
+<th>列名</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>在一个大的查询语句中每个<code>SELECT</code>关键字都对应一个唯一的<code>id</code></td>
+</tr>
+<tr>
+<td>select_type</td>
+<td><code>SELECT</code>关键字对应的那个查询的类型</td>
+</tr>
+<tr>
+<td>table</td>
+<td>表名</td>
+</tr>
+<tr>
+<td>partitions</td>
+<td>分区信息</td>
+</tr>
+<tr>
+<td>type</td>
+<td>单表的访问方法</td>
+</tr>
+<tr>
+<td>possible_keys</td>
+<td>可能用到的索引</td>
+</tr>
+<tr>
+<td>key</td>
+<td>实际用上的索引</td>
+</tr>
+<tr>
+<td>key_len</td>
+<td>实际使用的索引的长度</td>
+</tr>
+<tr>
+<td>ref</td>
+<td>当使用索引列等值查询时，与索引列进行等值匹配的对象信息</td>
+</tr>
+<tr>
+<td>rows</td>
+<td>预估的需要读取的记录条数</td>
+</tr>
+<tr>
+<td>filtered</td>
+<td>某个表经过搜索条件过滤后剩余记录条数的百分比</td>
+</tr>
+<tr>
+<td>Extra</td>
+<td>额外提示信息</td>
+</tr>
+</tbody>
+</table>
+<h4 id="执行计划各列详细信息"><a href="#执行计划各列详细信息" class="headerlink" title="执行计划各列详细信息"></a>执行计划各列详细信息</h4><h5 id="id"><a href="#id" class="headerlink" title="id"></a>id</h5><p>查询语句中每出现一个<code>SELECT</code>关键字，<code>MySQL</code>就会为它分配一个唯一的<code>id</code>值。通常简单的查询语句只还有一个<code>SELECT</code>关键字，但是有两种情况会出现多个<code>SELECT</code>关键字:</p>
+<ol>
+<li>包含子查询的情况:<code>SELECT * FROM s1 WHERE key1 IN (SELECT key3 FROM s2)</code>。这个查询语句就包含两个<code>SELECT</code>关键字</li>
+<li>包含<code>union</code>关键字: <code>SELECT * FROM s1  UNION SELECT * FROM s2</code></li>
+</ol>
+<p>针对于连接查询，一个<code>SELECT</code>关键字后边的<code>FROM</code>子句中可以跟随多个表，所以在连接查询的执行计划中，每个表都会对应一条记录，但是这些记录的id值都是相同的，比如：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; EXPLAIN SELECT * FROM s1 INNER JOIN s2;</span><br><span class="line">+----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+---------------------------------------+</span><br><span class="line">| id | select_type | table | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra                                 |</span><br><span class="line">+----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+---------------------------------------+</span><br><span class="line">|  1 | SIMPLE      | s1    | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 9688 |   100.00 | NULL                                  |</span><br><span class="line">|  1 | SIMPLE      | s2    | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 9954 |   100.00 | Using join buffer (Block Nested Loop) |</span><br><span class="line">+----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+---------------------------------------+</span><br></pre></td></tr></table></figure>
+<p>对于包含子查询的查询语句来说，就可能涉及多个<code>SELECT</code>关键字，所以在包含子查询的查询语句的执行计划中，每个<code>SELECT</code>关键字都会对应一个唯一的<code>id</code>值，比如这样：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; EXPLAIN SELECT * FROM s1 WHERE key1 IN (SELECT key1 FROM s2) OR key3 = &apos;a&apos;;</span><br><span class="line">+----+-------------+-------+------------+-------+---------------+----------+---------+------+------+----------+-------------+</span><br><span class="line">| id | select_type | table | partitions | type  | possible_keys | key      | key_len | ref  | rows | filtered | Extra       |</span><br><span class="line">+----+-------------+-------+------------+-------+---------------+----------+---------+------+------+----------+-------------+</span><br><span class="line">|  1 | PRIMARY     | s1    | NULL       | ALL   | idx_key3      | NULL     | NULL    | NULL | 9688 |   100.00 | Using where |</span><br><span class="line">|  2 | SUBQUERY    | s2    | NULL       | index | idx_key1      | idx_key1 | 303     | NULL | 9954 |   100.00 | Using index |</span><br><span class="line">+----+-------------+-------+------------+-------+---------------+----------+---------+------+------+----------+-------------+</span><br></pre></td></tr></table></figure>
+<h5 id="select-type"><a href="#select-type" class="headerlink" title="select_type"></a>select_type</h5><p>每一个<code>SELECT</code>关键字代表的小查询都定义了一个称之为<code>select_type</code>的属性，代表着这个小查询在整个大查询中的查询类型，<code>select_type</code>的取值为:</p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SIMPLE</td>
+<td>查询语句中不包含<code>UNION</code>或者子查询</td>
+</tr>
+<tr>
+<td>PRIMARY</td>
+<td>对于包含<code>UNION</code>、<code>UNION ALL</code>或者子查询的大查询来说，它是由几个小查询组成的，其中最左边的那个查询的<code>select_type</code>值就是<code>PRIMARY</code>(顾名思义为主查询)</td>
+</tr>
+<tr>
+<td>UNION</td>
+<td>对于包含<code>UNION</code>或者<code>UNION ALL</code>的大查询来说，它是由几个小查询组成的，其中除了最左边的那个小查询以外，其余的小查询的<code>select_type</code>值就是<code>UNION</code></td>
+</tr>
+<tr>
+<td>UNION RESULT</td>
+<td>MySQL选择使用临时表来完成<code>UNION</code>查询的去重工作(UNION ALL)，针对该临时表的查询的<code>select_type</code>就是<code>UNION RESULT</code></td>
+</tr>
+<tr>
+<td>SUBQUERY</td>
+<td>子查询的第一个SELECT(被物化，只执行一次)</td>
+</tr>
+<tr>
+<td>DEPENDENT SUBQUERY</td>
+<td>子查询的第一个SELECT(可能会被执行多次，取决外层的查询)</td>
+</tr>
+<tr>
+<td>DEPENDENT UNION</td>
+<td>在包含<code>UNION</code>或者<code>UNION ALL</code>的大查询中，如果各个小查询都依赖于外层查询的话，那除了最左边的那个小查询之外，其余的小查询的<code>select_type</code>的值就是<code>DEPENDENT UNION</code>。</td>
+</tr>
+<tr>
+<td>DERIVED</td>
+<td>导出表的SELECT(FROM子句的子查询)</td>
+</tr>
+<tr>
+<td>MATERIALIZED</td>
+</tr>
+</tbody>
+</table>
+<h5 id="table"><a href="#table" class="headerlink" title="table"></a>table</h5><p>不论查询语句有多复杂，里面包含了多少个表，到最后也是需要对每个表进行单表访问的，<code>MySQL</code>EXPLAIN语句输出的每条记录都对应着某个单表的访问方法，该条记录的table列代表着该表的表名。假如一个连接查询，执行计划如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; EXPLAIN SELECT * FROM s1 INNER JOIN s2;</span><br><span class="line">+----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+---------------------------------------+</span><br><span class="line">| id | select_type | table | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra                                 |</span><br><span class="line">+----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+---------------------------------------+</span><br><span class="line">|  1 | SIMPLE      | s1    | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 9688 |   100.00 | NULL                                  |</span><br><span class="line">|  1 | SIMPLE      | s2    | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 9954 |   100.00 | Using join buffer (Block Nested Loop) |</span><br><span class="line">+----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+---------------------------------------+</span><br></pre></td></tr></table></figure>
+<h5 id="type"><a href="#type" class="headerlink" title="type"></a>type</h5><p>执行计划的一条记录就代表着<code>MySQL</code>对某个表的执行查询时的访问方法，其中的<code>type</code>列就表明了这个访问方法是什么。完整的访问方法依次从好到差如下：<code>system &gt; const &gt; eq_ref &gt; ref &gt; fulltext &gt; ref_or_null &gt; unique_subquery &gt; index_subquery &gt; range &gt; index_merge &gt; index &gt; ALL</code>。</p>
+<ul>
+<li><p><code>system</code> : 表中只有一条记录, 并且存储引擎的统计是精确的(如 Myisam，表结构会存储表中有多少条记录。 InnoDB只会存一个大概的值，并不精确)</p>
+</li>
+<li><p><code>const</code>:  根据主键或者唯一二级索引列(<code>unique</code>)与常数进行等值匹配。</p>
+<p>如<code>EXPLAIN SELECT * FROM s1 WHERE id = 5</code>, 一次就能匹配到</p>
+</li>
+<li><p><code>eq_ref</code>: 在连接查询时，如果被驱动表是通过主键或者唯一二级索引(<code>unique</code>)等值匹配的方式进行访问的，则对该被驱动表的访问方法就是<code>eq_ref</code>。如:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; EXPLAIN SELECT * FROM s1 INNER JOIN s2 ON s1.id = s2.id;</span><br><span class="line">+----+-------------+-------+------------+--------+---------------+---------+---------+-----------------+------+----------+-------+</span><br><span class="line">| id | select_type | table | partitions | type   | possible_keys | key     | key_len | ref             | rows | filtered | Extra |</span><br><span class="line">+----+-------------+-------+------------+--------+---------------+---------+---------+-----------------+------+----------+-------+</span><br><span class="line">|  1 | SIMPLE      | s1    | NULL       | ALL    | PRIMARY       | NULL    | NULL    | NULL            | 9688 |   100.00 | NULL  |</span><br><span class="line">|  1 | SIMPLE      | s2    | NULL       | eq_ref | PRIMARY       | PRIMARY | 4       | xiaohaizi.s1.id |    1 |   100.00 | NULL  |</span><br><span class="line">+----+-------------+-------+------------+--------+---------------+---------+---------+-----------------+------+----------+-------+</span><br></pre></td></tr></table></figure>
+<p>从执行计划的结果中可以看出，<code>s1</code>作为驱动表，<code>s2</code>作为被驱动表，<code>s2</code>的访问方法是<code>eq_ref</code>表明在访问<code>s2</code>表的时候可以通过主键的等值匹配来进行访问</p>
+</li>
+<li><p><code>ref</code> : 当通过普通的二级索引列与常量进行等值匹配时来查询某个表，那么对该表的访问方法就可能是<code>ref</code></p>
+</li>
+<li><p><code>fulltext</code>： 全文索引</p>
+</li>
+<li><p><code>ref_or_null</code>: 当对普通二级索引进行等值匹配查询，该索引列的值也可以是<code>NULL</code>值时，那么对该表的访问方法就可能是<code>ref_or_null</code>。如<code>EXPLAIN SELECT * FROM s1 WHERE key1 = &#39;a&#39; OR key1 IS NULL</code>，该查询条件表明 key1 的取值可能是 null， 所以这个查询的 type 就是 <code>ref_or_null</code></p>
+</li>
+<li><p><code>index_merge</code>:  一般情况下对于某个表的查询只能使用到一个索引，但在某些场景下可以使用<code>Intersection</code>、<code>Union</code>、<code>Sort-Union</code>这三种索引合并的方式来执行查询。</p>
+</li>
+<li><p><code>unique_subquery</code>:  类似于两表连接中被驱动表的<code>eq_ref</code>访问方法，<code>unique_subquery</code>是针对在一些包含<code>IN</code>子查询的查询语句中，如果查询优化器决定将<code>IN</code>子查询转换为<code>EXISTS</code>子查询，而且子查询可以使用到主键进行等值匹配的话，那么该子查询执行计划的<code>type</code>列的值就是<code>unique_subquery</code>。</p>
+</li>
+<li><p><code>index_subquery</code>: <code>index_subquery</code>与<code>unique_subquery</code>类似，只不过访问子查询中的表时使用的是普通的索引</p>
+</li>
+<li><p><code>range</code>: 如果使用索引获取某些<code>范围区间</code>的记录，那么就可能使用到<code>range</code>访问方法</p>
+</li>
+<li><p><code>index</code> : 当可以使用索引覆盖，但需要扫描全部的索引记录时，该表的访问方法就是<code>index</code>。</p>
+<p>如<code>EXPLAIN SELECT key_part2 FROM s1 WHERE key_part3 = &#39;a&#39;</code>。上述查询中的搜索列表中只有<code>key_part2</code>一个列，而且搜索条件中也只有<code>key_part3</code>一个列，这两个列又恰好包含在<code>idx_key_part</code>这个索引中，可是搜索条件<code>key_part3</code>不能直接使用该索引进行<code>ref</code>或者<code>range</code>方式的访问，只能扫描整个<code>idx_key_part</code>索引的记录，所以查询计划的<code>type</code>列的值就是<code>index</code>。</p>
+</li>
+<li><p><code>ALL</code>: 全表扫描</p>
+</li>
+</ul>
+<h5 id="possible-key-和-key"><a href="#possible-key-和-key" class="headerlink" title="possible key 和 key"></a>possible key 和 key</h5><p><code>possible_keys</code>列表示在某个查询语句中，对某个表执行单表查询时可能用到的索引有哪些，<code>key</code>列表示实际用到的索引有哪些。</p>
+<h5 id="key-len"><a href="#key-len" class="headerlink" title="key_len"></a>key_len</h5><p><code>key_len</code>列表示当优化器决定使用某个索引执行查询时，该索引记录的最大长度。计算方法如下:</p>
+<ul>
+<li>对于使用固定长度类型的索引列来说，它实际占用的存储空间的最大长度就是该固定值，对于指定字符集的变长类型的索引列来说，比如某个索引列的类型是<code>VARCHAR(100)</code>，使用的字符集是<code>utf8</code>，那么该列实际占用的最大存储空间就是<code>100 × 3 = 300</code>个字节</li>
+<li>如果该索引列可以存储<code>NULL</code>值，则<code>key_len</code>比不可以存储<code>NULL</code>值时多1个字节</li>
+<li>对于变长字段来说，都会有2个字节的空间来存储该变长列的实际长度</li>
+</ul>
+<h5 id="ref"><a href="#ref" class="headerlink" title="ref"></a>ref</h5><p>当使用索引列等值匹配的条件去执行查询时，也就是在访问方法是<code>const</code>、<code>eq_ref</code>、<code>ref</code>、<code>ref_or_null</code>、<code>unique_subquery</code>、<code>index_subquery</code>其中之一时，<code>ref</code>列展示的就是与索引列作等值匹配的是什么，比如只是一个常数或者是某个列。</p>
+<p>一般情况下 <code>ref</code> 的值是<code>const</code>，代表与索引列作等值匹配的是常数。也有复杂一些的情况:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; EXPLAIN SELECT * FROM s1 INNER JOIN s2 ON s1.id = s2.id;</span><br><span class="line">+----+-------------+-------+------------+--------+---------------+---------+---------+-----------------+------+----------+-------+</span><br><span class="line">| id | select_type | table | partitions | type   | possible_keys | key     | key_len | ref             | rows | filtered | Extra |</span><br><span class="line">+----+-------------+-------+------------+--------+---------------+---------+---------+-----------------+------+----------+-------+</span><br><span class="line">|  1 | SIMPLE      | s1    | NULL       | ALL    | PRIMARY       | NULL    | NULL    | NULL            | 9688 |   100.00 | NULL  |</span><br><span class="line">|  1 | SIMPLE      | s2    | NULL       | eq_ref | PRIMARY       | PRIMARY | 4       | test.s1.id |    1 |   100.00 | NULL  |</span><br><span class="line">+----+-------------+-------+------------+--------+---------------+---------+---------+-----------------+------+----------+-------+</span><br></pre></td></tr></table></figure>
+<p>可以看到对被驱动表<code>s2</code>的访问方法是<code>eq_ref</code>，而对应的<code>ref</code>列的值是<code>test.s1.id</code>，这说明在对被驱动表进行访问时会用到<code>PRIMARY</code>索引，也就是聚簇索引与一个列进行等值匹配的条件，于<code>s2</code>表的<code>id</code>作等值匹配的对象就是<code>test.s1.id</code>列（注意这里把数据库名也写出来了）。</p>
+<h5 id="rows"><a href="#rows" class="headerlink" title="rows"></a>rows</h5><p>如果查询优化器决定使用全表扫描的方式对某个表执行查询时，执行计划的<code>rows</code>列就代表预计需要扫描的行数，如果使用索引来执行查询时，执行计划的<code>rows</code>列就代表预计扫描的索引记录行数。</p>
+<h5 id="filterd"><a href="#filterd" class="headerlink" title="filterd"></a>filterd</h5><p>连接查询的成本中有个<code>condition filtering</code>的概念，就是<code>MySQL</code>在计算驱动表扇出时采用的一个策略：</p>
+<ul>
+<li>如果使用的是全表扫描的方式执行的单表查询，那么计算驱动表扇出时需要估计出满足搜索条件的记录到底有多少条。</li>
+<li>如果使用的是索引执行的单表扫描，那么计算驱动表扇出的时候需要估计出满足除使用到对应索引的搜索条件外的其他搜索条件的记录有多少条。</li>
+</ul>
+<h5 id="extra"><a href="#extra" class="headerlink" title="extra"></a>extra</h5><p><code>Extra</code>列是用来说明一些额外信息的，我们可以通过这些额外信息来更准确的理解<code>MySQL</code>到底将如何执行给定的查询语句。常见的提示信息大概有:</p>
+<ul>
+<li><p><code>Using index</code> : 查询列表以及搜索条件中只包含属于某个索引的列，也就是在可以使用索引覆盖，不需要回表。</p>
+</li>
+<li><p><code>Using index condition</code>:  有些搜索条件中虽然出现了索引列，但却不能使用到索引。</p>
+<p>比如<code>SELECT * FROM s1 WHERE key1 &gt; &#39;z&#39; AND key1 LIKE &#39;%a&#39;</code>。</p>
+<p>在原来的 MySQL 版本中(5.7一下)，执行步骤如下:</p>
+<ol>
+<li>先根据<code>key1 &gt; &#39;z&#39;</code>这个条件，从二级索引<code>idx_key1</code>中获取到对应的二级索引记录</li>
+<li>根据上一步骤得到的二级索引记录中的主键值进行回表，找到完整的用户记录再检测该记录是否符合<code>key1 LIKE &#39;%a&#39;</code>这个条件，将符合条件的记录加入到最后的结果集</li>
+</ol>
+<p>虽然<code>key1 LIKE &#39;%a&#39;</code>不能组成范围区间参与<code>range</code>访问方法的执行，但这个条件毕竟只涉及到了<code>key1</code>列，所以<code>MySQL</code>对上边的步骤进行了一下改进:</p>
+<ol>
+<li>先根据<code>key1 &gt; &#39;z&#39;</code>这个条件，定位到二级索引<code>idx_key1</code>中对应的二级索引记录</li>
+<li>对于指定的二级索引记录，先不着急回表，而是先检测一下该记录是否满足<code>key1 LIKE &#39;%a&#39;</code>这个条件，如果这个条件不满足，则该二级索引记录压根儿就没必要回表</li>
+<li>对于满足<code>key1 LIKE &#39;%a&#39;</code>这个条件的二级索引记录执行回表操作</li>
+</ol>
+<p>回表操作其实是一个随机<code>IO</code>，比较耗时，所以上述修改虽然只改进了一点，但是可以省去很多回表操作的成本。<code>MySQL</code>这个改进称之为<code>索引条件下推</code>（<code>Index Condition Pushdown</code>）。</p>
+</li>
+<li><p><code>Using where</code> : 使用全表扫描来执行对某个表的查询，并且该语句的<code>WHERE</code>子句中有针对该表的搜索条件</p>
+</li>
+<li><p><code>Using filesort</code>: 排序操作无法使用到索引，只能在内存中（记录较少的时候）或者磁盘中（记录较多的时候）进行排序，<code>MySQL</code>中把这种在内存中或者磁盘上进行排序的方式统称为文件排序（<code>filesort</code>）。如果某个查询需要使用文件排序的方式执行查询，就会在执行计划的<code>Extra</code>列中显示<code>Using filesort</code>提示</p>
+</li>
+<li><p><code>Using join buffer (Block Nested Loop)</code>:  在连接查询执行过程中，当被驱动表不能有效的利用索引加快访问速度，<code>MySQL</code>一般会为其分配一块名叫<code>join buffer</code>的内存块来加快查询速度，也就是我们所讲的<code>基于块的嵌套循环算法</code>。</p>
+<p>比如以下语句:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; EXPLAIN SELECT * FROM s1 INNER JOIN s2 ON s1.common_field = s2.common_field;</span><br><span class="line">+----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+----------------------------------------------------+</span><br><span class="line">| id | select_type | table | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra                                              |</span><br><span class="line">+----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+----------------------------------------------------+</span><br><span class="line">|  1 | SIMPLE      | s1    | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 9688 |   100.00 | NULL                                               |</span><br><span class="line">|  1 | SIMPLE      | s2    | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 9954 |    10.00 | Using where; Using join buffer (Block Nested Loop) |</span><br><span class="line">+----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+----------------------------------------------------+</span><br></pre></td></tr></table></figure>
+<p>可以在对<code>s2</code>表的执行计划的<code>Extra</code>列显示了两个提示：</p>
+<ul>
+<li><code>Using join buffer (Block Nested Loop)</code>：这是因为对表<code>s2</code>的访问不能有效利用索引，只好退而求其次，使用<code>join buffer</code>来减少对<code>s2</code>表的访问次数，从而提高性能。</li>
+<li><code>Using where</code>：可以看到查询语句中有一个<code>s1.common_field = s2.common_field</code>条件，因为<code>s1</code>是驱动表，<code>s2</code>是被驱动表，所以在访问<code>s2</code>表时，<code>s1.common_field</code>的值已经确定下来了，所以实际上查询<code>s2</code>表的条件就是<code>s2.common_field = 一个常数</code>，所以提示了<code>Using where</code>额外信息。</li>
+</ul>
+</li>
+</ul>
+<h3 id="优化案例"><a href="#优化案例" class="headerlink" title="优化案例"></a>优化案例</h3><h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="http://mysql.taobao.org/monthly/2016/07/08/" target="_blank" rel="noopener">mysq条件下推物化</a></li>
+<li><a href="https://juejin.im/book/5bffcbc9f265da614b11b731/section/5c061b576fb9a049aa6ed8a4" target="_blank" rel="noopener">explain执行计划</a></li>
+<li><a href="https://juejin.im/post/5e0f5eec5188253a9d4a436f" target="_blank" rel="noopener">SQL性能优化-书写高质量SQL</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/mysql/" rel="tag"><i class="fa fa-tag"></i> mysql</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/11/28/mysql/关于mysq中的l锁/" rel="next" title="关于mysql中的锁">
+                <i class="fa fa-chevron-left"></i> 关于mysql中的锁
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/12/25/架构/谈谈一个框架的扩展加载/" rel="prev" title="谈谈一个框架的扩展加载">
+                谈谈一个框架的扩展加载 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">勿在浮沙筑高台</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">66</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">23</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#MySQL参数设置"><span class="nav-number">1.</span> <span class="nav-text">MySQL参数设置</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#通用配置"><span class="nav-number">1.1.</span> <span class="nav-text">通用配置</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#InnoDB相关配置"><span class="nav-number">1.2.</span> <span class="nav-text">InnoDB相关配置</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SQL性能分析"><span class="nav-number">2.</span> <span class="nav-text">SQL性能分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#explain-执行计划分析"><span class="nav-number">3.</span> <span class="nav-text">explain 执行计划分析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#执行计划各列详细信息"><span class="nav-number">3.1.</span> <span class="nav-text">执行计划各列详细信息</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#id"><span class="nav-number">3.1.1.</span> <span class="nav-text">id</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#select-type"><span class="nav-number">3.1.2.</span> <span class="nav-text">select_type</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#table"><span class="nav-number">3.1.3.</span> <span class="nav-text">table</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#type"><span class="nav-number">3.1.4.</span> <span class="nav-text">type</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#possible-key-和-key"><span class="nav-number">3.1.5.</span> <span class="nav-text">possible key 和 key</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#key-len"><span class="nav-number">3.1.6.</span> <span class="nav-text">key_len</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#ref"><span class="nav-number">3.1.7.</span> <span class="nav-text">ref</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#rows"><span class="nav-number">3.1.8.</span> <span class="nav-text">rows</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#filterd"><span class="nav-number">3.1.9.</span> <span class="nav-text">filterd</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#extra"><span class="nav-number">3.1.10.</span> <span class="nav-text">extra</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#优化案例"><span class="nav-number">4.</span> <span class="nav-text">优化案例</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">5.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/jquery/2.1.3/jquery.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fastclick/1.0.6/fastclick.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.bootcss.com/jquery_lazyload/1.9.7/jquery.lazyload.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.ui.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
