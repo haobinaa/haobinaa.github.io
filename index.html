@@ -349,10 +349,12 @@
       
         
           
-          源码分析执行命令分析执行 Hystrix 命令需要集成 HystrixCommand， 有四种调用方式：
+          整体源码分析在回顾一下hystrix的执行流程:
+
+执行命令入口执行 Hystrix 命令需要集成 HystrixCommand， 有四种调用方式：
 
 toObservable: 返回 Observable 对象
-observe: 在调用 toObservable 的基础上， 向 Observable 上注册 rx.subjects.Repl
+observe: 在调用 toObservable 的基础上， 向 Observabl
           ...
           <!--noindex-->
           <div class="post-button text-center">
