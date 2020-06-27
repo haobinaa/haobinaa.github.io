@@ -2,7 +2,7 @@
 title: hystrix原理应用
 date: 2020-06-07 21:17:16
 tags: hystrix
-categories: 架构
+categories: 中间件
 ---
 ### 简介
 
