@@ -129,7 +129,7 @@ mysql> EXPLAIN SELECT 1;
 1. 包含子查询的情况:`SELECT * FROM s1 WHERE key1 IN (SELECT key3 FROM s2)`。这个查询语句就包含两个`SELECT`关键字
 2. 包含`union`关键字: `SELECT * FROM s1  UNION SELECT * FROM s2`
 
-针对于连接查询，一个`SELECT`关键字后边的`FROM`子句中可以跟随多个表，所以在连接查询的执行计划中，每个表都会对应一条记录，但是这些记录的id值都是相同的，比如：
+针对于连接查询，一个`SELECT`关键字后边的`FROM`子句中可以跟随多个表，所以在连接查询的执行计划中，每个表都会对应一条记录，但是这些记录的id值都是相同的. 在连接查询中，每个表都会对应一条记录，这些记录的id列的值是相同的，出现在前边的表表示驱动表，出现在后边的表表示被驱动表。比如：
 
 ``` 
 mysql> EXPLAIN SELECT * FROM s1 INNER JOIN s2;
@@ -154,7 +154,6 @@ mysql> EXPLAIN SELECT * FROM s1 WHERE key1 IN (SELECT key1 FROM s2) OR key3 = 'a
 |  2 | SUBQUERY    | s2    | NULL       | index | idx_key1      | idx_key1 | 303     | NULL | 9954 |   100.00 | Using index |
 +----+-------------+-------+------------+-------+---------------+----------+---------+------+------+----------+-------------+
 ```
-
 
 
 ##### select_type
