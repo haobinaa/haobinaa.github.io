@@ -57,7 +57,7 @@
 <link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
 
 
-  <meta name="keywords" content="Hexo, NexT">
+  <meta name="keywords" content="限流,">
 
 
 
@@ -74,15 +74,16 @@
 
 
 <meta name="description" content="在开发高并发系统时有三把利器用来保护系统：缓存、降级和限流。限流的目的是通过对并发访问/请求进行限速，或者对一个时间窗口内的请求进行限速来保护系统，一旦达到限制速率则可以拒绝服务、排队或等待、降级等处理 常用的限流算法有：令牌桶和漏桶算法 常用限流算法计数器采用计数器实现限流有点简单粗暴，一般我们会限制一秒钟的能够通过的请求数，比如限流qps为100，算法的实现思路就是从第一个请求进来开始计时，在">
+<meta name="keywords" content="限流">
 <meta property="og:type" content="article">
 <meta property="og:title" content="限流算法(Guava RateLimiter)">
-<meta property="og:url" content="http://yoursite.com/2020/03/30/限流算法/index.html">
+<meta property="og:url" content="http://yoursite.com/2020/03/30/架构/限流算法/index.html">
 <meta property="og:site_name" content="Do Or Die">
 <meta property="og:description" content="在开发高并发系统时有三把利器用来保护系统：缓存、降级和限流。限流的目的是通过对并发访问/请求进行限速，或者对一个时间窗口内的请求进行限速来保护系统，一旦达到限制速率则可以拒绝服务、排队或等待、降级等处理 常用的限流算法有：令牌桶和漏桶算法 常用限流算法计数器采用计数器实现限流有点简单粗暴，一般我们会限制一秒钟的能够通过的请求数，比如限流qps为100，算法的实现思路就是从第一个请求进来开始计时，在">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://yoursite.com/images/distributed/leaky-bucket.png">
 <meta property="og:image" content="http://yoursite.com/images/distributed/token-bucket.png">
-<meta property="og:updated_time" content="2020-06-07T14:47:00.240Z">
+<meta property="og:updated_time" content="2020-06-23T12:23:31.230Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="限流算法(Guava RateLimiter)">
 <meta name="twitter:description" content="在开发高并发系统时有三把利器用来保护系统：缓存、降级和限流。限流的目的是通过对并发访问/请求进行限速，或者对一个时间窗口内的请求进行限速来保护系统，一旦达到限制速率则可以拒绝服务、排队或等待、降级等处理 常用的限流算法有：令牌桶和漏桶算法 常用限流算法计数器采用计数器实现限流有点简单粗暴，一般我们会限制一秒钟的能够通过的请求数，比如限流qps为100，算法的实现思路就是从第一个请求进来开始计时，在">
@@ -116,7 +117,7 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/2020/03/30/限流算法/">
+  <link rel="canonical" href="http://yoursite.com/2020/03/30/架构/限流算法/">
 
 
 
@@ -259,7 +260,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/03/30/限流算法/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/03/30/架构/限流算法/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Leo Hao">
@@ -376,6 +377,12 @@
 
     <footer class="post-footer">
       
+        <div class="post-tags">
+          
+            <a href="/tags/限流/" rel="tag"><i class="fa fa-tag"></i> 限流</a>
+          
+        </div>
+      
 
       
       
@@ -395,7 +402,7 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2020/06/07/hystrix原理应用/" rel="prev" title="hystrix原理应用">
+              <a href="/2020/06/07/中间件/hystrix原理应用/" rel="prev" title="hystrix原理应用">
                 hystrix原理应用 <i class="fa fa-chevron-right"></i>
               </a>
             
@@ -495,7 +502,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">23</span>
+                <span class="site-state-item-count">24</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
