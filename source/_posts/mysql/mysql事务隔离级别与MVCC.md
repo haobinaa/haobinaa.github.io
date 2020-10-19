@@ -14,7 +14,7 @@ categories: mysql
 
 ### 并发事务带来的问题
 
-#### 更新丢失(lost update， 又叫脏写)
+#### 脏写(dirty red)
 
 一个事务修改到了另一个未提交事务修改过的数据
 
