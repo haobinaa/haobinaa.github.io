@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+  <link href="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.min.js" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+  
+
+<link href="//cdn.staticfile.org/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="Hexo, NexT">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="原理简介Fork/Join 框架是 Java7提供了的一个用于并行执行任务的框架， 是一个把大任务分割成若干个小任务，最终汇总每个小任务结果后得到大任务结果的框架。 ForkJoinPool主要用来使用分治法, 在处理任务队列中一个任务的时候，可以让其中的线程创建新的任务并挂起当前任务，此时的线程就可以选择队列中的子任务来执行。如果单纯使用 ThreadPoolExecutor 是无法优先执行子任">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ForkJoinPool使用及原理">
+<meta property="og:url" content="http://yoursite.com/2020/11/15/并发/ForkJoinPool使用及原理/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="原理简介Fork/Join 框架是 Java7提供了的一个用于并行执行任务的框架， 是一个把大任务分割成若干个小任务，最终汇总每个小任务结果后得到大任务结果的框架。 ForkJoinPool主要用来使用分治法, 在处理任务队列中一个任务的时候，可以让其中的线程创建新的任务并挂起当前任务，此时的线程就可以选择队列中的子任务来执行。如果单纯使用 ThreadPoolExecutor 是无法优先执行子任">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/images/thread/work-stealing.png">
+<meta property="og:image" content="http://yoursite.com/images/thread/flowchart-of-forkjoin.png">
+<meta property="og:image" content="http://yoursite.com/images/thread/task-join.png">
+<meta property="og:updated_time" content="2020-12-14T13:42:30.688Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="ForkJoinPool使用及原理">
+<meta name="twitter:description" content="原理简介Fork/Join 框架是 Java7提供了的一个用于并行执行任务的框架， 是一个把大任务分割成若干个小任务，最终汇总每个小任务结果后得到大任务结果的框架。 ForkJoinPool主要用来使用分治法, 在处理任务队列中一个任务的时候，可以让其中的线程创建新的任务并挂起当前任务，此时的线程就可以选择队列中的子任务来执行。如果单纯使用 ThreadPoolExecutor 是无法优先执行子任">
+<meta name="twitter:image" content="http://yoursite.com/images/thread/work-stealing.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2020/11/15/并发/ForkJoinPool使用及原理/">
+
+
+
+
+
+  <title>ForkJoinPool使用及原理 | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/11/15/并发/ForkJoinPool使用及原理/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">ForkJoinPool使用及原理</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-11-15T23:41:23+08:00">
+                2020-11-15
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/并发/" itemprop="url" rel="index">
+                    <span itemprop="name">并发</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="原理简介"><a href="#原理简介" class="headerlink" title="原理简介"></a>原理简介</h3><p>Fork/Join 框架是 Java7提供了的一个用于并行执行任务的框架， 是一个把大任务分割成若干个小任务，最终汇总每个小任务结果后得到大任务结果的框架。</p>
+<p>ForkJoinPool主要用来使用分治法, 在处理任务队列中一个任务的时候，可以让其中的线程创建新的任务并挂起当前任务，此时的线程就可以选择队列中的子任务来执行。如果单纯使用 ThreadPoolExecutor 是无法优先执行子任务的。</p>
+<h4 id="工作窃取-work-stealing"><a href="#工作窃取-work-stealing" class="headerlink" title="工作窃取(work-stealing)"></a>工作窃取(work-stealing)</h4><p>forkjoin 最核心的地方就是利用了现代硬件设备多核,在一个操作时候会有空闲的 cpu,那么如何利用好这个空闲的 cpu 就成了提高性能的关键,工作窃取（work-stealing）算法是指某个线程从其他队列里窃取任务来执行。work-stealing 可以充分的利用线程进行并行计算， 减少了线程之间的竞争</p>
+<p>假如我们需要做一个比较大的任务，我们可以把这个任务分割为若干互不依赖的子任务，为了减少线程间的竞争，于是把这些子任务分别放到不同的队列里，并为每个队列创建一个单独的线程来执行队列里的任务，线程和队列一一对应，比如A线程负责处理A队列里的任务。但是有的线程会先把自己队列里的任务干完，而其他线程对应的队列里还有任务等待处理。干完活的线程与其等着，不如去帮其他线程干活，于是它就去其他线程的队列里窃取一个任务来执行。而在这时它们会访问同一个队列，所以为了减少窃取任务线程和被窃取任务线程之间的竞争，通常会使用双端队列，被窃取任务线程永远从双端队列的头部拿任务执行，而窃取任务的线程永远从双端队列的尾部拿任务执行。</p>
+<h3 id="实现原理"><a href="#实现原理" class="headerlink" title="实现原理"></a>实现原理</h3><ul>
+<li>fork()：开启一个新线程（或是重用线程池内的空闲线程），将任务交给该线程处理。</li>
+<li>join()：等待该任务的处理线程处理完毕，获得返回值。</li>
+</ul>
+<p>这里并不会每个 fork 都会创建新线程， 也不是每个 join 都会造成线程被阻塞， 而是采取了 <code>work-stealing 原理</code></p>
+<h4 id="work-stealing-原理"><a href="#work-stealing-原理" class="headerlink" title="work-stealing 原理"></a>work-stealing 原理</h4><p><img src="/images/thread/work-stealing.png" alt></p>
+<ul>
+<li>ForkJoinPool 的每个工作线程都维护着一个工作队列（WorkQueue），这是一个双端队列（Deque），里面存放的对象是任务（ForkJoinTask）。</li>
+<li>每个工作线程在运行中产生新的任务（通常是因为调用了 fork()）时，会放入工作队列的队尾，并且工作线程在处理自己的工作队列时，使用的是 LIFO 方式，也就是说每次从队尾取出任务来执行。</li>
+<li>每个工作线程在处理自己的工作队列同时，会尝试窃取一个任务（或是来自于刚刚提交到 pool 的任务，或是来自于其他工作线程的工作队列），窃取的任务位于其他线程的工作队列的队首，也就是说工作线程在窃取其他工作线程的任务时，使用的是 FIFO 方式。</li>
+<li>在遇到 join() 时，如果需要 join 的任务尚未完成，则会先处理其他任务，并等待其完成。<br>在既没有自己的任务，也没有可以窃取的任务时，进入休眠</li>
+</ul>
+<h4 id="fork-join-任务调度流程"><a href="#fork-join-任务调度流程" class="headerlink" title="fork/join 任务调度流程"></a>fork/join 任务调度流程</h4><p><img src="/images/thread/flowchart-of-forkjoin.png" alt></p>
+<h3 id="核心组件"><a href="#核心组件" class="headerlink" title="核心组件"></a>核心组件</h3><h4 id="ForkJoinPool"><a href="#ForkJoinPool" class="headerlink" title="ForkJoinPool"></a>ForkJoinPool</h4><p>ForkJoinPool 是 ExecutorService 的一个实现类，主要的工作如下:</p>
+<ol>
+<li>接收外部任务的提交(调用 <code>ForkJoinPool</code> 的  <code>invoke/execute/submit</code> 提交任务)</li>
+<li>接收 ForkJoinTask 自身 fork 出的子任务</li>
+<li>WorkQueue 的初始化和管理</li>
+<li>WorkThread 线程的创建和管理</li>
+</ol>
+<p>ForkJoinPool 提交外部任务方法的区别:</p>
+<ul>
+<li>invoke: 同步方法，调用线程直到任务执行完成才会返回</li>
+<li>execute: 没有返回结果的异步方法, 调用线程会立即返回</li>
+<li>submit: 有返回结果的异步方法，调用线程会立即返回(返回的是 <code>Future</code> 实现类， 通过 get 获取结果)</li>
+</ul>
+<p>ForkJoinPool 提供了三种构造方法，最终都是调用：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">private ForkJoinPool(int parallelism,</span><br><span class="line">                     ForkJoinWorkerThreadFactory factory,</span><br><span class="line">                     UncaughtExceptionHandler handler,</span><br><span class="line">                     int mode,</span><br><span class="line">                     String workerNamePrefix) &#123;</span><br><span class="line">    this.workerNamePrefix = workerNamePrefix;</span><br><span class="line">    this.factory = factory;</span><br><span class="line">    this.ueh = handler;</span><br><span class="line">    this.config = (parallelism &amp; SMASK) | mode;</span><br><span class="line">    long np = (long)(-parallelism); // offset ctl counts</span><br><span class="line">    this.ctl = ((np &lt;&lt; AC_SHIFT) &amp; AC_MASK) | ((np &lt;&lt; TC_SHIFT) &amp; TC_MASK);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<ul>
+<li>parallelism: 默认为 CPU 核数</li>
+<li>factory: 默认是 <code>DefaultForkJoinWorkThreadFactory</code>, 用来创建工作线程<code>ForkJoinWorkThread</code></li>
+<li>handler: 异常处理器</li>
+<li>config: 保存 parallelism 和 mode 信息</li>
+<li>ctl: 线程池核心控制字段</li>
+</ul>
+<p>ForkJoinPool 支持两种 mode， <code>mode = asyncMode ? FIFO_QUEUE : LIFO_QUEUE</code>，这里的同步异步指的是工作线程工作的方式:</p>
+<ul>
+<li>同步(默认)： 对于工作线程（Worker）自身队列中的任务，采用后进先出（LIFO）的方式执行，等同于”栈操作”</li>
+<li>异步： 对于工作线程（Worker）自身队列中的任务，采用先进先出（FIFO）的方式执行, 等同于”队列操作”</li>
+</ul>
+<h4 id="ForkJoinTask"><a href="#ForkJoinTask" class="headerlink" title="ForkJoinTask"></a>ForkJoinTask</h4><p>ForkJoinTask实现了 Future 接口，ForkJoinPool 线程池内部调度的其实都是 ForkJoinTask 任务（提交的是一个Runnable 或 Callable任务，也会被适配成ForkJoinTask)。Fork/Join 提供了两个抽象实现，使用的时候一般继承这两个类:</p>
+<ul>
+<li>RecursiveAction：表示没有返回结果的 ForkJoin 任务</li>
+<li>RecursiveTask：表示有返回结果的 ForkJoin 任务</li>
+</ul>
+<h4 id="ForkJoinWorkerThread"><a href="#ForkJoinWorkerThread" class="headerlink" title="ForkJoinWorkerThread"></a>ForkJoinWorkerThread</h4><p>Fork/Join框架中，每个工作线程（Worker）都有一个自己的任务队列（WorkerQueue），ForkJoinWorkerThread 类作为ForkJoinPool中的工作线程：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">public class ForkJoinWorkerThread extends Thread &#123;</span><br><span class="line">    </span><br><span class="line">    final ForkJoinPool pool;                    // 该工作线程归属的线程池</span><br><span class="line">    final ForkJoinPool.WorkQueue workQueue;     // 对应的任务队列</span><br><span class="line"> </span><br><span class="line">    protected ForkJoinWorkerThread(ForkJoinPool pool) &#123;</span><br><span class="line">        super(&quot;aForkJoinWorkerThread&quot;);         // 指定工作线程名称</span><br><span class="line">        this.pool = pool;</span><br><span class="line">        this.workQueue = pool.registerWorker(this);</span><br><span class="line">    &#125;</span><br><span class="line">  </span><br><span class="line">    // ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>ForkJoinWorkerThread 优先处理自身队列中的任务（LIFO或FIFO顺序，由线程池构造时的参数 mode 决定），自身队列为空时，以FIFO的顺序随机窃取其它队列中的任务。</p>
+<h4 id="WorkQueue"><a href="#WorkQueue" class="headerlink" title="WorkQueue"></a>WorkQueue</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">volatile WorkQueue[] workQueues;</span><br></pre></td></tr></table></figure>
+<p>任务队列（WorkQueue）是ForkJoinPool与其它线程池区别最大的地方，在ForkJoinPool内部，维护着一个WorkQueue[]数组，它会在外部首次提交任务时(<code>submit/invoke/execute</code>)进行初始化.初始化时根据数组大小和线程随机数（ThreadLocalRandom.probe）等信息，计算出任务队列所在的数组索引（这个索引一定是偶数），如果索引处没有任务队列，则初始化一个，再将任务入队。也就是说，通过外部方法提交的任务一定是在偶数队列，没有绑定工作线程。</p>
+<p>ForkJoinPool中的工作队列可以分为两类：</p>
+<ul>
+<li>有工作线程（Worker）绑定的任务队列：数组下标始终是奇数，称为task queue，该队列中的任务均由工作线程调用产生（工作线程调用FutureTask.fork方法）；</li>
+<li>没有工作线程（Worker）绑定的任务队列：数组下标始终是偶数，称为submissions queue，该队列中的任务全部由其它线程提交（也就是非工作线程调用execute/submit/invoke或者FutureTask.fork方法）</li>
+</ul>
+<h3 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h3><h4 id="任务提交"><a href="#任务提交" class="headerlink" title="任务提交"></a>任务提交</h4><h5 id="1-外部任务提交-以-ForkJoinPool-submit-为例"><a href="#1-外部任务提交-以-ForkJoinPool-submit-为例" class="headerlink" title="1. 外部任务提交(以 ForkJoinPool#submit 为例)"></a>1. 外部任务提交(以 ForkJoinPool#submit 为例)</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">public &lt;T&gt; ForkJoinTask&lt;T&gt; submit(ForkJoinTask&lt;T&gt; task) &#123;</span><br><span class="line">    if (task == null)</span><br><span class="line">        throw new NullPointerException();</span><br><span class="line">    externalPush(task);</span><br><span class="line">    return task;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">final void externalPush(ForkJoinTask&lt;?&gt; task) &#123;</span><br><span class="line">    WorkQueue[] ws;</span><br><span class="line">    WorkQueue q;</span><br><span class="line">    int m;</span><br><span class="line">    int r = ThreadLocalRandom.getProbe();</span><br><span class="line">    int rs = runState;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    if ((ws = workQueues) != null &amp;&amp; (m = (ws.length - 1)) &gt;= 0 &amp;&amp;</span><br><span class="line">        // SQMASK 为常量 0x007e, 二进制为 0111 1110, m &amp; r 取一个 [0,m]的随机数，再与SQMASK将最低置0</span><br><span class="line">        // 这样与出来必为偶数，所以通过externalPush方法提交的任务都添加到了偶数索引的任务队列中（没有绑定的工作线程）</span><br><span class="line">        (q = ws[m &amp; r &amp; SQMASK]) != null</span><br><span class="line">        &amp;&amp; r != 0 &amp;&amp; rs &gt; 0 </span><br><span class="line">        &amp;&amp; U.compareAndSwapInt(q, QLOCK, 0, 1)) &#123;</span><br><span class="line">        </span><br><span class="line">        </span><br><span class="line">        ForkJoinTask&lt;?&gt;[] a;</span><br><span class="line">        int am, n, s;</span><br><span class="line">        if ((a = q.array) != null &amp;&amp;</span><br><span class="line">            (am = a.length - 1) &gt; (n = (s = q.top) - q.base)) &#123;</span><br><span class="line">            int j = ((am &amp; s) &lt;&lt; ASHIFT) + ABASE;</span><br><span class="line">            U.putOrderedObject(a, j, task);</span><br><span class="line">            U.putOrderedInt(q, QTOP, s + 1);</span><br><span class="line">            U.putIntVolatile(q, QLOCK, 0);</span><br><span class="line">            if (n &lt;= 1)                 // 队列里只有一个任务</span><br><span class="line">                signalWork(ws, q);      // 创建或激活一个工作线程</span><br><span class="line">            return;</span><br><span class="line">        &#125;</span><br><span class="line">        U.compareAndSwapInt(q, QLOCK, 1, 0);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    // 未命中任务队列时（WorkQueue == null 或 WorkQueue[i] == null），会进入该方法</span><br><span class="line">    externalSubmit(task);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>submit 调用 externalPush， 包含两部分:</p>
+<ol>
+<li>根据线程随机变量、任务队列数组信息，计算命中槽（即本次提交的任务应该添加到任务队列数组中的哪个队列），如果命中且队列中任务数&lt;1，则创建或激活一个工作线程；</li>
+<li>未命中任务队列(workQueue == null || workQueue[i] == null)，调用 <code>externalSubmit</code> 初始化队列，并入队：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * 完整版本的externalPush.</span><br><span class="line"> * 处理线程池提交任务时未命中队列的情况和异常情况.</span><br><span class="line"> */</span><br><span class="line">private void externalSubmit(ForkJoinTask&lt;?&gt; task) &#123;</span><br><span class="line">    int r;                                    // 线程相关的随机数</span><br><span class="line">    if ((r = ThreadLocalRandom.getProbe()) == 0) &#123;</span><br><span class="line">        ThreadLocalRandom.localInit();</span><br><span class="line">        r = ThreadLocalRandom.getProbe();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    for (; ; ) &#123;</span><br><span class="line">        WorkQueue[] ws;</span><br><span class="line">        WorkQueue q;</span><br><span class="line">        int rs, m, k;</span><br><span class="line">        boolean move = false;</span><br><span class="line"></span><br><span class="line">        // CASE1: 线程池已关闭</span><br><span class="line">        if ((rs = runState) &lt; 0) &#123;</span><br><span class="line">            tryTerminate(false, false);     // help terminate</span><br><span class="line">            throw new RejectedExecutionException();</span><br><span class="line">        &#125;</span><br><span class="line">        // CASE2: 初始化线程池</span><br><span class="line">        else if ((rs &amp; STARTED) == 0 ||     // initialize</span><br><span class="line">            ((ws = workQueues) == null || (m = ws.length - 1) &lt; 0)) &#123;</span><br><span class="line">            int ns = 0;</span><br><span class="line">            rs = lockRunState();</span><br><span class="line">            try &#123;</span><br><span class="line">                if ((rs &amp; STARTED) == 0) &#123;</span><br><span class="line">                    U.compareAndSwapObject(this, STEALCOUNTER, null,</span><br><span class="line">                        new AtomicLong());</span><br><span class="line"></span><br><span class="line">                    // 初始化工作队列数组, 数组大小必须为2的幂次</span><br><span class="line">                    int p = config &amp; SMASK;</span><br><span class="line">                    int n = (p &gt; 1) ? p - 1 : 1;</span><br><span class="line">                    n |= n &gt;&gt;&gt; 1;</span><br><span class="line">                    n |= n &gt;&gt;&gt; 2;</span><br><span class="line">                    n |= n &gt;&gt;&gt; 4;</span><br><span class="line">                    n |= n &gt;&gt;&gt; 8;</span><br><span class="line">                    n |= n &gt;&gt;&gt; 16;</span><br><span class="line">                    n = (n + 1) &lt;&lt; 1;</span><br><span class="line">                    workQueues = new WorkQueue[n];</span><br><span class="line">                    ns = STARTED;   // 线程池状态转化为STARTED</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; finally &#123;</span><br><span class="line">                unlockRunState(rs, (rs &amp; ~RSLOCK) | ns);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        // CASE3: 入队任务</span><br><span class="line">        else if ((q = ws[k = r &amp; m &amp; SQMASK]) != null) &#123;</span><br><span class="line">            if (q.qlock == 0 &amp;&amp; U.compareAndSwapInt(q, QLOCK, 0, 1)) &#123;</span><br><span class="line">                ForkJoinTask&lt;?&gt;[] a = q.array;</span><br><span class="line">                int s = q.top;</span><br><span class="line">                boolean submitted = false; // initial submission or resizing</span><br><span class="line">                try &#123;                      // locked version of push</span><br><span class="line">                    if ((a != null &amp;&amp; a.length &gt; s + 1 - q.base) ||</span><br><span class="line">                        (a = q.growArray()) != null) &#123;</span><br><span class="line">                        int j = (((a.length - 1) &amp; s) &lt;&lt; ASHIFT) + ABASE;</span><br><span class="line">                        U.putOrderedObject(a, j, task);</span><br><span class="line">                        U.putOrderedInt(q, QTOP, s + 1);</span><br><span class="line">                        submitted = true;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125; finally &#123;</span><br><span class="line">                    U.compareAndSwapInt(q, QLOCK, 1, 0);</span><br><span class="line">                &#125;</span><br><span class="line">                if (submitted) &#123;</span><br><span class="line">                    signalWork(ws, q);</span><br><span class="line">                    return;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            move = true;                   // move on failure</span><br><span class="line">        &#125;</span><br><span class="line">        // CASE4: 创建一个任务队列</span><br><span class="line">        else if (((rs = runState) &amp; RSLOCK) == 0) &#123;</span><br><span class="line">            q = new WorkQueue(this, null);</span><br><span class="line">            q.hint = r;</span><br><span class="line">            q.config = k | SHARED_QUEUE;        // k为任务队列在队列数组中的索引: k == r &amp; m &amp; SQMASK, 在CASE3的IF判断中赋值</span><br><span class="line">            q.scanState = INACTIVE;             // 任务队列状态为INACTIVE</span><br><span class="line">            rs = lockRunState();</span><br><span class="line">            if (rs &gt; 0 &amp;&amp; (ws = workQueues) != null &amp;&amp;</span><br><span class="line">                k &lt; ws.length &amp;&amp; ws[k] == null)</span><br><span class="line">                ws[k] = q;                 // else terminated</span><br><span class="line">            unlockRunState(rs, rs &amp; ~RSLOCK);</span><br><span class="line">        &#125; else</span><br><span class="line">            move = true;                   // move if busy</span><br><span class="line">        if (move)</span><br><span class="line">            r = ThreadLocalRandom.advanceProbe(r);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>externalSubmit方法的逻辑很清晰，一共分为4种情况：<br>CASE1：线程池已经关闭，则执行终止操作，并拒绝该任务的提交；<br>CASE2：线程池未初始化，则进行初始化，主要就是初始化任务队列数组；<br>CASE3：命中了任务队列，则将任务入队，并尝试创建/唤醒一个工作线程（Worker）；<br>CASE4：未命中任务队列，则在偶数索引处创建一个任务队列</p>
+<h5 id="2-工作线程fork任务"><a href="#2-工作线程fork任务" class="headerlink" title="2.工作线程fork任务"></a>2.工作线程fork任务</h5><p>ForkJoinTask.fork 当调用线程为工作线程时， 直接添加到其自身队列:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">public final ForkJoinTask&lt;V&gt; fork() &#123;</span><br><span class="line">    Thread t;</span><br><span class="line">    if ((t = Thread.currentThread()) instanceof ForkJoinWorkerThread)   // 如果调用线程为【工作线程】</span><br><span class="line">        ((ForkJoinWorkerThread) t).workQueue.push(this);           // 直接添加到线程的自身队列中</span><br><span class="line">    else</span><br><span class="line">        ForkJoinPool.common.externalPush(this);                    // 外部（其它线程）提交的任务</span><br><span class="line">    return this;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// WorkQueue.push 将任务存入自身队列的栈顶</span><br><span class="line">final void push(ForkJoinTask&lt;?&gt; task) &#123;</span><br><span class="line">    ForkJoinTask&lt;?&gt;[] a;</span><br><span class="line">    ForkJoinPool p;</span><br><span class="line">    int b = base, s = top, n;</span><br><span class="line">    if ((a = array) != null) &#123;    // ignore if queue removed</span><br><span class="line">        int m = a.length - 1;     // fenced write for task visibility</span><br><span class="line">        U.putOrderedObject(a, ((m &amp; s) &lt;&lt; ASHIFT) + ABASE, task);</span><br><span class="line">        U.putOrderedInt(this, QTOP, s + 1);       // 任务存入栈顶(top+1)</span><br><span class="line">        if ((n = s - b) &lt;= 1) &#123;</span><br><span class="line">            if ((p = pool) != null)</span><br><span class="line">                p.signalWork(p.workQueues, this);   // 唤醒或创建一个工作线程</span><br><span class="line">        &#125; else if (n &gt;= m)</span><br><span class="line">            growArray();            // 扩容</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h4 id="创建工作线程"><a href="#创建工作线程" class="headerlink" title="创建工作线程"></a>创建工作线程</h4><p>任务提交后，会调用signalWork方法创建或唤醒一个工作线程，该方法的核心其实就两个分支：</p>
+<ol>
+<li>工作线程数不足：创建一个工作线程；</li>
+<li>工作线程数足够：唤醒一个空闲（阻塞）的工作线程。</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * 尝试创建或唤醒一个工作线程.</span><br><span class="line"> *</span><br><span class="line"> * @param ws 任务队列数组</span><br><span class="line"> * @param q  当前操作的任务队列WorkQueue</span><br><span class="line"> */</span><br><span class="line">final void signalWork(WorkQueue[] ws, WorkQueue q) &#123;</span><br><span class="line">    long c;</span><br><span class="line">    int sp, i;</span><br><span class="line">    WorkQueue v;</span><br><span class="line">    Thread p;</span><br><span class="line">    while ((c = ctl) &lt; 0L) &#123;                       // too few active</span><br><span class="line">        // CASE1: 工作线程数不足</span><br><span class="line">        if ((sp = (int) c) == 0) &#123;</span><br><span class="line">            if ((c &amp; ADD_WORKER) != 0L)</span><br><span class="line">                tryAddWorker(c);                    // 增加工作线程</span><br><span class="line">            break;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        // CASE2: 存在空闲工作线程，则唤醒</span><br><span class="line">        if (ws == null)                            // unstarted/terminated</span><br><span class="line">            break;</span><br><span class="line">        if (ws.length &lt;= (i = sp &amp; SMASK))         // terminated</span><br><span class="line">            break;</span><br><span class="line">        if ((v = ws[i]) == null)                   // terminating</span><br><span class="line">            break;</span><br><span class="line">        int vs = (sp + SS_SEQ) &amp; ~INACTIVE;        // next scanState</span><br><span class="line">        int d = sp - v.scanState;                  // screen CAS</span><br><span class="line">        long nc = (UC_MASK &amp; (c + AC_UNIT)) | (SP_MASK &amp; v.stackPred);</span><br><span class="line">        if (d == 0 &amp;&amp; U.compareAndSwapLong(this, CTL, c, nc)) &#123;</span><br><span class="line">            v.scanState = vs;                      // activate v</span><br><span class="line">            if ((p = v.parker) != null)</span><br><span class="line">                U.unpark(p);</span><br><span class="line">            break;</span><br><span class="line">        &#125;</span><br><span class="line">        if (q != null &amp;&amp; q.base == q.top)          // no more work</span><br><span class="line">            break;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>创建工作线程的方法tryAddWorker，其实就是设置下字段值（活跃/总工作线程池数），然后调用createWorker真正创建一个工作线程：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line">private void tryAddWorker(long c) &#123;</span><br><span class="line">    boolean add = false;</span><br><span class="line">    do &#123;</span><br><span class="line"></span><br><span class="line">        // 设置活跃工作线程数、总工作线程池数</span><br><span class="line">        long nc = ((AC_MASK &amp; (c + AC_UNIT)) |</span><br><span class="line">            (TC_MASK &amp; (c + TC_UNIT)));</span><br><span class="line">        if (ctl == c) &#123;</span><br><span class="line">            int rs, stop;                 // check if terminating</span><br><span class="line">            if ((stop = (rs = lockRunState()) &amp; STOP) == 0)</span><br><span class="line">                add = U.compareAndSwapLong(this, CTL, c, nc);</span><br><span class="line">            unlockRunState(rs, rs &amp; ~RSLOCK);</span><br><span class="line">            if (stop != 0)</span><br><span class="line">                break;</span><br><span class="line"></span><br><span class="line">            // 创建工作线程</span><br><span class="line">            if (add) &#123;</span><br><span class="line">                createWorker();</span><br><span class="line">                break;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; while (((c = ctl) &amp; ADD_WORKER) != 0L &amp;&amp; (int) c == 0);</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line">private boolean createWorker() &#123;</span><br><span class="line">    ForkJoinWorkerThreadFactory fac = factory;</span><br><span class="line">    Throwable ex = null;</span><br><span class="line">    ForkJoinWorkerThread wt = null;</span><br><span class="line">    try &#123;</span><br><span class="line">        </span><br><span class="line">        // 使用线程池工厂创建线程</span><br><span class="line">        if (fac != null &amp;&amp; (wt = fac.newThread(this)) != null) &#123;</span><br><span class="line">            wt.start();     // 启动线程</span><br><span class="line">            return true;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; catch (Throwable rex) &#123;</span><br><span class="line">        ex = rex;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    // 创建出现异常，则注销该工作线程</span><br><span class="line">    deregisterWorker(wt, ex);</span><br><span class="line">    return false;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>如果创建过程中出现异常，则调用deregisterWorker注销线程：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line">final void deregisterWorker(ForkJoinWorkerThread wt, Throwable ex) &#123;</span><br><span class="line">    WorkQueue w = null;</span><br><span class="line">    // 1.移除workQueue</span><br><span class="line">    if (wt != null &amp;&amp; (w = wt.workQueue) != null) &#123;     // 获取ForkJoinWorkerThread的等待队列</span><br><span class="line">        WorkQueue[] ws;                           </span><br><span class="line">        int idx = w.config &amp; SMASK;                     // 计算workQueue索引</span><br><span class="line">        int rs = lockRunState();                        // 获取runState锁和当前池运行状态</span><br><span class="line">        if ((ws = workQueues) != null &amp;&amp; ws.length &gt; idx &amp;&amp; ws[idx] == w)</span><br><span class="line">            ws[idx] = null;                             // 移除workQueue</span><br><span class="line">        unlockRunState(rs, rs &amp; ~RSLOCK);   // 解除runState锁</span><br><span class="line">    &#125;</span><br><span class="line">    // 2.减少CTL数</span><br><span class="line">    long c;                                       // decrement counts</span><br><span class="line">    do &#123;</span><br><span class="line">    &#125; while (!U.compareAndSwapLong</span><br><span class="line">        (this, CTL, c = ctl, ((AC_MASK &amp; (c - AC_UNIT)) |</span><br><span class="line">            (TC_MASK &amp; (c - TC_UNIT)) |</span><br><span class="line">            (SP_MASK &amp; c))));</span><br><span class="line">    // 3.处理被移除workQueue内部相关参数</span><br><span class="line">    if (w != null) &#123;</span><br><span class="line">        w.qlock = -1;                             // ensure set</span><br><span class="line">        w.transferStealCount(this);</span><br><span class="line">        w.cancelAll();                            // cancel remaining tasks</span><br><span class="line">    &#125;</span><br><span class="line">    // 4.如果线程未终止，替换被移除的workQueue并唤醒内部线程</span><br><span class="line">    for (; ; ) &#123;                                    // possibly replace</span><br><span class="line">        WorkQueue[] ws;</span><br><span class="line">        int m, sp;</span><br><span class="line">        // 尝试终止线程池</span><br><span class="line">        if (tryTerminate(false, false) || w == null || w.array == null ||</span><br><span class="line">            (runState &amp; STOP) != 0 || (ws = workQueues) == null ||</span><br><span class="line">            (m = ws.length - 1) &lt; 0)              // already terminating</span><br><span class="line">            break;</span><br><span class="line">        // 唤醒被替换的线程，依赖于下一步</span><br><span class="line">        if ((sp = (int) (c = ctl)) != 0) &#123;         // wake up replacement</span><br><span class="line">            if (tryRelease(c, ws[sp &amp; m], AC_UNIT))</span><br><span class="line">                break;</span><br><span class="line">        &#125;</span><br><span class="line">        // 创建工作线程替换</span><br><span class="line">        else if (ex != null &amp;&amp; (c &amp; ADD_WORKER) != 0L) &#123;</span><br><span class="line">            tryAddWorker(c);                      // create replacement</span><br><span class="line">            break;</span><br><span class="line">        &#125; else                                      // don&apos;t need replacement</span><br><span class="line">            break;</span><br><span class="line">    &#125;</span><br><span class="line">    // 5.处理异常</span><br><span class="line">    if (ex == null)                               // help clean on way out</span><br><span class="line">        ForkJoinTask.helpExpungeStaleExceptions();</span><br><span class="line">    else                                          // rethrow</span><br><span class="line">        ForkJoinTask.rethrow(ex);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>ForkJoinWorkerThread 在被 ForkJoinWorkerThreadFactory 创建的过程中会保存线程池信息和与自己绑定的任务队列信息。<br>工作线程（Worker）自身的任务队列，其数组下标始终是奇数，registerWorker方法的主要作用就是在任务队列数组WorkQueue[]找到一个空的奇数位，然后在该位置创建WorkQueue。<br>它通过ForkJoinPool.registerWorker方法将自己注册到线程池中：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line">protected ForkJoinWorkerThread(ForkJoinPool pool) &#123;</span><br><span class="line">    // Use a placeholder until a useful name can be set in registerWorker</span><br><span class="line">    super(&quot;aForkJoinWorkerThread&quot;);</span><br><span class="line">    this.pool = pool;</span><br><span class="line">    this.workQueue = pool.registerWorker(this);</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// ForkJoinPool#registerWorker</span><br><span class="line">final WorkQueue registerWorker(ForkJoinWorkerThread wt) &#123;</span><br><span class="line">    UncaughtExceptionHandler handler;</span><br><span class="line">    wt.setDaemon(true);                           // configure thread</span><br><span class="line">    if ((handler = ueh) != null)</span><br><span class="line">        wt.setUncaughtExceptionHandler(handler);</span><br><span class="line"></span><br><span class="line">    // 创建一个工作队列, 并于该工作线程绑定</span><br><span class="line">    WorkQueue w = new WorkQueue(this, wt);</span><br><span class="line">    int i = 0;                                    // 记录队列在任务队列数组中的索引, 始终为奇数</span><br><span class="line">    int mode = config &amp; MODE_MASK;</span><br><span class="line">    int rs = lockRunState();</span><br><span class="line">    try &#123;</span><br><span class="line">        WorkQueue[] ws;</span><br><span class="line">        int n;</span><br><span class="line">        if ((ws = workQueues) != null &amp;&amp; (n = ws.length) &gt; 0) &#123;</span><br><span class="line">            int s = indexSeed += SEED_INCREMENT;  // unlikely to collide</span><br><span class="line">            int m = n - 1;</span><br><span class="line">            i = ((s &lt;&lt; 1) | 1) &amp; m;               // 经计算后, i为奇数</span><br><span class="line">            if (ws[i] != null) &#123;                  // 槽冲突, 即WorkQueue[i]位置已经有了任务队列</span><br><span class="line"></span><br><span class="line">                // 重新计算索引i</span><br><span class="line">                int probes = 0;                   // step by approx half n</span><br><span class="line">                int step = (n &lt;= 4) ? 2 : ((n &gt;&gt;&gt; 1) &amp; EVENMASK) + 2;</span><br><span class="line">                while (ws[i = (i + step) &amp; m] != null) &#123;</span><br><span class="line">                    if (++probes &gt;= n) &#123;</span><br><span class="line">                        workQueues = ws = Arrays.copyOf(ws, n &lt;&lt;= 1);</span><br><span class="line">                        m = n - 1;</span><br><span class="line">                        probes = 0;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            // 设置队列状态为SCANNING</span><br><span class="line">            w.hint = s;                           // use as random seed</span><br><span class="line">            w.config = i | mode;</span><br><span class="line">            w.scanState = i;                      // publication fence</span><br><span class="line">            ws[i] = w;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; finally &#123;</span><br><span class="line">        unlockRunState(rs, rs &amp; ~RSLOCK);</span><br><span class="line">    &#125;</span><br><span class="line">    wt.setName(workerNamePrefix.concat(Integer.toString(i &gt;&gt;&gt; 1)));</span><br><span class="line">    return w;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h4 id="3-任务执行"><a href="#3-任务执行" class="headerlink" title="3. 任务执行"></a>3. 任务执行</h4><p>ForkJoinWorkerThread启动后，会执行它的run方法，该方法内部调用了<code>ForkJoinPool.runWorker</code>方法来执行任务：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">public void run() &#123;</span><br><span class="line">    if (workQueue.array == null) &#123;  // only run once</span><br><span class="line">        Throwable exception = null;</span><br><span class="line">        try &#123;</span><br><span class="line">            onStart();              // 钩子方法</span><br><span class="line">            pool.runWorker(workQueue);</span><br><span class="line">        &#125; catch (Throwable ex) &#123;</span><br><span class="line">            exception = ex;</span><br><span class="line">        &#125; finally &#123;</span><br><span class="line">            try &#123;</span><br><span class="line">                onTermination(exception);</span><br><span class="line">            &#125; catch (Throwable ex) &#123;</span><br><span class="line">                if (exception == null)</span><br><span class="line">                    exception = ex;</span><br><span class="line">            &#125; finally &#123;</span><br><span class="line">                pool.deregisterWorker(this, exception);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">// ForkJoinPool#runWorker</span><br><span class="line">final void runWorker(WorkQueue w) &#123;</span><br><span class="line">    w.growArray();                   // 初始化任务队列</span><br><span class="line">    int seed = w.hint;               // initially holds randomization hint</span><br><span class="line">    int r = (seed == 0) ? 1 : seed;  // avoid 0 for xorShift</span><br><span class="line">    for (ForkJoinTask&lt;?&gt; t; ; ) &#123;</span><br><span class="line"></span><br><span class="line">        // CASE1: 尝试获取一个任务</span><br><span class="line">        if ((t = scan(w, r)) != null)</span><br><span class="line">            w.runTask(t);                       // 获取成功, 执行任务</span><br><span class="line">        // CASE2: 获取失败, 阻塞等待任务入队</span><br><span class="line">        else if (!awaitWork(w, r))              // 等待失败, 跳出该方法后, 工作线程会被注销</span><br><span class="line">            break;</span><br><span class="line">        r ^= r &lt;&lt; 13;</span><br><span class="line">        r ^= r &gt;&gt;&gt; 17;</span><br><span class="line">        r ^= r &lt;&lt; 5; // xorshift</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>runWorker方法的核心流程如下：</p>
+<ol>
+<li>scan：尝试获取一个任务；</li>
+<li>runTask：执行取得的任务；</li>
+<li>awaitWork：没有任务则阻塞。</li>
+</ol>
+<h5 id="scan（任务窃取流程）"><a href="#scan（任务窃取流程）" class="headerlink" title="scan（任务窃取流程）"></a>scan（任务窃取流程）</h5><p>扫描并尝试偷取一个任务。随机选择一个WorkQueue，获取base位的 ForkJoinTask，成功取到后更新base位并返回任务；如果取到的 WorkQueue 中任务数大于1，则调用signalWork创建或唤醒其他工作线程。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br></pre></td><td class="code"><pre><span class="line">private ForkJoinTask&lt;?&gt; scan(WorkQueue w, int r) &#123;</span><br><span class="line">    WorkQueue[] ws;</span><br><span class="line">    int m;</span><br><span class="line">    if ((ws = workQueues) != null &amp;&amp; (m = ws.length - 1) &gt; 0 &amp;&amp; w != null) &#123;</span><br><span class="line">        int ss = w.scanState;                     // initially non-negative</span><br><span class="line">        for (int origin = r &amp; m, k = origin, oldSum = 0, checkSum = 0; ; ) &#123;</span><br><span class="line">            WorkQueue q;</span><br><span class="line">            ForkJoinTask&lt;?&gt;[] a;</span><br><span class="line">            ForkJoinTask&lt;?&gt; t;</span><br><span class="line">            int b, n;</span><br><span class="line">            long c;</span><br><span class="line"></span><br><span class="line">            // 根据随机数r定位一个任务队列</span><br><span class="line">            if ((q = ws[k]) != null) &#123;      // 获取workQueue</span><br><span class="line">                if ((n = (b = q.base) - q.top) &lt; 0 &amp;&amp;</span><br><span class="line">                    (a = q.array) != null) &#123;      // non-empty</span><br><span class="line">                    long i = (((a.length - 1) &amp; b) &lt;&lt; ASHIFT) + ABASE;</span><br><span class="line">                    if ((t = ((ForkJoinTask&lt;?&gt;)</span><br><span class="line">                        U.getObjectVolatile(a, i))) != null &amp;&amp;  // 取base位置任务</span><br><span class="line">                        q.base == b) &#123;</span><br><span class="line"></span><br><span class="line">                        // 成功获取到任务</span><br><span class="line">                        if (ss &gt;= 0) &#123;</span><br><span class="line">                            if (U.compareAndSwapObject(a, i, t, null)) &#123;</span><br><span class="line">                                q.base = b + 1;         // 更新base位</span><br><span class="line">                                if (n &lt; -1)</span><br><span class="line">                                    signalWork(ws, q);  // 创建或唤醒工作线程来运行任务</span><br><span class="line">                                return t;</span><br><span class="line">                            &#125;</span><br><span class="line">                        &#125; else if (oldSum == 0 &amp;&amp;   // try to activate</span><br><span class="line">                            w.scanState &lt; 0)</span><br><span class="line">                            tryRelease(c = ctl, ws[m &amp; (int) c], AC_UNIT);  // 唤醒栈顶工作线程</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    // base位置任务为空或base位置偏移，随机移位重新扫描</span><br><span class="line">                    if (ss &lt; 0)                   // refresh</span><br><span class="line">                        ss = w.scanState;</span><br><span class="line">                    r ^= r &lt;&lt; 1;</span><br><span class="line">                    r ^= r &gt;&gt;&gt; 3;</span><br><span class="line">                    r ^= r &lt;&lt; 10;</span><br><span class="line">                    origin = k = r &amp; m;           // move and rescan</span><br><span class="line">                    oldSum = checkSum = 0;</span><br><span class="line">                    continue;</span><br><span class="line">                &#125;</span><br><span class="line">                checkSum += b;</span><br><span class="line">            &#125;</span><br><span class="line">            if ((k = (k + 1) &amp; m) == origin) &#123;    // continue until stable</span><br><span class="line">                // 运行到这里说明已经扫描了全部的 workQueues，但并未扫描到任务</span><br><span class="line">                if ((ss &gt;= 0 || (ss == (ss = w.scanState))) &amp;&amp;</span><br><span class="line">                    oldSum == (oldSum = checkSum)) &#123;</span><br><span class="line">                    if (ss &lt; 0 || w.qlock &lt; 0)    // already inactive</span><br><span class="line">                        break;</span><br><span class="line"></span><br><span class="line">                    // 对当前WorkQueue进行灭活操作</span><br><span class="line">                    int ns = ss | INACTIVE;       // try to inactivate</span><br><span class="line">                    long nc = ((SP_MASK &amp; ns) |</span><br><span class="line">                        (UC_MASK &amp; ((c = ctl) - AC_UNIT)));</span><br><span class="line">                    w.stackPred = (int) c;         // hold prev stack top</span><br><span class="line">                    U.putInt(w, QSCANSTATE, ns);</span><br><span class="line">                    if (U.compareAndSwapLong(this, CTL, c, nc))</span><br><span class="line">                        ss = ns;</span><br><span class="line">                    else</span><br><span class="line">                        w.scanState = ss;         // back out</span><br><span class="line">                &#125;</span><br><span class="line">                checkSum = 0;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return null;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h5 id="awaitWork-阻塞等待"><a href="#awaitWork-阻塞等待" class="headerlink" title="awaitWork(阻塞等待)"></a>awaitWork(阻塞等待)</h5><p>如果scan方法未扫描到任务，会调用awaitWork等待获取任务：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line">private boolean awaitWork(WorkQueue w, int r) &#123;</span><br><span class="line">    if (w == null || w.qlock &lt; 0)                  // w is terminating</span><br><span class="line">        return false;</span><br><span class="line">    for (int pred = w.stackPred, spins = SPINS, ss; ; ) &#123;</span><br><span class="line">        if ((ss = w.scanState) &gt;= 0)               // 正在扫描，跳出循环</span><br><span class="line">            break;</span><br><span class="line">        else if (spins &gt; 0) &#123;</span><br><span class="line">            r ^= r &lt;&lt; 6;</span><br><span class="line">            r ^= r &gt;&gt;&gt; 21;</span><br><span class="line">            r ^= r &lt;&lt; 7;</span><br><span class="line">            if (r &gt;= 0 &amp;&amp; --spins == 0) &#123;           // randomize spins</span><br><span class="line">                WorkQueue v;</span><br><span class="line">                WorkQueue[] ws;</span><br><span class="line">                int s, j;</span><br><span class="line">                AtomicLong sc;</span><br><span class="line">                if (pred != 0 &amp;&amp; (ws = workQueues) != null &amp;&amp;</span><br><span class="line">                    (j = pred &amp; SMASK) &lt; ws.length &amp;&amp;</span><br><span class="line">                    (v = ws[j]) != null &amp;&amp;          // see if pred parking</span><br><span class="line">                    (v.parker == null || v.scanState &gt;= 0))</span><br><span class="line">                    spins = SPINS;                  // continue spinning</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; else if (w.qlock &lt; 0)                     // 当前workQueue已经终止，返回false recheck after spins</span><br><span class="line">            return false;</span><br><span class="line">        else if (!Thread.interrupted()) &#123;           // 判断线程是否被中断，并清除中断状态</span><br><span class="line">            long c, prevctl, parkTime, deadline;</span><br><span class="line">            int ac = (int) ((c = ctl) &gt;&gt; AC_SHIFT) + (config &amp; SMASK);      // 活跃线程数</span><br><span class="line">            if ((ac &lt;= 0 &amp;&amp; tryTerminate(false, false)) ||      // 无active线程，尝试终止</span><br><span class="line">                (runState &amp; STOP) != 0)             // pool terminating</span><br><span class="line">                return false;</span><br><span class="line">            if (ac &lt;= 0 &amp;&amp; ss == (int) c) &#123;         // is last waiter</span><br><span class="line">                // 计算活跃线程数（高32位）并更新为下一个栈顶的scanState（低32位）</span><br><span class="line">                prevctl = (UC_MASK &amp; (c + AC_UNIT)) | (SP_MASK &amp; pred);</span><br><span class="line">                int t = (short) (c &gt;&gt;&gt; TC_SHIFT);   // shrink excess spares</span><br><span class="line">                if (t &gt; 2 &amp;&amp; U.compareAndSwapLong(this, CTL, c, prevctl))//总线程过量</span><br><span class="line">                    return false;                   // else use timed wait</span><br><span class="line">                // 计算空闲超时时间</span><br><span class="line">                parkTime = IDLE_TIMEOUT * ((t &gt;= 0) ? 1 : 1 - t);</span><br><span class="line">                deadline = System.nanoTime() + parkTime - TIMEOUT_SLOP;</span><br><span class="line">            &#125; else</span><br><span class="line">                prevctl = parkTime = deadline = 0L;</span><br><span class="line">            Thread wt = Thread.currentThread();</span><br><span class="line">            U.putObject(wt, PARKBLOCKER, this);     // emulate LockSupport</span><br><span class="line">            w.parker = wt;                              // 设置parker，准备阻塞</span><br><span class="line">            if (w.scanState &lt; 0 &amp;&amp; ctl == c)            // recheck before park</span><br><span class="line">                U.park(false, parkTime);             // 阻塞指定的时间</span><br><span class="line"></span><br><span class="line">            U.putOrderedObject(w, QPARKER, null);</span><br><span class="line">            U.putObject(wt, PARKBLOCKER, null);</span><br><span class="line">            if (w.scanState &gt;= 0)                       // 正在扫描，说明等到任务，跳出循环</span><br><span class="line">                break;</span><br><span class="line">            if (parkTime != 0L &amp;&amp; ctl == c &amp;&amp;</span><br><span class="line">                deadline - System.nanoTime() &lt;= 0L &amp;&amp;</span><br><span class="line">                U.compareAndSwapLong(this, CTL, c, prevctl))    // 未等到任务，更新ctl，返回false</span><br><span class="line">                return false;                                      // shrink pool</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return true;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h5 id="runTask-任务执行"><a href="#runTask-任务执行" class="headerlink" title="runTask(任务执行)"></a>runTask(任务执行)</h5><p>窃取到任务后，调用<code>WorkQueue.runTask</code>方法执行任务：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line">final void runTask(ForkJoinTask&lt;?&gt; task) &#123;</span><br><span class="line">    if (task != null) &#123;</span><br><span class="line">        scanState &amp;= ~SCANNING;             // mark as busy</span><br><span class="line">        (currentSteal = task).doExec();     // 更新currentSteal并执行任务</span><br><span class="line">        U.putOrderedObject(this, QCURRENTSTEAL, null); // release for GC</span><br><span class="line">        execLocalTasks();                   // 依次执行本地任务</span><br><span class="line">        ForkJoinWorkerThread thread = owner;</span><br><span class="line">        if (++nsteals &lt; 0)                  // collect on overflow</span><br><span class="line">            transferStealCount(pool);       // 增加偷取任务数</span><br><span class="line">        scanState |= SCANNING;</span><br><span class="line">        if (thread != null)</span><br><span class="line">            thread.afterTopLevelExec();     // 执行钩子函数</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// ForkJoinTask#doExec</span><br><span class="line">final int doExec() &#123;</span><br><span class="line">    int s;</span><br><span class="line">    boolean completed;</span><br><span class="line">    if ((s = status) &gt;= 0) &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            completed = exec();     // exec为抽象方法, 由子类实现</span><br><span class="line">        &#125; catch (Throwable rex) &#123;</span><br><span class="line">            return setExceptionalCompletion(rex);</span><br><span class="line">        &#125;</span><br><span class="line">        if (completed)</span><br><span class="line">            s = setCompletion(NORMAL);</span><br><span class="line">    &#125;</span><br><span class="line">    return s;</span><br><span class="line">&#125;</span><br><span class="line">// WorkQueue#execLocalTasks</span><br><span class="line">final void execLocalTasks() &#123;</span><br><span class="line">    int b = base, m, s;</span><br><span class="line">    ForkJoinTask&lt;?&gt;[] a = array;</span><br><span class="line">    if (b - (s = top - 1) &lt;= 0 &amp;&amp; a != null &amp;&amp;</span><br><span class="line">        (m = a.length - 1) &gt;= 0) &#123;</span><br><span class="line">        if ((config &amp; FIFO_QUEUE) == 0) &#123;   // LIFO, 从top -&gt; base 遍历执行任务</span><br><span class="line">            for (ForkJoinTask&lt;?&gt; t; ; ) &#123;</span><br><span class="line">                if ((t = (ForkJoinTask&lt;?&gt;) U.getAndSetObject</span><br><span class="line">                    (a, ((m &amp; s) &lt;&lt; ASHIFT) + ABASE, null)) == null)</span><br><span class="line">                    break;</span><br><span class="line">                U.putOrderedInt(this, QTOP, s);</span><br><span class="line">                t.doExec();</span><br><span class="line">                if (base - (s = top - 1) &gt; 0)</span><br><span class="line">                    break;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; else  // FIFO,  从base -&gt; top 遍历执行任务</span><br><span class="line">            pollAndExecAll();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>从execLocalTasks可以看出，构建线程池时的asyncMode(从 config 中取出)，决定了工作线程执行自身队列中的任务的方式。如果 asyncMode == true，则以FIFO的方式执行任务；否则，以LIFO的方式执行任务。</p>
+<h4 id="任务结果的获取"><a href="#任务结果的获取" class="headerlink" title="任务结果的获取"></a>任务结果的获取</h4><h5 id="整体流程"><a href="#整体流程" class="headerlink" title="整体流程"></a>整体流程</h5><p><code>ForkJoinTask.join()</code>可以用来获取任务的执行结果。 流程如下:</p>
+<p><img src="/images/thread/task-join.png" alt></p>
+<h5 id="代码分析"><a href="#代码分析" class="headerlink" title="代码分析"></a>代码分析</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">public final V join() &#123;</span><br><span class="line">    int s;</span><br><span class="line">    if ((s = doJoin() &amp; DONE_MASK) != NORMAL)</span><br><span class="line">        reportException(s);</span><br><span class="line">    return getRawResult();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// doJoin</span><br><span class="line">private int doJoin() &#123;</span><br><span class="line">    int s;</span><br><span class="line">    Thread t;</span><br><span class="line">    ForkJoinWorkerThread wt;</span><br><span class="line">    ForkJoinPool.WorkQueue w;</span><br><span class="line">    return (s = status) &lt; 0 ? s :</span><br><span class="line">        ((t = Thread.currentThread()) instanceof ForkJoinWorkerThread) ?</span><br><span class="line">            (w = (wt = (ForkJoinWorkerThread) t).workQueue).tryUnpush(this) &amp;&amp; (s = doExec()) &lt; 0 ? s :</span><br><span class="line">                wt.pool.awaitJoin(w, this, 0L) :</span><br><span class="line">            externalAwaitDone();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>doJoin方法会判断调用线程是否是工作线程：</p>
+<p>1.如果是非工作线程调用的join，则最终调用externalAwaitDone()阻塞等待任务的完成。</p>
+<p>2.如果是工作线程调用的join，则存在以下情况：</p>
+<ul>
+<li>如果需要join的任务已经完成，直接返回运行结果；</li>
+<li>如果需要join的任务刚刚好是当前线程所拥有的队列的top位置，则立即执行它。</li>
+<li>如果该任务不在top位置,则调用<code>awaitJoin</code>方法等待</li>
+</ul>
+<p>awaitJoin完整代码如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">final int awaitJoin(WorkQueue w, ForkJoinTask&lt;?&gt; task, long deadline) &#123;</span><br><span class="line">    int s = 0;</span><br><span class="line">    if (task != null &amp;&amp; w != null) &#123;</span><br><span class="line">        ForkJoinTask&lt;?&gt; prevJoin = w.currentJoin;   // 获取给定Worker的join任务</span><br><span class="line">        U.putOrderedObject(w, QCURRENTJOIN, task);  // 把currentJoin替换为给定任务</span><br><span class="line">        </span><br><span class="line">        // 判断是否为CountedCompleter类型的任务</span><br><span class="line">        CountedCompleter&lt;?&gt; cc = (task instanceof CountedCompleter) ?</span><br><span class="line">            (CountedCompleter&lt;?&gt;) task : null;</span><br><span class="line">        for (; ; ) &#123;</span><br><span class="line">            if ((s = task.status) &lt; 0)              // 已经完成|取消|异常 跳出循环</span><br><span class="line">                break;</span><br><span class="line"></span><br><span class="line">            if (cc != null)                         // CountedCompleter任务由helpComplete来完成join</span><br><span class="line">                helpComplete(w, cc, 0);</span><br><span class="line">            else if (w.base == w.top || w.tryRemoveAndExec(task))  //尝试执行</span><br><span class="line">                helpStealer(w, task);               // 队列为空或执行失败，任务可能被偷，帮助偷取者执行该任务</span><br><span class="line"></span><br><span class="line">            if ((s = task.status) &lt; 0)              // 已经完成|取消|异常，跳出循环</span><br><span class="line">                break;</span><br><span class="line">            </span><br><span class="line">            // 计算任务等待时间</span><br><span class="line">            long ms, ns;</span><br><span class="line">            if (deadline == 0L)</span><br><span class="line">                ms = 0L;</span><br><span class="line">            else if ((ns = deadline - System.nanoTime()) &lt;= 0L)</span><br><span class="line">                break;</span><br><span class="line">            else if ((ms = TimeUnit.NANOSECONDS.toMillis(ns)) &lt;= 0L)</span><br><span class="line">                ms = 1L;</span><br><span class="line"></span><br><span class="line">            if (tryCompensate(w)) &#123;                         // 执行补偿操作</span><br><span class="line">                task.internalWait(ms);                      // 补偿执行成功，任务等待指定时间</span><br><span class="line">                U.getAndAddLong(this, CTL, AC_UNIT);     // 更新活跃线程数</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        U.putOrderedObject(w, QCURRENTJOIN, prevJoin);      // 循环结束，替换为原来的join任务</span><br><span class="line">    &#125;</span><br><span class="line">    return s;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<ul>
+<li>tryRemoveAndExec: 当工作线程正在等待join的任务时，它会从top位开始自旋向下查找该任务：<ul>
+<li>如果找到则移除他</li>
+<li>如果找不到，说明说明任务可能被偷，则调用helpStealer方法反过来帮助偷取者执行它自己的任务。</li>
+</ul>
+</li>
+<li>helpStealer<ul>
+<li>先定位的偷取者的任务队列；</li>
+<li>从偷取者的base索引开始，每次偷取一个任务执行。</li>
+</ul>
+</li>
+<li>tryCompensate： tryCompensate主要用来补偿工作线程因为阻塞而导致的算力损失，当工作线程自身的队列不为空，且还有其它空闲工作线程时，如果自己阻塞了，则在此之前会唤醒一个工作线程。</li>
+</ul>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="https://segmentfault.com/a/1190000016781127" target="_blank" rel="noopener">ForkJoinPool 原理</a></li>
+<li><a href="https://segmentfault.com/a/1190000016877931" target="_blank" rel="noopener">ForkJoinPool 实现</a></li>
+<li>[A Java Fork/Join Framework - Doug Lea]</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/10/22/算法/定时器算法/" rel="next" title="定时器算法">
+                <i class="fa fa-chevron-left"></i> 定时器算法
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">勿在浮沙筑高台</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">68</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">25</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#原理简介"><span class="nav-number">1.</span> <span class="nav-text">原理简介</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#工作窃取-work-stealing"><span class="nav-number">1.1.</span> <span class="nav-text">工作窃取(work-stealing)</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#实现原理"><span class="nav-number">2.</span> <span class="nav-text">实现原理</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#work-stealing-原理"><span class="nav-number">2.1.</span> <span class="nav-text">work-stealing 原理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#fork-join-任务调度流程"><span class="nav-number">2.2.</span> <span class="nav-text">fork/join 任务调度流程</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#核心组件"><span class="nav-number">3.</span> <span class="nav-text">核心组件</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#ForkJoinPool"><span class="nav-number">3.1.</span> <span class="nav-text">ForkJoinPool</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ForkJoinTask"><span class="nav-number">3.2.</span> <span class="nav-text">ForkJoinTask</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ForkJoinWorkerThread"><span class="nav-number">3.3.</span> <span class="nav-text">ForkJoinWorkerThread</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#WorkQueue"><span class="nav-number">3.4.</span> <span class="nav-text">WorkQueue</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#源码分析"><span class="nav-number">4.</span> <span class="nav-text">源码分析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#任务提交"><span class="nav-number">4.1.</span> <span class="nav-text">任务提交</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-外部任务提交-以-ForkJoinPool-submit-为例"><span class="nav-number">4.1.1.</span> <span class="nav-text">1. 外部任务提交(以 ForkJoinPool#submit 为例)</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-工作线程fork任务"><span class="nav-number">4.1.2.</span> <span class="nav-text">2.工作线程fork任务</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#创建工作线程"><span class="nav-number">4.2.</span> <span class="nav-text">创建工作线程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-任务执行"><span class="nav-number">4.3.</span> <span class="nav-text">3. 任务执行</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#scan（任务窃取流程）"><span class="nav-number">4.3.1.</span> <span class="nav-text">scan（任务窃取流程）</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#awaitWork-阻塞等待"><span class="nav-number">4.3.2.</span> <span class="nav-text">awaitWork(阻塞等待)</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#runTask-任务执行"><span class="nav-number">4.3.3.</span> <span class="nav-text">runTask(任务执行)</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#任务结果的获取"><span class="nav-number">4.4.</span> <span class="nav-text">任务结果的获取</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#整体流程"><span class="nav-number">4.4.1.</span> <span class="nav-text">整体流程</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#代码分析"><span class="nav-number">4.4.2.</span> <span class="nav-text">代码分析</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">5.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/jquery/2.1.3/jquery.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fastclick/1.0.6/fastclick.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.bootcss.com/jquery_lazyload/1.9.7/jquery.lazyload.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.ui.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
