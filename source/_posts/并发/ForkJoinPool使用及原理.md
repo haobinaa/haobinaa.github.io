@@ -26,6 +26,12 @@ forkjoin 最核心的地方就是利用了现代硬件设备多核,在一个操�
 
 这里并不会每个 fork 都会创建新线程， 也不是每个 join 都会造成线程被阻塞， 而是采取了 `work-stealing 原理`
 
+#### fork/join 整体任务调度流程
+
+![](/images/thread/flowchart-of-forkjoin.png)
+
+
+
 #### work-stealing 原理
 
 
@@ -37,9 +43,18 @@ forkjoin 最核心的地方就是利用了现代硬件设备多核,在一个操�
 - 在遇到 join() 时，如果需要 join 的任务尚未完成，则会先处理其他任务，并等待其完成。
   在既没有自己的任务，也没有可以窃取的任务时，进入休眠
   
-#### fork/join 任务调度流程
 
-![](/images/thread/flowchart-of-forkjoin.png)
+
+
+F/J框架的核心来自于它的工作窃取及调度策略，可以总结为以下几点：
+
+1. 每个Worker线程利用它自己的任务队列维护可执行任务；
+2. 任务队列是一种双端队列，支持LIFO的push和pop操作，也支持FIFO的take操作；
+3. 任务fork的子任务，只会push到它所在线程（调用fork方法的线程）的队列；
+4. 工作线程既可以使用LIFO通过pop处理自己队列中的任务，也可以FIFO通过poll处理自己队列中的任务，具体取决于构造线程池时的asyncMode参数；
+5. 当工作线程自己队列中没有待处理任务时，它尝试去随机读取（窃取）其它任务队列的base端的任务；
+6. 当线程进入join操作，它也会去处理其它工作线程的队列中的任务（自己的已经处理完了），直到目标任务完成（通过isDone方法）；
+7. 当一个工作线程没有任务了，并且尝试从其它队列窃取也失败了，它让出资源（通过使用yields, sleeps或者其它优先级调整）并且随后会再次激活，直到所有工作线程都空闲了——此时，它们都阻塞在等待另一个顶层线程的调用。
 
 
 ### 核心组件
@@ -121,7 +136,6 @@ ForkJoinPool中的工作队列可以分为两类：
 - 有工作线程（Worker）绑定的任务队列：数组下标始终是奇数，称为task queue，该队列中的任务均由工作线程调用产生（工作线程调用FutureTask.fork方法）；
 - 没有工作线程（Worker）绑定的任务队列：数组下标始终是偶数，称为submissions queue，该队列中的任务全部由其它线程提交（也就是非工作线程调用execute/submit/invoke或者FutureTask.fork方法）
 
-
 ### 源码分析
 
 #### 任务提交
@@ -139,6 +153,7 @@ final void externalPush(ForkJoinTask<?> task) {
     WorkQueue[] ws;
     WorkQueue q;
     int m;
+    // 线程随机数， 避免不同线程竞争同一数组元素
     int r = ThreadLocalRandom.getProbe();
     int rs = runState;
 
@@ -146,6 +161,7 @@ final void externalPush(ForkJoinTask<?> task) {
     if ((ws = workQueues) != null && (m = (ws.length - 1)) >= 0 &&
         // SQMASK 为常量 0x007e, 二进制为 0111 1110, m & r 取一个 [0,m]的随机数，再与SQMASK将最低置0
         // 这样与出来必为偶数，所以通过externalPush方法提交的任务都添加到了偶数索引的任务队列中（没有绑定的工作线程）
+        // 这里获取到一个队列的偶数索引
         (q = ws[m & r & SQMASK]) != null
         && r != 0 && rs > 0 
         && U.compareAndSwapInt(q, QLOCK, 0, 1)) {
@@ -153,30 +169,42 @@ final void externalPush(ForkJoinTask<?> task) {
         
         ForkJoinTask<?>[] a;
         int am, n, s;
+        // 任务队列不为空
         if ((a = q.array) != null &&
+            // top 是 push 指针， base 是 poll 指针
+            // 这里的含义是命中的队列中有任务
             (am = a.length - 1) > (n = (s = q.top) - q.base)) {
             int j = ((am & s) << ASHIFT) + ABASE;
             U.putOrderedObject(a, j, task);
             U.putOrderedInt(q, QTOP, s + 1);
             U.putIntVolatile(q, QLOCK, 0);
-            if (n <= 1)                 // 队列里只有一个任务
+            if (n <= 1)                 // 命中的队列里只有一个任务
                 signalWork(ws, q);      // 创建或激活一个工作线程
             return;
         }
         U.compareAndSwapInt(q, QLOCK, 1, 0);
     }
 
-    // 未命中任务队列时（WorkQueue == null 或 WorkQueue[i] == null），会进入该方法
+    // 未命中任务队列时（WorkQueue == null 或 WorkQueue[i] == null）
+    // 线程池有其他异常
     externalSubmit(task);
 }
 ```
 submit 调用 externalPush， 包含两部分:
 1. 根据线程随机变量、任务队列数组信息，计算命中槽（即本次提交的任务应该添加到任务队列数组中的哪个队列），如果命中且队列中任务数<1，则创建或激活一个工作线程；
 2. 未命中任务队列(workQueue == null || workQueue[i] == null)，调用 `externalSubmit` 初始化队列，并入队：
+
+
+
+externalSubmit方法的逻辑很清晰，一共分为4种情况：
+- CASE1：线程池已经关闭，则执行终止操作，并拒绝该任务的提交；
+- CASE2：线程池未初始化，则进行初始化，主要就是初始化任务队列数组；
+- CASE3：命中了任务队列，则将任务入队，并尝试创建/唤醒一个工作线程（Worker）；
+- CASE4：未命中任务队列，初始化任务队列并在偶数索引处创建一个任务队列
 ``` 
 /**
- * 完整版本的externalPush.
- * 处理线程池提交任务时未命中队列的情况和异常情况.
+ * 1. 处理线程池提交任务时未命中队列的情况
+ * 2. 处理异常情况.
  */
 private void externalSubmit(ForkJoinTask<?> task) {
     int r;                                    // 线程相关的随机数
@@ -264,16 +292,13 @@ private void externalSubmit(ForkJoinTask<?> task) {
     }
 }
 ```
-externalSubmit方法的逻辑很清晰，一共分为4种情况：
-CASE1：线程池已经关闭，则执行终止操作，并拒绝该任务的提交；
-CASE2：线程池未初始化，则进行初始化，主要就是初始化任务队列数组；
-CASE3：命中了任务队列，则将任务入队，并尝试创建/唤醒一个工作线程（Worker）；
-CASE4：未命中任务队列，则在偶数索引处创建一个任务队列
 
 
 ##### 2.工作线程fork任务
 
-ForkJoinTask.fork 当调用线程为工作线程时， 直接添加到其自身队列:
+fork 的任务即子任务 ，`ForkJoinTask.fork` ：
+1. 当调用线程为工作线程时， 直接添加到其自身队列
+2. 如果是外部线程调用的 fork， 则调用 `externalPush` （外部线程提交任务）
 ``` 
 public final ForkJoinTask<V> fork() {
     Thread t;
@@ -283,8 +308,14 @@ public final ForkJoinTask<V> fork() {
         ForkJoinPool.common.externalPush(this);                    // 外部（其它线程）提交的任务
     return this;
 }
+```
 
-// WorkQueue.push 将任务存入自身队列的栈顶
+
+WorkQueue.push 将任务存入自身队列的栈顶:
+
+1. 如果当前 WorkQueue 为新建的等待队列(`top - base <= 1`)，则调用`signalWork`方法为当前 WorkQueue 新建或唤醒一个工作线程；
+2. 如果 WorkQueue 中的任务数组容量过小(`top -base >= array.length - 1`)，则调用growArray方法对其进行两倍扩容，
+```
 final void push(ForkJoinTask<?> task) {
     ForkJoinTask<?>[] a;
     ForkJoinPool p;
@@ -293,11 +324,13 @@ final void push(ForkJoinTask<?> task) {
         int m = a.length - 1;     // fenced write for task visibility
         U.putOrderedObject(a, ((m & s) << ASHIFT) + ABASE, task);
         U.putOrderedInt(this, QTOP, s + 1);       // 任务存入栈顶(top+1)
+        // top -base <= 1 表示当前 workQueue 为新建的的等待队列
         if ((n = s - b) <= 1) {
             if ((p = pool) != null)
                 p.signalWork(p.workQueues, this);   // 唤醒或创建一个工作线程
+         // 任务数组容量过小， 则扩容两倍     
         } else if (n >= m)
-            growArray();            // 扩容
+            growArray();           
     }
 }
 ```
@@ -375,7 +408,7 @@ private void tryAddWorker(long c) {
         }
     } while (((c = ctl) & ADD_WORKER) != 0L && (int) c == 0);
 }
- 
+
 private boolean createWorker() {
     ForkJoinWorkerThreadFactory fac = factory;
     Throwable ex = null;
@@ -397,7 +430,7 @@ private boolean createWorker() {
 }
 ```
 
-如果创建过程中出现异常，则调用deregisterWorker注销线程：
+如果创建过程中出现异常，则调用`deregisterWorker`注销线程：
 ``` 
 final void deregisterWorker(ForkJoinWorkerThread wt, Throwable ex) {
     WorkQueue w = null;
@@ -453,8 +486,7 @@ final void deregisterWorker(ForkJoinWorkerThread wt, Throwable ex) {
 ```
 
 ForkJoinWorkerThread 在被 ForkJoinWorkerThreadFactory 创建的过程中会保存线程池信息和与自己绑定的任务队列信息。
-工作线程（Worker）自身的任务队列，其数组下标始终是奇数，registerWorker方法的主要作用就是在任务队列数组WorkQueue[]找到一个空的奇数位，然后在该位置创建WorkQueue。
-它通过ForkJoinPool.registerWorker方法将自己注册到线程池中：
+它通过`ForkJoinPool.registerWorker`方法将自己注册到线程池中(在任务队列数组WorkQueue[]找到一个空的奇数位，然后在该位置创建WorkQueue)：
 ``` 
 protected ForkJoinWorkerThread(ForkJoinPool pool) {
     // Use a placeholder until a useful name can be set in registerWorker
@@ -482,12 +514,14 @@ final WorkQueue registerWorker(ForkJoinWorkerThread wt) {
         if ((ws = workQueues) != null && (n = ws.length) > 0) {
             int s = indexSeed += SEED_INCREMENT;  // unlikely to collide
             int m = n - 1;
-            i = ((s << 1) | 1) & m;               // 经计算后, i为奇数
+            // 经计算后, i为奇数
+            i = ((s << 1) | 1) & m;               
             if (ws[i] != null) {                  // 槽冲突, 即WorkQueue[i]位置已经有了任务队列
 
                 // 重新计算索引i
                 int probes = 0;                   // step by approx half n
                 int step = (n <= 4) ? 2 : ((n >>> 1) & EVENMASK) + 2;
+                // 找到一个 workQueue[i] 为空的槽位
                 while (ws[i = (i + step) & m] != null) {
                     if (++probes >= n) {
                         workQueues = ws = Arrays.copyOf(ws, n <<= 1);
@@ -511,7 +545,7 @@ final WorkQueue registerWorker(ForkJoinWorkerThread wt) {
 }
 ```
 
-#### 3. 任务执行
+#### 3. 任务执行（runWorker）
 
 ForkJoinWorkerThread启动后，会执行它的run方法，该方法内部调用了`ForkJoinPool.runWorker`方法来执行任务：
 ``` 
@@ -556,14 +590,16 @@ final void runWorker(WorkQueue w) {
     }
 }
 ```
-runWorker方法的核心流程如下：
+runWorker方法的核心流程如下
 1. scan：尝试获取一个任务；
 2. runTask：执行取得的任务；
 3. awaitWork：没有任务则阻塞。
 
 ##### scan（任务窃取流程）
 
-扫描并尝试偷取一个任务。随机选择一个WorkQueue，获取base位的 ForkJoinTask，成功取到后更新base位并返回任务；如果取到的 WorkQueue 中任务数大于1，则调用signalWork创建或唤醒其他工作线程。
+1. 随机选择一个任务队列 `workQueue[i]`（ 不会选择 workQueue[0]）
+2. 获取 base 位置的任务
+3. 获取成功则更新 base 指针(+1操作)， 如果获取的任务数>1(base - top < -1)，则 `signalWork` 拉起一个其他工作线程
 
 ``` 
 private ForkJoinTask<?> scan(WorkQueue w, int r) {
@@ -580,11 +616,14 @@ private ForkJoinTask<?> scan(WorkQueue w, int r) {
 
             // 根据随机数r定位一个任务队列
             if ((q = ws[k]) != null) {      // 获取workQueue
+                // base - top < 0 队列(栈)中有任务
                 if ((n = (b = q.base) - q.top) < 0 &&
-                    (a = q.array) != null) {      // non-empty
+                  // 切队列不为空
+                    (a = q.array) != null) {     
                     long i = (((a.length - 1) & b) << ASHIFT) + ABASE;
+                    // 取base位置任务
                     if ((t = ((ForkJoinTask<?>)
-                        U.getObjectVolatile(a, i))) != null &&  // 取base位置任务
+                        U.getObjectVolatile(a, i))) != null &&  
                         q.base == b) {
 
                         // 成功获取到任务
@@ -640,7 +679,7 @@ private ForkJoinTask<?> scan(WorkQueue w, int r) {
 
 ##### awaitWork(阻塞等待)
 
-如果scan方法未扫描到任务，会调用awaitWork等待获取任务：
+如果scan方法未扫描到任务，会调用`awaitWork`等待获取任务：
 ``` 
 private boolean awaitWork(WorkQueue w, int r) {
     if (w == null || w.qlock < 0)                  // w is terminating
@@ -705,6 +744,11 @@ private boolean awaitWork(WorkQueue w, int r) {
 ##### runTask(任务执行)
 
 窃取到任务后，调用`WorkQueue.runTask`方法执行任务：
+1. 执行`ForkJoinTask#doExec`， 这个是由子类`RecursiveTask`和`RecursiveAction`来实现的， 最终执行 `compute`
+2. 如果任务队列有任务（base - top <= 0, 判断 mode (从 config 中 取出
+3. `WorkQueue#execLocalTasks` 扫描任务队列执行
+4. 如果 mode 是 FIFO(默认), 从 base -> top 遍历任务， 执行 `ForkJoinTask#doExec`
+5. 如果 mode 是 LIFO， 则从 top -> base 遍历任务
 ``` 
 final void runTask(ForkJoinTask<?> task) {
     if (task != null) {
@@ -727,7 +771,8 @@ final int doExec() {
     boolean completed;
     if ((s = status) >= 0) {
         try {
-            completed = exec();     // exec为抽象方法, 由子类实现
+             // exec为抽象方法, 由子类实现（RecursiveTask 和 RecursiveAction 来执行 compute 方法）
+            completed = exec();    
         } catch (Throwable rex) {
             return setExceptionalCompletion(rex);
         }
@@ -752,7 +797,7 @@ final void execLocalTasks() {
                 if (base - (s = top - 1) > 0)
                     break;
             }
-        } else  // FIFO,  从base -> top 遍历执行任务
+        } else  // LIFO,  从base -> top 遍历执行任务
             pollAndExecAll();
     }
 
@@ -762,7 +807,6 @@ final void execLocalTasks() {
 
 #### 任务结果的获取
 
-##### 整体流程
 `ForkJoinTask.join()`可以用来获取任务的执行结果。 流程如下:
 
 ![](/images/thread/task-join.png)
