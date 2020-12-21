@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+  <link href="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.min.js" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+  
+
+<link href="//cdn.staticfile.org/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="Hexo, NexT">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="CompletableFuture 介绍CompletableFuture 是对 Future 的扩展， 提供了函数式编程的能力，简化了异步编程的复杂性。  函数式编程的几个接口CompletableFuture 主要使用了函数式编程， 这里介绍几个函数式编程的接口    name type description     Consumer Consumer 接收 T 对象, 无返回值   Fun">
+<meta property="og:type" content="article">
+<meta property="og:title" content="异步编程CompletableFuture使用">
+<meta property="og:url" content="http://yoursite.com/2020/12/14/并发/异步编程CompletableFuture使用/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="CompletableFuture 介绍CompletableFuture 是对 Future 的扩展， 提供了函数式编程的能力，简化了异步编程的复杂性。  函数式编程的几个接口CompletableFuture 主要使用了函数式编程， 这里介绍几个函数式编程的接口    name type description     Consumer Consumer 接收 T 对象, 无返回值   Fun">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2020-12-21T07:17:22.109Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="异步编程CompletableFuture使用">
+<meta name="twitter:description" content="CompletableFuture 介绍CompletableFuture 是对 Future 的扩展， 提供了函数式编程的能力，简化了异步编程的复杂性。  函数式编程的几个接口CompletableFuture 主要使用了函数式编程， 这里介绍几个函数式编程的接口    name type description     Consumer Consumer 接收 T 对象, 无返回值   Fun">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2020/12/14/并发/异步编程CompletableFuture使用/">
+
+
+
+
+
+  <title>异步编程CompletableFuture使用 | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/12/14/并发/异步编程CompletableFuture使用/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">异步编程CompletableFuture使用</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-12-14T21:52:15+08:00">
+                2020-12-14
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/并发/" itemprop="url" rel="index">
+                    <span itemprop="name">并发</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="CompletableFuture-介绍"><a href="#CompletableFuture-介绍" class="headerlink" title="CompletableFuture 介绍"></a>CompletableFuture 介绍</h3><p><code>CompletableFuture</code> 是对 <code>Future</code> 的扩展， 提供了函数式编程的能力，简化了异步编程的复杂性。 </p>
+<h4 id="函数式编程的几个接口"><a href="#函数式编程的几个接口" class="headerlink" title="函数式编程的几个接口"></a>函数式编程的几个接口</h4><p><code>CompletableFuture</code> 主要使用了函数式编程， 这里介绍几个函数式编程的接口</p>
+<table>
+<thead>
+<tr>
+<th>name</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Consumer</td>
+<td>Consumer<t></t></td>
+<td>接收 T 对象, 无返回值</td>
+</tr>
+<tr>
+<td>Functional</td>
+<td>Functional&lt;T,R&gt;</td>
+<td>接收 T 对象， 返回 R 对象</td>
+</tr>
+<tr>
+<td>Supplier</td>
+<td>Supplier<t></t></td>
+<td>无接收参数，返回 T 对象</td>
+</tr>
+<tr>
+<td>Predicate</td>
+<td>Predicate<t></t></td>
+<td>接收 T 对象，返回布尔值</td>
+</tr>
+</tbody>
+</table>
+<h4 id="Future-的局限性"><a href="#Future-的局限性" class="headerlink" title="Future 的局限性"></a>Future 的局限性</h4><p>Future 是 JDK5 新增的接口，用于描述一个异步的计算任务，但是使用中有很多局限:</p>
+<ol>
+<li>Future 对结果的获取仍是阻塞的， 这样与异步编程的初衷相违背</li>
+<li>无法将多个异步的计算结果合并为一个</li>
+<li>无法等待 Future 集合的所有任务完成</li>
+<li>任务完成后触发动作</li>
+</ol>
+<h3 id="CompletableFuture-的使用"><a href="#CompletableFuture-的使用" class="headerlink" title="CompletableFuture 的使用"></a>CompletableFuture 的使用</h3><p>这里只介绍 CompletableFuture 的使用，不涉及源码分析</p>
+<h4 id="创建一个-CompletableFuture-任务"><a href="#创建一个-CompletableFuture-任务" class="headerlink" title="创建一个 CompletableFuture 任务"></a>创建一个 CompletableFuture 任务</h4><ul>
+<li>runAsync: 不支持返回值</li>
+<li>supplyAsync: 支持返回值</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">// Runnable 构建任务</span><br><span class="line">CompletableFuture&lt;Void&gt; rFuture = CompletableFuture.runAsync(() -&gt; &#123;</span><br><span class="line">    System.out.println(&quot;runnable completableFuture&quot;);</span><br><span class="line">&#125;, pool);</span><br><span class="line">// Supplier 构建任务</span><br><span class="line">CompletableFuture&lt;String&gt; sFuture = CompletableFuture.supplyAsync(() -&gt; &#123;</span><br><span class="line">    System.out.println(&quot;supply completableFuture&quot;);</span><br><span class="line">    return &quot;supply&quot;;</span><br><span class="line">&#125;, pool);</span><br><span class="line">// 阻塞等待</span><br><span class="line">System.out.println(rFuture.join());</span><br><span class="line">// 阻塞等待</span><br><span class="line">String name = sFuture.join();</span><br><span class="line">System.out.println(name);</span><br><span class="line">// 关闭线程池</span><br><span class="line">pool.shutdown();</span><br></pre></td></tr></table></figure>
+<h4 id="串行执行任务"><a href="#串行执行任务" class="headerlink" title="串行执行任务"></a>串行执行任务</h4><ul>
+<li>thenRunAsync 任务完成运行 action，不关心上一个任务的结果，无返回值</li>
+<li>thenAcceptAsync 任务完成运行 action, 依赖上一个任务结果, 无返回值</li>
+<li>thenApplyAsync 任务完成运行 action, 依赖上一个任务结果, 有返回值   </li>
+<li>thenComposeAsync 任务完成运行 action, 依赖上一个任务结果，有返回值(与 thenApplyAsync 区别是该方法返回 CompletionStage 而非 U 对象)</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">CompletableFuture&lt;Void&gt; thenRunAsyncFuture = CompletableFuture</span><br><span class="line">        .supplyAsync(() -&gt; &quot;RunAsync run supply&quot;, pool)</span><br><span class="line">        // 不关心上一个任务的结果</span><br><span class="line">        .thenRunAsync(() -&gt; System.out.println(&quot;ok&quot;), pool);</span><br><span class="line">CompletableFuture&lt;Void&gt; thenAcceptAsyncFuture = CompletableFuture</span><br><span class="line">        .supplyAsync(() -&gt; &quot;RunAccept run supply&quot;)</span><br><span class="line">        // 依赖上一个任务返回结果</span><br><span class="line">        .thenAcceptAsync(consumer -&gt; System.out.println(consumer), pool);</span><br><span class="line">CompletableFuture&lt;String&gt; thenApplyAsyncFuture = CompletableFuture</span><br><span class="line">        .supplyAsync(() -&gt; &quot;ApplyAsync run supply&quot;)</span><br><span class="line">        // 依赖上个任务的返回结果， 有返回值</span><br><span class="line">        .thenApplyAsync((fn) -&gt; &#123;</span><br><span class="line">            System.out.println(fn);</span><br><span class="line">            return &quot;success&quot;;</span><br><span class="line">        &#125;, pool);</span><br><span class="line">CompletableFuture&lt;String&gt; thenComposeFuture = CompletableFuture</span><br><span class="line">        .supplyAsync(() -&gt; &quot;Compose run supply&quot;)</span><br><span class="line">        // 依赖上个任务的返回结果， 返回第一个异步任务</span><br><span class="line">        .thenComposeAsync((result) -&gt; CompletableFuture.supplyAsync(() -&gt; &#123;</span><br><span class="line">            System.out.println(result);</span><br><span class="line">            return result;</span><br><span class="line">        &#125;), pool);</span><br><span class="line">pool.shutdown();</span><br></pre></td></tr></table></figure>
+<h4 id="并行执行任务"><a href="#并行执行任务" class="headerlink" title="并行执行任务"></a>并行执行任务</h4><ul>
+<li>runAfterBothAsync：两个 CompletableFuture 并行执行完， 然后执行 action，不依赖两个任务的结果，无返回值</li>
+<li>thenAcceptBothAsync： 两个 CompletableFuture 并行执行完，然后执行 action，依赖两个任务的结果，无返回值</li>
+<li>thenCombine：两个 CompletableFuture 并行执行完，然后执行 action， 依赖两个任务的结果， 有返回值</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">CompletableFuture&lt;Void&gt; runAfterBothAsyncFuture = CompletableFuture</span><br><span class="line">        .supplyAsync(() -&gt; &#123;</span><br><span class="line">            System.out.println(&quot;first task execution&quot;);</span><br><span class="line">            return &quot;ok&quot;;</span><br><span class="line">        &#125;, pool)</span><br><span class="line">        .runAfterBothAsync(</span><br><span class="line">                CompletableFuture.supplyAsync(() -&gt; &#123;</span><br><span class="line">                    System.out.println(&quot;second task execution&quot;);</span><br><span class="line">                    return &quot;ok&quot;;</span><br><span class="line">                &#125;),</span><br><span class="line">                // 不依赖前两个任务的执行结果， 无返回值</span><br><span class="line">                () -&gt; System.out.println(&quot;both ok&quot;));</span><br><span class="line"></span><br><span class="line">CompletableFuture&lt;Void&gt; thenAcceptBothAsyncFuture = CompletableFuture</span><br><span class="line">        .supplyAsync(() -&gt; &#123;</span><br><span class="line">            System.out.println(&quot;first accept task execution&quot;);</span><br><span class="line">            return &quot;first accept ok&quot;;</span><br><span class="line">        &#125;, pool)</span><br><span class="line">        .thenAcceptBothAsync(CompletableFuture.supplyAsync(() -&gt; &#123;</span><br><span class="line">                    System.out.println(&quot;second accept task execution&quot;);</span><br><span class="line">                    return &quot;second accept ok&quot;;</span><br><span class="line">                &#125;, pool),</span><br><span class="line">                // 依赖前两个任务的执行结果， 无返回值</span><br><span class="line">                (f, s) -&gt; System.out.println(f + &quot;，&quot; + s), pool);</span><br><span class="line"></span><br><span class="line">CompletableFuture&lt;String&gt; thenCombineFuture = CompletableFuture</span><br><span class="line">        .supplyAsync(() -&gt; &#123;</span><br><span class="line">            System.out.println(&quot;first combine task&quot;);</span><br><span class="line">            return &quot;first combine ok&quot;;</span><br><span class="line">        &#125;, pool)</span><br><span class="line">        .thenCombine(CompletableFuture.supplyAsync(() -&gt; &#123;</span><br><span class="line">                    System.out.println(&quot;second combine task execution&quot;);</span><br><span class="line">                    return &quot;second combine ok&quot;;</span><br><span class="line">                &#125;),</span><br><span class="line">                // 依赖前两个任务的执行结果， 有返回值</span><br><span class="line">                (f, s) -&gt; &#123;</span><br><span class="line">                    System.out.println(f + &quot;,&quot; + s);</span><br><span class="line">                    return &quot;&quot;;</span><br><span class="line">                &#125;</span><br><span class="line">        );</span><br><span class="line">pool.shutdown();</span><br></pre></td></tr></table></figure>
+<h4 id="两任务并行执行，先完成的触发-action"><a href="#两任务并行执行，先完成的触发-action" class="headerlink" title="两任务并行执行，先完成的触发 action"></a>两任务并行执行，先完成的触发 action</h4><ul>
+<li>runAfterEitherAsync: 前面两个任务先执行完的触发 action, 不依赖上个任务的返回结果， 无返回值   </li>
+<li>acceptEitherAsync: 前面两个任务谁先执行完触发 action， 依赖上个任务的返回结果，无返回值   </li>
+<li>applyToEitherAsync: 前面两个任务谁先执行完触发 action， 依赖上个任务的返回结果，有返回值</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line">CompletableFuture&lt;Void&gt; runAfterEitherFuture = CompletableFuture</span><br><span class="line">        .supplyAsync(() -&gt; &#123;</span><br><span class="line">            try &#123;</span><br><span class="line">                Thread.sleep(100);</span><br><span class="line">            &#125; catch (Exception e) &#123;</span><br><span class="line">                System.out.println(&quot;exception&quot;);</span><br><span class="line">            &#125;</span><br><span class="line">            System.out.println(&quot;first either task execution&quot; + Thread.currentThread().getName());</span><br><span class="line">            return &quot;first either&quot;;</span><br><span class="line">        &#125;, pool)</span><br><span class="line">        .runAfterEitherAsync(CompletableFuture.supplyAsync(() -&gt; &#123;</span><br><span class="line">                    System.out.println(&quot;second either task execution&quot; + Thread.currentThread().getName());</span><br><span class="line">                    return &quot;second either&quot;;</span><br><span class="line">                &#125;, pool),</span><br><span class="line">                // 前面的任务谁先执行完谁触发， 不依赖上个任务的返回结果， 无返回值</span><br><span class="line">                () -&gt; System.out.println(&quot;ok&quot; + Thread.currentThread().getName()), pool);</span><br><span class="line"></span><br><span class="line">CompletableFuture&lt;Void&gt; acceptEitherFuture = CompletableFuture</span><br><span class="line">        .supplyAsync(() -&gt; &#123;</span><br><span class="line">            System.out.println(&quot;first accept task execution&quot;);</span><br><span class="line">            return &quot;first accept&quot;;</span><br><span class="line">        &#125;, pool)</span><br><span class="line">        .acceptEitherAsync(CompletableFuture.supplyAsync(() -&gt; &#123;</span><br><span class="line">                    System.out.println(&quot;second either task execution&quot;);</span><br><span class="line">                    return &quot;second accept&quot;;</span><br><span class="line">                &#125;, pool),</span><br><span class="line">                // 前面两个任务谁先执行完谁触发， 依赖上个任务的返回结果， 无返回值</span><br><span class="line">                result -&gt; System.out.println(result));</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">CompletableFuture&lt;String&gt; applyToEitherFuture = CompletableFuture</span><br><span class="line">        .supplyAsync(() -&gt; &#123;</span><br><span class="line">            System.out.println(&quot;first apply task execution&quot;);</span><br><span class="line">            return &quot;first apply&quot;;</span><br><span class="line">        &#125;, pool)</span><br><span class="line">        .applyToEitherAsync(CompletableFuture.supplyAsync(() -&gt; &#123;</span><br><span class="line">                    System.out.println(&quot;second apply execution&quot;);</span><br><span class="line">                    return &quot;second apply&quot;;</span><br><span class="line">                &#125;, pool),</span><br><span class="line">                result -&gt; &#123;</span><br><span class="line">                    System.out.println(result);</span><br><span class="line">                    return &quot;ok&quot;;</span><br><span class="line">                &#125;, pool);</span><br><span class="line">pool.shutdown();</span><br></pre></td></tr></table></figure>
+<h4 id="多任务的组合"><a href="#多任务的组合" class="headerlink" title="多任务的组合"></a>多任务的组合</h4><ul>
+<li>allOf: 调用 join 会阻塞直到所有任务运行完成， 没有返回值</li>
+<li>anyOf: 调用 join 返回最先完成任务的值<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">CompletableFuture cfA = CompletableFuture.supplyAsync(() -&gt; &quot;taskA&quot;);</span><br><span class="line">CompletableFuture cfB = CompletableFuture.supplyAsync(() -&gt; &quot;taskB&quot;);</span><br><span class="line">CompletableFuture cfC = CompletableFuture.supplyAsync(() -&gt; &quot;taskC&quot;);</span><br><span class="line">CompletableFuture&lt;Void&gt; allFuture = CompletableFuture.allOf(cfA, cfB, cfC);</span><br><span class="line">// join 阻塞到这里， 直到所有任务运行完成. allOf 是聚合多个 CompletableFuture 实例， 所以没有返回值</span><br><span class="line">allFuture.join();</span><br><span class="line"></span><br><span class="line">CompletableFuture&lt;Object&gt; anyFuture = CompletableFuture.anyOf(cfA, cfB, cfC);</span><br><span class="line">// join 会返回最先完成的任务， 也是返回最先完成任务的结果</span><br><span class="line">Object result = anyFuture.join();</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h4 id="异常处理"><a href="#异常处理" class="headerlink" title="异常处理"></a>异常处理</h4><ul>
+<li>handle: 任务完成或触发异常就会执行，入参分别为 data(正常执行结果)和exception(异常执行结果)，一般情况下两个参数必有一个为 null</li>
+<li>exceptionally： 在任务后衔接可能发生的异常，等同于 try catch 写法<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">CompletableFuture&lt;Integer&gt; exceptionallyFuture = CompletableFuture</span><br><span class="line">        .supplyAsync(() -&gt; &#123;</span><br><span class="line">            if (true) &#123;</span><br><span class="line">                throw new RuntimeException(&quot;exceptionally&quot;);</span><br><span class="line">            &#125;</span><br><span class="line">            return &quot;first task&quot;;</span><br><span class="line">        &#125;)</span><br><span class="line">        .exceptionally(e -&gt; &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">            return &quot;first task handle&quot;;</span><br><span class="line">        &#125;)</span><br><span class="line">        .thenApply(data -&gt; &#123;</span><br><span class="line">            System.out.println(&quot;second task:&quot; + data);</span><br><span class="line">            return 1;</span><br><span class="line">        &#125;);</span><br><span class="line">CompletableFuture&lt;Integer&gt; handleFuture = CompletableFuture</span><br><span class="line">        .supplyAsync(() -&gt; &#123;</span><br><span class="line">            System.out.println(&quot;first task&quot;);</span><br><span class="line">            if (true) &#123;</span><br><span class="line">                throw new RuntimeException(&quot;handle&quot;);</span><br><span class="line">            &#125;</span><br><span class="line">            return &quot;handle&quot;;</span><br><span class="line">        &#125;, pool)</span><br><span class="line">        .thenApply(data -&gt; &#123;</span><br><span class="line">            if (true) &#123;</span><br><span class="line">                throw new RuntimeException(&quot;second handle&quot;);</span><br><span class="line">            &#125;</span><br><span class="line">            return 200;</span><br><span class="line">        &#125;)</span><br><span class="line">        // data 和 e 分别代表正常执行结果和异常执行结果， 两个必有一个为 null</span><br><span class="line">        .handle((data, e) -&gt; &#123;</span><br><span class="line">            System.out.println(data);</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">            return data;</span><br><span class="line">        &#125;);</span><br><span class="line">pool.shutdown();</span><br></pre></td></tr></table></figure></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/11/15/并发/ForkJoinPool使用及原理/" rel="next" title="ForkJoinPool使用及原理">
+                <i class="fa fa-chevron-left"></i> ForkJoinPool使用及原理
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">勿在浮沙筑高台</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">69</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">25</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#CompletableFuture-介绍"><span class="nav-number">1.</span> <span class="nav-text">CompletableFuture 介绍</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#函数式编程的几个接口"><span class="nav-number">1.1.</span> <span class="nav-text">函数式编程的几个接口</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Future-的局限性"><span class="nav-number">1.2.</span> <span class="nav-text">Future 的局限性</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CompletableFuture-的使用"><span class="nav-number">2.</span> <span class="nav-text">CompletableFuture 的使用</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#创建一个-CompletableFuture-任务"><span class="nav-number">2.1.</span> <span class="nav-text">创建一个 CompletableFuture 任务</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#串行执行任务"><span class="nav-number">2.2.</span> <span class="nav-text">串行执行任务</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#并行执行任务"><span class="nav-number">2.3.</span> <span class="nav-text">并行执行任务</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#两任务并行执行，先完成的触发-action"><span class="nav-number">2.4.</span> <span class="nav-text">两任务并行执行，先完成的触发 action</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#多任务的组合"><span class="nav-number">2.5.</span> <span class="nav-text">多任务的组合</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#异常处理"><span class="nav-number">2.6.</span> <span class="nav-text">异常处理</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/jquery/2.1.3/jquery.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fastclick/1.0.6/fastclick.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.bootcss.com/jquery_lazyload/1.9.7/jquery.lazyload.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.ui.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
