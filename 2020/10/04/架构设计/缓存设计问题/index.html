@@ -57,7 +57,7 @@
 <link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
 
 
-  <meta name="keywords" content="限流,">
+  <meta name="keywords" content="Hexo, NexT">
 
 
 
@@ -73,21 +73,17 @@
 
 
 
-<meta name="description" content="在开发高并发系统时有三把利器用来保护系统：缓存、降级和限流。限流的目的是通过对并发访问/请求进行限速，或者对一个时间窗口内的请求进行限速来保护系统，一旦达到限制速率则可以拒绝服务、排队或等待、降级等处理 常用的限流算法有：令牌桶和漏桶算法 常用限流算法计数器采用计数器实现限流有点简单粗暴，一般我们会限制一秒钟的能够通过的请求数，比如限流qps为100，算法的实现思路就是从第一个请求进来开始计时，在">
-<meta name="keywords" content="限流">
+<meta name="description" content="概述在使用缓存的过程中，考虑到缓存系统的高并发和高可用， 我们绕不过三个问题缓存雪崩、缓存穿透、缓存击穿。 这里对这几个情况的处理办法做一个总结 缓存雪崩很多使用场景，查询的缓存数据都是由定时任务取刷新，然后缓存查不到从 DB 查了在更新缓存。如果这些 key 在同一时间失效， 那么失效的时候， 大量的请求过来。就会直接打到 DB　上，　这个时候　DB　很可能被打垮，　即使马上重启也会被新的流量打">
 <meta property="og:type" content="article">
-<meta property="og:title" content="限流算法(Guava RateLimiter)">
-<meta property="og:url" content="http://yoursite.com/2020/03/30/架构/限流算法/index.html">
+<meta property="og:title" content="缓存设计问题">
+<meta property="og:url" content="http://yoursite.com/2020/10/04/架构设计/缓存设计问题/index.html">
 <meta property="og:site_name" content="Do Or Die">
-<meta property="og:description" content="在开发高并发系统时有三把利器用来保护系统：缓存、降级和限流。限流的目的是通过对并发访问/请求进行限速，或者对一个时间窗口内的请求进行限速来保护系统，一旦达到限制速率则可以拒绝服务、排队或等待、降级等处理 常用的限流算法有：令牌桶和漏桶算法 常用限流算法计数器采用计数器实现限流有点简单粗暴，一般我们会限制一秒钟的能够通过的请求数，比如限流qps为100，算法的实现思路就是从第一个请求进来开始计时，在">
+<meta property="og:description" content="概述在使用缓存的过程中，考虑到缓存系统的高并发和高可用， 我们绕不过三个问题缓存雪崩、缓存穿透、缓存击穿。 这里对这几个情况的处理办法做一个总结 缓存雪崩很多使用场景，查询的缓存数据都是由定时任务取刷新，然后缓存查不到从 DB 查了在更新缓存。如果这些 key 在同一时间失效， 那么失效的时候， 大量的请求过来。就会直接打到 DB　上，　这个时候　DB　很可能被打垮，　即使马上重启也会被新的流量打">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="http://yoursite.com/images/distributed/leaky-bucket.png">
-<meta property="og:image" content="http://yoursite.com/images/distributed/token-bucket.png">
-<meta property="og:updated_time" content="2020-06-23T12:23:31.230Z">
+<meta property="og:updated_time" content="2020-10-22T07:27:30.336Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="限流算法(Guava RateLimiter)">
-<meta name="twitter:description" content="在开发高并发系统时有三把利器用来保护系统：缓存、降级和限流。限流的目的是通过对并发访问/请求进行限速，或者对一个时间窗口内的请求进行限速来保护系统，一旦达到限制速率则可以拒绝服务、排队或等待、降级等处理 常用的限流算法有：令牌桶和漏桶算法 常用限流算法计数器采用计数器实现限流有点简单粗暴，一般我们会限制一秒钟的能够通过的请求数，比如限流qps为100，算法的实现思路就是从第一个请求进来开始计时，在">
-<meta name="twitter:image" content="http://yoursite.com/images/distributed/leaky-bucket.png">
+<meta name="twitter:title" content="缓存设计问题">
+<meta name="twitter:description" content="概述在使用缓存的过程中，考虑到缓存系统的高并发和高可用， 我们绕不过三个问题缓存雪崩、缓存穿透、缓存击穿。 这里对这几个情况的处理办法做一个总结 缓存雪崩很多使用场景，查询的缓存数据都是由定时任务取刷新，然后缓存查不到从 DB 查了在更新缓存。如果这些 key 在同一时间失效， 那么失效的时候， 大量的请求过来。就会直接打到 DB　上，　这个时候　DB　很可能被打垮，　即使马上重启也会被新的流量打">
 
 
 
@@ -117,13 +113,13 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/2020/03/30/架构/限流算法/">
+  <link rel="canonical" href="http://yoursite.com/2020/10/04/架构设计/缓存设计问题/">
 
 
 
 
 
-  <title>限流算法(Guava RateLimiter) | Do Or Die</title>
+  <title>缓存设计问题 | Do Or Die</title>
   
 
 
@@ -260,7 +256,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/03/30/架构/限流算法/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/10/04/架构设计/缓存设计问题/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Leo Hao">
@@ -277,7 +273,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">限流算法(Guava RateLimiter)</h1>
+          <h1 class="post-title" itemprop="name headline">缓存设计问题</h1>
         
 
         <div class="post-meta">
@@ -289,8 +285,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-03-30T22:23:29+08:00">
-                2020-03-30
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-10-04T17:58:19+08:00">
+                2020-10-04
               </time>
             
 
@@ -349,20 +345,16 @@
       
 
       
-        <p>在开发高并发系统时有三把利器用来保护系统：缓存、降级和限流。限流的目的是通过对并发访问/请求进行限速，或者对一个时间窗口内的请求进行限速来保护系统，一旦达到限制速率则可以拒绝服务、排队或等待、降级等处理</p>
-<p>常用的限流算法有：令牌桶和漏桶算法</p>
-<h3 id="常用限流算法"><a href="#常用限流算法" class="headerlink" title="常用限流算法"></a>常用限流算法</h3><h4 id="计数器"><a href="#计数器" class="headerlink" title="计数器"></a>计数器</h4><p>采用计数器实现限流有点简单粗暴，一般我们会限制一秒钟的能够通过的请求数，比如限流qps为100，算法的实现思路就是从第一个请求进来开始计时，在接下去的1s内，每来一个请求，就把计数加1，如果累加的数字达到了100，那么后续的请求就会被全部拒绝。等到1s结束后，把计数恢复成0，重新开始计数。</p>
-<p>这种实现方式有一个弊端：如果我在单位时间1s内的前10ms，已经通过了100个请求，那后面的990ms，只能把请求拒绝，这种现象称为”突刺现象”</p>
-<h4 id="漏桶限流"><a href="#漏桶限流" class="headerlink" title="漏桶限流"></a>漏桶限流</h4><p><img src="/images/distributed/leaky-bucket.png" alt></p>
-<p>不管服务调用方多么不稳定，通过漏桶算法进行限流，固定的时间处理一次请求(漏过的流量速度是一定)。因为处理的速度是固定的，请求进来的速度是未知的，可能突然进来很多请求，没来得及处理的请求就先放在桶里，既然是个桶，肯定是有容量上限，如果桶满了，那么新进来的请求就丢弃。</p>
-<p>漏桶算法消除了”突刺现像”, 但是也有一个弊端就是：无法应对短时间的突发流量</p>
-<h4 id="令牌桶限流"><a href="#令牌桶限流" class="headerlink" title="令牌桶限流"></a>令牌桶限流</h4><p><img src="/images/distributed/token-bucket.png" alt></p>
-<p>令牌桶算法是对漏桶算法的一个改进， 不但可以限制请求速率，并且能够在限制调用的平均速率的同时还允许一定程度的突发调用。<br>在令牌桶算法中，存在一个桶，用来存放固定数量的令牌，并以一定的速率往桶中放令牌。每次请求调用需要先获取令牌，只有拿到令牌，才有机会继续执行，否则选择选择等待可用的令牌、或者直接拒绝。如果桶中令牌数达到上限，就丢弃令牌。所以就存在这种情况，桶中一直有大量的可用令牌，这时进来的请求就可以直接拿到令牌执行，比如设置qps为100，那么限流器初始化完成一秒后，桶中就已经有100个令牌了，这时服务还没完全启动好，等启动完成对外提供服务时，该限流器可以抵挡瞬时的100个请求。所以，只有桶中没有令牌时，请求才会进行等待，最后相当于以一定的速率执行。</p>
-<h3 id="Guava-RateLimiter"><a href="#Guava-RateLimiter" class="headerlink" title="Guava RateLimiter"></a>Guava RateLimiter</h3><p>guava <code>RateLimiter</code> 作为抽象类有个子类 <code>SmoothRateLimiter</code>， 这是个抽象类并且又两个实现类:<code>SmoothWarmingUp</code>和<code>SmoothBursty</code>。</p>
-<p><code>RateLimiter</code>只有两个属性:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">// 用于计时，RateLimiter 把实例化的时间设置为 0 值，后续都是取相对时间，用微秒表示。</span><br><span class="line">private final SleepingStopwatch stopwatch;</span><br><span class="line">// 来做锁，RateLimiter 依赖于 synchronized 来控制并发</span><br><span class="line">private volatile Object mutexDoNotUseDirectly;</span><br></pre></td></tr></table></figure></p>
-<h4 id="SmoothRateLimiter"><a href="#SmoothRateLimiter" class="headerlink" title="SmoothRateLimiter"></a>SmoothRateLimiter</h4><p><code>SmoothRateLimiter</code> 作为抽象类继承于 <code>RateLimiter</code>。<code>SmoothRateLimiter</code>的属性如下:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">// 当前还有多少 permits 没有被使用，被存下来的 permits 数量</span><br><span class="line">double storedPermits;</span><br><span class="line"></span><br><span class="line">// 最大允许缓存的 permits 数量，也就是 storedPermits 能达到的最大值</span><br><span class="line">double maxPermits;</span><br><span class="line"></span><br><span class="line">// 每隔多少时间产生一个 permit，</span><br><span class="line">// 比如我们构造方法中设置每秒 5 个，也就是每隔 200ms 一个，这里单位是微秒，也就是 200,000 个</span><br><span class="line">double stableIntervalMicros;</span><br><span class="line"></span><br><span class="line">// 下一次可以获取 permits 的时间，这个时间是相对 RateLimiter 的构造时间的，是一个相对时间，理解为时间戳吧</span><br><span class="line">private long nextFreeTicketMicros = 0L;</span><br></pre></td></tr></table></figure></p>
-<p>对于 <code>nextFreeTicketMicros</code> 属性，</p>
-
+        <h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><p>在使用缓存的过程中，考虑到缓存系统的高并发和高可用， 我们绕不过三个问题缓存雪崩、缓存穿透、缓存击穿。</p>
+<p>这里对这几个情况的处理办法做一个总结</p>
+<h3 id="缓存雪崩"><a href="#缓存雪崩" class="headerlink" title="缓存雪崩"></a>缓存雪崩</h3><p>很多使用场景，查询的缓存数据都是由定时任务取刷新，然后缓存查不到从 DB 查了在更新缓存。如果这些 key 在同一时间失效， 那么失效的时候， 大量的请求过来。就会直接打到 DB　上，　这个时候　DB　很可能被打垮，　即使马上重启也会被新的流量打垮。</p>
+<p>这种同一时间大量缓存的失效，导致请求直接打到　DB 上的情况， 就是缓存雪崩。</p>
+<p>针对于这种情况，在批量写 Redis 数据的时候， 可以给 key 的失效时间增加一个随机值， 保证他们不会在同一时间大面积失效。或者是设置数据永不过期，如果有数据有更新再更新缓存。</p>
+<p>Redis 设置 key 的随机过期时间:<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">setRedis（Key，value，time + Math.random() * <span class="number">10000</span>）；</span><br></pre></td></tr></table></figure></p>
+<h3 id="缓存穿透"><a href="#缓存穿透" class="headerlink" title="缓存穿透"></a>缓存穿透</h3><p>缓存穿透指的是缓存缓存和数据库中都没有的数据，而用户不断发起请求，让请求直接落再DB上，增加数据库压力，可能导致数据库被击垮。这种请求很可能是攻击者恶意发起的。</p>
+<p>针对这种情况首先要做好数据校验，不合法的数据尽量拦截掉，其次如果缓存差不到，数据库也查不到的数据也缓存起来。将 value 存个null， 过期时间短一点(如30s，如果设置太长肯恶搞导致正常的情况数据没法及时更新)。 </p>
+<p>另外还可以使用 Redis 提供的布隆过滤器，可以高效的判断出某个key是否在数据库当中，如果通过布隆过滤器判断出不存在，直接返回，存在了在去DB取数据刷新缓存。</p>
+<h3 id="缓存击穿"><a href="#缓存击穿" class="headerlink" title="缓存击穿"></a>缓存击穿</h3>
       
     </div>
     
@@ -377,12 +369,6 @@
 
     <footer class="post-footer">
       
-        <div class="post-tags">
-          
-            <a href="/tags/限流/" rel="tag"><i class="fa fa-tag"></i> 限流</a>
-          
-        </div>
-      
 
       
       
@@ -392,8 +378,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2020/03/22/mysql/mysql语句加锁分析/" rel="next" title="mysql语句加锁分析">
-                <i class="fa fa-chevron-left"></i> mysql语句加锁分析
+              <a href="/2020/06/21/中间件/hystrix源码分析/" rel="next" title="hystrix源码分析">
+                <i class="fa fa-chevron-left"></i> hystrix源码分析
               </a>
             
           </div>
@@ -402,8 +388,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2020/06/07/中间件/hystrix原理应用/" rel="prev" title="hystrix原理应用">
-                hystrix原理应用 <i class="fa fa-chevron-right"></i>
+              <a href="/2020/10/22/算法/定时器算法/" rel="prev" title="定时器算法">
+                定时器算法 <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -537,7 +523,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#常用限流算法"><span class="nav-number">1.</span> <span class="nav-text">常用限流算法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#计数器"><span class="nav-number">1.1.</span> <span class="nav-text">计数器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#漏桶限流"><span class="nav-number">1.2.</span> <span class="nav-text">漏桶限流</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#令牌桶限流"><span class="nav-number">1.3.</span> <span class="nav-text">令牌桶限流</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Guava-RateLimiter"><span class="nav-number">2.</span> <span class="nav-text">Guava RateLimiter</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#SmoothRateLimiter"><span class="nav-number">2.1.</span> <span class="nav-text">SmoothRateLimiter</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#缓存雪崩"><span class="nav-number">2.</span> <span class="nav-text">缓存雪崩</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#缓存穿透"><span class="nav-number">3.</span> <span class="nav-text">缓存穿透</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#缓存击穿"><span class="nav-number">4.</span> <span class="nav-text">缓存击穿</span></a></li></ol></div>
             
 
           </div>
