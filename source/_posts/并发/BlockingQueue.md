@@ -682,4 +682,3 @@ private static <T> void siftDownComparable(int k, T x, Object[] array,
 }
 
 ```
-### DelayedQueue

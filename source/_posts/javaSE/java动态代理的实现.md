@@ -4,7 +4,10 @@ date: 2017-11-14 16:01:13
 tags: javaSE
 categories: javaSE
 ---
-java的动态代理机制的是需要Proxy类来实现的，我们来看一个简单的动态代理的实现,no bb, show the code:
+
+### JDK 动态代理
+
+java的动态代理机制的是需要Proxy类来实现的，使用如下:
 ``` 
 public class DynamicProxyDemo {
 
@@ -50,7 +53,7 @@ class ProxyHandler implements InvocationHandler {
 }
 ```
 
-##### java.lang.reflect.Proxy
+#### java.lang.reflect.Proxy
 ``` 
 // 方法 1: 该方法用于获取指定代理对象所关联的调用处理器
 public static InvocationHandler getInvocationHandler(Object proxy) 
@@ -67,7 +70,7 @@ public static Object newProxyInstance(ClassLoader loader,
  Class<?>[] interfaces,InvocationHandler h)
 ```
 
-##### java.lang.reflect.InvocationHandler
+#### java.lang.reflect.InvocationHandler
 ``` 
 /**
  该方法负责集中处理动态代理类上的所有方法调用。
@@ -80,7 +83,7 @@ public Object invoke(Object proxy, Method method, Object[] args)
     throws Throwable;
 ```
 
-##### java.lang.ClassLoader
+#### java.lang.ClassLoader
 类装载器类，将类的字节码装载到 Java 虚拟机（JVM）中并为其定义类对象，然后该类才能被使用。Proxy类与普通类的唯一区别就是其字节码是由 JVM 在运行时动态生成的而非预存在于任何一个 .class 文件中。   
 每次生成动态代理类对象时都需要指定一个类装载器对象：newProxyInstance()方法第一个参数
 
@@ -129,6 +132,6 @@ Interface proxy = (Interface)Proxy.newProxyInstance( classLoader,
 
 Proxy 类是它的父类，这个规则适用于所有由 Proxy 创建的动态代理类。而且该类还实现了其所代理的一组接口，这就是为什么它能够被安全地类型转换到其所代理的某接口的根本原因
 
-###### 参考文档:
+### 参考文档:
 - [java动态代理机制分析](https://www.ibm.com/developerworks/cn/java/j-lo-proxy1/)
 - [AOP中的动态代理](https://github.com/brianway/java-learning/blob/master/blogs/javase/java%E5%9F%BA%E7%A1%80%E5%B7%A9%E5%9B%BA%E7%AC%94%E8%AE%B0(4)-%E4%BB%A3%E7%90%86.md)
