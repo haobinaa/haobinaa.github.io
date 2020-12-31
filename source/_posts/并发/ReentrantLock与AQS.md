@@ -339,7 +339,7 @@ private final boolean parkAndCheckInterrupt() {
 
 正常情况下，如果线程没获取到锁，线程会被 `LockSupport.park(this)` 挂起停止，等待被唤醒。
 
-```java
+```
 public void unlock() {
     sync.release(1);
 }
@@ -396,7 +396,13 @@ private void unparkSuccessor(Node node) {
 }
 ```
 
-唤醒线程以后，被唤醒的线程将从以下代码中继续往前走, 直到释放head
+唤醒线程以后，被唤醒的线程将从以下代码中继续往前走, 直到释放head:
+``` 
+private final boolean parkAndCheckInterrupt() {
+    LockSupport.park(this); // 刚刚线程被挂起在这里了
+    return Thread.interrupted();
+}
+```
 
 ### 非公平锁和公平锁
 
@@ -451,7 +457,7 @@ static final class FairSync extends Sync {
 
 #### 非公平锁的Lock
 
-```java
+```
 static final class NonfairSync extends Sync {
     final void lock() {
         // 2. 和公平锁相比，这里会直接先进行一次CAS，成功就返回了
