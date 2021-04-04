@@ -5,9 +5,17 @@ tags: netty
 categories: IO
 ---
 
-## Linux中零拷贝(Zero-copy)
+### 零拷贝
 
-### DMA操作
+#### 概念
+
+- 当某个程序或已存在的进程需要某段数据时，它只能在用户空间中属于它自己的内存中访问、修改，这段内存暂且称之为`user
+  buffer`
+- 正常情况下，数据只能从磁盘(或其他外部设备)加载到内核的缓冲区，且称之为`kernel buffer`
+- TCP/IP协议栈维护着两个缓冲区：`send buffer` 和 `recv buffer` ，它们合称为 `socket buffer`
+
+
+#### DMA操作
 
 DMA 的全称叫直接内存存取（Direct Memory Access），是一种允许外围设备（硬件子系统）直接访问系统主内存的机制。
 
@@ -22,40 +30,23 @@ DMA下读取磁盘数据流程如下:
 5. DMA 磁盘控制器向 CPU 发出数据读完的信号，由 CPU 负责将数据从内核缓冲区拷贝到用户缓冲区。
 6. 用户进程由内核态切换回用户态，解除阻塞状态，然后等待 CPU 的下一个执行时间钟。
 
-### 传统I/O方式
 
-先介绍几个I/O操作相关的概念:
-1. 上下文切换：当用户程序向内核发起系统调用时，CPU 将用户进程从用户态切换到内核态；当系统调用返回时，CPU 将用户进程从内核态切换回用户态。
-2. CPU拷贝：由 CPU 直接处理数据的传送，数据拷贝时会一直占用 CPU 的资源。
-3. DMA拷贝：由 CPU 向DMA磁盘控制器下达指令，让 DMA 控制器来处理数据的传送，数据传送完毕再把信息反馈给 CPU，从而减轻了 CPU 资源的占有率。
+#### 传统读取数据和发送数据
 
-#### 传统读操作
+程序传统IO实际上是调用系统的`read()`和`write()`实现，通过`read()`把数据从硬盘读取到内核缓冲区，再复制到用户缓冲区；然后再通过`write()`写入到socket缓冲区，最后写入网卡设备。
 
-``` 
-read(file_fd, tmp_buf, len);
-```
+![](/images/io/io_process.png)
 
-基于传统的 I/O 读取方式，read 系统调用会触发 2 次上下文切换，1 次 DMA 拷贝和 1 次 CPU 拷贝，发起数据读取的流程如下：
-
-1. 用户进程通过 read() 函数向内核（kernel）发起系统调用，上下文从用户态（user space）切换为内核态（kernel space）。
-2. CPU利用DMA控制器将数据从主存或硬盘拷贝到内核空间（kernel space）的读缓冲区（read buffer）。
-3. CPU将读缓冲区（read buffer）中的数据拷贝到用户空间（user space）的用户缓冲区（user buffer）。
-4. 上下文从内核态（kernel space）切换回用户态（user space），read 调用执行返回。
+整个过程发生了四次用户态和内核态的切换还有四次IO拷贝， 具体流程是：
+1. 用户进程通过`read()`方法向操作系统发起调用，此时上下文从用户态转向内核态
+2. DMA控制器把数据从硬盘中拷贝到读缓冲区
+3. CPU把读缓冲区数据拷贝到应用缓冲区，上下文从内核态转为用户态，`read()`返回
+4. 用户进程通过`write()`方法发起调用，上下文从用户态转为内核态
+5. CPU将应用缓冲区中数据拷贝到socket缓冲区
+6. DMA控制器把数据从socket缓冲区拷贝到网卡，上下文从内核态切换回用户态，`write()`返回
 
 
-#### 传统写操作
-
-``` 
-write(socket_fd, tmp_buf, len);
-```
-
-基于传统的 I/O 写入方式，write() 系统调用会触发 2 次上下文切换，1 次 CPU 拷贝和 1 次 DMA 拷贝，用户程序发送网络数据的流程如下：
-1. 用户进程通过 write() 函数向内核（kernel）发起系统调用，上下文从用户态（user space）切换为内核态（kernel space）。
-2. CPU 将用户缓冲区（user buffer）中的数据拷贝到内核空间（kernel space）的网络缓冲区（socket buffer）。
-3. CPU 利用 DMA 控制器将数据从网络缓冲区（socket buffer）拷贝到网卡进行数据传输。
-4. 上下文从内核态（kernel space）切换回用户态（user space），write 系统调用执行返回。
-
-### 零拷贝
+#### 零拷贝实现方式
 
 在Linux中零拷贝的实现方式主要有: 用户态直接 I/O、减少数据拷贝次数以及写时复制技术。
 
@@ -73,57 +64,84 @@ write(socket_fd, tmp_buf, len);
 
 mmap 是 Linux 提供的一种内存映射文件方法，即将一个进程的地址空间中的一段虚拟地址映射到磁盘文件地址。
 
-使用 mmap 的目的是将内核中读缓冲区（read buffer）的地址与用户空间的缓冲区（user buffer）进行映射，从而实现内核缓冲区与应用程序内存的共享，省去了将数据从内核读缓冲区（read buffer）拷贝到用户缓冲区（user buffer）的过程，然而内核读缓冲区（read buffer）仍需将数据到内核写缓冲区（socket buffer）
+mmap 主要实现方式是将读缓冲区的地址和用户缓冲区的地址进行映射，内核缓冲区和应用缓冲区共享，从而减少了从读缓冲区到用户缓冲区的一次CPU拷贝，然而内核读缓冲区（read buffer）仍需将数据到内核写缓冲区（socket buffer）
 
-![](/images/io/mmap-write.jpg)
+![](/images/io/mmap-write.png)
 
-基于 mmap + write 系统调用的零拷贝方式，整个读写拷贝过程会发生 4 次上下文切换，1 次 CPU 拷贝和 2 次 DMA 拷贝，用户程序读写数据的流程如下：
-
-读：
-1. 用户进程通过 mmap() 函数向内核（kernel）发起系统调用，上下文从用户态（user space）切换为内核态（kernel space）。
-2. 将用户进程的内核空间的读缓冲区（read buffer）与用户空间的缓存区（user buffer）进行内存地址映射。
-3. CPU利用DMA控制器将数据从主存或硬盘拷贝到内核空间（kernel space）的读缓冲区（read buffer）。
-4. 上下文从内核态（kernel space）切换回用户态（user space），mmap 系统调用执行返回。
-
-写:
-1. 用户进程通过 write() 函数向内核（kernel）发起系统调用，上下文从用户态（user space）切换为内核态（kernel space）。
-2. CPU将读缓冲区（read buffer）中的数据拷贝到的网络缓冲区（socket buffer）。
-3. CPU利用DMA控制器将数据从网络缓冲区（socket buffer）拷贝到网卡进行数据传输。
-4. 上下文从内核态（kernel space）切换回用户态（user space），write 系统调用执行返回
+基于 mmap + write 系统调用的零拷贝方式，整个过程发生了4次用户态和内核态的上下文切换和3次拷贝，具体流程如下：
+1. 用户进程通过mmap()方法向操作系统发起调用，上下文从用户态转向内核态
+2. DMA控制器把数据从硬盘中拷贝到读缓冲区
+3. 上下文从内核态转为用户态，mmap调用返回
+4. 用户进程通过write()方法发起调用，上下文从用户态转为内核态
+5. CPU将读缓冲区中数据拷贝到socket缓冲区
+6. DMA控制器把数据从socket缓冲区拷贝到网卡，上下文从内核态切换回用户态，write()返回
 
 mmap 主要的用处是提高 I/O 性能，特别是针对大文件。对于小文件，内存映射文件反而会导致碎片空间的浪费，因为内存映射总是要对齐页边界，最小单位是 4 KB，一个 5 KB 的文件将会映射占用 8 KB 内存，也就会浪费 3 KB 内存。
 
 #### sendfile
 
-sendfile 目的是简化通过网络在两个通道之间进行的数据传输过程。
+通过使用`sendfile`数据可以直接在内核空间进行传输，因此避免了用户空间和内核空间的拷贝，同时由于使用sendfile替代了read+write从而节省了一次系统调用，也就是2次上下文切换。
 
-splice 系统调用可以在内核空间的读缓冲区（read buffer）和网络缓冲区（socket buffer）之间建立管道（pipeline），从而避免了两者之间的 CPU 拷贝操作。
+![](/images/io/sendfile.png)
 
-![](/images/io/sendfile.jpg)
+整个过程发生了2次用户态和内核态的上下文切换和3次拷贝，具体流程如下：
 
-基于 sendfile 系统调用的零拷贝方式，整个拷贝过程会发生 2 次上下文切换，1 次 CPU 拷贝和 2 次 DMA 拷贝，用户程序读写数据的流程如下：
+1. 用户进程通过sendfile()方法向操作系统发起调用，上下文从用户态转向内核态
+2. DMA控制器把数据从硬盘中拷贝到读缓冲区
+3. CPU将读缓冲区中数据拷贝到socket缓冲区
+4. DMA控制器把数据从socket缓冲区拷贝到网卡，上下文从内核态切换回用户态，sendfile调用返回
 
-1. 用户进程通过 sendfile() 函数向内核（kernel）发起系统调用，上下文从用户态（user space）切换为内核态（kernel space）。
-2. CPU 利用 DMA 控制器将数据从主存或硬盘拷贝到内核空间（kernel space）的读缓冲区（read buffer）。
-3. CPU 将读缓冲区（read buffer）中的数据拷贝到的网络缓冲区（socket buffer）。
-4. CPU 利用 DMA 控制器将数据从网络缓冲区（socket buffer）拷贝到网卡进行数据传输。
-5. 上下文从内核态（kernel space）切换回用户态（user space），sendfile 系统调用执行返回。
 
-相比较于 mmap 内存映射的方式，sendfile 少了 2 次上下文切换，但是仍然有 1 次 CPU 拷贝操作。sendfile 存在的问题是用户程序不能对数据进行修改，而只是单纯地完成了一次数据传输过程。
+sendfile方法IO数据对用户空间完全不可见，所以只能适用于完全不需要用户空间处理的情况，比如静态文件服务器。
+
+sendfile 只适用于把数据从磁盘中读出来往 socket buffer 发送的场景
+
+
+#### sendfile+DMA scatter/gather
+
+Linux2.4内核版本之后对sendfile做了进一步优化，通过引入新的硬件支持，这个方式叫做DMA Scatter/Gather 分散/收集功能。
+
+它将读缓冲区中的数据描述信息--内存地址和偏移量记录到socket缓冲区，由 DMA 根据这些将数据从读缓冲区拷贝到网卡，相比之前版本减少了一次CPU拷贝的过程
+
+![](/images/io/sendfile-scatter.png)
+
+整个过程发生了2次用户态和内核态的上下文切换和2次拷贝，其中更重要的是完全没有CPU拷贝，具体流程如下：
+
+1. 用户进程通过sendfile()方法向操作系统发起调用，上下文从用户态转向内核态
+2. DMA控制器利用scatter把数据从硬盘中拷贝到读缓冲区离散存储
+3. CPU把读缓冲区中的文件描述符和数据长度发送到socket缓冲区
+4. DMA控制器根据文件描述符和数据长度，使用scatter/gather把数据从内核缓冲区拷贝到网卡
+5. sendfile()调用返回，上下文从内核态切换回用户态
+
+DMA gather和sendfile一样数据对用户空间不可见，而且需要硬件支持，同时输入文件描述符只能是文件，但是过程中完全没有CPU拷贝过程，极大提升了性能。
+
+
+#### 传统零拷贝总结
+
+由于CPU和IO速度的差异问题，产生了DMA技术，通过DMA搬运来减少CPU的等待时间。
+
+传统的`IO read/write`方式会产生2次DMA拷贝+2次CPU拷贝，同时有4次上下文切换。
+
+而通过`mmap+write`方式则产生2次DMA拷贝+1次CPU拷贝，4次上下文切换，通过内存映射减少了一次CPU拷贝，可以减少内存使用，适合大文件的传输。
+
+`sendfile`方式是新增的一个系统调用函数，产生2次DMA拷贝+1次CPU拷贝，但是只有2次上下文切换。因为只有一次调用，减少了上下文的切换，但是用户空间对IO数据不可见，适用于静态文件服务器。
+
+`sendfile+DMA gather`方式产生2次DMA拷贝，没有CPU拷贝，而且也只有2次上下文切换。虽然极大地提升了性能，但是需要依赖新的硬件设备支持。
+
+
 
 ### Netty中的零拷贝
 
-传统IO数据传输，在之前 [java网络编程模型概述](https://blog.haobin95.club/2018/08/08/IO/javaIO%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B%E6%A6%82%E8%BF%B0/)中有描述
 
-OS层面的零拷贝主要避免在`用户态(User-space)`和`内核态(Kernel-space)
-`之间来回拷贝数据。比如Linux可以将一段用户空间映射到内核空间，映射成功后，用户对这段内存区域的修改可以直接反映到内核空间，这种映射的方式就不需要在两个空间来回拷贝数据，提高了数据传输的效率。
+OS层面的零拷贝主要避免在`用户态(User-space)`和`内核态(Kernel-space)`之间来回拷贝数据。
 
 Netty中的 `zero-copy` 不同于操作系统，它完全是在用户态(java 层面)，更多的偏向于优化数据操作这样的概念,体现在：
-
 -  Netty 提供了 `CompositeByteBuf` 类, 它可以将多个 ByteBuf 合并为一个逻辑上的 ByteBuf, 避免了各个 ByteBuf 之间的拷贝
 - 通过 wrap 操作, 我们可以将 byte[] 数组、ByteBuf、ByteBuffer等包装成一个 Netty ByteBuf 对象, 进而避免了拷贝操作
 - ByteBuf 支持 slice 操作, 因此可以将 ByteBuf 分解为多个共享同一个存储区域的 ByteBuf, 避免了内存的拷贝
-- 通过 `FileRegion` 包装的`FileChannel.tranferTo` 实现文件传输, 可以直接将文件缓冲区的数据发送到目标 Channel, 避免了传统通过循环 write 方式导致的内存拷贝问题
+- 通过 `FileRegion` 包装的`FileChannel.transferTo` 实现文件传输, 可以直接将文件缓冲区的数据发送到目标 Channel, 避免了传统通过循环 write 方式导致的内存拷贝问题
+
+上述的 Netty 包装了 `FileChannel.transferTo` 实际上也是对操作系统 `sendfile` 的一个封装， 我们可以理解为 Netty 即支持了系统层面的零拷贝， 还有一个重要作用就是：防止 JVM 中不必要的复制
 
 #### ByteBuf
 
@@ -135,40 +153,42 @@ ByteBuf是Netty进行数据读写交互的单位，结构如下:
 
 2. 以上三段内容是被两个指针给划分出来的，从左到右，依次是读指针（readerIndex）、写指针（writerIndex），然后还有一个变量 capacity，表示 ByteBuf 底层内存的总容量
 
-3. 从 ByteBuf 中每读取一个字节，readerIndex 自增1，ByteBuf 里面总共有 writerIndex-readerIndex 个字节可读, 由此可以推论出当 readerIndex 与 writerIndex 相等的时候，ByteBuf 不可读
+3. 从 ByteBuf 中每读取一个字节，readerIndex 自增1，ByteBuf 里面总共有 `writerIndex-readerIndex` 个字节可读,当 readerIndex 与 writerIndex 相等的时候，ByteBuf 不可读
 
 4. 写数据是从 writerIndex 指向的部分开始写，每写一个字节，writerIndex 自增1，直到增到 capacity，这个时候，表示 ByteBuf 已经不可写了
 
 5. ByteBuf 里面其实还有一个参数 maxCapacity，当向 ByteBuf 写数据的时候，如果容量不足，那么这个时候可以进行扩容，直到 capacity 扩容到 maxCapacity，超过 maxCapacity 就会报错
 
-#### 通过 CompositeByteBuf 实现零拷贝
+#### CompositeByteBuf 零拷贝
 
-假设我们有一份协议数据, 它由头部和消息体组成, 而头部和消息体是分别存放在两个 ByteBuf 中的, 即:
+`Composite buffer`实现了透明的零拷贝，将物理上的多个 Buffer 组合成了一个逻辑上完整的 CompositeByteBuf.
+
+比如在网络编程中, 一个完整的 http 请求常常会被分散到多个 Buffer 中。用 CompositeByteBuf 很容易将多个分散的Buffer组装到一起，而无需额外的复制：
 ``` 
-ByteBuf header = ...
-ByteBuf body = ...
+ByteBuf header = Unpooled.buffer();// 模拟http请求头
+ByteBuf body = Unpooled.buffer();// 模拟http请求主体
+CompositeByteBuf httpBuf = Unpooled.compositeBuffer();
+// 这一步，不需要进行header和body的额外复制，httpBuf只是持有了header和body的引用
+// 接下来就可以正常操作完整httpBuf了
+httpBuf.addComponents(header, body);
 ```
-我们在代码处理中, 通常希望将 header 和 body 合并为一个 ByteBuf, 方便处理, 那么通常的做法是:
+
+![](/images/netty/composite-bytebuf.png)
+
+而 JDK ByteBuffer 完成这一需求:
 ``` 
-ByteBuf allBuf = Unpooled.buffer(header.readableBytes() + body.readableBytes());
-allBuf.writeBytes(header);
-allBuf.writeBytes(body);
+ByteBuffer header = ByteBuffer.allocate(1024);// 模拟http请求头
+ByteBuffer body = ByteBuffer.allocate(1024);// 模拟http请求主体
+
+// 需要创建一个新的ByteBuffer来存放合并后的buffer信息，这涉及到复制操作
+ByteBuffer httpBuffer = ByteBuffer.allocate(header.remaining() + body.remaining());
+// 将header和body放入新创建的Buffer中
+httpBuffer.put(header);
+httpBuffer.put(body);
+httpBuffer.flip();
 ```
-将 header 和 body 都拷贝到了新的 allBuf 中了, 这无形中增加了两次额外的数据拷贝操作了
 
-
-`CompositeByteBuf`可以高效优雅的实现同样的目的:
-``` 
-ByteBuf header = ...
-ByteBuf body = ...
-
-CompositeByteBuf compositeByteBuf = Unpooled.compositeBuffer();
-compositeByteBuf.addComponents(true, header, body);
-```
-`CompositeByteBuf` 的 `addComponents` 将 header 和 body 两个 ByteBuf 
-整合成了一个逻辑的整体，在CompositeByteBuf内部，这两个ByteBuf都是单独存在的，CompositeByteBuf只是一个逻辑上的整体:
-
-![](/images/CompositeByteBuf.png)
+相比于JDK，Netty的实现更合理，省去了不必要的内存复制，可以称得上是JVM层面的零拷贝。
 
 #### 通过 wrap 操作实现零拷贝
 
@@ -184,22 +204,32 @@ byte[] bytes = ...
 ByteBuf byteBuf = Unpooled.wrappedBuffer(bytes);
 ```
 
-`Unpooled.wrappedBuffer` 方法来将 bytes 包装成为一个 UnpooledHeapByteBuf 对象, 而在包装的过程中, 是不会有拷贝操作的. 即最后我们生成的生成的 ByteBuf 对象是和 bytes 数组共用了同一个存储空间, 对 bytes 的修改也会反映到 ByteBuf 对象中
+`Unpooled.wrappedBuffer` 方法来将 bytes 包装成为一个 `UnpooledHeapByteBuf` 对象, 而在包装的过程中, 是不会有拷贝操作的. 即最后我们生成的生成的 ByteBuf 对象是和 bytes 数组共用了同一个存储空间, 对 bytes 的修改也会反映到 ByteBuf 对象中
+
+Unpooled 提供的方法可以将一个或多个 buffer 包装为一个 ByteBuf 对象, 从而避免了拷贝操作.
+
+
 
 #### 通过 slice 操作实现零拷贝
 
-slice 操作和 wrap 操作刚好相反, Unpooled.wrappedBuffer 可以将多个 ByteBuf 合并为一个, 而 slice 操作可以将一个 ByteBuf 切片 为多个共享一个存储区域的 ByteBuf 对象,ByteBuf 提供了两个 slice 操作方法:
+slice 操作和 wrap 操作刚好相反, `Unpooled.wrappedBuffer` 可以将多个 ByteBuf 合并为一个
+而 slice 操作将一个 ByteBuf 切片为多个共享一个存储区域的 ByteBuf 对象,如:
 ``` 
-public ByteBuf slice();
-public ByteBuf slice(int index, int length);
+ByteBuf byteBuf = ...
+ByteBuf header = byteBuf.slice(0, 5);
+ByteBuf body = byteBuf.slice(5, 10);
 ```
-不带参数的 slice 方法等同于 buf.slice(buf.readerIndex(), buf.readableBytes()) 调用, 即返回 buf 中可读部分的切片. 而 slice(int index, int length) 方法相对就比较灵活了, 我们可以设置不同的参数来获取到 buf 的不同区域的切片.
 
-用 slice 方法产生 byteBuf 的过程是没有拷贝操作的, header 和 body 对象在内部其实是共享了 byteBuf 存储空间的不同部分而已.
+用 slice 方法产生 byteBuf 的过程是没有拷贝操作的, header 和 body 对象在内部其实是共享了 byteBuf 存储空间的不同部分而已
+
+![](/images/netty/slice.png)
+
 
 #### 通过 FileRegion 实现零拷贝
 
 Netty 中使用 FileRegion 实现文件传输的零拷贝, 不过在底层 FileRegion 是依赖于 `Java NIO FileChannel.transfer` 的零拷贝功能.
+
+`Java NIO FileChannel.transfer` 实际上是对 sendfile 的一种实现， 直接在内核态之间拷贝内存
 
 一个文件拷贝的功能, 那么使用传统的方式实现如下:
 ``` 
@@ -253,7 +283,6 @@ public void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception
             raf.close();
         }
     }
-
     ctx.write("OK: " + raf.length() + '\n');
     if (ctx.pipeline().get(SslHandler.class) == null) {
         // SSL not enabled - can use zero-copy file transfer.
