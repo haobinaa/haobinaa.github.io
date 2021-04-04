@@ -80,7 +80,7 @@
 <meta property="og:site_name" content="Do Or Die">
 <meta property="og:description" content="概述在使用缓存的过程中，考虑到缓存系统的高并发和高可用， 我们绕不过三个问题缓存雪崩、缓存穿透、缓存击穿。 这里对这几个情况的处理办法做一个总结 缓存雪崩很多使用场景，查询的缓存数据都是由定时任务取刷新，然后缓存查不到从 DB 查了在更新缓存。如果这些 key 在同一时间失效， 那么失效的时候， 大量的请求过来。就会直接打到 DB　上，　这个时候　DB　很可能被打垮，　即使马上重启也会被新的流量打">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2020-10-22T07:27:30.336Z">
+<meta property="og:updated_time" content="2021-01-07T07:41:36.825Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="缓存设计问题">
 <meta name="twitter:description" content="概述在使用缓存的过程中，考虑到缓存系统的高并发和高可用， 我们绕不过三个问题缓存雪崩、缓存穿透、缓存击穿。 这里对这几个情况的处理办法做一个总结 缓存雪崩很多使用场景，查询的缓存数据都是由定时任务取刷新，然后缓存查不到从 DB 查了在更新缓存。如果这些 key 在同一时间失效， 那么失效的时候， 大量的请求过来。就会直接打到 DB　上，　这个时候　DB　很可能被打垮，　即使马上重启也会被新的流量打">
@@ -350,7 +350,7 @@
 <h3 id="缓存雪崩"><a href="#缓存雪崩" class="headerlink" title="缓存雪崩"></a>缓存雪崩</h3><p>很多使用场景，查询的缓存数据都是由定时任务取刷新，然后缓存查不到从 DB 查了在更新缓存。如果这些 key 在同一时间失效， 那么失效的时候， 大量的请求过来。就会直接打到 DB　上，　这个时候　DB　很可能被打垮，　即使马上重启也会被新的流量打垮。</p>
 <p>这种同一时间大量缓存的失效，导致请求直接打到　DB 上的情况， 就是缓存雪崩。</p>
 <p>针对于这种情况，在批量写 Redis 数据的时候， 可以给 key 的失效时间增加一个随机值， 保证他们不会在同一时间大面积失效。或者是设置数据永不过期，如果有数据有更新再更新缓存。</p>
-<p>Redis 设置 key 的随机过期时间:<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">setRedis（Key，value，time + Math.random() * <span class="number">10000</span>）；</span><br></pre></td></tr></table></figure></p>
+<p>Redis 设置 key 的随机过期时间:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">setRedis（Key，value，time + Math.random() * 10000）；</span><br></pre></td></tr></table></figure></p>
 <h3 id="缓存穿透"><a href="#缓存穿透" class="headerlink" title="缓存穿透"></a>缓存穿透</h3><p>缓存穿透指的是缓存缓存和数据库中都没有的数据，而用户不断发起请求，让请求直接落再DB上，增加数据库压力，可能导致数据库被击垮。这种请求很可能是攻击者恶意发起的。</p>
 <p>针对这种情况首先要做好数据校验，不合法的数据尽量拦截掉，其次如果缓存差不到，数据库也查不到的数据也缓存起来。将 value 存个null， 过期时间短一点(如30s，如果设置太长肯恶搞导致正常的情况数据没法及时更新)。 </p>
 <p>另外还可以使用 Redis 提供的布隆过滤器，可以高效的判断出某个key是否在数据库当中，如果通过布隆过滤器判断出不存在，直接返回，存在了在去DB取数据刷新缓存。</p>
@@ -477,7 +477,7 @@
             
             <div class="site-state-item site-state-categories">
               <a href="/categories/index.html">
-                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-count">14</span>
                 <span class="site-state-item-name">分类</span>
               </a>
             </div>
@@ -488,7 +488,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">25</span>
+                <span class="site-state-item-count">24</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
@@ -546,7 +546,7 @@
         <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2020</span>
+  <span itemprop="copyrightYear">2021</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

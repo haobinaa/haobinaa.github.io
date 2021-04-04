@@ -73,21 +73,20 @@
 
 
 
-<meta name="description" content="IO数据传输过程 概念 当某个程序或已存在的进程需要某段数据时，它只能在用户空间中属于它自己的内存中访问、修改，这段内存暂且称之为app  buffer 正常情况下，数据只能从磁盘(或其他外部设备)加载到内核的缓冲区，且称之为kernel buffer  TCP/IP协议栈维护着两个缓冲区：send buffer 和 recv buffer ，它们合称为 socket buffer  程序读取数据">
+<meta name="description" content="Blocking IO(阻塞模式IO)也叫 同步阻塞IO ， 请求数据的进程需要一直阻塞等待读取完成才能返回，同时整个读取的动作也是要同步等待I/O操作的完成才返回。  Java中的实现即是最原始的SocketChannel然后accept BIO编程模型传统BIO编程模型实现如下:1234567891011121314151617181920212223242526&amp;#123; Executor">
 <meta name="keywords" content="网络IO">
 <meta property="og:type" content="article">
 <meta property="og:title" content="javaIO网络编程参考">
 <meta property="og:url" content="http://yoursite.com/2018/08/08/IO/javaIO网络编程概述/index.html">
 <meta property="og:site_name" content="Do Or Die">
-<meta property="og:description" content="IO数据传输过程 概念 当某个程序或已存在的进程需要某段数据时，它只能在用户空间中属于它自己的内存中访问、修改，这段内存暂且称之为app  buffer 正常情况下，数据只能从磁盘(或其他外部设备)加载到内核的缓冲区，且称之为kernel buffer  TCP/IP协议栈维护着两个缓冲区：send buffer 和 recv buffer ，它们合称为 socket buffer  程序读取数据">
+<meta property="og:description" content="Blocking IO(阻塞模式IO)也叫 同步阻塞IO ， 请求数据的进程需要一直阻塞等待读取完成才能返回，同时整个读取的动作也是要同步等待I/O操作的完成才返回。  Java中的实现即是最原始的SocketChannel然后accept BIO编程模型传统BIO编程模型实现如下:1234567891011121314151617181920212223242526&amp;#123; Executor">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="http://yoursite.com/images/io_process.png">
 <meta property="og:image" content="http://yoursite.com/images/block_io.png">
-<meta property="og:updated_time" content="2020-06-07T04:32:06.980Z">
+<meta property="og:updated_time" content="2021-04-02T06:24:26.143Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="javaIO网络编程参考">
-<meta name="twitter:description" content="IO数据传输过程 概念 当某个程序或已存在的进程需要某段数据时，它只能在用户空间中属于它自己的内存中访问、修改，这段内存暂且称之为app  buffer 正常情况下，数据只能从磁盘(或其他外部设备)加载到内核的缓冲区，且称之为kernel buffer  TCP/IP协议栈维护着两个缓冲区：send buffer 和 recv buffer ，它们合称为 socket buffer  程序读取数据">
-<meta name="twitter:image" content="http://yoursite.com/images/io_process.png">
+<meta name="twitter:description" content="Blocking IO(阻塞模式IO)也叫 同步阻塞IO ， 请求数据的进程需要一直阻塞等待读取完成才能返回，同时整个读取的动作也是要同步等待I/O操作的完成才返回。  Java中的实现即是最原始的SocketChannel然后accept BIO编程模型传统BIO编程模型实现如下:1234567891011121314151617181920212223242526&amp;#123; Executor">
+<meta name="twitter:image" content="http://yoursite.com/images/block_io.png">
 
 
 
@@ -349,43 +348,7 @@
       
 
       
-        <h3 id="IO数据传输过程"><a href="#IO数据传输过程" class="headerlink" title="IO数据传输过程"></a>IO数据传输过程</h3><p><img src="/images/io_process.png" alt></p>
-<h4 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h4><ul>
-<li>当某个程序或已存在的进程需要某段数据时，它只能在用户空间中属于它自己的内存中访问、修改，这段内存暂且称之为<code>app 
-buffer</code></li>
-<li>正常情况下，数据只能从磁盘(或其他外部设备)加载到内核的缓冲区，且称之为<code>kernel buffer</code> </li>
-<li>TCP/IP协议栈维护着两个缓冲区：<code>send buffer</code> 和 <code>recv buffer</code> ，它们合称为 <code>socket buffer</code></li>
-</ul>
-<h4 id="程序读取数据"><a href="#程序读取数据" class="headerlink" title="程序读取数据"></a>程序读取数据</h4><ol>
-<li>进程发起系统调用，通知内核将磁盘的文件加载到 kernel buffer(DMA直接内存拷贝)</li>
-<li>将kernel buffer 的数据拷贝到 app buffer</li>
-</ol>
-<p>这个过程中进行了两次上下文切换(用户态和内核态之间)， 两次IO拷贝(DMA加载到内核，内核copy到用户空间)</p>
-<h4 id="程序发送和读取网络数据"><a href="#程序发送和读取网络数据" class="headerlink" title="程序发送和读取网络数据"></a>程序发送和读取网络数据</h4><p>当数据要通过TCP发送出去的时候：</p>
-<ol>
-<li>app buffer 的数据复制到 send buffer(socket buffer)</li>
-<li>socket buffer 的数据通过DMA拷贝到网卡通过网络传输出去</li>
-</ol>
-<p>数据接收TCP数据时:</p>
-<ol>
-<li>数据从网卡(NIC)拷贝到 recv buffer(socket buffer)</li>
-<li>socket buffer 的数据再拷贝到 app buffer</li>
-</ol>
-<p>这个过程也发生了两次上下文切换和IO拷贝:</p>
-<ol>
-<li>将用户区的缓存拷贝到内核区的socket buffer， 同时从用户态切换到内核态</li>
-<li>将socket buffer的数据通过DMA拷贝到TCP协议网卡中(IO拷贝), 然后返回系统调用结果给用户空间(上下文切换)</li>
-</ol>
-<h4 id="零拷贝"><a href="#零拷贝" class="headerlink" title="零拷贝"></a>零拷贝</h4><p>我们可以看到，要将磁盘上的数据发送到网络上要经过四次转换:</p>
-<ol>
-<li>数据从磁盘读取到内核的 kernel buffer</li>
-<li>数据从内核缓冲区拷贝到用户缓冲区</li>
-<li>数据从用户缓冲区拷贝到内核的socket buffer</li>
-<li>数据从内核的socket buffer拷贝到网卡接口的缓冲区</li>
-</ol>
-<p>但是如果我们进程不需要修改数据，则第二步和第三步是没有必要的。 操作系统直接将磁盘上的数据拷贝到 kernel buffer 后， 直接拷贝到网卡缓存区， 这就是零拷贝技术(两次拷贝都不需要CPU参与)</p>
-<p>备注： 这里的零拷贝跟netty的零拷贝不是一个概念， netty的零拷贝可以看我另一篇博客</p>
-<h3 id="Blocking-IO-阻塞模式IO"><a href="#Blocking-IO-阻塞模式IO" class="headerlink" title="Blocking IO(阻塞模式IO)"></a>Blocking IO(阻塞模式IO)</h3><p>也叫 <strong>同步阻塞IO</strong> ， 请求数据的进程需要一直阻塞等待读取完成才能返回，同时整个读取的动作也是要同步等待I/O操作的完成才返回。</p>
+        <h3 id="Blocking-IO-阻塞模式IO"><a href="#Blocking-IO-阻塞模式IO" class="headerlink" title="Blocking IO(阻塞模式IO)"></a>Blocking IO(阻塞模式IO)</h3><p>也叫 <strong>同步阻塞IO</strong> ， 请求数据的进程需要一直阻塞等待读取完成才能返回，同时整个读取的动作也是要同步等待I/O操作的完成才返回。</p>
 <p><img src="/images/block_io.png" alt></p>
 <p>Java中的实现即是最原始的SocketChannel然后accept</p>
 <h4 id="BIO编程模型"><a href="#BIO编程模型" class="headerlink" title="BIO编程模型"></a>BIO编程模型</h4><p>传统BIO编程模型实现如下:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line"> ExecutorService executor = Excutors.newFixedThreadPollExecutor(100);//线程池</span><br><span class="line"></span><br><span class="line"> ServerSocket serverSocket = new ServerSocket();</span><br><span class="line"> serverSocket.bind(8088);</span><br><span class="line"> while(!Thread.currentThread.isInturrupted())&#123;//主线程死循环等待新连接到来</span><br><span class="line"> Socket socket = serverSocket.accept();</span><br><span class="line"> executor.submit(new ConnectIOnHandler(socket));//为新的连接创建新的线程</span><br><span class="line"> &#125;</span><br><span class="line"></span><br><span class="line">class ConnectIOnHandler extends Thread&#123;</span><br><span class="line">    private Socket socket;</span><br><span class="line">    public ConnectIOnHandler(Socket socket)&#123;</span><br><span class="line">       this.socket = socket;</span><br><span class="line">    &#125;</span><br><span class="line">    public void run()&#123;</span><br><span class="line">      while(!Thread.currentThread.isInturrupted()&amp;&amp;!socket.isClosed())&#123;死循环处理读写事件</span><br><span class="line">          String someThing = socket.read()....//读取数据</span><br><span class="line">          if(someThing!=null)&#123;</span><br><span class="line">             ......//处理数据</span><br><span class="line">             socket.write()....//写数据</span><br><span class="line">          &#125;</span><br><span class="line"></span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
@@ -556,7 +519,7 @@ buffer</code></li>
             
             <div class="site-state-item site-state-categories">
               <a href="/categories/index.html">
-                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-count">14</span>
                 <span class="site-state-item-name">分类</span>
               </a>
             </div>
@@ -567,7 +530,7 @@ buffer</code></li>
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">25</span>
+                <span class="site-state-item-count">24</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
@@ -602,7 +565,7 @@ buffer</code></li>
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#IO数据传输过程"><span class="nav-number">1.</span> <span class="nav-text">IO数据传输过程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#概念"><span class="nav-number">1.1.</span> <span class="nav-text">概念</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#程序读取数据"><span class="nav-number">1.2.</span> <span class="nav-text">程序读取数据</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#程序发送和读取网络数据"><span class="nav-number">1.3.</span> <span class="nav-text">程序发送和读取网络数据</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#零拷贝"><span class="nav-number">1.4.</span> <span class="nav-text">零拷贝</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Blocking-IO-阻塞模式IO"><span class="nav-number">2.</span> <span class="nav-text">Blocking IO(阻塞模式IO)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#BIO编程模型"><span class="nav-number">2.1.</span> <span class="nav-text">BIO编程模型</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Nonblocking-IO-非阻塞IO"><span class="nav-number">3.</span> <span class="nav-text">Nonblocking IO(非阻塞IO)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#NIO编程模型"><span class="nav-number">3.1.</span> <span class="nav-text">NIO编程模型</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#异步IO-NIO-2"><span class="nav-number">4.</span> <span class="nav-text">异步IO(NIO.2)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">5.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Blocking-IO-阻塞模式IO"><span class="nav-number">1.</span> <span class="nav-text">Blocking IO(阻塞模式IO)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#BIO编程模型"><span class="nav-number">1.1.</span> <span class="nav-text">BIO编程模型</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Nonblocking-IO-非阻塞IO"><span class="nav-number">2.</span> <span class="nav-text">Nonblocking IO(非阻塞IO)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#NIO编程模型"><span class="nav-number">2.1.</span> <span class="nav-text">NIO编程模型</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#异步IO-NIO-2"><span class="nav-number">3.</span> <span class="nav-text">异步IO(NIO.2)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">4.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
             
 
           </div>
@@ -625,7 +588,7 @@ buffer</code></li>
         <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2020</span>
+  <span itemprop="copyrightYear">2021</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

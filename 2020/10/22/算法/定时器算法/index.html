@@ -82,7 +82,7 @@
 <meta property="og:description" content="概述在日常开发中， 定时任务是一个比较关键的功能。 Java 中一般使用 JDK 中 Timer、ScheduledExecutorService 和调度框架 Quartz等。 通常用于实现延时任务， 周期性任务等， 一般会有两种需求:  轮询定时任务：给定周期内扫描所有记录，查看是否有满足要求的数据。 延时消息：如常见的订单业务， 订单创建的时候发送一条 N 分钟到期的信息，一旦消息消费后便可判">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://yoursite.com/images/algorithm/time-wheel.jpg">
-<meta property="og:updated_time" content="2020-12-01T02:42:51.646Z">
+<meta property="og:updated_time" content="2020-12-28T09:26:42.504Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="定时器算法">
 <meta name="twitter:description" content="概述在日常开发中， 定时任务是一个比较关键的功能。 Java 中一般使用 JDK 中 Timer、ScheduledExecutorService 和调度框架 Quartz等。 通常用于实现延时任务， 周期性任务等， 一般会有两种需求:  轮询定时任务：给定周期内扫描所有记录，查看是否有满足要求的数据。 延时消息：如常见的订单业务， 订单创建的时候发送一条 N 分钟到期的信息，一旦消息消费后便可判">
@@ -362,6 +362,7 @@
 </ul>
 <h4 id="内部原理"><a href="#内部原理" class="headerlink" title="内部原理"></a>内部原理</h4><p>Timer 类里包含一个任务队列和一个异步轮训线程。</p>
 <ol>
+<li>任务队列是一个以下次执行时间比较的最小堆 </li>
 <li>任务队列里容纳了所有待执行的任务，所有的任务将会在这一个异步线程里执行，任务执行中代码不能抛出异常，否则会导致 Timer 线程挂掉，所有的任务都无法执行了。</li>
 <li>单个任务也不易执行时间太长，否则会影响任务调度在时间上的精准性。比如你一个任务跑了太久，其它等着调度的任务就一直处于饥饿状态得不到调度。所有任务的执行都是这单一的 TimerThread 线程。</li>
 </ol>
@@ -520,7 +521,7 @@
             
             <div class="site-state-item site-state-categories">
               <a href="/categories/index.html">
-                <span class="site-state-item-count">15</span>
+                <span class="site-state-item-count">14</span>
                 <span class="site-state-item-name">分类</span>
               </a>
             </div>
@@ -531,7 +532,7 @@
             
             <div class="site-state-item site-state-tags">
               <a href="/tags/index.html">
-                <span class="site-state-item-count">25</span>
+                <span class="site-state-item-count">24</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
@@ -589,7 +590,7 @@
         <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2020</span>
+  <span itemprop="copyrightYear">2021</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
