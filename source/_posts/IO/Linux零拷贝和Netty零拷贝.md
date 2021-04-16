@@ -1,5 +1,5 @@
 ---
-title: Linux零拷贝和Netty零拷贝(ByteBuffer)
+title: Linux零拷贝和Netty零拷贝
 date: 2019-01-17 17:09:51
 tags: netty
 categories: IO
