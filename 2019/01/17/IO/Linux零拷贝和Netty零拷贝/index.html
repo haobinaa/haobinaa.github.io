@@ -76,8 +76,8 @@
 <meta name="description" content="零拷贝概念 当某个程序或已存在的进程需要某段数据时，它只能在用户空间中属于它自己的内存中访问、修改，这段内存暂且称之为user buffer 正常情况下，数据只能从磁盘(或其他外部设备)加载到内核的缓冲区，且称之为kernel buffer TCP/IP协议栈维护着两个缓冲区：send buffer 和 recv buffer ，它们合称为 socket buffer  DMA操作DMA 的全称叫">
 <meta name="keywords" content="netty">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Linux零拷贝和Netty零拷贝(ByteBuffer)">
-<meta property="og:url" content="http://yoursite.com/2019/01/17/IO/Linux零拷贝和Netty零拷贝(ByteBuffer)/index.html">
+<meta property="og:title" content="Linux零拷贝和Netty零拷贝">
+<meta property="og:url" content="http://yoursite.com/2019/01/17/IO/Linux零拷贝和Netty零拷贝/index.html">
 <meta property="og:site_name" content="Do Or Die">
 <meta property="og:description" content="零拷贝概念 当某个程序或已存在的进程需要某段数据时，它只能在用户空间中属于它自己的内存中访问、修改，这段内存暂且称之为user buffer 正常情况下，数据只能从磁盘(或其他外部设备)加载到内核的缓冲区，且称之为kernel buffer TCP/IP协议栈维护着两个缓冲区：send buffer 和 recv buffer ，它们合称为 socket buffer  DMA操作DMA 的全称叫">
 <meta property="og:locale" content="zh-Hans">
@@ -88,9 +88,9 @@
 <meta property="og:image" content="http://yoursite.com/images/bytebuf.jpg">
 <meta property="og:image" content="http://yoursite.com/images/netty/composite-bytebuf.png">
 <meta property="og:image" content="http://yoursite.com/images/netty/slice.png">
-<meta property="og:updated_time" content="2021-04-04T10:11:28.601Z">
+<meta property="og:updated_time" content="2021-04-19T06:46:15.618Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Linux零拷贝和Netty零拷贝(ByteBuffer)">
+<meta name="twitter:title" content="Linux零拷贝和Netty零拷贝">
 <meta name="twitter:description" content="零拷贝概念 当某个程序或已存在的进程需要某段数据时，它只能在用户空间中属于它自己的内存中访问、修改，这段内存暂且称之为user buffer 正常情况下，数据只能从磁盘(或其他外部设备)加载到内核的缓冲区，且称之为kernel buffer TCP/IP协议栈维护着两个缓冲区：send buffer 和 recv buffer ，它们合称为 socket buffer  DMA操作DMA 的全称叫">
 <meta name="twitter:image" content="http://yoursite.com/images/io/io_process.png">
 
@@ -122,13 +122,13 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/2019/01/17/IO/Linux零拷贝和Netty零拷贝(ByteBuffer)/">
+  <link rel="canonical" href="http://yoursite.com/2019/01/17/IO/Linux零拷贝和Netty零拷贝/">
 
 
 
 
 
-  <title>Linux零拷贝和Netty零拷贝(ByteBuffer) | Do Or Die</title>
+  <title>Linux零拷贝和Netty零拷贝 | Do Or Die</title>
   
 
 
@@ -265,7 +265,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/01/17/IO/Linux零拷贝和Netty零拷贝(ByteBuffer)/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/01/17/IO/Linux零拷贝和Netty零拷贝/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Leo Hao">
@@ -282,7 +282,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">Linux零拷贝和Netty零拷贝(ByteBuffer)</h1>
+          <h1 class="post-title" itemprop="name headline">Linux零拷贝和Netty零拷贝</h1>
         
 
         <div class="post-meta">
@@ -362,7 +362,7 @@ buffer</code></li>
 </ul>
 <h4 id="DMA操作"><a href="#DMA操作" class="headerlink" title="DMA操作"></a>DMA操作</h4><p>DMA 的全称叫直接内存存取（Direct Memory Access），是一种允许外围设备（硬件子系统）直接访问系统主内存的机制。</p>
 <p>整个数据传输操作在一个 DMA 控制器的控制下进行的。CPU 除了在数据传输开始和结束时做一点处理外（开始和结束时候要做中断处理），在传输过程中 CPU 可以继续进行其他的工作。这样在大部分时间里，CPU 计算和 I/O 操作都处于并行操作，使整个计算机系统的效率大大提高。</p>
-<p>DMA下读取磁盘数据流程如下:</p>
+<p>DMA下读取磁盘数据流程如下:·</p>
 <ol>
 <li>用户进程向 CPU 发起 read 系统调用读取数据，由用户态切换为内核态，然后一直阻塞等待数据的返回。</li>
 <li>CPU 在接收到指令以后对 DMA 磁盘控制器发起调度指令。</li>
@@ -371,7 +371,7 @@ buffer</code></li>
 <li>DMA 磁盘控制器向 CPU 发出数据读完的信号，由 CPU 负责将数据从内核缓冲区拷贝到用户缓冲区。</li>
 <li>用户进程由内核态切换回用户态，解除阻塞状态，然后等待 CPU 的下一个执行时间钟。</li>
 </ol>
-<h4 id="传统读取数据和发送数据"><a href="#传统读取数据和发送数据" class="headerlink" title="传统读取数据和发送数据"></a>传统读取数据和发送数据</h4><p>程序传统IO实际上是调用系统的<code>read()</code>和<code>write()</code>实现，通过<code>read()</code>把数据从硬盘读取到内核缓冲区，再复制到用户缓冲区；然后再通过<code>write()</code>写入到socket缓冲区，最后写入网卡设备。</p>
+<h4 id="传统读取数据和发送数据"><a href="#传统读取数据和发送数据" class="headerlink" title="传统读取数据和发送数据"></a>传统读取数据和发送数据</h4><p>程序传统IO实际上是调用系统的<code>read()</code>和<code>write()</code>实现，通过<code>read()</code>把数据从硬盘读取到内核缓冲区，再复制到用户缓冲区；然后再通过<code>write()</code>写入到socket缓冲区，最后写入网卡设备</p>
 <p><img src="/images/io/io_process.png" alt></p>
 <p>整个过程发生了四次用户态和内核态的切换还有四次IO拷贝， 具体流程是：</p>
 <ol>
@@ -596,7 +596,7 @@ buffer</code></li>
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">69</span>
+                <span class="site-state-item-count">70</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
