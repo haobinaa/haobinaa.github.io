@@ -11,7 +11,7 @@ BlockingQueue 是一个先进先出的队列（Queue）, 并且当获取队列�
 
 BlockingQueue 对插入、删除、获取元素在不同场景下提供了不同的操作:
 
-|         |  抛异常  |  返回特殊值  | 阻塞等待  | 阻塞等待直至超时       |
+|         |  抛异常  |  返回特殊值(成功或失败)  | 阻塞等待  | 阻塞等待直至超时       |
 |--------- |------- | --------   | ------  | -------------------- |
 |  插入  | add(e)    | offer(e)   | put(e)  | offer(e, time, unit) | 
 | 删除  | remove()  | poll()      | take()  | poll(time, unit)    |
@@ -290,10 +290,13 @@ private void signalNotFull() {
 #### 构造方法
 
 ``` 
-// 构造时，我们可以指定公平模式还是非公平模式，区别之后再说
+// 构造时，我们可以指定公平模式还是非公平模式
+// queue 先入先出， stack 先入后出
 public SynchronousQueue(boolean fair) {
     transferer = fair ? new TransferQueue() : new TransferStack();
 }
+
+// TransferQueue 和 TransferStack 都实现了抽象类 Transfer
 abstract static class Transferer {
     // 从方法名上大概就知道，这个方法用于转移元素，从生产者手上转到消费者手上
     // 也可以被动地，消费者调用这个方法来从生产者手上取元素
@@ -305,7 +308,7 @@ abstract static class Transferer {
 }
 ```
 
-#### put & take(公平模式)
+#### put & take
 
 ``` 
 // 写入值
@@ -326,15 +329,17 @@ public E take() throws InterruptedException {
 }
 ```
 
-#### transfer 分析
+#### transfer 分析(queue 公平模式)
 
-`put(E o)` 和 `take()` 都调用了 `transferer.transfer(....)`， 区别是 take 操作的第一个参数为 null。
+`put(E o)` 和 `take()` 都调用了 `transferer.transfer()`， 区别是 take 操作的第一个参数为 null(则该操作为读操作)
+
+
 `transfer` 整体的设计思路如下:
 1. 当调用这个方法时，如果队列是空的，或者队列中的节点和当前的线程操作类型一致（如当前操作是 put 操作，而队列中的元素也都是写线程）。这种情况下，将当前线程加入到等待队列
 2. 如果队列中有等待节点，而且与当前操作可以匹配（如队列中都是读操作线程，当前线程是写操作线程，反之亦然）。这种情况下，匹配等待队列的队头，出队，返回相应数据
 
 
-等待队列 QNode 的结构如下:
+等待队列节点 `QNode` 的结构如下:
 ``` 
 static final class QNode {
     volatile QNode next;          // 可以看出来，等待队列是单向链表
@@ -355,29 +360,33 @@ static final class QNode {
 Object transfer(Object e, boolean timed, long nanos) {
 
     QNode s = null;
+    // 标记是否为写操作
     boolean isData = (e != null);
 
     for (;;) {
         QNode t = tail;
         QNode h = head;
+        
+        // 未初始化， 自旋
         if (t == null || h == null)
             continue;                       
 
         // 队列空，或队列中节点类型和当前节点一致， 直接入队
         if (h == t || t.isData == isData) {
             QNode tn = t.next;
-            // t != tail 说明刚刚有节点入队，continue
-            if (t != tail)                  // inconsistent read
+            // t != tail 说明刚刚有节点入队，continue 重试
+            if (t != tail)                 
                 continue;
             // 有其他节点入队，但是 tail 还是指向原来的，此时设置 tail 即可
-            if (tn != null) {               // lagging tail
-                // 这个方法就是：如果 tail 此时为 t 的话，设置为 tn
+            if (tn != null) {
+                // 这个方法就是：如果 tail 此时为 t 的话，设置为 tn 为 tail
                 advanceTail(t, tn);
                 continue;
             }
-            // 
-            if (timed && nanos <= 0)        // can't wait
+            // 超时  can't wait
+            if (timed && nanos <= 0)        
                 return null;
+            // 构造新节点    
             if (s == null)
                 s = new QNode(e, isData);
             // 将当前节点，插入到 tail 的后面
@@ -386,7 +395,8 @@ Object transfer(Object e, boolean timed, long nanos) {
 
             // 将当前节点设置为新的 tail
             advanceTail(t, s);              // swing tail and wait
-            // 自旋或阻塞，直到满足条件
+            
+            // 自旋或阻塞，直到满足条件, 进入该方法看详情
             Object x = awaitFulfill(s, e, timed, nanos);
             // 到这里，说明之前入队的线程被唤醒了，准备往下执行
             if (x == s) {                   // wait was cancelled
@@ -422,6 +432,8 @@ Object transfer(Object e, boolean timed, long nanos) {
         }
     }
 }
+
+// nt cas 设置为 新的 tail
 void advanceTail(QNode t, QNode nt) {
     if (tail == t)
         UNSAFE.compareAndSwapObject(this, tailOffset, t, nt);
@@ -682,3 +694,5 @@ private static <T> void siftDownComparable(int k, T x, Object[] array,
 }
 
 ```
+
+### DelayQueue
