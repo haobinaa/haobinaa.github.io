@@ -76,7 +76,7 @@
 <meta name="description" content="分布式共识算法多个参与者针对某一件事达成完全一致：一件事，一个结论。已达成一致的结论，不可推翻。 主流分布式共识算法 Paxos：被认为是分布式共识算法的根本，其他都是其变种，但是 paxos 论文中只给出了单个提案的过程，并没有给出复制状态机中需要的 multi-paxos 的相关细节的描述，实现 paxos 具有很高的工程复杂度（如多点可写，允许日志空洞等）。 Raft：以容易理解著称，业界也">
 <meta property="og:type" content="article">
 <meta property="og:title" content="分布式共识算法(Paxos、Raft)">
-<meta property="og:url" content="http://yoursite.com/2019/04/01/分布式/共识算法Paxos和Raft/index.html">
+<meta property="og:url" content="http://yoursite.com/2021/04/01/分布式/共识算法Paxos和Raft/index.html">
 <meta property="og:site_name" content="Do Or Die">
 <meta property="og:description" content="分布式共识算法多个参与者针对某一件事达成完全一致：一件事，一个结论。已达成一致的结论，不可推翻。 主流分布式共识算法 Paxos：被认为是分布式共识算法的根本，其他都是其变种，但是 paxos 论文中只给出了单个提案的过程，并没有给出复制状态机中需要的 multi-paxos 的相关细节的描述，实现 paxos 具有很高的工程复杂度（如多点可写，允许日志空洞等）。 Raft：以容易理解著称，业界也">
 <meta property="og:locale" content="zh-Hans">
@@ -90,7 +90,7 @@
 <meta property="og:image" content="http://yoursite.com/images/arch/paxos-term.png">
 <meta property="og:image" content="http://yoursite.com/images/arch/paxos-log.png">
 <meta property="og:image" content="http://yoursite.com/images/arch/paxos-leader-recover.png">
-<meta property="og:updated_time" content="2021-06-10T09:22:56.028Z">
+<meta property="og:updated_time" content="2021-06-13T09:29:53.882Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="分布式共识算法(Paxos、Raft)">
 <meta name="twitter:description" content="分布式共识算法多个参与者针对某一件事达成完全一致：一件事，一个结论。已达成一致的结论，不可推翻。 主流分布式共识算法 Paxos：被认为是分布式共识算法的根本，其他都是其变种，但是 paxos 论文中只给出了单个提案的过程，并没有给出复制状态机中需要的 multi-paxos 的相关细节的描述，实现 paxos 具有很高的工程复杂度（如多点可写，允许日志空洞等）。 Raft：以容易理解著称，业界也">
@@ -124,7 +124,7 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/2019/04/01/分布式/共识算法Paxos和Raft/">
+  <link rel="canonical" href="http://yoursite.com/2021/04/01/分布式/共识算法Paxos和Raft/">
 
 
 
@@ -267,7 +267,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/04/01/分布式/共识算法Paxos和Raft/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2021/04/01/分布式/共识算法Paxos和Raft/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Leo Hao">
@@ -296,8 +296,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-04-01T09:44:31+08:00">
-                2019-04-01
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-04-01T09:44:31+08:00">
+                2021-04-01
               </time>
             
 
@@ -563,7 +563,27 @@
 <li>Candidate存储的日志至少要和follower一样新；</li>
 <li>只有获得超过半数投票才有机会成为leader；</li>
 </ul>
-<p>##### </p>
+<h5 id="Leader-Completeness-选举完备性：leader必须具备最新提交日志"><a href="#Leader-Completeness-选举完备性：leader必须具备最新提交日志" class="headerlink" title="Leader Completeness 选举完备性：leader必须具备最新提交日志"></a>Leader Completeness 选举完备性：leader必须具备最新提交日志</h5><p>Raft规定：只有拥有最新提交日志的follower节点才有资格成为leader节点。 具体做法：candidate竞选投票时会携带最新提交日志，follower会用自己的日志和candidate做比较。</p>
+<ul>
+<li>如果follower的更新，那么拒绝这次投票；</li>
+<li>否则根据前面的投票规则处理。这样就可以保证只有最新提交节点成为leader；</li>
+</ul>
+<p>因为日志提交需要超过半数的节点同意，所以针对日志同步落后的follower（还未同步完全部日志，导致落后于其他节点）在竞选leader的时候，肯定拿不到超过半数的票，也只有那些完成同步的才有可能获取超过半数的票成为leader。</p>
+<p>日志更新判断方式是比较日志项的term和index：</p>
+<ul>
+<li>如果TermId不同，选择TermId最大的；</li>
+<li>如果TermId相同，选择Index最大的；</li>
+</ul>
+<h5 id="State-Machine-Safety-状态机安全性：确保当前任期日志提交"><a href="#State-Machine-Safety-状态机安全性：确保当前任期日志提交" class="headerlink" title="State Machine Safety 状态机安全性：确保当前任期日志提交"></a>State Machine Safety 状态机安全性：确保当前任期日志提交</h5><p>考虑到当前的日志复制规则</p>
+<ul>
+<li>当前follower节点强制复制leader节点；</li>
+<li>假如以前Term日志复制超过半数节点，在面对当前任期日志的节点比较中，很明显当前任期节点更新，有资格成为leader；<br>上述两条就可能出现已有任期日志被覆盖的情况，这意味着已复制超过半数的以前任期日志被强制覆盖了，和前面提到的日志安全性矛盾。</li>
+</ul>
+<p>所以，Raft对日志提交有额外安全机制：leader只能提交当前任期Term的日志，旧任期Term（以前的数据）只能通过当前任期Term的数据提交来间接完成提交。简单的说，日志提交有两个条件需要满足：</p>
+<ul>
+<li>当前任期；</li>
+<li>复制结点超过半数</li>
+</ul>
 <h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
 <li>[维基百科 Paxos]</li>
 <li>[维基百科 Raft]</li>
@@ -593,8 +613,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2019/03/28/分布式/分布式理论与分布式事务/" rel="next" title="分布式理论与分布式事务">
-                <i class="fa fa-chevron-left"></i> 分布式理论与分布式事务
+              <a href="/2021/01/07/池化设计之CommonPool/" rel="next" title="池化设计之CommonPool">
+                <i class="fa fa-chevron-left"></i> 池化设计之CommonPool
               </a>
             
           </div>
@@ -603,8 +623,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2019/04/22/中间件/activeMQ的producer发送和consumer消费/" rel="prev" title="activeMQ的producer发送和consumer消费">
-                activeMQ的producer发送和consumer消费 <i class="fa fa-chevron-right"></i>
+              <a href="/2021/04/30/并发/Java线程池异常处理/" rel="prev" title="Java线程池异常处理">
+                Java线程池异常处理 <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -738,7 +758,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#分布式共识算法"><span class="nav-number">1.</span> <span class="nav-text">分布式共识算法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#主流分布式共识算法"><span class="nav-number">1.1.</span> <span class="nav-text">主流分布式共识算法</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Paxos"><span class="nav-number">2.</span> <span class="nav-text">Paxos</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#基本概念"><span class="nav-number">2.1.</span> <span class="nav-text">基本概念</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#提议"><span class="nav-number">2.1.1.</span> <span class="nav-text">提议</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#角色"><span class="nav-number">2.1.2.</span> <span class="nav-text">角色</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#basic-paxos-协议流程"><span class="nav-number">2.2.</span> <span class="nav-text">basic-paxos 协议流程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#第一阶段-A"><span class="nav-number">2.2.1.</span> <span class="nav-text">第一阶段 A</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#第一阶段-B"><span class="nav-number">2.2.2.</span> <span class="nav-text">第一阶段 B</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#第二阶段-A"><span class="nav-number">2.2.3.</span> <span class="nav-text">第二阶段 A</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#第二阶段-B"><span class="nav-number">2.2.4.</span> <span class="nav-text">第二阶段 B</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#paxos-协议流程解决的问题"><span class="nav-number">2.2.5.</span> <span class="nav-text">paxos 协议流程解决的问题</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#basic-paxos-证明过程"><span class="nav-number">2.3.</span> <span class="nav-text">basic paxos 证明过程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#paxos-原命题"><span class="nav-number">2.3.1.</span> <span class="nav-text">paxos 原命题</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#归纳法证明原命题成立"><span class="nav-number">2.3.2.</span> <span class="nav-text">归纳法证明原命题成立</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#协议中的细节"><span class="nav-number">2.3.3.</span> <span class="nav-text">协议中的细节</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#multi-paxos"><span class="nav-number">2.4.</span> <span class="nav-text">multi paxos</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#basic-paxos-存在的问题"><span class="nav-number">2.4.1.</span> <span class="nav-text">basic paxos 存在的问题</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#multi-paxos-1"><span class="nav-number">2.4.2.</span> <span class="nav-text">multi paxos</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Raft算法"><span class="nav-number">3.</span> <span class="nav-text">Raft算法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Raft-特点与概念"><span class="nav-number">3.1.</span> <span class="nav-text">Raft 特点与概念</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#特点-Strong-Leader"><span class="nav-number">3.1.1.</span> <span class="nav-text">特点: Strong Leader</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#复制状态机-Replicated-State-Machine"><span class="nav-number">3.1.2.</span> <span class="nav-text">复制状态机(Replicated State Machine)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Raft-角色与-Message"><span class="nav-number">3.1.3.</span> <span class="nav-text">Raft 角色与 Message</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#任期时钟-term"><span class="nav-number">3.1.4.</span> <span class="nav-text">任期时钟 term</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#raft-功能"><span class="nav-number">3.2.</span> <span class="nav-text">raft 功能</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Leader选举-Leader-Election"><span class="nav-number">3.2.1.</span> <span class="nav-text">Leader选举(Leader Election)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#日志复制"><span class="nav-number">3.2.2.</span> <span class="nav-text">日志复制</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#Raft-日志格式"><span class="nav-number">3.2.2.1.</span> <span class="nav-text">Raft 日志格式</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Log-Replicate-关键点"><span class="nav-number">3.2.2.2.</span> <span class="nav-text">Log Replicate 关键点</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#leader崩溃保证日志一致性"><span class="nav-number">3.2.2.3.</span> <span class="nav-text">leader崩溃保证日志一致性</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#safety-安全性"><span class="nav-number">3.2.3.</span> <span class="nav-text">safety 安全性</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#Election-Safety-选举安全性：避免脑裂问题"><span class="nav-number">3.2.3.1.</span> <span class="nav-text">Election Safety 选举安全性：避免脑裂问题</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">3.3.</span> <span class="nav-text">参考资料</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#分布式共识算法"><span class="nav-number">1.</span> <span class="nav-text">分布式共识算法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#主流分布式共识算法"><span class="nav-number">1.1.</span> <span class="nav-text">主流分布式共识算法</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Paxos"><span class="nav-number">2.</span> <span class="nav-text">Paxos</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#基本概念"><span class="nav-number">2.1.</span> <span class="nav-text">基本概念</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#提议"><span class="nav-number">2.1.1.</span> <span class="nav-text">提议</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#角色"><span class="nav-number">2.1.2.</span> <span class="nav-text">角色</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#basic-paxos-协议流程"><span class="nav-number">2.2.</span> <span class="nav-text">basic-paxos 协议流程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#第一阶段-A"><span class="nav-number">2.2.1.</span> <span class="nav-text">第一阶段 A</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#第一阶段-B"><span class="nav-number">2.2.2.</span> <span class="nav-text">第一阶段 B</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#第二阶段-A"><span class="nav-number">2.2.3.</span> <span class="nav-text">第二阶段 A</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#第二阶段-B"><span class="nav-number">2.2.4.</span> <span class="nav-text">第二阶段 B</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#paxos-协议流程解决的问题"><span class="nav-number">2.2.5.</span> <span class="nav-text">paxos 协议流程解决的问题</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#basic-paxos-证明过程"><span class="nav-number">2.3.</span> <span class="nav-text">basic paxos 证明过程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#paxos-原命题"><span class="nav-number">2.3.1.</span> <span class="nav-text">paxos 原命题</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#归纳法证明原命题成立"><span class="nav-number">2.3.2.</span> <span class="nav-text">归纳法证明原命题成立</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#协议中的细节"><span class="nav-number">2.3.3.</span> <span class="nav-text">协议中的细节</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#multi-paxos"><span class="nav-number">2.4.</span> <span class="nav-text">multi paxos</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#basic-paxos-存在的问题"><span class="nav-number">2.4.1.</span> <span class="nav-text">basic paxos 存在的问题</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#multi-paxos-1"><span class="nav-number">2.4.2.</span> <span class="nav-text">multi paxos</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Raft算法"><span class="nav-number">3.</span> <span class="nav-text">Raft算法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Raft-特点与概念"><span class="nav-number">3.1.</span> <span class="nav-text">Raft 特点与概念</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#特点-Strong-Leader"><span class="nav-number">3.1.1.</span> <span class="nav-text">特点: Strong Leader</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#复制状态机-Replicated-State-Machine"><span class="nav-number">3.1.2.</span> <span class="nav-text">复制状态机(Replicated State Machine)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Raft-角色与-Message"><span class="nav-number">3.1.3.</span> <span class="nav-text">Raft 角色与 Message</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#任期时钟-term"><span class="nav-number">3.1.4.</span> <span class="nav-text">任期时钟 term</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#raft-功能"><span class="nav-number">3.2.</span> <span class="nav-text">raft 功能</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Leader选举-Leader-Election"><span class="nav-number">3.2.1.</span> <span class="nav-text">Leader选举(Leader Election)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#日志复制"><span class="nav-number">3.2.2.</span> <span class="nav-text">日志复制</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#Raft-日志格式"><span class="nav-number">3.2.2.1.</span> <span class="nav-text">Raft 日志格式</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Log-Replicate-关键点"><span class="nav-number">3.2.2.2.</span> <span class="nav-text">Log Replicate 关键点</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#leader崩溃保证日志一致性"><span class="nav-number">3.2.2.3.</span> <span class="nav-text">leader崩溃保证日志一致性</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#safety-安全性"><span class="nav-number">3.2.3.</span> <span class="nav-text">safety 安全性</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#Election-Safety-选举安全性：避免脑裂问题"><span class="nav-number">3.2.3.1.</span> <span class="nav-text">Election Safety 选举安全性：避免脑裂问题</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Leader-Completeness-选举完备性：leader必须具备最新提交日志"><span class="nav-number">3.2.3.2.</span> <span class="nav-text">Leader Completeness 选举完备性：leader必须具备最新提交日志</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#State-Machine-Safety-状态机安全性：确保当前任期日志提交"><span class="nav-number">3.2.3.3.</span> <span class="nav-text">State Machine Safety 状态机安全性：确保当前任期日志提交</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">3.3.</span> <span class="nav-text">参考资料</span></a></li></ol></li></ol></div>
             
 
           </div>
