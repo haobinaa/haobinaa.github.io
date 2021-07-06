@@ -80,7 +80,7 @@
 <meta property="og:site_name" content="Do Or Die">
 <meta property="og:description" content="Class 文件虚拟机会将我们平时编写的 Java 文件编译成字节码格式的 .class 文件。 class文件中的信息是一项一项排列的， 每项数据都有它的固定长度， 有的占一个字节， 有的占两个字节， 还有的占四个字节或8个字节， 数据项的不同长度分别用u1, u2, u4, u8表示， 分别表示一种数据项在class文件中占据一个字节， 两个字节， 4个字节和8个字节。 可以把u1, u2,">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2020-06-07T04:32:06.982Z">
+<meta property="og:updated_time" content="2021-07-06T11:41:45.031Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Class文件格式与Jvm常量池">
 <meta name="twitter:description" content="Class 文件虚拟机会将我们平时编写的 Java 文件编译成字节码格式的 .class 文件。 class文件中的信息是一项一项排列的， 每项数据都有它的固定长度， 有的占一个字节， 有的占两个字节， 还有的占四个字节或8个字节， 数据项的不同长度分别用u1, u2, u4, u8表示， 分别表示一种数据项在class文件中占据一个字节， 两个字节， 4个字节和8个字节。 可以把u1, u2,">
@@ -447,9 +447,9 @@
 </ul>
 <h3 id="jvm中的常量池"><a href="#jvm中的常量池" class="headerlink" title="jvm中的常量池"></a>jvm中的常量池</h3><p>java中常量池分为三种类型:</p>
 <ol>
-<li>类文件常量池(Class Constant Pool)</li>
-<li>运行时常量池(The Run-Time Constant Pool)</li>
-<li>String 常量池</li>
+<li>类文件常量池(Class Constant Pool), 在 class 文件中体现</li>
+<li>运行时常量池(The Run-Time Constant Pool), 每个类私有，每个class文件里的“常量池”在类被加载器加载之后，就映射存放在这个地方</li>
+<li>String 常量池，全局共享， 在 PermGen，JDK 7开始Hotspot把Interned String从PermGen挪到Heap堆，JDK 8又彻底取消了PermGen</li>
 </ol>
 <h4 id="Class-文件常量池"><a href="#Class-文件常量池" class="headerlink" title="Class 文件常量池"></a>Class 文件常量池</h4><p>上面已经写过 Class Constant Pool 的结构。这里再总结一下，class常量池主要存储两大常量： 字面量和符号引用。</p>
 <h5 id="字面量-Literal"><a href="#字面量-Literal" class="headerlink" title="字面量(Literal)"></a>字面量(Literal)</h5><p>字面量有点接近于 java 语言层面的概念，主要包括：</p>
@@ -468,34 +468,35 @@
 <li>方法的名称和描述符</li>
 </ol>
 <p>这里引申另一个概念：直接引用。符号引用是字面量描述符，用文本形式来表示引用关系。那么直接引用就类似于直接指针，JVM能直接定位到具体位置。</p>
-<h4 id="运行时常量池"><a href="#运行时常量池" class="headerlink" title="运行时常量池"></a>运行时常量池</h4><p>jvm在执行某个类的时候，必须经过加载、连接、初始化，而连接又包括验证、准备、解析三个阶段。而当类加载到内存中后，jvm就会将class常量池中的内容存放到运行时常量池中，由此可知，运行时常量池也是每个类都有一个。在上面我也说了，class常量池中存的是字面量和符号引用，也就是说他们存的并不是对象的实例，而是对象的符号引用值。<code>而经过解析（resolve）之后，也就是把符号引用替换为直接引用</code>，解析的过程会去查询全局字符串池(String Table)，以保证运行时常量池所引用的字符串与全局字符串池中所引用的是一致的。</p>
-<p>运行时常量池再JDK8之前位于永久代，JDK8移入元空间(Metaspace)。</p>
+<h4 id="运行时常量池"><a href="#运行时常量池" class="headerlink" title="运行时常量池"></a>运行时常量池</h4><p>jvm在执行某个类的时候，必须经过加载、连接、初始化，而连接又包括验证、准备、解析三个阶段。<br>而当类加载到内存中后，jvm就会将class常量池中的内容存放到运行时常量池中，运行时常量池也是每个类都有一个。<br>class常量池中存的是字面量和符号引用，也就是说他们存的并不是对象的实例，而是对象的符号引用值。<br>经过<code>解析（resolve）</code>之后把符号引用替换为直接引用，解析的过程会去查询全局字符串池(String Table)，以保证运行时常量池所引用的字符串与全局字符串池中所引用的是一致的。</p>
+<p>运行时常量池再JDK7之前位于永久代，JDK8移入元空间(Metaspace)。</p>
 <h4 id="全局字符串常量池-String-Pool"><a href="#全局字符串常量池-String-Pool" class="headerlink" title="全局字符串常量池(String Pool)"></a>全局字符串常量池(String Pool)</h4><p>HotSpot VM里，记录interned string的一个全局表叫做<code>StringTable</code>，它本质上就是个<code>HashSet&lt;String&gt;</code>。这是个纯运行时的结构，而且是惰性（lazy）维护的。注意它只存储对java.lang.String实例的引用，而不存储String对象的内容。 注意，它只存了引用，根据这个引用可以得到具体的String对象。</p>
 <p>一般我们说一个字符串进入了全局的字符串常量池其实是说在这个StringTable中保存了对它的引用，反之，如果说没有在其中就是中没有对它的引用。</p>
-<h5 id="字面量进入字符串常量池的时机"><a href="#字面量进入字符串常量池的时机" class="headerlink" title="字面量进入字符串常量池的时机"></a>字面量进入字符串常量池的时机</h5><p>在前面一小节提到，在类的解析(resolve)的过程中，会去查询 String Table 保证运行时常量池所引用的字符串字面量与 String Table 一致。其实这个表述不是很准确，总的来说应该是这样的:</p>
+<h5 id="字面量进入字符串常量池的时机"><a href="#字面量进入字符串常量池的时机" class="headerlink" title="字面量进入字符串常量池的时机"></a>字面量进入字符串常量池的时机</h5><p>前面说到在类的解析(resolve)的过程中，会去查询 <code>String Table</code> 保证运行时常量池所引用的字符串字面量与 String Table 中一致。其实这个表述不是很准确，总的来说应该是这样的:</p>
 <ul>
-<li><p>HotSpot VM的实现来说，加载类的时候，那些字符串字面量会进入到当前类的运行时常量池，不会进入全局的字符串常量池 ;</p>
+<li><p>加载类的时候，那些字符串字面量会进入到当前类的运行时常量池，不会进入全局的字符串常量池 ;</p>
 </li>
 <li><p>在字面量赋值的时候，会翻译成字节码ldc指令，ldc指令触发<code>lazy resolution</code>动作:</p>
 <ol>
 <li>到当前类的运行时常量池（runtime constant pool）去查找该index对应的项(这里其实存的是一个索引，类型是 String_info)</li>
-<li>如果该项尚未resolve则resolve之，并返回resolve后的内容</li>
-<li>遇到String类型常量时，resolve的过程如果发现StringTable已经有了内容匹配的java.lang.String的引用，则直接返回这个引用;</li>
-<li>如果StringTable里尚未有内容匹配的String实例的引用，则会在Java堆里创建一个对应内容的String对象，然后在StringTable记录下这个引用，并返回这个引用出去</li>
+<li>如果该项尚未 resolve 则 resolve 之，并返回 resolve 后的内容</li>
+<li>遇到 String 类型常量时，resolve 的过程如果发现 <code>StringTable</code> 已经有了内容匹配的 String 的引用，则直接返回这个引用;</li>
+<li>如果<code>StringTable</code>里尚未有内容匹配的 String 实例的引用，则会在Java堆里创建一个对应内容的String对象，然后在StringTable记录下这个引用，并返回这个引用出去</li>
 </ol>
 </li>
 </ul>
-<h5 id="字符串拼接-的本质"><a href="#字符串拼接-的本质" class="headerlink" title="字符串拼接(+)的本质"></a>字符串拼接(+)的本质</h5><p>对于拼接的参数只有字面量或常量，则会直接返回 String Poll 中的引用:<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">String s1 = <span class="string">"hello"</span>;</span><br><span class="line">String s2 = <span class="string">"hel"</span> + <span class="string">"lo"</span>;</span><br><span class="line">System.out.println(s1 == s2) <span class="comment">// true</span></span><br></pre></td></tr></table></figure></p>
+<p>一个字符串字面量经过 <code>reslove</code> 后， 就在 <code>StringTable</code> 中创建了引用， 并在 <code>Heap</code> 中创建了字符串对象的实例。当主线程开始创建字符串变量的时候，虚拟机就会到 <code>StringTable</code> 中找到对应的 String 变量， 如果找到了就在栈区的当前栈帧中创建一个String变量，并把 <code>StringTable</code> 中的对象引用复制给创建的 String 变量</p>
+<h5 id="字符串拼接-的本质"><a href="#字符串拼接-的本质" class="headerlink" title="字符串拼接(+)的本质"></a>字符串拼接(+)的本质</h5><p>对于拼接的参数只有字面量或常量，则会直接返回 String Poll 中的引用:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">String s1 = &quot;hello&quot;;</span><br><span class="line">String s2 = &quot;hel&quot; + &quot;lo&quot;;</span><br><span class="line">System.out.println(s1 == s2) // true</span><br></pre></td></tr></table></figure></p>
 <p>这个在解析的时候， s2是直接返回的拼接后的 “hello” 的在 String Table 中的引用。</p>
-<p>如果是堆中两个不同地方创建的对象，实质上是通过 <code>StringBuilder.append</code> 拼接出来的:<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">String s3 = <span class="string">"hello"</span>;</span><br><span class="line">String s4 = <span class="string">"hel"</span> + <span class="keyword">new</span> String(<span class="string">"lo"</span>);</span><br><span class="line">System.out.println(s3 == s4) <span class="comment">// false</span></span><br></pre></td></tr></table></figure></p>
+<p>如果是堆中两个不同地方创建的对象，实质上是通过 <code>StringBuilder.append</code> 拼接出来的:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">String s3 = &quot;hello&quot;;</span><br><span class="line">String s4 = &quot;hel&quot; + new String(&quot;lo&quot;);</span><br><span class="line">System.out.println(s3 == s4) // false</span><br></pre></td></tr></table></figure></p>
 <p>这个时候 s4 实际上是通过 <code>StringBuilder.append</code> 拼接出来，并且最终调用<code>StringBuilder.toString</code>返回的，<code>StringBuilder.toString</code>方法如下:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">public String toString() &#123;</span><br><span class="line">      // Create a copy, don&apos;t share the array</span><br><span class="line">      return new String(value, 0, count);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure></p>
-<p>可以看到是 new 了一个新的 String 对象， 最终 s4 指向的是另一个对象</p>
+<p>可以看到是 new 了一个新的 String 对象， 最终 s4 指向的是另一个对象, 这里需要注意的是并没有把 hello 对象放入字符串常量池</p>
 <h5 id="String-intern"><a href="#String-intern" class="headerlink" title="String.intern"></a>String.intern</h5><p>String#intern()这个方法的作用是：</p>
 <ol>
 <li>如果字符串未在 String Pool 中，那么就往 Pool 中增加一条记录，然后返回 Pool 中的引用</li>
 <li>如果已经在 Pool 中，直接返回 Pool 中的引用</li>
 </ol>
-<p>这样一段代码:<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">    String s = <span class="keyword">new</span> String(<span class="string">"1"</span>);</span><br><span class="line">    s.intern();</span><br><span class="line">    String s2 = <span class="string">"1"</span>;</span><br><span class="line">    System.out.println(s == s2);</span><br><span class="line"></span><br><span class="line">    String s3 = <span class="keyword">new</span> String(<span class="string">"1"</span>) + <span class="keyword">new</span> String(<span class="string">"1"</span>);</span><br><span class="line">    s3.intern();</span><br><span class="line">    String s4 = <span class="string">"11"</span>;</span><br><span class="line">    System.out.println(s3 == s4);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这样一段代码:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">public static void main(String[] args) &#123;</span><br><span class="line">    String s = new String(&quot;1&quot;);</span><br><span class="line">    s.intern();</span><br><span class="line">    String s2 = &quot;1&quot;;</span><br><span class="line">    System.out.println(s == s2);</span><br><span class="line"></span><br><span class="line">    String s3 = new String(&quot;1&quot;) + new String(&quot;1&quot;);</span><br><span class="line">    s3.intern();</span><br><span class="line">    String s4 = &quot;11&quot;;</span><br><span class="line">    System.out.println(s3 == s4);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>打印的结果：</p>
 <ul>
 <li>jdk6: <code>false false</code></li>
@@ -510,6 +511,7 @@
 <li><a href="https://tech.meituan.com/2014/03/06/in-depth-understanding-string-intern.html" target="_blank" rel="noopener">深入理解String#intern</a></li>
 <li><a href="https://www.zhihu.com/question/55994121" target="_blank" rel="noopener">new String(“字面量”)中的字面量是何时进入常量池的</a></li>
 <li><a href="http://tangxman.github.io/2015/07/27/the-difference-of-java-string-pool/" target="_blank" rel="noopener">java几种常量池的区分</a></li>
+<li><a href="https://www.zhihu.com/question/55994121" target="_blank" rel="noopener">java 中 new String(“字面量”)中”字面量”是什么时候进入字符串常量池</a></li>
 </ul>
 
       
