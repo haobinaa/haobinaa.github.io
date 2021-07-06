@@ -696,3 +696,99 @@ private static <T> void siftDownComparable(int k, T x, Object[] array,
 ```
 
 ### DelayQueue
+
+DelayQueue 是用优先队列实现的无界阻塞队列
+
+#### 主要属性
+
+``` 
+public class DelayQueue<E extends Delayed> extends AbstractQueue<E>
+    implements BlockingQueue<E> {
+    // 持有内部重入锁。
+    private final transient ReentrantLock lock = new ReentrantLock();
+    // 优先级队列，存放工作任务。
+    private final PriorityQueue<E> q = new PriorityQueue<E>();
+    // 当前等待获取到期元素的线程
+    private Thread leader = null;
+    // 依赖于重入锁的 condition。
+    private final Condition available = lock.newCondition();
+}
+```
+
+#### put & take 操作
+
+
+put 操作如下
+``` 
+public void put(E e) {
+    offer(e);
+}
+
+public boolean offer(E e) {
+    // 获取锁
+    final ReentrantLock lock = this.lock;
+    lock.lock();
+    try {
+        // 往优先队列添加元素
+        q.offer(e);
+        // 添加成功
+        if (q.peek() == e) {
+            // 添加元素成功后将当前等待的leader线程移除， 重新唤醒一个线程
+            leader = null;
+            available.signal();
+        }
+        return true;
+    } finally {
+        lock.unlock();
+    }
+}
+```
+
+take 操作:
+``` 
+public E take() throws InterruptedException {
+    // 同样先获取锁
+    final ReentrantLock lock = this.lock;
+    lock.lockInterruptibly();
+    try {
+        for (;;) {
+            // 队头元素
+            E first = q.peek();
+            // 如果队头为空， 则挂起当前线程
+            if (first == null)
+                available.await();
+            else {
+                // 通过延迟任务的 getDelay 获取延迟时间
+                long delay = first.getDelay(NANOSECONDS);
+                // 时间到期， 删除并返回队头
+                if (delay <= 0)
+                    return q.poll();
+                // 时间未到， 线程进入等待，此时不能持有头节点元素引用， 防止内存泄漏
+                first = null; // don't retain ref while waiting
+                // 如果 leader 线程已存在， 当前线程直接等待
+                if (leader != null)
+                    available.await();
+                else {
+                    // 当前线程赋值给 leader 并且限时等待获取元素
+                    Thread thisThread = Thread.currentThread();
+                    leader = thisThread;
+                    try {
+                        // 限时等待
+                        available.awaitNanos(delay);
+                    } finally {
+                        // 限时等待完成， 进入下一个循环获取元素返回
+                        // 如果 leader != thisThread, 代表等待期间有新元素添加， 重新选择 leader
+                        if (leader == thisThread)
+                            leader = null;
+                    }
+                }
+            }
+        }
+    } finally {
+        // 如果leader线程为null且队头任务不为空，唤醒其中一个等待线程，使之能成为新leader
+        if (leader == null && q.peek() != null)
+            available.signal();
+        lock.unlock();
+    }
+}
+```
