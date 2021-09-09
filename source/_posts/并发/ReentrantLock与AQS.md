@@ -150,6 +150,16 @@ static final class FairSync extends Sync {
         return false;
     }
 
+ public final boolean hasQueuedPredecessors() {
+   Node h = head;
+   Node s;
+  // 双向链表中，第一个节点为虚节点，其实并不存储任何信息，只是占位。真正的第一个有数据的节点，是在第二个节点开始的。
+  // 当h != t时： 如果(s = h.next) == null，等待队列正在有线程进行初始化，但只是进行到了Tail指向Head，没有将Head指向Tail，此时队列中有元素，需要返回True
+  // 如果(s = h.next) != null，说明此时队列中至少有一个有效节点。说明等待队列的第一个有效节点线程与当前线程不同，当前线程必须加入进等待队列
+   return h != t &&
+           ((s = h.next) == null || s.thread != Thread.currentThread());
+ }
+
     // 假设tryAcquire(arg) 返回false，那么代码将执行：
     // acquireQueued(addWaiter(Node.EXCLUSIVE), arg)
     // 这个方法，首先需要执行：addWaiter(Node.EXCLUSIVE)
