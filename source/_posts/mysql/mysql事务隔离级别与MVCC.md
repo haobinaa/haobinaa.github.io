@@ -28,9 +28,8 @@ categories: mysql
 
 #### 不可重复读(Non-Repeatable Read)
 
-一个事务只能读到另一个已经提交的事务修改过的数据，并且其他事务每对该数据进行一次修改并提交后，该事务都能查询得到最新值(注重的是update和delete操作)。
+一个事务中能读到另一个已经提交的事务修改过的数据，并且其他事务每对该数据进行一次修改并提交后(注重的是update和delete操作)，该事务都能查询得到最新值， 这说明发生了不可重复读。
 
-换句话说个事务从开始直到提交之前，所做的任何修改对其他事务都是不可见的。但是两次执行同样的查询，可能会得到不一样的结果(读到了其他事务的修改结果)。
 
 
 #### 幻读(Phantom Read)
@@ -168,17 +167,8 @@ select * from book_table where bookid = 1;
 1 rows in set (0.00 sec)
 ```
 
-#### `REPEATABLE-READ` 将出现幻读
+#### `READ-COMMITTED` 将出现幻读
 ``` 
-# 隔离级别默认是 repeatable read
-select @@session.tx_isolation;
-+------------------------+
-| @@session.tx_isolation |
-+------------------------+
-| REPEATABLE READ      |
-+------------------------+
-
-
 ########## session1  查询bookid>1的数据只有1条
    
 select * from book_table where bookid = 1;
@@ -203,6 +193,36 @@ select * from book_table where bookid = 1;
 | english  |      2 |
 +----------+--------+
 ```
+
+#### `REPEATABLE READ` 下出现幻读
+
+``` 
+
+########## session1  
+# 查询bookname = 'bio' 的数据为空
+select * from book_table where bookname = 'bio'
+
+########## session2
+# 此时 session2 插入了一条 book
+insert into book_table values('gym', 5)
+
+########  
+# session 1 执行 update 修改 book_id 为 5 的数据
+update book_table set bookname = 'bio' where bookid = 5
+
+# session1 再次执行 select 查出一条数据
+select * from book_table where bookname = 'bio'
++----------+--------+
+| bookname | bookid |
++----------+--------+
+| bio     |     5  |
++----------+--------+
+```
+在`RR`隔离级别下，session1 第一次执行普通的SELECT语句时生成了一个ReadView
+之后session2向表中新插入了一条记录便提交了，ReadView并不能阻止session1执行UPDATE或者DELETE语句来对改动这个新插入的记录（因为session2已经提交，改动该记录并不会造成阻塞）
+但是这样一来这条新记录的trx_id隐藏列就变成了session1的事务id
+之后session1中再使用普通的SELECT语句去查询这条记录时就可以看到这条记录了，也就把这条记录返回给客户端了。因为这个特殊现象的存在，你也可以认为InnoDB中的MVCC并不能完完全全的禁止幻读。
+
 
 #### 不可重复读和幻读的区别
 
