@@ -80,7 +80,7 @@
 <meta property="og:site_name" content="Do Or Die">
 <meta property="og:description" content="Spring 事务不生效的原因同一个类中无事务方法调用一个有事务方法事务不生效123456789public void testTransactionWork() &amp;#123;    insertTransaction();&amp;#125;@Transactionalpublic void insertTransaction() &amp;#123;    testMapper.insert(&amp;quot;li">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2020-06-07T04:32:06.986Z">
+<meta property="og:updated_time" content="2021-08-27T09:10:45.553Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="spring事务传播">
 <meta name="twitter:description" content="Spring 事务不生效的原因同一个类中无事务方法调用一个有事务方法事务不生效123456789public void testTransactionWork() &amp;#123;    insertTransaction();&amp;#125;@Transactionalpublic void insertTransaction() &amp;#123;    testMapper.insert(&amp;quot;li">
@@ -348,6 +348,7 @@
         <h3 id="Spring-事务不生效的原因"><a href="#Spring-事务不生效的原因" class="headerlink" title="Spring 事务不生效的原因"></a>Spring 事务不生效的原因</h3><h4 id="同一个类中无事务方法调用一个有事务方法事务不生效"><a href="#同一个类中无事务方法调用一个有事务方法事务不生效" class="headerlink" title="同一个类中无事务方法调用一个有事务方法事务不生效"></a>同一个类中无事务方法调用一个有事务方法事务不生效</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">public void testTransactionWork() &#123;</span><br><span class="line">    insertTransaction();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">@Transactional</span><br><span class="line">public void insertTransaction() &#123;</span><br><span class="line">    testMapper.insert(&quot;lili&quot;);</span><br><span class="line">    throw new NullPointerException(&quot;null&quot;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>在同一个类中，外部调用<code>testTransactionWork</code>，<code>testTransactionWork</code>无事务, <code>insertTransaction</code>有事务, 执行后记录还是插入成功，并没有因为<code>insertTransaction</code>抛出异常而回滚，事务没有生效.</p>
 <p>原因: AOP使用的是动态代理的机制，它会给类生成一个代理类，事务的相关操作都在代理类上完成。内部方式是实例调用，调用的还是原来的对象的方法，不会被 AOP 增强。</p>
+<p>#### </p>
 <h3 id="Spring-事务的传播级别"><a href="#Spring-事务的传播级别" class="headerlink" title="Spring 事务的传播级别"></a>Spring 事务的传播级别</h3><p>Spring 事务传播级别与数据库事务隔离级别不同，传播分为 7 种级别:</p>
 <ol>
 <li><p><code>PROPAGATION_REQUIRED</code>：Spring的默认传播级别，如果上下文中存在事务则加入当前事务，如果不存在事务则新建事务执行。</p>
@@ -629,7 +630,7 @@
             
               <a href="/archives/">
             
-                <span class="site-state-item-count">69</span>
+                <span class="site-state-item-count">68</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
