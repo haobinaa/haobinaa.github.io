@@ -289,9 +289,7 @@ mysql> EXPLAIN SELECT * FROM s1 INNER JOIN s2;
 
 - `range`: 如果使用索引获取某些`范围区间`的记录，那么就可能使用到`range`访问方法
 
-- `index` : 当可以使用索引覆盖，但需要扫描全部的索引记录时，该表的访问方法就是`index`。
-
-  如`EXPLAIN SELECT key_part2 FROM s1 WHERE key_part3 = 'a'`。上述查询中的搜索列表中只有`key_part2`一个列，而且搜索条件中也只有`key_part3`一个列，这两个列又恰好包含在`idx_key_part`这个索引中，可是搜索条件`key_part3`不能直接使用该索引进行`ref`或者`range`方式的访问，只能扫描整个`idx_key_part`索引的记录，所以查询计划的`type`列的值就是`index`。
+- `index` : 当可以使用索引覆盖，但需要扫描全部的索引记录时(full index scan)，该表的访问方法就是`index`。 所要查询的数据直接在索引树中就可以获取到, 而不需要扫描聚簇索引数据. 当是这种情况时, Extra 字段 会显示 `Using index`
 
 - `ALL`: 全表扫描
 
