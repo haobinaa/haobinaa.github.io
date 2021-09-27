@@ -83,7 +83,7 @@
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://yoursite.com/images/mysql/ru_rc_table_scan.png">
 <meta property="og:image" content="http://yoursite.com/images/mysql/rr_index_equal.png">
-<meta property="og:updated_time" content="2021-09-16T13:37:29.326Z">
+<meta property="og:updated_time" content="2021-09-26T10:20:06.607Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="mysql语句加锁分析">
 <meta name="twitter:description" content="概述锁类型 S/X Lock: 读/写锁， 又称共享锁和排他锁 Gap Lock: 间隙锁, 锁的是与下一条记录之间的间隙 Next-Key Lock: Gap + Lock, 锁间隙和下一条记录(左开右闭)  普通 select 语句 READ UNCOMMITTED隔离级别下，不加锁，直接读取记录的最新版本，可能发生脏读、不可重复读和幻读问题。 READ COMMITTED隔离级别下，不加锁，">
@@ -544,8 +544,8 @@
 <li>其他三种情况分析都一样了</li>
 </ol>
 <h5 id="范围查询-4"><a href="#范围查询-4" class="headerlink" title="范围查询"></a>范围查询</h5><p>与唯一二级索引类似</p>
-<h4 id="全表扫描"><a href="#全表扫描" class="headerlink" title="全表扫描"></a>全表扫描</h4><p>这里需要说明一下，再<code>REPEATABLE READ</code>隔离级别下，如果是全表扫描的方式，表里面的所有记录都会被加上<code>next-key</code>锁，直到事务提交才释放。<br>这样会极大的影响该表的并发事务处理能力，如果遇到这个情况，还是尽量对表建立合适的索引</p>
-<h3 id="insert-语句"><a href="#insert-语句" class="headerlink" title="insert 语句"></a>insert 语句</h3><p>INSERT语句一般情况下不加锁，不过当前事务在插入一条记录前需要先定位到该记录在B+树中的位置，如果该位置的下一条记录已经被加了gap锁（next-key锁也包含gap锁），那么当前事务会在该记录上加上一种类型为插入意向锁的锁，并且事务进入等待状态。</p>
+<h4 id="全表扫描"><a href="#全表扫描" class="headerlink" title="全表扫描"></a>全表扫描</h4><p>这里需要说明一下，再<code>REPEATABLE READ</code>隔离级别下，如果是全表扫描的方式，表里面的所有记录都会被加上<code>next-key</code>锁，直到事务提交才释放。<br>这样会极大的影响该表的并发事务处理能力，如果遇到这个情况，还是尽量对表建立合适的索引<br>另外可以通过设置<code>innodb_locks_unsafe_for_binlog</code>来提前释放锁</p>
+<h3 id="insert-语句"><a href="#insert-语句" class="headerlink" title="insert 语句"></a>insert 语句</h3><p>INSERT语句一般情况下不加锁，不过当前事务在插入一条记录前需要先定位到该记录在B+树中的位置，如果该位置的下一条记录已经被加了gap锁（next-key锁也包含gap锁），那么当前事务会在该记录上加上一种类型为插入意向锁的锁，并且事务进入等待状态。<br>INSERT 在执行成功后会给记录+X Lock</p>
 <p>这里有一些 insert 语句的特殊情况</p>
 <h4 id="重复键-duplicate-key"><a href="#重复键-duplicate-key" class="headerlink" title="重复键(duplicate key)"></a>重复键(duplicate key)</h4><p>在插入一条新记录时，首先要做的事情其实是定位到这条新记录应该插入到B+树的哪个位置。如果定位位置时发现了有已存在记录的主键或者唯一二级索引列与待插入记录的主键或者唯一二级索引列相同，那么此时此时是会报错.在生成报错信息前，其实还需要做一件非常重要的事情 —— 对聚簇索引中那条记录加S锁。不过具体的行锁类型在不同隔离级别下是不一样的：</p>
 <ul>
@@ -553,8 +553,31 @@
 <li>在REPEATABLE READ/SERIALIZABLE隔离级别下，加的是S型next-key锁</li>
 </ul>
 <h4 id="外键检查"><a href="#外键检查" class="headerlink" title="外键检查"></a>外键检查</h4><p>外键的情况也是特殊处理，再插入子表的时候，也要对相应关联的父表做一些加锁的操作</p>
-<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
-<li>[掘金小册-从根上理解MySQL]</li>
+<h4 id="INSERT-加锁分析整个流程"><a href="#INSERT-加锁分析整个流程" class="headerlink" title="INSERT 加锁分析整个流程"></a>INSERT 加锁分析整个流程</h4><ul>
+<li><p>首先对插入的间隙加插入意向锁(Insert Intension Locks)</p>
+<ul>
+<li>如果该间隙已被加上了 GAP 锁或 Next-Key 锁，则加锁失败进入等待</li>
+<li>如果没有，则加锁成功，表示可以插入；</li>
+</ul>
+</li>
+<li><p>然后判断插入记录是否有唯一键，如果有，则进行唯一性约束检查</p>
+<ul>
+<li>如果不存在相同键值，则完成插入</li>
+<li>如果存在相同键值，则判断该键值是否加锁<ul>
+<li>如果没有锁， 判断该记录是否被标记为删除<ul>
+<li>如果标记为删除，说明事务已经提交，还没来得及 purge，这时加 S 锁等待；</li>
+<li>如果没有标记删除，则报 1062 duplicate key 错误；</li>
+</ul>
+</li>
+<li>如果有锁，说明该记录正在处理（新增、删除或更新），且事务还未提交，加 S 锁等待；</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>插入记录并对记录加 X 记录锁；</p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3></li>
+<li><p>[掘金小册-从根上理解MySQL]</p>
+</li>
 <li>[公众号:我们都是小青蛙 - MySQL加锁分析三部曲]</li>
 </ul>
 
@@ -597,8 +620,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2020/03/30/限流算法/" rel="prev" title="限流算法(Guava RateLimiter)">
-                限流算法(Guava RateLimiter) <i class="fa fa-chevron-right"></i>
+              <a href="/2020/06/07/中间件/hystrix原理应用/" rel="prev" title="hystrix原理应用">
+                hystrix原理应用 <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -732,7 +755,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#锁类型"><span class="nav-number">1.1.</span> <span class="nav-text">锁类型</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#普通-select-语句"><span class="nav-number">1.2.</span> <span class="nav-text">普通 select 语句</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#锁定读语句"><span class="nav-number">1.3.</span> <span class="nav-text">锁定读语句</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#RU-RC-情况下加锁分析"><span class="nav-number">2.</span> <span class="nav-text">RU/RC 情况下加锁分析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#主键查询情况"><span class="nav-number">2.1.</span> <span class="nav-text">主键查询情况</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#等值查询"><span class="nav-number">2.1.1.</span> <span class="nav-text">等值查询</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#范围查询"><span class="nav-number">2.1.2.</span> <span class="nav-text">范围查询</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#二级索引"><span class="nav-number">2.2.</span> <span class="nav-text">二级索引</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#等值查询-1"><span class="nav-number">2.2.1.</span> <span class="nav-text">等值查询</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#范围查询-1"><span class="nav-number">2.2.2.</span> <span class="nav-text">范围查询</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#全表扫描情况"><span class="nav-number">2.3.</span> <span class="nav-text">全表扫描情况</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#REPEATABLE-READ隔离级别下"><span class="nav-number">3.</span> <span class="nav-text">REPEATABLE READ隔离级别下</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#主键情况"><span class="nav-number">3.1.</span> <span class="nav-text">主键情况</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#等值查询-2"><span class="nav-number">3.1.1.</span> <span class="nav-text">等值查询</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#范围查询-2"><span class="nav-number">3.1.2.</span> <span class="nav-text">范围查询</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#唯一二级索引"><span class="nav-number">3.2.</span> <span class="nav-text">唯一二级索引</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#等值查询-3"><span class="nav-number">3.2.1.</span> <span class="nav-text">等值查询</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#范围查询-3"><span class="nav-number">3.2.2.</span> <span class="nav-text">范围查询</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#普通二级索引"><span class="nav-number">3.3.</span> <span class="nav-text">普通二级索引</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#等值查询-4"><span class="nav-number">3.3.1.</span> <span class="nav-text">等值查询</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#范围查询-4"><span class="nav-number">3.3.2.</span> <span class="nav-text">范围查询</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#全表扫描"><span class="nav-number">3.4.</span> <span class="nav-text">全表扫描</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#insert-语句"><span class="nav-number">4.</span> <span class="nav-text">insert 语句</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#重复键-duplicate-key"><span class="nav-number">4.1.</span> <span class="nav-text">重复键(duplicate key)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#外键检查"><span class="nav-number">4.2.</span> <span class="nav-text">外键检查</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">5.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#锁类型"><span class="nav-number">1.1.</span> <span class="nav-text">锁类型</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#普通-select-语句"><span class="nav-number">1.2.</span> <span class="nav-text">普通 select 语句</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#锁定读语句"><span class="nav-number">1.3.</span> <span class="nav-text">锁定读语句</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#RU-RC-情况下加锁分析"><span class="nav-number">2.</span> <span class="nav-text">RU/RC 情况下加锁分析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#主键查询情况"><span class="nav-number">2.1.</span> <span class="nav-text">主键查询情况</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#等值查询"><span class="nav-number">2.1.1.</span> <span class="nav-text">等值查询</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#范围查询"><span class="nav-number">2.1.2.</span> <span class="nav-text">范围查询</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#二级索引"><span class="nav-number">2.2.</span> <span class="nav-text">二级索引</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#等值查询-1"><span class="nav-number">2.2.1.</span> <span class="nav-text">等值查询</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#范围查询-1"><span class="nav-number">2.2.2.</span> <span class="nav-text">范围查询</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#全表扫描情况"><span class="nav-number">2.3.</span> <span class="nav-text">全表扫描情况</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#REPEATABLE-READ隔离级别下"><span class="nav-number">3.</span> <span class="nav-text">REPEATABLE READ隔离级别下</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#主键情况"><span class="nav-number">3.1.</span> <span class="nav-text">主键情况</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#等值查询-2"><span class="nav-number">3.1.1.</span> <span class="nav-text">等值查询</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#范围查询-2"><span class="nav-number">3.1.2.</span> <span class="nav-text">范围查询</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#唯一二级索引"><span class="nav-number">3.2.</span> <span class="nav-text">唯一二级索引</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#等值查询-3"><span class="nav-number">3.2.1.</span> <span class="nav-text">等值查询</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#范围查询-3"><span class="nav-number">3.2.2.</span> <span class="nav-text">范围查询</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#普通二级索引"><span class="nav-number">3.3.</span> <span class="nav-text">普通二级索引</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#等值查询-4"><span class="nav-number">3.3.1.</span> <span class="nav-text">等值查询</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#范围查询-4"><span class="nav-number">3.3.2.</span> <span class="nav-text">范围查询</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#全表扫描"><span class="nav-number">3.4.</span> <span class="nav-text">全表扫描</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#insert-语句"><span class="nav-number">4.</span> <span class="nav-text">insert 语句</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#重复键-duplicate-key"><span class="nav-number">4.1.</span> <span class="nav-text">重复键(duplicate key)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#外键检查"><span class="nav-number">4.2.</span> <span class="nav-text">外键检查</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#INSERT-加锁分析整个流程"><span class="nav-number">4.3.</span> <span class="nav-text">INSERT 加锁分析整个流程</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">5.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
             
 
           </div>

@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+  <link href="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.min.js" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+  
+
+<link href="//cdn.staticfile.org/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="限流,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2">
+
+
+
+
+
+
+<meta name="description" content="限流算法计数器(固定窗口) 在一个时间周期内每来一次请求就将计数器+1 如果计数器超过了限制数量， 则拒绝服务 时间达到下一个时间窗口， 计数器重置  这种算法很好实现， 但是会出现限流不准确问题。比如每秒通过 5 个请求，时间窗口的大小为 1 秒，当前时间窗口周期内的后半秒正常通过了 5 个请求，下一个时间窗口周期内的前半秒正常通过了 5 个请求，在这两个窗口内都没有超过限制。但是在这两个窗口的">
+<meta name="keywords" content="限流">
+<meta property="og:type" content="article">
+<meta property="og:title" content="限流算法(Guava RateLimiter)">
+<meta property="og:url" content="http://yoursite.com/2021/08/30/限流算法/index.html">
+<meta property="og:site_name" content="Do Or Die">
+<meta property="og:description" content="限流算法计数器(固定窗口) 在一个时间周期内每来一次请求就将计数器+1 如果计数器超过了限制数量， 则拒绝服务 时间达到下一个时间窗口， 计数器重置  这种算法很好实现， 但是会出现限流不准确问题。比如每秒通过 5 个请求，时间窗口的大小为 1 秒，当前时间窗口周期内的后半秒正常通过了 5 个请求，下一个时间窗口周期内的前半秒正常通过了 5 个请求，在这两个窗口内都没有超过限制。但是在这两个窗口的">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/images/distributed/leaky-bucket.png">
+<meta property="og:image" content="http://yoursite.com/images/distributed/token-bucket.png">
+<meta property="og:updated_time" content="2021-09-23T13:52:04.959Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="限流算法(Guava RateLimiter)">
+<meta name="twitter:description" content="限流算法计数器(固定窗口) 在一个时间周期内每来一次请求就将计数器+1 如果计数器超过了限制数量， 则拒绝服务 时间达到下一个时间窗口， 计数器重置  这种算法很好实现， 但是会出现限流不准确问题。比如每秒通过 5 个请求，时间窗口的大小为 1 秒，当前时间窗口周期内的后半秒正常通过了 5 个请求，下一个时间窗口周期内的前半秒正常通过了 5 个请求，在这两个窗口内都没有超过限制。但是在这两个窗口的">
+<meta name="twitter:image" content="http://yoursite.com/images/distributed/leaky-bucket.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.2',
+    sidebar: {"position":"left","display":"always","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2021/08/30/限流算法/">
+
+
+
+
+
+  <title>限流算法(Guava RateLimiter) | Do Or Die</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Do Or Die</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2021/08/30/限流算法/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Leo Hao">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Do Or Die">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">限流算法(Guava RateLimiter)</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-08-30T22:23:29+08:00">
+                2021-08-30
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/算法/" itemprop="url" rel="index">
+                    <span itemprop="name">算法</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="限流算法"><a href="#限流算法" class="headerlink" title="限流算法"></a>限流算法</h3><h4 id="计数器-固定窗口"><a href="#计数器-固定窗口" class="headerlink" title="计数器(固定窗口)"></a>计数器(固定窗口)</h4><ol>
+<li>在一个时间周期内每来一次请求就将计数器+1</li>
+<li>如果计数器超过了限制数量， 则拒绝服务</li>
+<li>时间达到下一个时间窗口， 计数器重置</li>
+</ol>
+<p>这种算法很好实现， 但是会出现限流不准确问题。比如每秒通过 5 个请求，时间窗口的大小为 1 秒，当前时间窗口周期内的后半秒正常通过了 5 个请求，下一个时间窗口周期内的前半秒正常通过了 5 个请求，在这两个窗口内都没有超过限制。<br>但是在这两个窗口的中间那一秒实际上通过了 10 个请求，显然不满足每秒 5 个请求的限制。</p>
+<h4 id="滑动计数器"><a href="#滑动计数器" class="headerlink" title="滑动计数器"></a>滑动计数器</h4><ol>
+<li>将时间周期设置为滑动窗口大小</li>
+<li>当有新的请求来临时将窗口滑动到改请求来临的时刻</li>
+<li>判断窗口内的请求数是否超过了限制， 超过则拒绝服务， 否则请求通过</li>
+<li>丢弃滑动窗口以外的请求</li>
+</ol>
+<p>这种算法解决了固定窗口计数器出现的通过请求数是限制数两倍的缺陷，但是需要记录窗口周期内的请求，如果限流阈值设置过大，窗口周期内记录的请求就会很多，就会比较占用内存</p>
+<h4 id="漏桶限流"><a href="#漏桶限流" class="headerlink" title="漏桶限流"></a>漏桶限流</h4><p><img src="/images/distributed/leaky-bucket.png" alt></p>
+<ol>
+<li>将进来的请求流量视为水滴放入桶里</li>
+<li>水从桶的底部以固定速率匀速流出， 相当于匀速请求</li>
+<li>当漏桶的水满时(超过限流阈值)则拒绝服务</li>
+</ol>
+<p>漏桶算法控制流量流速绝对均匀， 适合流量比较平滑的场景(如数据库)， 分布式的实现难度较滑动窗口来说复杂一些</p>
+<h4 id="令牌桶限流"><a href="#令牌桶限流" class="headerlink" title="令牌桶限流"></a>令牌桶限流</h4><p><img src="/images/distributed/token-bucket.png" alt></p>
+<ol>
+<li>按照一定的速率生产令牌并放入令牌桶中</li>
+<li>如果桶中令牌已满，则丢弃令牌</li>
+<li>请求过来时先到桶中拿令牌，拿到令牌则放行通过，否则拒绝请求。</li>
+</ol>
+<h4 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h4><ul>
+<li>固定窗口计数算法简单易实现，其缺陷是可能在中间的某一秒内通过的请求数是限流阈值的两倍，该算法仅适用于对限流准确度要求不高的应用场景。</li>
+<li>滑动窗口计数算法解决了固定窗口计数算法的缺陷，但是该算法较难实现，因为要记录每次请求所以可能出现比较占用内存比较多的情况。</li>
+<li>漏桶算法可以做到均匀平滑的限制请求，Ngixn 热 limit_req 模块也是采用此种算法。因为匀速处理请求的缘故所以该算法应对限流阈值内的突发请求无法及时处理。</li>
+<li>令牌桶算法解决了以上三个算法的所有缺陷，是一种相对比较完美的限流算法，也是限流场景中应用最为广泛的算法。使用 Redis + Lua 脚本的方式可以简单的实现</li>
+</ul>
+<h4 id="Guava-RateLimiter"><a href="#Guava-RateLimiter" class="headerlink" title="Guava RateLimiter"></a>Guava RateLimiter</h4><p>guava <code>RateLimiter</code> 作为抽象类有个子类 <code>SmoothRateLimiter</code>， 这是个抽象类并且又两个实现类:<code>SmoothWarmingUp</code>和<code>SmoothBursty</code>。</p>
+<p><code>RateLimiter</code>只有两个属性:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">// 用于计时，RateLimiter 把实例化的时间设置为 0 值，后续都是取相对时间，用微秒表示。</span><br><span class="line">private final SleepingStopwatch stopwatch;</span><br><span class="line">// 来做锁，RateLimiter 依赖于 synchronized 来控制并发</span><br><span class="line">private volatile Object mutexDoNotUseDirectly;</span><br></pre></td></tr></table></figure></p>
+<h3 id="SmoothRateLimiter"><a href="#SmoothRateLimiter" class="headerlink" title="SmoothRateLimiter"></a>SmoothRateLimiter</h3><p><code>SmoothRateLimiter</code> 作为抽象类继承于 <code>RateLimiter</code>。<code>SmoothRateLimiter</code>的属性如下:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">// 当前还有多少 permits 没有被使用，被存下来的 permits 数量</span><br><span class="line">double storedPermits;</span><br><span class="line"></span><br><span class="line">// 最大允许缓存的 permits 数量，也就是 storedPermits 能达到的最大值</span><br><span class="line">double maxPermits;</span><br><span class="line"></span><br><span class="line">// 每隔多少时间产生一个 permit，</span><br><span class="line">// 比如我们构造方法中设置每秒 5 个，也就是每隔 200ms 一个，这里单位是微秒，也就是 200,000 个</span><br><span class="line">double stableIntervalMicros;</span><br><span class="line"></span><br><span class="line">// 下一次可以获取 permits 的时间，这个时间是相对 RateLimiter 的构造时间的，是一个相对时间</span><br><span class="line">private long nextFreeTicketMicros = 0L;</span><br></pre></td></tr></table></figure></p>
+<p><code>nextFreeTicketMicros</code> 是一个很关键的属性。每次获取 permits 的时候，先拿 storedPermits 的值，因为它是存货，如果够，storedPermits 减去相应的值就可以了，如果不够，那么还需要将 nextFreeTicketMicros 往前推，表示预占了接下来多少时间的量了。<br>那么下一个请求来的时候，如果还没到 nextFreeTicketMicros 这个时间点，需要 sleep 到这个点再返回，就要将这个值再往前推。</p>
+<h3 id="SmoothBursty"><a href="#SmoothBursty" class="headerlink" title="SmoothBursty"></a>SmoothBursty</h3><p>构造 <code>SmoothBursty</code>:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">public static RateLimiter create(double permitsPerSecond) &#123;</span><br><span class="line">    return create(permitsPerSecond, SleepingStopwatch.createFromSystemTimer());</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">static RateLimiter create(double permitsPerSecond, SleepingStopwatch stopwatch) &#123;</span><br><span class="line">    // 这里实例化就一个属性 maxBurstSeconds 为 1.0, 代表最多缓存 1s</span><br><span class="line">    RateLimiter rateLimiter = new SmoothBursty(stopwatch, 1.0 /* maxBurstSeconds */);</span><br><span class="line">    rateLimiter.setRate(permitsPerSecond);</span><br><span class="line">    return rateLimiter;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h4 id="setRate"><a href="#setRate" class="headerlink" title="setRate"></a>setRate</h4><p>继续看 <code>setRate</code> 分析<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">public final void setRate(double permitsPerSecond) &#123;</span><br><span class="line">  // 检查表达式是否有效</span><br><span class="line">  checkArgument(</span><br><span class="line">      permitsPerSecond &gt; 0.0 &amp;&amp; !Double.isNaN(permitsPerSecond), &quot;rate must be positive&quot;);</span><br><span class="line">  // synchronized 控制并发</span><br><span class="line">  synchronized (mutex()) &#123;</span><br><span class="line">    doSetRate(permitsPerSecond, stopwatch.readMicros());</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">// doSetRate</span><br><span class="line">final void doSetRate(double permitsPerSecond, long nowMicros) &#123;</span><br><span class="line">    // 同步</span><br><span class="line">    resync(nowMicros);</span><br><span class="line">    // 计算属性 stableIntervalMicros</span><br><span class="line">    double stableIntervalMicros = SECONDS.toMicros(1L) / permitsPerSecond;</span><br><span class="line">    this.stableIntervalMicros = stableIntervalMicros;</span><br><span class="line">    doSetRate(permitsPerSecond, stableIntervalMicros);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p><code>resync</code> 用来更新 <code>storedPermits</code> 和 <code>nextFreeTicketMicros</code>， 避免长时间不调用 acquire 导致不准确：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">void resync(long nowMicros) &#123;</span><br><span class="line">  // nextFreeTicket 已经过过期了，比如很长时间没有再次调用 limiter.acquire() </span><br><span class="line">  // 需要将 nextFreeTicket 设置为当前时间，重新计算 storedPermits</span><br><span class="line">  if (nowMicros &gt; nextFreeTicketMicros) &#123;</span><br><span class="line">    // coolDownIntervalMicros 直接返回了 stableIntervalMicros， 也就是生产一个 permits 的时间长度</span><br><span class="line">    // 计算一下， 这段时间产生了多少 permits</span><br><span class="line">    double newPermits = (nowMicros - nextFreeTicketMicros) / coolDownIntervalMicros();</span><br><span class="line">    // 如果超过了 maxtPermits, 则使用 maxPermits</span><br><span class="line">    storedPermits = min(maxPermits, storedPermits + newPermits);</span><br><span class="line">    // 将 nextFreeTicketMicros 更新为现在</span><br><span class="line">    nextFreeTicketMicros = nowMicros;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>设置好了<code>stableIntervalMicros</code>、<code>storedPermits</code>和<code>nextFreeTicketMicros</code>, doSetRate 的实现:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">void doSetRate(double permitsPerSecond, double stableIntervalMicros) &#123;</span><br><span class="line">  double oldMaxPermits = this.maxPermits;</span><br><span class="line">  // 这里计算了新的 maxPermits 为 1 秒产生的 permits</span><br><span class="line">  // 原来的值是初始化的， 现在要重新调整频率， 所以需要重新计算 maxPermits</span><br><span class="line">  maxPermits = maxBurstSeconds * permitsPerSecond;</span><br><span class="line">  if (oldMaxPermits == Double.POSITIVE_INFINITY) &#123;</span><br><span class="line">    // if we don&apos;t special-case this, we would get storedPermits == NaN, below</span><br><span class="line">    storedPermits = maxPermits;</span><br><span class="line">  &#125; else &#123;</span><br><span class="line">    // maxPermits 来说，是重新计算，而对于 storedPermits 来说，是做等比例的缩放</span><br><span class="line">    storedPermits =</span><br><span class="line">        (oldMaxPermits == 0.0)</span><br><span class="line">            ? 0.0 // initial state</span><br><span class="line">            : storedPermits * maxPermits / oldMaxPermits;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h4 id="acquire"><a href="#acquire" class="headerlink" title="acquire"></a>acquire</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">public double acquire() &#123;</span><br><span class="line">  return acquire(1);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public double acquire(int permits) &#123;</span><br><span class="line">  // 预约，如果当前不能直接获取到 permits，需要等待</span><br><span class="line">  // 返回值代表需要 sleep 多久</span><br><span class="line">  long microsToWait = reserve(permits);</span><br><span class="line">  // sleep</span><br><span class="line">  stopwatch.sleepMicrosUninterruptibly(microsToWait);</span><br><span class="line">  // 返回 sleep 的时长</span><br><span class="line">  return 1.0 * microsToWait / SECONDS.toMicros(1L);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>reserve</code> 预定 permits:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">final long reserve(int permits) &#123;</span><br><span class="line">  checkPermits(permits);</span><br><span class="line">  synchronized (mutex()) &#123;</span><br><span class="line">    return reserveAndGetWaitLength(permits, stopwatch.readMicros());</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">final long reserveAndGetWaitLength(int permits, long nowMicros) &#123;</span><br><span class="line">  // 返回 nextFreeTicketMicros</span><br><span class="line">  long momentAvailable = reserveEarliestAvailable(permits, nowMicros);</span><br><span class="line">  // 计算时长</span><br><span class="line">  return max(momentAvailable - nowMicros, 0);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">final long reserveEarliestAvailable(int requiredPermits, long nowMicros) &#123;</span><br><span class="line">  // 这里做一次同步，更新 storedPermits 和 nextFreeTicketMicros (如果需要)</span><br><span class="line">  resync(nowMicros);</span><br><span class="line">  // 返回值就是 nextFreeTicketMicros，注意刚刚已经做了 resync 了，此时它是最新的正确的值</span><br><span class="line">  long returnValue = nextFreeTicketMicros;</span><br><span class="line">  // storedPermits 中可以使用多少个 permits</span><br><span class="line">  double storedPermitsToSpend = min(requiredPermits, this.storedPermits);</span><br><span class="line">  // storedPermits 中不够的部分</span><br><span class="line">  double freshPermits = requiredPermits - storedPermitsToSpend;</span><br><span class="line">  // 为了这个不够的部分，需要等待多久时间</span><br><span class="line">  long waitMicros =</span><br><span class="line">      storedPermitsToWaitTime(this.storedPermits, storedPermitsToSpend) // 这部分固定返回 0</span><br><span class="line">          + (long) (freshPermits * stableIntervalMicros);</span><br><span class="line">  // 将 nextFreeTicketMicros 往前推</span><br><span class="line">  this.nextFreeTicketMicros = LongMath.saturatedAdd(nextFreeTicketMicros, waitMicros);</span><br><span class="line">  // storedPermits 减去被拿走的部分</span><br><span class="line">  this.storedPermits -= storedPermitsToSpend;</span><br><span class="line">  return returnValue;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>从 reserve 的流程可看到，获取 permits 的时候，其实是获取了两部分，一部分来自于存量 storedPermits，存量不够的话，另一部分来自于预占未来的 freshPermits。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/限流/" rel="tag"><i class="fa fa-tag"></i> 限流</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2021/06/22/定时器算法/" rel="next" title="定时器算法">
+                <i class="fa fa-chevron-left"></i> 定时器算法
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          
+            <p class="site-author-name" itemprop="name">Leo Hao</p>
+            <p class="site-description motion-element" itemprop="description">勿在浮沙筑高台</p>
+        </div>
+
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+            
+              <a href="/archives/">
+            
+                <span class="site-state-item-count">68</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">14</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">23</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#限流算法"><span class="nav-number">1.</span> <span class="nav-text">限流算法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#计数器-固定窗口"><span class="nav-number">1.1.</span> <span class="nav-text">计数器(固定窗口)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#滑动计数器"><span class="nav-number">1.2.</span> <span class="nav-text">滑动计数器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#漏桶限流"><span class="nav-number">1.3.</span> <span class="nav-text">漏桶限流</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#令牌桶限流"><span class="nav-number">1.4.</span> <span class="nav-text">令牌桶限流</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#总结"><span class="nav-number">1.5.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Guava-RateLimiter"><span class="nav-number">1.6.</span> <span class="nav-text">Guava RateLimiter</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SmoothRateLimiter"><span class="nav-number">2.</span> <span class="nav-text">SmoothRateLimiter</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SmoothBursty"><span class="nav-number">3.</span> <span class="nav-text">SmoothBursty</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#setRate"><span class="nav-number">3.1.</span> <span class="nav-text">setRate</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#acquire"><span class="nav-number">3.2.</span> <span class="nav-text">acquire</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Hao</span>
+
+  
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.2</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/jquery/2.1.3/jquery.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fastclick/1.0.6/fastclick.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.bootcss.com/jquery_lazyload/1.9.7/jquery.lazyload.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/velocity/1.2.1/velocity.ui.min.js"></script>
+
+  
+  <script type="text/javascript" src="//cdn.staticfile.org/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
