@@ -21,57 +21,81 @@ categories: mysql
 
 #### InnoDB相关配置
 
-1. sync_binlog
+##### bin log 刷盘
+sync_binlog， `binlog`的刷新写入方式，这个参数不仅影响到`binlog`对MySQL所带来的性能损耗，而且还影响到MySQL中数据的完整性。参数设置说明如下：
+- 0： 事务提交时，  write 到 page cache, 由 os 决定什么时候刷盘
+- 1: 事务提交时， 执行 fsync 刷盘
+- n: n个事务提交后， 调用 fsync 刷盘
 
-   `binlog`的刷新写入方式，这个参数不仅影响到`binlog`对MySQL所带来的性能损耗，而且还影响到MySQL中数据的完整性。参数设置说明如下：
-   1).  `sync_binlog=0`
-   当事务提交之后，MySQL不做fsync之类的磁盘同步指令刷新binlog_cache中的信息到磁盘，而让文件系统自行决定什么时候来做同步，或者cache满了之后才同步到磁盘。如果没刷新到磁盘前系统宕机，则会丢失最后的binlog内容，但是此参数性能最佳
-   2).  `sync_binlog=n`
-   当每进行n次事务提交之后，MySQL将进行一次fsync之类的磁盘同步指令来将binlog_cache中的数据强制写入磁盘。
+##### redo log 刷盘
+   
+
+innodb_flush_logs_at_trx_commit， redo log 刷新方式
+
+- 0： 事务提交时，直接 write 到 redo log buffer, innodb 后台线程每 1 s执行一次 write 到 page cache， 并执行 fsync 刷盘
+- 1： 事务提交时，每次都 write 到 page cache， 并执行 fsync 刷盘
+- 2： 事务提交时， write 到 page cache， 由 innodb 线程每秒执行一次 fsync 刷盘 (与 0 是同一个 innodb 后台线程)
+
+#### 事务组提交
+
+- binlog_group_commit_sync_delay = n, n 微妙后提交一次 bin log
+- binlog_group_commit_sync_no_delay_count=n， n组事务后提交一次 bin log
+
+这两个是或关系， 任意满足一个就会执行
+   
+   
+##### innodb 其他相关参数
+
+1. innodb_buffer_pool_size
+
+这是Innodb最重要的一个配置参数，这个参数控制Innodb本身的缓冲大小，也影响到，多少数据能在缓存中。建议该参数的配置在`物理内存的70％－80％`之间
+
+2. innodb_log_file_size
+
+这个参数是设置 `redo log`大小。规则很简单:小日志文件写入慢，恢复快；大日志文件写入快，恢复慢。目前设置的是`128M`
 
    
 
-2. innodb_flush_logs_at_trx_commit
-
-   InnoDB事务日志（redo log）的刷新写入方式，这个参数对InnoDB的写入性能来说非常重要，有以下3种设置：
-   
-   1) `innodb_flush_logs_at_trx_commit=0`， 日志缓冲(`log buffer`)由后台线程每秒一次地被写到日志文件(这里可以理解成操作系统的`page cache`并没有落到磁盘上)，并且对日志文件做到磁盘操作的刷新。任何mysqld进程的崩溃会导致丢失一秒的事务数据
-   
-   2) `innodb_flush_logs_at_trx_commit=1`，在每个事务提交时，日志缓冲被写到日志文件，对日志文件做到磁盘操作的刷新。这是默认的值， 最安全的方式，但是速度最慢。
-   3)  `innodb_flush_logs_at_trx_commit=2`，在每个事务提交时，日志缓冲被写到文件，但不对日志文件做到磁盘操作的刷新，操作系统来决定何时刷盘(`page cache`刷盘策略)。只有操作系统崩溃或掉电会丢失事务数据，不然不会丢失事务。
-   
-   
-   
-3. innodb_buffer_pool_size
-
-   这是Innodb最重要的一个配置参数，这个参数控制Innodb本身的缓大小，也影响到，多少数据能在缓存中。建议该参数的配置在`物理内存的70％－80％`之间
-
-4. innodb_log_file_size
-
-   这个参数是设置 `redo log`大小。规则很简单:小日志文件写入慢，恢复快；大日志文件写入快，恢复慢。目前设置的是`128M`
-
-   
-
-### SQL性能分析
+### SQL性能/锁分析
 
 
+#### 连接性能缝隙
 
-(1). 查看`mysql`系统状态，分析系统是否正常等:
+1. 最大连接数
 
+查看系统最大连接数：
+``` 
+SHOW VARIABLES LIKE 'max_connections';
 ```
-#显示状态信息（扩展show status like ‘XXX’）
-Mysql> show status;
-#显示系统变量（扩展show variables like ‘XXX’）
-Mysql> show variables\G;
-#显示InnoDB存储引擎的状态
-Mysql> show engine innodb status;
-#查看当前SQL执行，包括执行状态、是否锁表等(当执行大SQL时，这个命令可以看到执行进度)
-Mysql> show processlist ;
+
+设置连接数, 在 `my.conf` 中:
+``` 
+max_connections = 2000
 ```
 
 
+2. 当前开放的连接/当前运行的连接
 
-(2). 系统慢SQL记录，使用 `slowLog`记录，开启慢查询日志:
+- `Thread_conneted`: 代表当前已建立连接的数量，因为一个连接就需要一个线程，所以也可以看成当前被使用的线程数， 
+- `Thread_running`: 代表当前激活的（当前并发执行的statement/command的）线程数。有时候连接已建立，但是连接处于sleep状态。如果sql性能足够好.可能 thread running 极少就可以处理，当 sql 出了问题 running 就会飙升
+
+threads_running 飙高表示server目前压力较大，一般是客户端压力突增/IO问题/CPU问题/异常SQL等原因引起，需要定位问题源头并马上解决，否则上层应用受到更大影响，可能导致"server hang住"
+
+
+查看 Thread 相关:
+```
+show status like 'Thread%' \G;
+```
+
+
+3. show engine innodb status 查看
+  
+
+
+
+#### 慢查询分析
+
+系统慢SQL记录，使用 `slowLog`记录，开启慢查询日志:
 
 ```
 # 检查是否开启慢查询日志
@@ -84,7 +108,44 @@ set long_query_time = 0.1;
 set slow_query_log_file = /data/log/mysql/slow_query.log
 ```
 
+
 这里在慢查询日志中找到了慢SQL后，就需要用执行计划来查看SQL语句是否命中索引，根据具体情况来优化SQL
+
+
+#### 锁分析
+
+在`information_schema`下面有三张表:`INNODB_TRX`、`INNODB_LOCKS`、`INNODB_LOCK_WAITS`，通过这三张表，可以更简单地监控当前的事务并分析可能存在的问题。
+
+1. INNODB_TRX 
+- trx_id:InnoDB存储引擎内部唯一的事物ID 
+- trx_status:当前事务的状态 
+- trx_status:事务的开始时间 
+- trx_requested_lock_id：等待事务的锁ID 
+- trx_wait_started：事务等待的开始时间 
+- trx_weight：事务的权重，反应一个事务修改和锁定的行数，当发现死锁需要回滚时，权重越小的值被回滚 
+- trx_mysql_thread_id：MySQL中的进程ID，与show processlist中的ID值相对应 
+- trx_query：事务运行的SQL语句
+
+2. INNODB_LOCKS
+- LOCK_ID     一个唯一的锁ID号，内部为 InnoDB。 
+- LOCK_TRX_ID     持有锁的交易的ID 
+- LOCK_MODE     如何请求锁定。允许锁定模式描述符 S，X， IS，IX， GAP，AUTO_INC。锁定模式描述符可以组合使用以识别特定的锁定模式。 
+- LOCK_TYPE     锁的类型 
+- LOCK_TABLE     已锁定或包含锁定记录的表的名称 
+- LOCK_INDEX     索引的名称，如果LOCK_TYPE是 RECORD; 否则NULL 
+- LOCK_SPACE     锁定记录的表空间ID，如果 LOCK_TYPE是RECORD; 否则NULL 
+- LOCK_PAGE     锁定记录的页码，如果 LOCK_TYPE是RECORD; 否则NULL。 
+- LOCK_REC     页面内锁定记录的堆号，如果 LOCK_TYPE是RECORD; 否则NULL。 
+- LOCK_DATA     与锁相关的数据（如果有）。如果 LOCK_TYPE是RECORD，是锁定的记录的主键值，否则NULL。
+此列包含锁定行中主键列的值，格式为有效的SQL字符串。如果没有主键，LOCK_DATA则是唯一的InnoDB内部行ID号。如果对键值或范围高于索引中的最大值的间隙锁定，则LOCK_DATA 报告supremum pseudo-record。当包含锁定记录的页面不在缓冲池中时（如果在保持锁定时将其分页到磁盘），InnoDB不从磁盘获取页面，以避免不必要的磁盘操作。相反， LOCK_DATA设置为 NULL。
+
+
+3. INNODB_LOCK_WAITS
+
+- REQUESTING_TRX_ID     请求（阻止）事务的ID。
+- REQUESTED_LOCK_ID     事务正在等待的锁的ID。
+- BLOCKING_TRX_ID     阻止事务的ID。
+- BLOCKING_LOCK_ID     由阻止另一个事务继续进行的事务所持有的锁的ID
 
 
 
@@ -332,9 +393,7 @@ mysql> EXPLAIN SELECT * FROM s1 INNER JOIN s2 ON s1.id = s2.id;
 
   - `Using join buffer (Block Nested Loop)`：这是因为对表`s2`的访问不能有效利用索引，只好退而求其次，使用`join buffer`来减少对`s2`表的访问次数，从而提高性能。
   - `Using where`：可以看到查询语句中有一个`s1.common_field = s2.common_field`条件，因为`s1`是驱动表，`s2`是被驱动表，所以在访问`s2`表时，`s1.common_field`的值已经确定下来了，所以实际上查询`s2`表的条件就是`s2.common_field = 一个常数`，所以提示了`Using where`额外信息。
-
-### 优化案例
-
+  
 
 
 ### 参考资料
