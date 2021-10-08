@@ -78,5 +78,5 @@ theme: next
 ## Docs: https://hexo.io/docs/deployment.html
 deploy:
   type: git
-  repository: git@github.com:haobinaa/haobinaa.github.io.git
+  repository: git@101.32.178.99:/home/git/repos/blog.git
   branch: master
