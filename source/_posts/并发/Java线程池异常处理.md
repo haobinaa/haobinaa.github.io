@@ -3,6 +3,7 @@ title: Java线程池异常处理
 date: 2021-04-30 11:29:19
 tags:
 categories: 并发
+description: 线程池异常情况
 ---
 
 ### 线程池运行中线程异常后的情况

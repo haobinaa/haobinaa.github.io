@@ -3,6 +3,7 @@ title: 池化设计之CommonPool
 date: 2021-01-07 15:45:28
 tags:
 categories: 架构
+description: 池化对象设计
 ---
 ### 池化技术 CommonPool 
 

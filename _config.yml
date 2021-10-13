@@ -4,10 +4,11 @@
 
 # Site
 title: Do Or Die
-subtitle: 
+subtitle:
 description: 勿在浮沙筑高台
+keywords: 架构师
 author: Leo Hao
-language: zh-Hans
+language: zh-Han
 timezone:
 
 # URL
@@ -72,7 +73,7 @@ pagination_dir: page
 # Extensions
 ## Plugins: https://hexo.io/plugins/
 ## Themes: https://hexo.io/themes/
-theme: next
+theme: next-reloaded
 
 # Deployment
 ## Docs: https://hexo.io/docs/deployment.html
@@ -80,3 +81,40 @@ deploy:
   type: git
   repository: git@101.32.178.99:/home/git/repos/blog.git
   branch: master
+
+# 阅读统计
+symbols_count_time:
+  symbols: true
+  time: true
+  total_symbols: true
+  total_time: true
+
+# 本地搜索
+search:
+  path: search.xml
+  field: post
+  format: html
+  limit: 100
+
+# 博文压缩
+neat_enable: true
+# 压缩html
+neat_html:
+  enable: true
+  exclude:
+# 压缩css
+neat_css:
+  enable: true
+  exclude:
+    - '**/*.min.css'
+# 压缩js
+neat_js:
+  enable: true
+  mangle: true
+  output:
+  compress:
+  exclude:
+    - '**/*.min.js'
+    - '**/jquery.fancybox.pack.js'
+    - '**/index.js'
+    - '**/fireworks.js'

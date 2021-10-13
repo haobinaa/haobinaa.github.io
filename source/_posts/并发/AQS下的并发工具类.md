@@ -3,6 +3,7 @@ title: AQS下的并发工具类
 date: 2019-10-23 19:57:21
 tags:
 categories: 并发
+description: CountDownLatch、CyclicBarrier、Semaphore
 ---
 ### CountDownLatch
 `CountDownLatch`也叫闭锁, 它允许一个或多个线程一直等待，直到其他线程的操作执行完后再执行。

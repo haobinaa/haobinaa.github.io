@@ -2,7 +2,8 @@
 title: 分布式共识算法(Paxos、Raft)
 date: 2021-04-01 09:44:31
 tags:
-categories: 分布式
+categories: 算法
+description: paxos、multi-paxos、raft
 ---
 
 ## 分布式共识算法
