@@ -24,14 +24,14 @@ minify: false
 custom_file_path:
 #head: source/_data/head.swig
 #header: source/_data/header.swig
-#sidebar: source/_data/sidebar.swig
+  sidebar: source/_data/sidebar.swig
 #postMeta: source/_data/post-meta.swig
 #postBodyEnd: source/_data/post-body-end.swig
 #footer: source/_data/footer.swig
 #bodyEnd: source/_data/body-end.swig
-#variable: source/_data/variables.styl
+#  variable: source/_data/variables.styl
 #mixin: source/_data/mixins.styl
-#style: source/_data/styles.styl
+  style: source/_data/styles.styl
 
 
 # ---------------------------------------------------------------
@@ -66,7 +66,7 @@ footer:
   copyright:
 
   # Powered by Hexo & NexT
-  powered: true
+  powered: false
 
   # Beian ICP and gongan information for Chinese users. See: https://beian.miit.gov.cn, http://www.beian.gov.cn
   beian:
@@ -87,8 +87,8 @@ footer:
 creative_commons:
   license: by-nc-sa
   sidebar: false
-  post: false
-  language:
+  post: true
+  language: zh-Han
 
 
 # ---------------------------------------------------------------
@@ -102,7 +102,7 @@ creative_commons:
 scheme: Gemini
 
 # Dark Mode
-darkmode: false
+darkmode: true
 
 
 # ---------------------------------------------------------------
@@ -200,7 +200,7 @@ links_settings:
   layout: block
 
 links:
-#Title: http://yoursite.com
+Title: https://haobin.work
 
 # Table of Contents in the Sidebar
 # Front-matter variable (unsupport wrap expand_all).
@@ -393,7 +393,7 @@ bookmark:
 # `Follow me on GitHub` banner in the top-right corner.
 github_banner:
   enable: false
-  permalink: https://github.com/yourname
+  permalink: https://github.com/haobinaa
   title: Follow me on GitHub
 
 
@@ -569,7 +569,7 @@ comments:
   style: tabs
   # Choose a comment system to be displayed by default.
   # Available values: changyan | disqus | disqusjs | gitalk | livere | valine
-  active: false
+  active: valine
   # Setting `true` means remembering the comment system selected by the visitor.
   storage: true
   # Lazyload all comment systems.
@@ -584,7 +584,7 @@ comments:
 
 # Disqus
 disqus:
-  enable: true
+  enable: false
   shortname: haobin
   count: true
   #post_meta_order: 0

@@ -4,7 +4,7 @@
 
 # Site
 title: Do Or Die
-subtitle:
+subtitle: 逝者如斯夫
 description: 勿在浮沙筑高台
 keywords: 架构师
 author: Leo Hao
@@ -13,7 +13,7 @@ timezone:
 
 # URL
 ## If your site is put in a subdirectory, set url as 'http://yoursite.com/child' and root as '/child/'
-url: http://yoursite.com
+url: https://haobin.work
 root: /
 permalink: :year/:month/:day/:title/
 permalink_defaults:
