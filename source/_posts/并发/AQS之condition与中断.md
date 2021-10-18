@@ -3,6 +3,7 @@ title: AQS之condition与中断
 date: 2019-07-26 23:45:25
 tags:
 categories: 并发
+description: Lock.newCondition 条件队列，aps中断处理
 ---
 
 ### condition用于生产者-消费者

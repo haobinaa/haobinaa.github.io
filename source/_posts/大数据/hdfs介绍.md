@@ -3,6 +3,7 @@ title: hdfs介绍
 date: 2019-03-01 18:32:13
 tags: 
 categories: bigdata
+description: hdfs 存储
 ---
 
 ### HDFS

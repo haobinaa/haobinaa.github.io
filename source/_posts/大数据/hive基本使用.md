@@ -3,12 +3,10 @@ title: hive基本使用
 date: 2019-03-08 17:48:51
 tags: hive
 categories: bigdata
+description: hive 使用
 ---
 
 由于最近项目需要和大数据对接，需要了解一下数仓的基本知识，所以记录一下hive的基础原理和使用
-
-
-
 
 ### hive简介
 

@@ -3,6 +3,7 @@ title: ReentrantLock与AQS
 date: 2018-06-28 09:28:33
 tags:
 categories: 并发
+description: aqs队列
 ---
 ## 概述
 

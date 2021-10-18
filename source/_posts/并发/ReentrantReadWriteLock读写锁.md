@@ -3,6 +3,7 @@ title: ReentrantReadWriteLock读写锁
 date: 2020-03-14 19:51:49
 tags:
 categories: 并发
+description: java中读写锁的典型实现
 ---
 
 ### ReentrantReadWriteLock 结构

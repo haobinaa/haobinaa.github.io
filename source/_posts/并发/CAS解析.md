@@ -3,6 +3,7 @@ title: CAS解析
 date: 2018-09-28 09:29:15
 tags:
 categories: 并发
+description: cas 操作
 ---
 ### CAS(Compare And Swap)概述
  CAS 指的是现代 CPU 广泛支持的一种对内存中的共享数据进行操作的一种特殊指令。这个指令会对内存中的共享数据做原子的读写操作

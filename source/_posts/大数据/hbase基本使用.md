@@ -3,6 +3,7 @@ title: hbase基本介绍
 date: 2019-03-11 08:45:04
 tags:
 categories: bigdata
+description: hbase 使用
 ---
 ### 简介
 

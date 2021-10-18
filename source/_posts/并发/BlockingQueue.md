@@ -3,6 +3,7 @@ title: BlockingQueue
 date: 2020-12-21 19:13:32
 tags:
 categories: 并发
+description: 阻塞队列。ArrayBlockingQueue,SynchronousQueue，PriorityBlockingQueue
 ---
 
 ### BlockingQueue 介绍

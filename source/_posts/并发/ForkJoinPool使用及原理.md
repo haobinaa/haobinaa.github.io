@@ -3,6 +3,7 @@ title: ForkJoinPool使用及原理
 date: 2020-11-15 23:41:23
 tags:
 categories: 并发
+description: ForkJoinPool 工作窃取算法
 ---
 
 ### 原理简介

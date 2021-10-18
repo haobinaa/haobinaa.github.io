@@ -3,6 +3,7 @@ title: synchronize和volatile
 date: 2017-11-19 11:31:32
 tags: 
 categories: 并发
+description: 并发问题，MESI缓存一致性协议
 ---
 ### 并发产生的问题
 
@@ -228,6 +229,7 @@ volatile 的禁止重排序并不局限于两个 volatile 的属性操作不能�
 另 volatile 可以使得 long 和 double 的赋值是原子的
 
 
+### MESI 协议
 ### 参考资料
 
 - [类锁和对象锁](https://juejin.im/post/5adc8f8af265da0b7e0bdafe)
