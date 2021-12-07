@@ -1,6 +1,6 @@
 ---
-title: ThreadLocal详解
-date: 2018-08-15 11:38:04
+title: ThreadLocal与FastThreadLocal
+date: 2020-08-15 11:38:04
 tags: 
 categories: 并发
 description: ThreadLocal 原理， FastThreadLocal
@@ -307,6 +307,7 @@ ThreadLocalMap的设计中已经考虑到这种情况，也加上了一些防护
 - 分配使用了ThreadLocal又不再调用get(),set(),remove()方法，那么就会导致内存泄漏。
 
 ##### 为什么使用弱引用
+
 先来看看官方文档的说法：
 > To help deal with very large and long-lived usages, the hash table entries use WeakReferences for keys.
   为了应对非常大和长时间的用途，哈希表使用弱引用的 key。
