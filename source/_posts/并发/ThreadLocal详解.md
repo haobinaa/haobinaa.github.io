@@ -328,6 +328,30 @@ ThreadLocalMap的设计中已经考虑到这种情况，也加上了一些防护
 
 在使用线程池的情况下，没有及时清理ThreadLocal，不仅是内存泄漏的问题，更严重的是可能导致业务逻辑出现问题。所以，使用ThreadLocal就跟加锁完要解锁一样，用完就清理。
 
+### FastThreadLocal
+
+Netty 中使用 FastThreadLocal 作为 ThreadLocal 的扩展， ThreadLocalMap 中使用线性探测的方式解决hash冲突的问题，如果没有找到空闲的slot，就不断往后尝试，直到找到一个空闲的位置，插入entry，这种方式在经常遇到hash冲突时，影响效率。
+
+FastThreadLocal 直接使用数组避免了hash冲突的发生，对每一个FastThreadLocal实例创建时，分配一个下标index;分配index使用AtomicInteger实现，每个FastThreadLocal都能获取到一个不重复的下标
+
+
+#### FTL 关键类
+
+FastThreadLocal 使用了 FastThreadLocalThread 和 InternalThreadLocalMap 两个类
+
+`FastThreadLocalThread`是对Thread类的一层包装，每个线程对应一个`InternalThreadLocalMap`实例
+```
+public class FastThreadLocalThread extends Thread {
+
+    private InternalThreadLocalMap threadLocalMap;
+    // 省略其他代码
+} 
+```
+
+
+
+
+
 ### 参考资料
 - [javaThreadLocal详解](https://juejin.im/post/5965ef1ff265da6c40737292)
 - [ThreadLocal内存泄露问题](https://juejin.im/post/5ba9a6665188255c791b0520)
