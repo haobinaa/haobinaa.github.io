@@ -348,6 +348,156 @@ public class FastThreadLocalThread extends Thread {
 } 
 ```
 
+`InternalThreadLocalMap` 主要由两个成员组成(继承于 `UnpaddedInternalThreadLocalMap`)，其中 indexedVariables 作为一个 Object[]数组，直接用来存放 FastThreadLocal 对应的 value，每个 FastThreadLocal 对象都会在相应的线程的 ThreadLocalMap 中被分配到对应的 index，而这里的具体下标，则由以上的 nextIndex 成员在每个 FastThreadLocal 初始化的时候分配:
+``` 
+public final class InternalThreadLocalMap extends UnpaddedInternalThreadLocalMap {
+  
+  // 这里是 UnpaddedInternalThreadLocalMap 中定义的
+  static final AtomicInteger nextIndex = new AtomicInteger();
+  Object[] indexedVariables;
+  
+   public static int nextVariableIndex() {
+      int index = nextIndex.getAndIncrement();
+      if (index < 0) {
+          nextIndex.decrementAndGet();
+          throw new IllegalStateException("too many thread-local indexed variables");
+      }
+      return index;
+  }
+}
+
+public class FastThreadLocal<V> {
+  private final int index; 
+  // 初始化分配下标
+  public FastThreadLocal() {
+    index = InternalThreadLocalMap.nextVariableIndex();
+}
+}
+```
+
+#### FTL get 和 set 过程
+
+get 操作比较简单， 就是先获取 `InternalThreadLocalMap`, 这里分为 fastGet 和 slowGet:
+- fastGet: 如果当前Thread是 FastThreadLocalThread, 则直接获取 `InternalThreadLocalMap`, 然后根据 FTL 的下标获取对应值
+- slowGet: 当前 Thread 是普通 Thread， 则通过 ThreadLocal 包一下 `InternalThreadLocalMap` 返回， 然后根据 FTL 下标获取值
+``` 
+//  FastThreadLocal.get 
+public final V get() {
+    return get(InternalThreadLocalMap.get());
+}
+public final V get(InternalThreadLocalMap threadLocalMap) {
+    Object v = threadLocalMap.indexedVariable(index);
+    if (v != InternalThreadLocalMap.UNSET) {
+        return (V) v;
+    }
+
+    return initialize(threadLocalMap);
+}
+
+// InternalThreadLocalMap.get
+public static InternalThreadLocalMap get() {
+    Thread thread = Thread.currentThread();
+    if (thread instanceof FastThreadLocalThread) {
+        return fastGet((FastThreadLocalThread) thread);
+    } else {
+        return slowGet();
+    }
+}
+
+// InternalThreadLocalMap.fastGet
+private static InternalThreadLocalMap fastGet(FastThreadLocalThread thread) {
+    InternalThreadLocalMap threadLocalMap = thread.threadLocalMap();
+    if (threadLocalMap == null) {
+        thread.setThreadLocalMap(threadLocalMap = new InternalThreadLocalMap());
+    }
+    return threadLocalMap;
+}
+
+// InternalThreadLocalMap.slowGet
+private static InternalThreadLocalMap slowGet() {
+    ThreadLocal<InternalThreadLocalMap> slowThreadLocalMap = UnpaddedInternalThreadLocalMap.slowThreadLocalMap;
+    InternalThreadLocalMap ret = slowThreadLocalMap.get();
+    if (ret == null) {
+        ret = new InternalThreadLocalMap();
+        slowThreadLocalMap.set(ret);
+    }
+    return ret;
+}
+```
+
+
+```
+public final void set(V value) {
+    if (value != InternalThreadLocalMap.UNSET) {
+        set(InternalThreadLocalMap.get(), value);
+    } else {
+        remove();
+    }
+}
+```
+
+
+set 操作
+
+``` 
+##### FastThreadLocal.set
+public final void set(V value) {
+    if (value != InternalThreadLocalMap.UNSET) {
+        set(InternalThreadLocalMap.get(), value);
+    } else {
+        remove();
+    }
+}
+public final void set(InternalThreadLocalMap threadLocalMap, V value) {
+    if (value != InternalThreadLocalMap.UNSET) {
+        if (threadLocalMap.setIndexedVariable(index, value)) {
+            addToVariablesToRemove(threadLocalMap, this);
+        }
+    } else {
+        remove(threadLocalMap);
+    }
+}
+
+###### ThreadLocalMap.setIndexedVariable
+// 将值设置到指定数组下标位置
+public boolean setIndexedVariable(int index, Object value) {
+    Object[] lookup = indexedVariables;
+    if (index < lookup.length) {
+        Object oldValue = lookup[index];
+        lookup[index] = value;
+        // 如果是第一次设置值则返回 true
+        return oldValue == UNSET;
+    } else {
+      // 容量不够则扩容
+        expandIndexedVariableTableAndSet(index, value);
+        return true;
+    }
+}
+
+######  ThreadLocalMap.addToVariablesToRemove
+// 将 FastThreadLocal 变量加入数组第一个下标的 set 集合中
+private static void addToVariablesToRemove(InternalThreadLocalMap threadLocalMap, FastThreadLocal<?> variable) {
+    // variablesToRemoveIndex 是 FastThreadLocal 的静态变量， 也就是第一次取数组的下标 = 0
+    Object v = threadLocalMap.indexedVariable(variablesToRemoveIndex);
+    Set<FastThreadLocal<?>> variablesToRemove;
+    if (v == InternalThreadLocalMap.UNSET || v == null) {
+        variablesToRemove = Collections.newSetFromMap(new IdentityHashMap<FastThreadLocal<?>, Boolean>());
+        threadLocalMap.setIndexedVariable(variablesToRemoveIndex, variablesToRemove);
+    } else {
+        variablesToRemove = (Set<FastThreadLocal<?>>) v;
+    }
+
+    variablesToRemove.add(variable);
+}
+```
+
+#### FTL 对比 ThreadLocal 快在哪
+
+
+- FastThreadLocal 在具体的定位的过程中，只需要根据在构造方法里获取得到的具体下标就可以定位到具体的数组位置进行变量的存取，而在 jdk 原生的 ThreadLocal 中，具体位置的下标获取不仅需要计算 ThreadLocal 的 hash 值，并需要在 hashTable 上根据 key 定位的结果，一旦定位之后的结果上已经存在其他 ThreadLocal 的变量，那么则是通过线性探测法，在 hashTable 上寻找下一个位置进行，相比 FastThreadLocal 定位的过程要复杂的多。
+- FastThreadLocal 由于采取数组的方式，当面对扩容的时候，只需要将原数组中的内容复制过去，并用 NULL 对象填满剩余位置即可，而在 ThreadLocal 中，由于 hashTable 的缘故，在扩容后还需要进行一轮 rehash，在这过程中，仍旧存在 hash 冲突的可能。
+- 在 FastThreadLocal 中，遍历当前线程的所有本地变量，只需要将数组首位的集合即可，不需要遍历数组上的每一个位置。
+- 在原生的 ThreadLocal 中，由于可能存在 ThreadLocal 被回收，但是当前线程仍旧存活的情况导致 ThreadLocal 对应的本地变量内存泄漏的问题，因此在 ThreadLocal 的每次操作后，都会进行启发式的内存泄漏检测，防止这样的问题产生，但也在每次操作后花费了额外的开销。而在 FastThreadLocal 的场景下，由于数组首位的 FastThreadLocal 集合中保持着所有 FastThreadLocal 对象的引用，因此当外部的 FastThreadLocal 的引用被置为 null，该 FastThreadLocal 对象仍旧保持着这个集合的引用，不会被回收掉，只需要在线程当前业务操作后，手动调用 FastThreadLocal 的 removeAll()方法，将会遍历数组首位集合，回收掉所有 FastThreadLocal 的变量，避免内存泄漏的产生，也减少了原生 ThreadLocal 的启发式检测开销。
 
 
 
