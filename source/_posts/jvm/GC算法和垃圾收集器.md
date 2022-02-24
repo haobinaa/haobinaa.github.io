@@ -1,6 +1,9 @@
 ---
-title: GC算法和垃圾收集器 date: 2018-11-11 18:06:07 tags:
-categories: jvm description: 如何判断对象是否应该回收，什么时候回收，怎么回收。CMS和G1的工作原理， GC日志
+title: GC算法和垃圾收集器 
+date: 2018-11-11 18:06:07 
+tags:
+categories: jvm 
+description: 如何判断对象是否应该回收，什么时候回收，怎么回收。CMS和G1的工作原理， GC日志
 ---
 
 ### 判断对象是否存活
