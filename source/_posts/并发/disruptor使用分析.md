@@ -8,7 +8,7 @@ description: 高性能并发队列 disruptor 源码分析， 场景示例
 
 ### disruptor 介绍
 
-disruptor 是一个开源的并发框架， 提供了类似有界队列的功能， 相较于java原生并发队列， disruptor 能够达到很高的tps和很低的延时。 
+Disruptor 是LMAX公司开源的一个高效的内存无锁队列，一个高性能的异步处理框架，或者可以认为是最快的消息框架(轻量的JMS)，也可以认为是一个观察者模式实现，或者事件-监听模式的实现，直接称disruptor模式。disruptor最大特点是高性能，其LMAX架构可以获得每秒6百万订单，用1微秒的延迟获得吞吐量为100K+。
 
 
 #### disruptor 设计
