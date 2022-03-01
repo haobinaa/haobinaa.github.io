@@ -180,6 +180,7 @@ EventFactory 是一次性使用的类，在最开始的时候用来给RingBuffer
 为了避免JAVA GC带来的性能影响，Disruptor采用的设计是在数组上预填充好对象，每次publish event的时候，只是通过RingBuffer.get(seq)拿到对象，更新对象的值，然后就发布出去了。整个生产消费过程中再也不会有event对象的创建和销毁。
 
 
+
 #### Sequence
 
 sequence 是用来表达event序例号的对象。为了高并发下的可见性，肯定不能直接用long的，至少也是volatile long。但Disruptor觉得volatile long还是不够用，所以创造了Sequence类。
@@ -192,31 +193,33 @@ sequence 是用来表达event序例号的对象。为了高并发下的可见性
 
 比如在对EventProcessor.sequence的更新中都是用的order writes，不保证立即可见，但速度快很多。在这个场景里，造成的结果是显示的消费进度可能比实际上慢，导致生产者有可能在可以生产的情况下没有去生产。但生产者看的是多个消费者中最慢的那个消费进度，所以影响可能没有那么大。
 
-#### Sequencer
 
-Sequencer是Disruptor框架的核心类。
+#### 生产者
 
-生产者发布event的时候首先需要预定一个sequence，Sequencer就是计算和发布sequence的。它主要有2个实现类： `SingleProducerSequencer` 和 `MultiProducerSequencer`
+生产者 Sequencer 是 Disruptor 框架的核心类。
+
+生产者发布 event 的时候首先需要预定一个 sequence，Sequencer 就是计算和发布 sequence 的。它主要有2个实现类： `SingleProducerSequencer` 和 `MultiProducerSequencer`
 
 
-##### SingleProducerSequencer
-
-生产者 publishEvent 步骤: 
+生产者 publishEvent 步骤:
 1. 通过Sequencer.next(n) 来预定下面n个可以写入的数据位，然后修改数据
 2. Sequencer.publish 发布event
 
-但因为RingBuffer是环形的，一个 size 16 的RingBuffer当你拿到Sequence为16时相当于又要去写 `RingBuffer[0]` 的位置了，假如之前的数据还没被消费过就会被覆盖了。Sequencer是这样解决这个问题的，它在内部维护了一个:
+##### SingleProducerSequencer
+
+但因为RingBuffer是环形的，一个 size 16 的RingBuffer当你拿到 sequence 为16时相当于又要去写 `RingBuffer[0]` 的位置了，假如之前的数据还没被消费过就会被覆盖了。Sequencer是这样解决这个问题的，它在内部维护了一个:
 ``` 
 volatile Sequence[] gatingSequences = new Sequence[0];
 ```
-每个消费者会维护一个自己的Sequence对象，来记录自己已经消费到的序例位置。 每添加一个消费者，都会把消费者的Sequence引用添加到gatingSequences中。 通过访问gatingSequences，Sequencer可以得知消费的最慢的消费者消费到了哪个位置。
+每个消费者会维护一个自己的 Sequence 对象，来记录自己已经消费到的序例位置。 每添加一个消费者，都会把消费者的Sequence引用添加到 gatingSequences 中。 通过访问 gatingSequences，Sequencer可以得知消费的最慢的消费者消费到了哪个位置。
+
 ``` 
 gatingSequences=[7, 8, 9, 10, 3, 4, 5, 6, 11]
 
 8个消费者的例子，最慢的消费完了3，此时可以写seq 19的数据，但不能写seq 20(会覆盖 seq 4 的位置， 还没消费)
 ```
 
-在next(n)方法里，如果计算出的下一个event的Sequence值减去bufferSize.得出来的wrapPoint > min(gatingSequences)，说明即将写入的位置上，之前的event还有消费者没有消费，这时SingleProducerSequencer会等待并自旋。
+在next(n)方法里，如果计算出的下一个event的Sequence值减去bufferSize.得出来的 `wrapPoint > min(gatingSequences)`，说明即将写入的位置上，之前的event还有消费者没有消费，这时SingleProducerSequencer会等待并自旋。
 
 ``` 
 public long next(int n)
@@ -394,9 +397,57 @@ public boolean isAvailable(long sequence)
 
 在publish方法中是去setAvailable(sequence)了，所以 availableBuffer 是数据是否可用的标志。那为什么值要写成圈数呢，应该是避免把上一轮的数据当成这一轮的数据，错误判断sequence是否可用。
 
-#### EventProcessor 
+#### 消费者
 
-`EventProcessor extends Runnable` 可以理解为是一个消费者线程的接口
+当调用 `disruptor.handleEventsWith` 设置消息的处理器时，`Event Handler` 会被包装为 `BatchEventProcessor`.
+
+``` 
+public EventHandlerGroup<T> handleEventsWith(final EventHandler<? super T>... handlers)
+{
+    return createEventProcessors(new Sequence[0], handlers);
+}
+
+EventHandlerGroup<T> createEventProcessors(
+    final Sequence[] barrierSequences,
+    final EventHandler<? super T>[] eventHandlers)
+{
+    checkNotStarted();
+
+    final Sequence[] processorSequences = new Sequence[eventHandlers.length];
+    final SequenceBarrier barrier = ringBuffer.newBarrier(barrierSequences);
+    
+    // 如果传入多个事件， 这里就创建多个 EventProcessor
+    for (int i = 0, eventHandlersLength = eventHandlers.length; i < eventHandlersLength; i++)
+    {
+        final EventHandler<? super T> eventHandler = eventHandlers[i];
+
+        // 创建 BatchEventProcessor
+        final BatchEventProcessor<T> batchEventProcessor =
+            new BatchEventProcessor<T>(ringBuffer, barrier, eventHandler);
+
+        if (exceptionHandler != null)
+        {
+            batchEventProcessor.setExceptionHandler(exceptionHandler);
+        }
+        // consumerRepository 就包含了 EventProcessorInfo
+        consumerRepository.add(batchEventProcessor, eventHandler, barrier);
+        processorSequences[i] = batchEventProcessor.getSequence();
+    }
+
+    updateGatingSequencesForNextInChain(barrierSequences, processorSequences);
+
+    return new EventHandlerGroup<T>(this, consumerRepository, processorSequences);
+}
+```
+
+Disruptor 启动后消费过程:
+![](/images/thread/disruptor_start.png)
+
+
+##### EventProcessor 
+
+
+`EventProcessor extends Runnable` 可以理解为是一个消费者线程的接口.
 
 主要实现类是 `BatchEventProcessor`, 主要属性是
 ``` 
@@ -406,18 +457,86 @@ EventHandler<? super T> eventHandler;  // 真正消费event的业务代码
 Sequence sequence = new Sequence(-1);      // 该消费线程消费完的sequence位置
 ```
 
-run 方法中是主要的逻辑
+run 方法中`processEvent`是主要的逻辑：
+``` 
+private void processEvents()
+{
+    T event = null;
+    // 获取下一个消费位置
+    long nextSequence = sequence.get() + 1L;
+    // 死循环处理事件
+    while (true)
+    {
+        try
+        {
+            // 当没有事件时候， 从ProcessingSequenceBarrier获取可用的 availableSequence
+            final long availableSequence = sequenceBarrier.waitFor(nextSequence);
+            if (batchStartAware != null)
+            {
+                batchStartAware.onBatchStart(availableSequence - nextSequence + 1);
+            }
+
+            while (nextSequence <= availableSequence)
+            {
+                event = dataProvider.get(nextSequence);
+                eventHandler.onEvent(event, nextSequence, nextSequence == availableSequence);
+                nextSequence++;
+            }
+
+            sequence.set(availableSequence);
+        }
+        catch (final TimeoutException e)
+        {
+            notifyTimeout(sequence.get());
+        }
+        catch (final AlertException ex)
+        {
+            if (running.get() != RUNNING)
+            {
+                break;
+            }
+        }
+        catch (final Throwable ex)
+        {
+            exceptionHandler.handleEventException(ex, nextSequence, event);
+            sequence.set(nextSequence);
+            nextSequence++;
+        }
+    }
+}
+```
 
 
 ##### SequenceBarrier
 
-ProcessingSequenceBarrier 内部持有Sequencer的cursor引用，知道生产者生产到哪个位置了。BatchEventProcessor.sequence 是当前消费线程消费到的位置。sequence + 1 就是下一个打算消费的位置 nextSequence，sequenceBarrier.waitFor(nextSequence) 会去获取下一个可以消费的availableSequence。
+`BatchEventProcessor.processEvent` 会先调用 `sequnceBarries.waitFor` 等待事件的产生。 `SequnceBarries` 的实现类是 `ProcessingSequenceBarrier`
 
-拿到的availableSequence可能比要求的nextSequence大，意味着生产者生产出了很多可以消费的event。这时就会一个个去消费，并且更新BatchEventProcessor的sequence至availableSequence。此时Sequencer上的gatingSequences因为是引用的关系也会被更新。
+``` 
+public long waitFor(final long sequence)
+    throws AlertException, InterruptedException, TimeoutException
+{
+    checkAlert();
+    // 调用等待策略， 获取最新的事件编号
+    // 具体等待策略下文有介绍
+    long availableSequence = waitStrategy.waitFor(sequence, cursorSequence, dependentSequence, this);
+
+    // 如果当前可用的最新事件编号小于传入的 sequence，就直接返回可用编号即可
+    if (availableSequence < sequence)
+    {
+        return availableSequence;
+    }
+    
+    // 查询最高可用 event 编号的位置
+    return sequencer.getHighestPublishedSequence(sequence, availableSequence);
+}
+```
+
+
+拿到的availableSequence可能比要求的nextSequence大，意味着生产者生产出了很多可以消费的 event。这时就会一个个去消费，并且更新BatchEventProcessor的sequence至availableSequence。此时Sequencer上的gatingSequences因为是引用的关系也会被更新。
 
 ##### WaitStrategy
 
-调用 sequenceBarrier.waitFor(nextSequence) 时可能不会立即有新的event，这时的行为由 waitStrategy 决定，有多种实现，比如 BlockingWaitStrategy。
+调用 `sequenceBarrier.waitFor(nextSequence)` 时可能不会立即有新的event，这时的行为由 waitStrategy 决定，有多种实现，比如 BlockingWaitStrategy。
 
 Sequencer在构造的时候就会传入一个 waitStrategy，sequenceBarrier 是由 Sequencer 创建的，创建的时候把 Sequencer 的 waitStrategy 传递给 sequenceBarrier。Sequencer和SequenceBarrier持有同样的waitStrategy，相当于在两者间起到了 传递信息和回调 的作用。
 
@@ -482,14 +601,14 @@ else
 ThreadHints.onSpinWait();
 ```
 
-#### WorkerPool
+##### WorkerPool
 
 ``` 
 Sequence workSequence = new Sequence(-1);
 WorkProcessor<?>[] workProcessors
 ```
 
-WorkerPool 内部维护了一个workSequence，代表着整个pool分配出去的event位置。
+WorkerPool 内部维护了一个 workSequence，代表着整个pool分配出去的event位置。
 <=workSequence的event已经被分配给某个workProcessors了，但是不是一定已经被消费完。
 这个设计和多生产者的情况下，先分配sequence到具体的某个生产者，然后再去填充，提交是一样的道理。
 
@@ -497,9 +616,9 @@ WorkerPool 内部维护了一个workSequence，代表着整个pool分配出去�
 
 WorkProcessor 是基本的消费者线程，它保有workSequence的引用。
 
-在它的run loop中，它会首先尝试CAS去抢workSequence的下一个位置，抢到了就会去消费。
+在它的run loop中，它会首先尝试CAS去抢 workSequence 的下一个位置，抢到了就会去消费。
 
-如果没有可消费的event了，它就会调用 sequenceBarrier.waitFor(nextSequence) 陷入等待。但即使有了新的event被唤醒，它还是要靠CAS去抢下一个event的消费权。
+如果没有可消费的event了，它就会调用 `sequenceBarrier.waitFor(nextSequence)` 陷入等待。但即使有了新的event被唤醒，它还是要靠CAS去抢下一个event的消费权。
 
 ``` 
 while (true)
