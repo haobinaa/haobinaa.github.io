@@ -154,7 +154,7 @@ public final Buffer clear() {
 ### Channel
 
 Channel 是数据来源或写入的目的地，NIO中主要的channel：
-- FileChannel： 文件通道，用于文件读写
+- FileChannel： 文件通道，用于文件读写(常用的文件操作， 是阻塞的)
 - DatagramChannel: UDP 连接的接收和发送
 - SocketChannel: TCP 客户端
 - SeverSocketChannel: TCP 服务端
@@ -167,8 +167,8 @@ FileChannel 主要用于一些文件的操作，常见的操作如下:
 
 ##### 初始化
 
-可以从 inputstream 或 RandomAccessFile 获取一个 FileChannel:
-```java
+可以从 `inputstream` 或 RandomAccessFile 获取一个 FileChannel:
+```
 // inputstream
 FileInputStream inputStream = new FileInputStream(new File("/data.txt"));
 FileChannel fileChannel = inputStream.getChannel();
@@ -180,8 +180,7 @@ FileChannel fileChannel = new RandomAccessFile(new File("/data.txt"), "rw").getC
 ##### 读取/写入文件内容
 
 前面说过，Channel 的数据操作是和 Buffer 打交道的:
-```java
-
+```
 ByteBuffer buffer = ByteBuffer.allocate(1024);
 // 读取数据到 buffer
 int num = fileChannel.read(buffer);
