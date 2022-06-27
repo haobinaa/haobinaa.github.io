@@ -79,7 +79,7 @@ theme: next-reloaded
 ## Docs: https://hexo.io/docs/deployment.html
 deploy:
   type: git
-  repository: git@101.32.178.99:/home/git/repos/blog.git
+  repository: git@101.32.178.99:/var/repo/hexo.git
   branch: master
 
 # 阅读统计
