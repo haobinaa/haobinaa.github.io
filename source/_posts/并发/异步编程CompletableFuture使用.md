@@ -1,6 +1,6 @@
 ---
 title: 异步编程CompletableFuture使用
-date: 2020-12-14 21:52:15
+date: 2021-12-14 21:52:15
 tags:
 categories: 并发
 description: java 异步编程 CompletableFuture 使用
@@ -25,7 +25,7 @@ description: java 异步编程 CompletableFuture 使用
 
 Future 是 JDK5 新增的接口，用于描述一个异步的计算任务，但是使用中有很多局限:
 
-1. Future 对结果的获取仍是阻塞的， 这样与异步编程的初衷相违背
+1. Future 对结果的获取仍是阻塞的(只能通过阻塞或轮询的方式获取结果)
 2. 无法将多个异步的计算结果合并为一个
 3. 无法等待 Future 集合的所有任务完成
 4. 任务完成后触发动作
@@ -199,7 +199,8 @@ pool.shutdown();
 
 - allOf: 调用 join 会阻塞直到所有任务运行完成， 没有返回值
 - anyOf: 调用 join 返回最先完成任务的值
-``` 
+
+```
 CompletableFuture cfA = CompletableFuture.supplyAsync(() -> "taskA");
 CompletableFuture cfB = CompletableFuture.supplyAsync(() -> "taskB");
 CompletableFuture cfC = CompletableFuture.supplyAsync(() -> "taskC");
@@ -254,3 +255,47 @@ CompletableFuture<Integer> handleFuture = CompletableFuture
         });
 pool.shutdown();
 ```
+
+### CompletableFuture 原理
+
+CompletableFuture中包含两个字段：`result`和`stack`。
+- result用于存储当前CF的结果
+- stack（Completion）表示当前CF完成后需要触发的依赖动作（Dependency Actions），去触发依赖它的CF的计算，依赖动作可以有多个（表示有多个依赖它的CF），以栈（Treiber stack）的形式存储，stack表示栈顶元素。
+> 备注: Treiber stack 是一种无锁并发栈， Treiber stack 首先是个单向链表，链表头部即栈顶元素，在入栈和出现过程中，需要对栈顶元素进行CAS控制，防止多线程情况下数据错乱。 FutureTask 也是这种实现
+```
+volatile Object result;       // Either the result or boxed AltResult
+volatile Completion stack;    // Top of Treiber stack of dependent actions
+```
+
+依赖动作`Completion`基于类似观察者模式实现，他的子类如下:
+![](/images/thread/completion.png)
+- `UniCompletion`继承了 `Completion`，是一元依赖的基类，例如`thenApply`的实现类`UniApply`就继承自`UniCompletion`
+- `BiCompletion`继承了`UniCompletion`，是二元依赖的基类，同时也是多元依赖的基类。例如`thenCombine`的实现类`BiRelay`就继承自`BiCompletion`。
+
+#### CompletableFuture 中观察者模式(一元依赖)
+
+一个一元依赖(依赖一个CF)的 CompletableFuture 例子
+``` 
+// 定义一个异步执行 cf1
+CompletableFuture<String> cf1 = CompletableFuture.supplyAsync(() -> {
+    System.out.println("cf1 execute");
+    return "result1";
+}, pool);
+// 依赖 cf1 的执行结果
+CompletableFuture<String> cf2 = cf1.thenApply(result1 -> {
+    System.out.println("cf2 execute");
+    return "result2";
+});
+```
+
+1. `CompletableFuture` 中 `stack` 变量为 `Completion` 类型， 成员变量 `next` 串成责任链:
+```
+volatile Completion next;      // Treiber stack link
+```
+
+2. CompletableFuture 支持很多回调方法，例如`thenAccept、thenApply、exceptionally`等，这些方法接收一个函数类型的参数f，生成一个`Completion`类型的对象（即观察者），并将入参函数f赋值给Completion的成员变量fn，然后检查当前CF是否已处于完成状态（即result != null），如果已完成直接触发fn，否则将观察者Completion加入到CF的观察者链stack中，再次尝试触发，如果被观察者未执行完则其执行完毕之后通知触发。
+   1. 观察者中的dep属性：指向其对应的 CompletableFuture(如下图)
+   2. 观察者中的src属性：指向其依赖的 CompletableFuture
+   3. 观察者Completion中的fn属性：用来存储具体的等待被回调的函数。这里需要注意的是不同的回调方法（thenAccept、thenApply、exceptionally等）接收的函数类型也不同
+
+![](/images/thread/CompletableFutureThenApply.png)
