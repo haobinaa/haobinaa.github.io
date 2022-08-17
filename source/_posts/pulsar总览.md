@@ -3,7 +3,7 @@ title: pulsar总览
 date: 2022-08-16 09:09:24
 tags: 
 categories: 中间件
-description: apache pulsar 总览介绍， 与其他MQ中间件对比
+description: apache pulsar 总览介绍， 与其他MQ中间件设计对比
 ---
 
 ### pulsar 架构
@@ -154,3 +154,106 @@ Apache Pulsar 提供了多种订阅方式来消费消息，分为三种类型：
 ![](/images/pulsar/geo-replication.png)
 
 如上图所示，有三个 Apache Pulsar 集群，分布于北京、上海和广州，用户创建的一个 Topic T1 设置了跨越三个数据中心做互备。在三个数据中心中，分别有三个生产者：P1、P2、P3，它们往主题 T1 中发布消息；有两个消费者：C1、C2，订阅了这个主题，接收主题中的消息。 当消息由本数据中心的生产者发布成功后，会立即复制到其他两个数据中心。消息复制完成后，消费者不仅可以收到本数据中心产生的消息，也可以收到从其他数据中心复制过来
+
+### pulsar 与其他 MQ 设计上的区别
+
+#### 云原生租户设计
+
+##### 分级命名
+
+Pulsar原生支持多租户设计，非常适合作为云产品进行管理。 Pulsar的topic名称如下:
+``` 
+persistent://tenant/namespaces/topic
+```
+分为四个部分:
+- 第一部分：Domain，表示存储方式，分为nonpersistent 和persistent，对应非持久化和持久化存储；
+- 第二部分：tenant，表示租户名称，公司或团队内部使用时，也可以作为部门名称、业务分类等；
+- 第三部分：namespace，表示命名空间，作为租户内部的一个层级划分。
+- 第四部分：topic名称，具体的topic。Pulsar支持分区和非分区topic。但是，在业务侧视角，很难看出是否是分区topic，需要查看元数据或者日志信息。
+
+##### 多级流控
+
+Pulsar支持Broker级别、Namespace级别、Topic级别的流控，包括生产、消费的出入流控，客户端的连接数，存储配额等。
+Kafka/Rocketmq 等的流控措施和策略相对来说要少很多
+
+#### 计算与存储
+
+##### broker 状态
+
+1. Pulsar 的broker 是无状态的，这和它的计算、存储分离的架构设计有关，broker端不需要保存任何的元数据和消息信息。可以根据系统的需求，进行动态的扩/缩容处理。
+2. Rocketmq broker具备主备的概念，且broker 侧本地需要存储消息。单个broker 使用一个逻辑的commitlog文件，以wal的方式写入消息。（目前，高版本已经引入自动主备选主能力和Dledger进行计算与存储分离处理，有需要的也可以关注下），所以默认方式下，算是一个有状态的broker。
+另外，Rocketmq的备，仅在主挂掉或者主负载过高的时候才会提供读取服务，算是冷备份。这在目前逐步强调机器利用率的环境下，算是一个待优化的设计点。
+3. Kafka 中也有主、备的概念区分，但是主备是partition维度的。Kafka broker端也需要存储消息，它的每个分区会使用wal方式存储消息，相对Rocketmq而言会多用很多写FD（即会同时对应到多个以wal方式写入的文件句柄），这块也是Kafka 在broker端分区总数过多的时候，性能下降的一个原因。
+
+##### 集群扩展能力
+
+1. Puslar 的服务器端，分为broker 和 bookie两个部署，broker 负责接入、计算、拉取、分发消息等，bookie负责消息存储存储。broker、bookie均可以按需动态的进行扩缩容处理。
+其中，bookie存储过程中的多副本、数据条带化分布处理等均在bookkeeper的客户端sdk中实现，是一个胖客户端的逻辑。broker作为bookie的客户端存在，消息数据会总体均匀的分布在bookie集群中。不会出现因为某些topic或着某些topic的部分分区，在数据大规模倾斜时，导致部分存储机器磁盘使用率过高的问题。当然，如果系统需要保存的消息量比较大，扩容时可能需要同时扩容多台bookie机器（写入的副本个数的整数倍）。
+此外，bookie集群扩容后，系统在写入新消息的时候会优先选用新加入的、负载低的节点作为候选节点，在存量节点不受影响的情况下，将新增消息写入到新扩容的节点上。
+2. Rocketmq的broker端，扩展能力也比较强，只要新增主备对到集群中即可。但是需要在扩容完毕后，在新增的broker对上面创建对应的topic 和订阅组信息。
+此外，Rocketmq比较强大的一点是，broker端具备读、写权限控制的能力，可以针对单个topic的单个Queue和broker进行读写控制，非常便于运维操作。
+3. Kafka的broker端，在扩所容的时候要略显麻烦些，使用的时候需要提前评估好容量，如果在运营的过程中进行扩容，需要做部分数据的迁移操作。
+
+#### 分区与消息存储
+
+##### 分区与消息存储
+
+1. Pulsar 中Topic的分区是Topic内针对整个集群范围的，每个分区topic的分区数编号在集群内递增。而每个分区在内部生产、消费处理的时候均被作为最小单位的topic进行处理，sdk内部会针对每个分区单独的创建一个producer/consumer进行处理。
+
+Pulsar中的每个topic的每个分区与broker的关联关系是通过Namespace的bundle机制进行关联的，可以通过loadbalance机制自动进行load/unload的操作的，也可以通过命令进行unload操作，如图所示：
+
+![](/images/pulsar/broker-bundles.png)
+
+- namespace下的每个bundle区间会关联一个broker（这个关联关系会被 loadbalance 逻辑修改，同时也可以通过运维命令进行unload处理），每个topic的每个分区通过hash运算落到相应的bundle区间，进而找到当前区间关联的broker。在broker与bundle的关系发生变化时，客户端会有重连操作，会有相应的链接断开和重建建立链接的日志，这个现象是正常的。
+- 当集群内broker节点的个数比较多的时候，可以通过增加topic的分区数，同时调整namespace的bundle数，将topic的分区更加均匀的分布到所有或者大多数的broker 节点上，来提升集群针对这个topic的生产/消费性能。
+- Pulsar中的每个Topic下的每个分区会对应一系列的ledger（ledger id是全局唯一的），逻辑的将消息组织起来，存储到bookie中。Puslar 的分区是个物理上面的划分，每个分区单独的处理消息的生产、消费和存储。
+
+2. Rocketmq中的分区（实际上是Queue的概念，逻辑划分）是针对单个broker主/备关系对的（Rocketmq 的broker 有主/备的区分），在单个主/备关系下的broker 内递增。如果需要在集群内的多个主/备关系对的broker间使用相同的topic，需要针对每个主/备关系对下的broker单独创建相同的topic。每个主/备对关系下的broker上面，相同名称的topic 的分区数可以不同。
+Rocketmq的消息数据是通过索引方式，被逻辑的划分到每个Queue的，消费者需要通过索引文件从pagcache或者wal方式写入的commitlog文件中获取消息。
+
+3. Kafka中的分区，是针对一组broker的，因为Kafka中也具有主/备的概念。但是，Kafka的主备关系是分区级别的，相同topic的不同分区的主可能是不同的broker。这样集群下的每个broker 均可交叉的对外提供读写服务。
+
+##### 分区与消费者
+
+![](/images/pulsar/partition-consumer.png)
+
+1. Kafka/Rocketmq 每个分区会负载到一个 comsumer 上，多出partition个数的consumer将不会起作用（即多出的消费者不能消费任何的消息）。
+2. Pulsar这面，每个分区会与订阅下的所有消费者客户端进行关联，broker端会根据每个消费者客户端的能力，将消息推送给客户端进行消费。Pulsar的这种设计，在很大程度上提高了系统可承载的消费能力。业务方可以根据自己的消费需求，并行的部署多于分区个数的消费者。
+
+##### 分区与顺序消息
+
+Kafka/Rocketmq 等实现顺序消息的大致方法是将顺序消息，按照顺序分组关键字（或对应的key），在生产的时候，将顺序消息分发到同一个partition中。消费时，因为partition 与consumer是一对一的关系，通过简单的处理即可保证消费的顺序性。
+这种设计的问题就是负载到同一个partition中的消息在不同分组之间实际是可以并行消费的，顺序性仅需要保证在同一个分组内即可。如果，消费者与partition是一对一的对应关系，顺序消费，效率会比较低。
+
+![](/images/pulsar/sequential-message.png)
+
+如上图， 在Pulsar中，每个分区与多个消费者做关联。在顺序消息的场景，生产的时候也是根据key，将消息负载到相同的 parititon 内。而消费的时候，则是根据key，按照key的维度，每个key关联到固定的consumer，同一个 parititon 内的不同key的消息，使用不同（如果consumer足够多）的但唯一的一个consumer进行推送和消费处理，在很大的程度上提高了顺序消息场景下的消费性能。
+
+##### 消息分发机制
+
+1. Puslar 采用的是推模式，broker端给消费者客户端推送消息。客户端在创建consumer的时候，会配置当前consumer 可以接受的消息的最大能力（`receiveQueueSize，默认1000`）。broker端会根据这个参数，在服务端给每个consumer初始化对应的permit参数，通过对permit的控制，批量给consumer推送消息。
+同时,broker端会统计 unack 状态的消息个数并进行流控处理，当推送给单个consumer或整个订阅组下的unack状态的消息达到一定阈值后，broker端将不再推送任何消息到当前消费者或整个订阅下的所有消费者（订阅组维度时，即使有部分的消费者有接收能力，broker端也不会在推送消息）。
+Consumer端会在处理的消息个数达到 `receiveQueueSize/2` 时，向broker端重新发送一条Flow命令，变更broker端对应当前consumer的分发permit值。
+分发消息时的交互流程，如下图所示：
+
+![](/images/pulsar/message-model.png)
+
+2. 而Kafka/Rocketmq，消费者均采用拉模式获取消息（Rocketmq是客户端用long pull的方式实现的push）
+
+##### 消息确认保存机制
+
+1. Kafka/Rocketmq/InLong-TubeMQ在消费确认的时候，每次上报的是当前已经消费的最小的offset值，broker端针对每个topic的每个分区下的每个订阅，保存这个分区下当前订阅的最小的offset。 
+这种实现方式比较简单，但是在运营过程中，会发现存在比较严重的缺陷。因为消息是被批量拉取到客户端的，消费端有可能已经消费了后面的大量的消息，只是因为较小的offset的这条消息例如图中5这个位置，消费过程出错或者消费时间比较长，每次消费确认信息的时候只能上报到5这个位置。表面上看，有大量的消息堆积，其实可能后面的消息已经被消费很多了。当消费者重启的时候会重新从5这个位置重新拉取一遍消息，这时消费者可能要处理大量的重复消息，如果业务侧幂等措施做的不够健壮，可能会对业务造成很大的困扰。
+
+2. Pulsar中，每个topic的每个分区是与订阅组下的所有消费者关联的，broker端可以将这个分区下的消息按批次分发给每个对应的消费者，每个消费者对接受到的消息进行消费和确认。
+每个分区下的订阅通过markDeletePosition保存当前完全消费的最有一个位点（即这个位置之前的所有消息均已经消费和确认了），使用individualDeletedMessages表示当前正在消费的消息的确认情况，这里不是仅仅的保存一个点，而是保存多个范围，表示markDeletePosition这个位置之后哪些消息范围内的消息已经被确认了。避免了重启之后消息被重复消费的问题。
+
+![](/images/pulsar/message-ack.png)
+
+
+但是，这里也有一个风险点。如果，`individualDeletedMessages`中保存的区间信息比较多的时候，需要占用大量的内存空间，会对broker和bookie存储造成压力。因此，我们在使用的时候，需要尽量的将位点连续的消息，连续的消费和确认，避免出现大量的确认空洞。
+
+### 参考资料
+
+- [Tencent iWiki MQ Oteam pulsar 系列文章]
+
