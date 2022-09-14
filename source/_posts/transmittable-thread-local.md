@@ -3,15 +3,162 @@ title: transmittable-thread-local
 date: 2022-08-22 10:20:10
 tags:
 categories: 并发
-description: ttl 使用以及场景介绍、框架结构。 以及源码分析
+description: ttl 使用以及场景介绍、框架结构。与InheritableThreadLocal对比以及源码分析
 ---
+
+### InheritableThreadLocal
+
+在 TTL 之前， 先谈谈 JDK 自带的 InheritableThreadLocal
+
+`InheritableThreadLocal` 可以将变量在父子线程中传递。 根据 `ThreadLocal` 分析， 现成变量是存在 `ThreadLocalMap` 中的， `InheritableThreadLocal` 应该要将 `ThreadLocalMap` 复制一份给子线程。
+
+
+#### InheritableThreadLocal 源码
+
+``` 
+public class InheritableThreadLocal<T> extends ThreadLocal<T> {
+
+    /**
+    * 重写 childValue
+    **/
+    protected T childValue(T parentValue) {
+        return parentValue;
+    }
+
+    /**
+    * ThreadLocal.get/set 使用， 返回的是 inheritableThreadLocals 变量
+    **/
+    ThreadLocalMap getMap(Thread t) {
+       return t.inheritableThreadLocals;
+    }
+
+    /**
+    * 创建 set 创建 ThreadLocalMap 变量的时候， 使用 inheritableThreadLocals 变量
+    **/
+    void createMap(Thread t, T firstValue) {
+        t.inheritableThreadLocals = new ThreadLocalMap(this, firstValue);
+    }
+}
+```
+`InheritableThreadLocal` 源码非常少， 继承于 `ThreadLocal`。 那么 get、set 也是使用的 `ThreadLocal` 提供的， 即操作的是线程的 `t.threadlocals` 变量
+
+#### 复制原理
+
+Thread 初始化时会调用 `init`， 其中有部分逻辑是:
+``` 
+// ..... Thread#init 省略
+if (inheritThreadLocals && parent.inheritableThreadLocals != null)
+        this.inheritableThreadLocals =
+            ThreadLocal.createInheritedMap(parent.inheritableThreadLocals);
+// ..... Thread#init 省略
+```
+
+从 `Thread` 构造函数来看 `inheritableThreadLocals` 默认是 true， 即父线程 `inheritableThreadLocals` 不为 null, 就将父线程的 `inheritableThreadLocals` 复制给子线程, 源码如下:
+``` 
+private ThreadLocalMap(ThreadLocalMap parentMap) {
+    Entry[] parentTable = parentMap.table;
+    int len = parentTable.length;
+    setThreshold(len);
+    table = new Entry[len];
+    // 遍历复制
+    for (int j = 0; j < len; j++) {
+        Entry e = parentTable[j];
+        if (e != null) {
+            @SuppressWarnings("unchecked")
+            ThreadLocal<Object> key = (ThreadLocal<Object>) e.get();
+            if (key != null) {
+                // IniheritableThreadLocal 重写了 childValue
+                // 读取 Threadlocal 值， 默认是浅拷贝， 可以实现这个方法深拷贝
+                Object value = key.childValue(e.value);
+                Entry c = new Entry(key, value);
+                int h = key.threadLocalHashCode & (len - 1);
+                while (table[h] != null)
+                    h = nextIndex(h, len);
+                table[h] = c;
+                size++;
+            }
+        }
+    }
+}
+```
+
+#### childValue 含义
+
+`InheritableThreadLocal` 中实现了 `childValue` 方法， 从父线程复制 `ThreaLocalMap` 到子线程时，值从childValue 函数过了一遍再赋值给 Entry.
+
+这里特殊处理的含义: 这个是 `ThreadLocal` 留给子类实现的， 有些情况下设置的值是一个自定义的引用类型，那么从父线程复制到多个子线程的值就存在并发问题（值传递，地址值是共享的），所以复制的时候要保证复制给每个子线程的地址值不一样。 需要实现这个 `childValue` 的深拷贝。(如 TTL 中 holder 的实现)
 
 
 ### TTL 概述
 
 JDK `ThreadLocal`、`InheritableThreadLocal`的最大局限性就是：无法为预先创建好（未投入使用）的线程实例传递变量（准确来说是首次传递某些场景是可行的，而后面由于线程池中的线程是复用的，无法进行更新或者修改变量的传递值），泛线程池Executor体系、TimerTask和ForkJoinPool等一般会预先创建（核心）线程，也就它们都是无法在线程池中由预创建的子线程执行的Runnable任务实例中使用。
 
-#### 使用场景
+#### InheritableThreadLocal存在的问题
+
+1. 无法在主线程和子线程中透传
+
+``` 
+static InheritableThreadLocal<String> ITL = new InheritableThreadLocal<>();
+static ExecutorService executorService =  Executors.newFixedThreadPool(1);
+/**
+ * ITL 无法再父子线程中透传
+ */
+public static void main(String[] args) throws Exception {
+    ITL.set("parent-set");
+    executorService.execute(() -> {
+        System.out.println(ITL.get());
+    });
+    TimeUnit.SECONDS.sleep(1);
+    ITL.set("parent-new-value");
+    executorService.execute(() -> {
+        System.out.println(ITL.get());
+    });
+}
+
+============== 输出
+parent-set
+parent-set
+```
+
+可以看到主线程第二次设置的值并没有透传到提交的线程池中。 这是因为ITL只有第一次创建线程的时候会从父线程拿到 inheritableThreadLocals 中的数据，之后父线程对 inheritableThreadLocals 的操作都不会传递给子线程
+
+2. 线程池中线程存在复用的问题， 导致不同子线程之间的值互相影响
+
+``` 
+static InheritableThreadLocal<String> ITL = new InheritableThreadLocal<>();
+static ExecutorService executorService =  Executors.newFixedThreadPool(1);
+/**
+ * ITL 无法再父子线程中透传
+ */
+public static void main(String[] args) throws Exception {
+    ITL.set("parent-set");
+    executorService.execute(() -> {
+        System.out.println(ITL.get());
+        ITL.set("old-set");
+    });
+    TimeUnit.SECONDS.sleep(1);
+    ITL.set("new-set");
+    executorService.execute(() -> {
+        System.out.printf(ITL.get());
+    });
+}
+
+============输出
+parent-set
+old-set
+```
+
+可以看第二次线程池打印出了第一次在线程池中设置的值 "old-set"。
+
+这是因为第二次执行任务的时候复用了第一次执行任务的线程， 导致第一次设置的值传递到了第二次任务
+
+#### TTL 解决方案和使用
+
+根据上面 ITL 存的局限性， 我们推出: 我们需要的并不是创建线程的那一刻父线程的ThreadLocal值，而是提交任务时父线程的ThreadLocal值。或者说需要把任务提交给线程池时的ThreadLocal值传递到任务执行时。
+
+具体的思路是: 父线程把任务提交给线程池时一同附上此刻自己的ThreadLocalMap，包装在task里，待线程池中某个线程执行到该任务时，用task里的ThreadLocalMap赋盖当前线程ThreadLocalMap，这样就完成了父线程向池化的子线程传递线程私有数据的目标。为了避免数据污染，待任务执行完后，线程归还回线程池之前，还需要还原ThreadLocalMap，如下示：
+
+![](/images/thread/ttl-usage.png)
 
 ##### 1. 父子线程传递
 
@@ -57,6 +204,7 @@ executorService.submit(TtlRunnable.get(task));
 
 这里需要注意的是即使是同一个Runnable任务多次提交到线程池时，每次提交时都需要通过修饰操作(`TtlRunnable.get`)
 
+
 ### 源码解析
 
 #### TTL 整体框架结构
@@ -77,6 +225,8 @@ TTL 除了提供给用户使用的API，还提供了基于Agent和字节码增�
 
 TTL 时序图:
 ![](/images/thread/ttl-sequence.png)
+
+TTL核心流程和原理是通过 `TransmittableThreadLocal.Transmitter` 抓取当前线程的所有TTL值并在其他线程进行回放，然后在回放线程执行完业务操作后，再恢复为回放线程原来的TTL值。
 
 #### TransmittableThreadLocal(核心类)
 
@@ -245,16 +395,18 @@ public class TransmittableThreadLocal<T> extends InheritableThreadLocal<T> imple
 
 ```
 
-这里 `holder 静态变量` ， 作为父线程管理所有 `TransmittableThreadLocal` 的桥梁
-- 是 `InheritableThreadLocal` 类型(get 方法为线程隔离)
-- 存放了一个 `WeakHashMap<TransmittableThreadLocal<Object>, ?>`,  key 是 `TransmittableThreadLocal`, value 是 null， 这里是把 `WeakHashMap` 当 SET 容器使用
+holder 从表象上看是一个静态类， 整个 JVM 只有一份变量。 
+实际上不是的，因为继承于 `InheritableThreadLocal`，意味着，每一个线程有且只有一份这个 Holder。
+这里体现的设计:
+- `static` 修饰: 一个线程中，无论`TransmittableThreadLocal`被创建多少次，需要保证维护的是同一个缓存
+- `WeakHashMap`: 弱引用(发生GC就回收)， 避免内存泄露
 
 整体存储结构如下:
 ![](/images/thread/ttl-set.png)
 
 
 这里有一个关键变量， 也是上面提到的 `disableIgnoreNullValueSemantics`。
-默认情况下`disableIgnoreNullValueSemantics=false`，TTL如果设置 NULL 值，会直接从holder 移除对应的 TTL 实例，在TTL#get()方法被调用的时候，如果原来持有的属性不为NULL，该TTL实例会重新加到holder。
+默认情况下`disableIgnoreNullValueSemantics=false`，TTL如果设置 NULL 值，会直接从holder 移除对应的 TTL 实例，在`TTL#get()`方法被调用的时候，如果原来持有的属性不为NULL，该TTL实例会重新加到holder。
 
 如果设置为true，则`set(null)`的语义和ThreadLocal一致。详细说明见上文 ISSUE 地址
 
@@ -292,7 +444,9 @@ public static class Transmitter {
         throw new InstantiationError("Must not instantiate this class");
     }
     
-    // 私有静态类，快照，保存从holder中捕获的所有TransmittableThreadLocal和外部手动注册保存在threadLocalHolder的ThreadLocal的K-V映射快照
+    // 私有静态类，快照
+    // 保存从holder中捕获的所有TransmittableThreadLocal
+    // 和外部手动注册保存在 threadLocalHolder的ThreadLocal 的 K-V映射快照
     private static class Snapshot {
         final WeakHashMap<TransmittableThreadLocal<Object>, Object> ttl2Value;
         final WeakHashMap<ThreadLocal<Object>, Object> threadLocal2Value;
@@ -311,8 +465,7 @@ Transmitter在设计上是一个典型的工具类，外部只能调用其公有
 ``` 
 // # TransmittableThreadLocal#Transmitter
 public static class Transmitter {
-    //-- 捕获
-    
+    //----------------- 捕获
     // 捕获当前线程绑定的所有的 TransmittableThreadLocal 和已经注册的ThreadLocal的值 - 使用了用时拷贝快照的策略
     // 备注: 一般在构造任务实例的时候被调用，因此当前线程相对于子线程或者线程池的任务就是父线程，其实本质是捕获父线程的所有线程本地变量的值
     @NonNull
@@ -460,13 +613,23 @@ public static class Transmitter {
 ```
 
 
-- `capture`：捕获操作，父线程原来就存在的线程本地变量映射和手动注册的线程本地变量映射捕获，得到捕获的快照值captured。
-- `reply`：重放操作，子线程原来就存在的线程本地变量映射和手动注册的线程本地变量生成备份backup，刷新captured的所有值到子线程在全局存储器holder中绑定的值。
-- `restore`：复原操作，子线程原来就存在的线程本地变量映射和手动注册的线程本地变量恢复成backup。
+- `capture`：捕获，捕获父线程的TTL和TL值， 快照保存。
+- `reply`：重放， 备份子线程的 TTL和TL值， 将父线程的快照覆盖给子线程
+- `restore`：复原，任务执行完后将子线程的 ThreadLocalMap 复原
 
 
 #### TtlRunnable
 
+##### 使用示例
+在线程池场景， 采取 `TtlRunable` 修饰 `Runnable`, 如:
+``` 
+Runnable ttlRunnable = TtlRunnable.get(() -> {
+    System.out.println(TTL.get());
+});
+EXECUTOR.submit(ttlRunnable);
+```
+
+##### 源码流程
 
 `TtlRunnable` 使用了 `Transmitter` 的 capture、reply 和 restore 等， 主要关注 `run` 方法:
 ``` 
@@ -524,9 +687,6 @@ public final class TtlRunnable implements Runnable, TtlWrapper<Runnable>, TtlEnh
     
     //......... 
 ```
-
-整体执行流程:
-![](/images/thread/ttl-runnable.png)
 
 ### 参考资料
 
