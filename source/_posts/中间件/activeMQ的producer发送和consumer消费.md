@@ -296,7 +296,7 @@ broker将消息推送到本地 `unconsumedMessages` 的流程大概如下:
         }
     }
 ```
-optimizeAcknowledge是开启批量回传的标记，可以设置批量回传阀值来优化回传效率。
+`optimizeAcknowledge`是开启批量回传的标记，可以设置批量回传阀值来优化回传效率。
 
 综上我们可以看到
 - 针对事务性会话

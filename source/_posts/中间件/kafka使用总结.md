@@ -127,8 +127,6 @@ log.cleaner.enable=false
 
 
 
-
-
 #### Replication & Leader election
 
 Kafka提供partition级别的replication，replication默认情况下为1，replication的数量可在`$KAFKA_HOME/config/server.properties`中配置:
