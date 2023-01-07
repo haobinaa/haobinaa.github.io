@@ -1,6 +1,6 @@
 ---
-title: MMAP 与 FileChannel
-date: 2019-05-17 15:17:52
+title: 顺序写(MMAP 与 FileChannel)
+date: 2022-05-17 15:17:52
 tags: IO
 categories: IO
 ---

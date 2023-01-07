@@ -80,7 +80,7 @@ theme: fluid
 ## Docs: https://hexo.io/docs/deployment.html
 deploy:
   type: git
-  repository: git@101.32.178.99:/var/repo/hexo.git
+  repository: blog@haobin.work:/home/blog/repos/blog.git
   branch: master
 
 # 阅读统计

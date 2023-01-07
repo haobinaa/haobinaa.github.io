@@ -1,16 +1,21 @@
 ---
 title: synchronize和volatile
-date: 2017-11-19 11:31:32
+date: 2020-11-19 11:31:32
 tags: 
 categories: 并发
 description: 并发问题，MESI缓存一致性协议
 ---
-### 并发产生的问题
+### 并发概览
+
+#### 并发产生的问题
 
 Java 种并发会产生三大问题:
-1. 重排序(编译器优化和指令重排序)
+1. 重排序
+    - 编译器(JIT)优化导致重排序
+    - 指令重排序(CPU层面的指令优化， 与编译器优化类似)
+    - 内存乱序(由于缓存的存在， 导致程序从行为上看起来是乱序的)
 2. 内存可见性(JMM 内存模型)
-3. 原子性
+3. 原子性(volatile特性， 如 long 和 double 本身是 64 位的， 他的赋值被分为了两个 32 位， 并发操作下会得到一个意料之外的值)
 
 #### Java 对并发的规范约束
 
@@ -18,7 +23,7 @@ Java 种并发会产生三大问题:
 
 ##### Synchronization Order
 
-JVM 的同步规范:
+JVM 的同步规范, 参考[Oracle Thread and Locks](https://docs.oracle.com/javase/specs/jls/se7/html/jls-17.html):
 
 - 对于监视器 m 的解锁与所有后续操作对于 m 的加锁同步
 
@@ -26,9 +31,9 @@ JVM 的同步规范:
 
 - 启动线程的操作与线程中的第一个操作同步。
 
-- 对于每个属性写入默认值（0， false，null）与每个线程对其进行的操作同步。(尽管在创建对象完成之前对对象属性写入默认值有点奇怪，但从概念上来说，每个对象都是在程序启动时用默认值初始化来创建的)
+- 对于每个属性写入默认值(0， false，null)与每个线程对其进行的第一步操作同步。(尽管在创建对象完成之前对对象属性写入默认值有点奇怪，但从概念上来说，每个对象都是在程序启动时用默认值初始化来创建的)
 
-- 线程 T1 的最后操作与线程 T2 发现线程 T1 已经结束同步( 线程 T2 可以通过 T1.isAlive() 或 T1.join() 方法来判断 T1 是否已经终结)
+- 线程 T1 的最后操作与线程 T2 发现线程 T1 已经结束同步( 线程 T2 可以通过 `T1.isAlive()` 或 `T1.join()` 方法来判断 T1 是否已经终结)
 
 - 如果线程 T1 中断了 T2，那么线程 T1 的中断操作与其他所有线程发现 T2 被中断了同步（通过抛出 InterruptedException 异常，或者调用 Thread.interrupted 或 Thread.isInterrupted ）
 
@@ -37,22 +42,27 @@ JVM 的同步规范:
 两个操作可以用 happens-before 来确定它们的执行顺序，如果一个操作 x happens-before 于另一个操作 y (记作: hb(x,y))，那么我们说第一个操作对于第二个操作是可见的。
 
 - 如果操作 x 和操作 y 是同一个线程的两个操作，并且在代码上操作 x 先于操作 y 出现，那么有 hb(x, y)
+  - 解释: 在单线程里面代码是顺序执行的
 
 - 对象构造方法的最后一行指令 happens-before 于 finalize() 方法的第一行指令。
+  - 解释: 构造函数先于 finalize 执行
 
-- 如果操作 x 与随后的操作 y 构成同步，那么 hb(x, y)。这里值得是前面同步规则的内容。
-
+- 如果操作 x 与随后的操作 y 构成同步，那么 hb(x, y)。
+  - 解释: 这条规则就是 synchronization order 规则， 也就是上面一节的内容
+ 
 - hb(x, y) 和 hb(y, z)，那么可以推断出 hb(x, z)
 
 ### synchronized
 
+线程 a 对于进入 synchronized 块之前或在 synchronized 中对于共享变量的操作，对于后续的持有同一个监视器锁(monitor)的线程 b 可见。
+
+- synchronized 保障变量的可见性:
 一个线程在获取到监视器锁以后才能进入 `synchronized` 控制的代码块，一旦进入代码块，会从主存中重新读取共享变量的值，退出代码块的时候的，会将该线程写缓冲区中的数据刷到主内存中。
 
-Java中每一个对象都可以作为锁，这是 synchronized 实现同步的基础：
-
-- 普通同步方法，锁是当前实例对象(synchronized method)
-- 静态同步方法，锁是当前类的class对象(synchronize static method, synchronized(Obj.class))
-- 同步方法块，锁是括号里面的对象(synchronized(this), synchronized(obj))
+- Java中每一个对象都可以作为锁，这是 synchronized 实现同步的基础：
+  - 普通同步方法，锁是当前实例对象(synchronized method)
+  - 静态同步方法，锁是当前类的 class 对象(synchronize static method, synchronized(Obj.class))
+  - 同步方法块，锁是括号里面的对象(synchronized(this), synchronized(obj))
 
 
 #### 实现原理
@@ -158,13 +168,12 @@ CAS原理及应用即是无锁的实现
 
 
 
-
 ##### 重量级锁
 
 升级为重量级锁时，锁标志的状态值变为“10”，此时Mark Word中存储的是指向重量级锁的指针，此时等待锁的线程都会进入阻塞状态。
 
 
-##### 总结理解
+##### 锁升级过程总结理解
 
 - 偏向锁: 只有一个线程进入临界区
 - 轻量级锁: 多个线程交替进入临界区
@@ -199,6 +208,35 @@ CAS原理及应用即是无锁的实现
 
 这种方式虽然不会带来上下文的切换，但是会消耗 CPU 的资源。为了综合较长和较短两种线程等待模式，JVM 会根据运行过程中收集到的信息来判断，锁持有时间是较长时间或者较短时间。然后再采取线程暂停或忙等的策略。
 
+#### synchronize 不保障重排序
+
+以单例模式的 double check 检查问题， 看一下如下单例的写法:
+``` 
+public class Singleton {
+    private static Singleton instance = null;
+    private Singleton() {
+    }
+
+    public static Singleton getInstance() {
+        if (instance == null) { // 1. 第一次检查
+            synchronized (Singleton.class) { // 2
+                if (instance == null) { // 3. 第二次检查
+                    instance = new Singleton(); // 4
+                }
+            }
+        }
+        return instance;
+    }
+}
+```
+这种写法是有问题的， 假设有两个线程 a 和 b 调用 `getInstance()` 方法
+1. 假设 a 先运行， 首先到步骤 4 处。`instance = new Singleton()` 这句代码首先会申请一段空间，然后将各个属性初始化为零值(0/null)，执行构造方法中的属性赋值[1]，将这个对象的引用赋值给 instance[2]。在这个过程中，[1] 和 [2] 可能会发生重排序。
+2. 此时，线程 b 刚刚进来执行到步骤 1，就有可能会看到 instance 不为 null，然后线程 b 也就不会等待监视器锁，而是直接返回 instance。问题是这个 instance 可能还没执行完构造方法（线程 a 此时还在 4 这一步），所以线程 b 拿到的 instance 是不完整的，它里面的属性值可能是初始化的零值(0/false/null)，而不是线程 a 在构造方法中指定的值。
+
+想解决这个问题， 使用 `volatile` 关键字修饰 instance 即可
+
+另外： 如果对象所有的属性都被 final 关键字修饰， 那么不需要加 volatile 也可以保证不发生重排序。
+
 
 ### volatile
 
@@ -217,19 +255,67 @@ volatile 的禁止重排序并不局限于两个 volatile 的属性操作不能�
 根据 volatile 的内存可见性和禁止重排序，那么我们不难得出一个推论：线程 a 如果写入一个 volatile 变量，此时线程 b 再读取这个变量，那么此时对于线程 a 可见的所有属性对于线程 b
  都是可见的(这里想想为何ReentrantLock只用了一个volatile的state属性)
 
+#### volatile 语义的实现(内存屏障)
+
+内存屏障四大分类：（Load 代表读取指令，Store代表写入指令）
+
+| 内存屏障类型        | 使用场景                        | 描述                                                       |
+|:--------------|:----------------------------|:---------------------------------------------------------|
+| LoadLoad 屏障	  | Load1; LoadLoad; Load2      | 在Load2要读取的数据被访问前，保证Load1要读取的数据被读取完毕。                     |
+| StoreStore 屏障 | Store1; StoreStore; Store2	 | 在Store2写入执行前，保证Store1的写入操作对其它处理器可见                       |
+| LoadStore 屏障	 | Load1; LoadStore; Store2	   | 在Store2被写入前，保证Load1要读取的数据被读取完毕。                          |
+| StoreLoad 屏障	 | Store1; StoreLoad; Load2	   | 在Load2读取操作执行前，保证Store1的写入对所有处理器可见。          |
+
+
+为了实现volatile的内存语义，Java内存模型采取以下的保守策略:
+
+- 在每个 volatile 写操作的前面插入一个 StoreStore 屏障
+- 在每个 volatile 写操作的后面插入一个 StoreLoad 屏障
+- 在每个 volatile 读操作的后面插入一个 LoadLoad 屏障
+- 在每个 volatile 读操作的后面插入一个 LoadStore 屏障
+
+
 #### volatile使用总结
 
 1. volatile 修饰符适用于以下场景：某个属性被多个线程共享，其中有一个线程修改了此属性，其他线程可以立即得到修改后的值。
 2. volatile 属性的读写操作都是无锁的，它不能替代 synchronized，因为它没有提供原子性和互斥性。因为无锁，不需要花费时间在获取锁和释放锁上，所以说它是低成本的。
-
 3. volatile 只能作用于属性，我们用 volatile 修饰属性，这样 compilers 就不会对这个属性做指令重排序。
-
 4. volatile 提供了可见性，任何一个线程对其的修改将立马对其他线程可见。volatile 属性不会被线程缓存，始终从主存中读取。
 5. volatile 提供了 happens-before 保证，对 volatile 变量 v 的写入 happens-before 所有其他线程后续对 v 的读操作。
 另 volatile 可以使得 long 和 double 的赋值是原子的
 
 
-### MESI 协议
+### MESI(CPU缓存一致性协议)
+
+MESI 协议是一个基于失效的缓存一致性协议， 它基于总线嗅探实现，用额外的两位给每个缓存行标记状态，并且维护状态的切换，达到缓存一致性的目的。
+
+
+MESI 是四个单词的缩写，每个单词分别代表缓存行的一个状态：
+
+- M：modified，已修改。缓存行与主存的值不同。如果别的 CPU 内核要读主存这块数据，该缓存行必须回写到主存，状态变为共享状态（S）。
+- E：exclusive，独占的。缓存行只在当前缓存中，但和主存数据一致。当别的缓存读取它时，状态变为共享；当前写数据时，变为已修改状态（M）。
+- S：shared，共享的。缓存行也存在于其它缓存中且是干净的。缓存行可以在任意时刻抛弃。
+- I：invalid，无效的。缓存行是无效的。
+
+#### Store buffer
+
+如果 CPU 对某个数据进行写操作，那么 CPU 就会发送一个 `Read Invalidate` 消息去读取对应的数据，并让其他的缓存副本失效。
+从发送消息之后，到接收到所有的响应消息，中间等待过程对于 CPU 来说是漫长的， store buffer 就是用来减少 cpu 的等待时间的。
+
+
+#### Invalidate Queue
+
+
+
+#### 流程演示
+
+![](/images/thread/mesi.png)
+
+从上图来看整个读取写入的流程:
+1. cpu0 向总线读取 a， 此刻缓存未命中， 到主存中读取， 此刻 cpu0 中 flag 为 E
+2. cpu1 向总线读取 a,  发现其他 cpu 有数据， 将 cpu0 中 flag 置为 S， cpu1 读取 a flag 为 S
+3. cpu1 修改 a=1, 
+
 ### 参考资料
 
 - [类锁和对象锁](https://juejin.im/post/5adc8f8af265da0b7e0bdafe)
