@@ -292,18 +292,37 @@ MESI 协议是一个基于失效的缓存一致性协议， 它基于总线嗅�
 
 MESI 是四个单词的缩写，每个单词分别代表缓存行的一个状态：
 
-- M：modified，已修改。缓存行与主存的值不同。如果别的 CPU 内核要读主存这块数据，该缓存行必须回写到主存，状态变为共享状态（S）。
-- E：exclusive，独占的。缓存行只在当前缓存中，但和主存数据一致。当别的缓存读取它时，状态变为共享；当前写数据时，变为已修改状态（M）。
-- S：shared，共享的。缓存行也存在于其它缓存中且是干净的。缓存行可以在任意时刻抛弃。
+- M：modified，已修改, 但未同步。缓存行与主存的值不同。如果别的 CPU 内核要读主存这块数据，该缓存行必须回写到主存，状态变为共享状态（S）。
+- E：exclusive，独占。缓存行只在当前缓存中，但和主存数据一致。当别的缓存读取它时，状态变为共享；当前写数据时，变为已修改状态（M）。
+- S：shared，共享。缓存行也存在于其它缓存中且是干净的。缓存行可以在任意时刻抛弃。
 - I：invalid，无效的。缓存行是无效的。
 
-#### Store buffer
+在 S(共享) 和 I(失效)状态下, 核心没有获得 Cache 块的独占权（锁）。在修改数据时不能直接修改，而是要先向所有核心广播 RFO（Request For Ownership）请求 ，将其它核心的 Cache 置为 “已失效”，等到获得回应 ACK 后才算获得 Cache 块的独占权。
+
+在 M(已修改) 和 E(独占) 状态下，核心已经获得了 Cache 块的独占权（锁）, 在修改数据时不需要向总线发送广播，能够减轻总线的通信压力。
+
+
+> 备注： 在线体验 MESI 协议的网站: https://www.scss.tcd.ie/Jeremy.Jones/VivioJS/caches/MESI.htm
+
+#### Store Buffer
 
 如果 CPU 对某个数据进行写操作，那么 CPU 就会发送一个 `Read Invalidate` 消息去读取对应的数据，并让其他的缓存副本失效。
 从发送消息之后，到接收到所有的响应消息，中间等待过程对于 CPU 来说是漫长的， store buffer 就是用来减少 cpu 的等待时间的。
 
 
+对于 store buffer:
+- CPU 在写操作时，可以不等待其他 CPU 响应消息就直接写到 store buffer，后续收到响应消息之后，再把 store buffer 里面的数据写入缓存行。
+- CPU 读数据的时候，也会先判断一下 store buffer 里面有没有数据，如果存在，就优先使用 store buffer 里面的数据（这个机制，叫做`store forwarding`）。
+
+
 #### Invalidate Queue
+
+store buffer 容量非常小，如果在其他 CPU 繁忙的时候响应消息的速度变慢，store buffer 会很容易地被填满，会直接的影响 CPU 的运行效率。
+解决这个问题的关键就是提高 cpu 响应速度， invalid queue 主要作用就是问题提高 invalidate 消息的响应速度
+
+对于 invalid queue:
+- CPU 在收到 invalidate 消息(RFO)时，可以先不讲对应的缓存行失效，而是将消息放入 `invalidate queue`，立即返回 Invalidate Acknowledge 消息，然后在要对外发送 invalidate 消息时，先检查 invalidate queue 中有无该缓存行的 Invalidate 消息，如果有的话这个时候才处理 Invalidate 消息。
+
 
 
 
@@ -312,9 +331,15 @@ MESI 是四个单词的缩写，每个单词分别代表缓存行的一个状态
 ![](/images/thread/mesi.png)
 
 从上图来看整个读取写入的流程:
-1. cpu0 向总线读取 a， 此刻缓存未命中， 到主存中读取， 此刻 cpu0 中 flag 为 E
-2. cpu1 向总线读取 a,  发现其他 cpu 有数据， 将 cpu0 中 flag 置为 S， cpu1 读取 a flag 为 S
-3. cpu1 修改 a=1, 
+1. cpu0 向总线读取 a， 此刻缓存未命中， 到主存中读取， 此刻 `cpu0 中 flag 为 E`
+2. cpu1 向总线读取 a,  发现其他 cpu 有数据， 将 cpu0 中 flag 置为 S， `cpu1 读取 a flag 为 S`
+3. cpu1 修改 a=1, 写入 store buffer 后立即返回
+4. store buffer 异步在总线广播 invalidate 消息， 并等待 ack
+5. cpu0 收到 invaliadte 消息后， 放入 invalidate queue 并返回 ack
+6. invalidate queue 异步执行消息， 将 `cpu0 缓存行 a=0 置为 I`
+7. cpu0 读取变量 a, 此刻缓存行状态为 I， 代表已失效
+8. cpu0 像总线广播一个读请求
+9. cpu1 收到读请求后， `cpu1 将缓存行状态置为 S` ， 并将缓存行 a=2 同步到 cpu0(这里使用的是cpu缓存行间同步， 比直接读主存快)
 
 ### 参考资料
 
