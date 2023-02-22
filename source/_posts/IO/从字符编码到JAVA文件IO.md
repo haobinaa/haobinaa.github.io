@@ -1,16 +1,11 @@
 ---
-title: javaIO流
+title: 从字符编码到JAVA文件IO
 date: 2017-11-15 23:03:03
 tags: JavaIO
 categories: IO
 ---
 
-### 概述
-
-#### java流类图结构
-![](http://ojpgmz933.bkt.clouddn.com/17-11-11/66017095.jpg)
-
-#### java流的概念
+### IO 流
 
 流是一组有顺序的，有起点和终点的字节集合，是对数据传输的总称或抽象。即数据在两设备间的传输称为流，流的本质是数据传输，根据数据传输特性将流抽象为各种类，方便更直观的进行数据操作。
 
@@ -19,21 +14,72 @@ categories: IO
 根据数据流入不同分为输入流和输出流
 
 
-### File类
-java.io.File: 文件和目录路径名的抽象表示形式，和平台无关
-
-File能新建、删除、重命名文件和目录，但是不能访问文件内容本身，如果需要访问文件本身，需要使用输入/输出流
-
 ### 字符流与字节流
+
+#### 字符编码
+
+在谈字节与字符之前， 先聊聊字符串编码的问题。
+
+##### ASCII 码
+
+计算机内部，所有信息最终都是一个二进制值。每一个二进制位（bit）有0和1两种状态，因此八个二进制位就可以组合出256种状态，这被称为一个字节（byte，这样一个字节可以表示 256 种状态。
+
+ASCII 码一共规定了128个字符的编码，比如空格SPACE是32（二进制00100000），大写的字母A是65（二进制01000001）。这128个符号（包括32个不能打印出来的控制符号），只占用了一个字节的后面7位，最前面的一位统一规定为0。
+
+##### UNICODE-字符集
+
+英语用 ascii 码就够了， 但是其他语言(如中文)只用 128 个符号是远远不够的,  所以需要多个字节来表达一个符号。
+
+UNICODE 是一个很大的字符集， 想囊括人类所有的符号。它规定一个 16 位即 2Byte 的空间为一个平面（plane），一个平面的容量就是 2^16 = 65536。目前 Unicode 已经定义了 17 个平面，即 17 * 65536 大约 100 万这么多容量。如果不够还可以继续扩充至 18 平面、19平面 ……
+
+但是 UNICODE 只是一个 **符号集(字符集)**， 只规定了符号的二进制代码， 并没有定义这个二进制该如何存储。
+
+比如，汉字严的 Unicode 是十六进制数4E25，转换成二进制数足足有15位（100111000100101），也就是说，这个符号的表示至少需要2个字节。表示其他更大的符号，可能需要3个字节或者4个字节，甚至更多。
+这里就有两个严重的问题，第一个问题是，如何才能区别 Unicode 和 ASCII ？计算机怎么知道三个字节表示一个符号，而不是分别表示三个符号呢？第二个问题是，我们已经知道，英文字母只用一个字节表示就够了，如果 Unicode 统一规定，每个符号用三个或四个字节表示，那么每个英文字母前都必然有二到三个字节是0，这对于存储来说是极大的浪费，文本文件的大小会因此大出二三倍，这是无法接受的。
+
+这两个问题就造成了 UNICODE 出现了很多种存储方式(许多不同的二进制格式)以及很长一段时间无法推广， 直到互联网的出现。
+
+##### UNICODE码元和码点 
+
+- 一个字符集一般可以用一张或多张由多个行和多个列所构成的二维表来表示。 二维表中行与列相交的点，称之为**码点(Code Point)**, 可以理解为每个字符在字符集中都有一个唯一的 code point 来表示。 表示为一个与计算机无关的十六机制数 
+- 在计算机存储和网络传输时，码点值(即字符编号)被映射到一个或多个**码元(Code Unit)**。码元可理解为字符编码方式CEF(Character Encoding Form)对码点值进行编码处理时作为一个整体来看待的基本单位。 简单的理解， code unit 就是将 code point 映射到某种编码的实际字节数。 对于utf8来说 code unit 就是1字节， utf16 code unit 就是2字节
+
+
+##### UTF8-编码
+
+互联网的普及， 就强烈需要一种统一的编码方式， UTF-8 就是在互联网上使用最广的一种 Unicode 的实现方式。其他实现方式还包括 UTF-16（字符用两个字节或四个字节表示）和 UTF-32（字符用四个字节表示）。这里的关系是： **UTF-8 是 Unicode 的实现方式之一**。
+
+UTF-8 最大的一个特点，就是它是一种变长的编码方式。它可以使用1~4个字节表示一个符号，根据不同的符号而变化字节长度。
+UTF-8 的编码规则很简单，只有二条：
+1. 对于单字节的符号，字节的第一位设为0，后面7位为这个符号的 Unicode 码。因此对于英语字母，UTF-8 编码和 ASCII 码是相同的。
+2. 对于n字节的符号（n > 1），第一个字节的前n位都设为1，第n + 1位设为0，后面字节的前两位一律设为10。剩下的没有提及的二进制位，全部为这个符号的 Unicode 码。
+编码规则如下:
+``` 
+Unicode符号范围     |        UTF-8编码方式
+(十六进制)        |              （二进制）
+----------------------+---------------------------------------------
+0000 0000-0000 007F | 0xxxxxxx
+0000 0080-0000 07FF | 110xxxxx 10xxxxxx
+0000 0800-0000 FFFF | 1110xxxx 10xxxxxx 10xxxxxx
+0001 0000-0010 FFFF | 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx 
+```
+
+跟据上表，解读 UTF-8 编码非常简单。如果一个字节的第一位是0，则这个字节单独就是一个字符；如果第一位是1，则连续有多少个1，就表示当前字符占用多少个字节。
+
+
+##### UTF16-编码
+
+UTF16 是JAVA默认的编码， 每次固定读取两个字节。
+
+
 #### 字节流
 
 Java 中的字节流处理的最基本单位为单个字节，它通常用来处理二进制数据。Java 中最基本的两个字节流类是 `InputStream` 和 `OutputStream`，它们分别代表了组基本的输入字节流和输出字节流。`InputStream` 类与 `OutputStream` 类均为抽象类，我们在实际使用中通常使用 Java 类库中提供的它们的一系列子类。
 
 
-以`InputStream`为例，有一个从字节流中读取字节的方法:   
-`public abstract int read() throws IOException;`这一方法的功能是从字节流中读取一个字节，若到了末尾则返回-1，否则返回读入的字节
+以`InputStream`为例，有一个从字节流中读取字节的方法 `read()` 这一方法的功能是从字节流中读取一个字节，若到了末尾则返回-1，否则返回读入的字节
 
-一次读一个字节效率很低(每读一次就会进行一次磁盘io)，inputStream重载了read方法，可以一次读一个字节数组，源码如下:   
+一次读一个字节效率很低(每读一次就会进行一次IO)，inputStream重载了read方法，可以一次读一个字节数组，源码如下:   
 ``` 
 public int read(byte b[]) throws IOException {
     return read(b, 0, b.length);
@@ -55,6 +101,7 @@ public int read(byte b[], int off, int len) throws IOException {
 
     int i = 1;
     try {
+    // 本质上还是调用 read
         for (; i < len ; i++) {
             c = read();
             if (c == -1) {
@@ -67,64 +114,19 @@ public int read(byte b[], int off, int len) throws IOException {
     return i;
 }
 ```
-我们可以看到read(byte[])也是通过循环调用read来实现一次读入一个字节数组，因此本质上来说这个方法也没有使用内存缓存区。要提高读取的效率，应该使用`BufferedInputStream`
+可以看到`read(byte[])`也是通过循环调用read来实现一次读入一个字节数组，因此本质上来说这个方法也没有使用内存缓存区。
+要提高读取的效率，应该使用`BufferedInputStream`等带缓存的实现类
 
 #### 字符流
-##### Unicode编码集
-谈到Unicode首先要说ASCLL码，ASCII 是用来表示英文字符的一种编码规范。每个ASCII字符占用1 个字节，因此，ASCII 编码可以表示的最大字符数是255（00H—FFH）。这对于英文而言，是没有问题的，一般只什么用到前128个(00H--7FH,最高位为0)。而最高位为1 的另128 个字符（80H—FFH）被称为“扩展ASCII”，一般用来存放英文的制表符、部分音标字符等等的一些其它符号。
-
-但是对于中文等比较复杂的语言，255个字符显然不够用，所以后来采用Unicode来解决这个问题，它占用两个字节（0000H—FFFFH）,容纳65536 个字符，这完全可以容纳全世界所有语言文字的编码。在Unicode 里，所有的字符都按一个字符来处理， 它们都有一个唯一的Unicode码。
 
 
+在以上范围内的每个数字都与一个字符相对应，Java中的String类型默认就把字符以Unicode规则编码而后存储在内存中。然而与存储在内存中不同，存储在磁盘上的数据通常有着各种各样的编码方式。使用不同的编码方式，相同的字符会有不同的二进制表示。字符流的工作方式是：
 
-##### 字符流原理
-Java中的字符流处理的最基本的单元是Unicode码元（大小2字节），它通常用来处理文本数据。所谓Unicode码元，也就是一个Unicode代码单元，范围是0x0000~0xFFFF。在以上范围内的每个数字都与一个字符相对应，Java中的String类型默认就把字符以Unicode规则编码而后存储在内存中。然而与存储在内存中不同，存储在磁盘上的数据通常有着各种各样的编码方式。使用不同的编码方式，相同的字符会有不同的二进制表示。字符流的工作方式是：
-- 输出字符流：把要写入文件的字符序列（实际上是Unicode码元序列）转为指定编码方式下的字节序列，然后再写入到文件中
-- 输入字符流：把要读取的字节序列按指定编码方式解码为相应字符序列（实际上是Unicode码元序列）从而可以存在内存中
+- 输入字符流：把要读取的字节序列按指定编码方式解码为相应字符序列从而可以存在内存中
+- 输出字符流：把要写入文件的字符序列转为指定编码方式下的字节序列，然后再写入到文件中
 
-例如:
-``` 
-public class FileWriterDemo {
-    public static void main(String[] args) {
-        FileWriter fileWriter = null;
-        try {
-            try {
-                fileWriter = new FileWriter("demo.txt");
-                fileWriter.write("demo");
-            } finally {
-                fileWriter.close();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-}
-```
-用FileWriter像demo.txt写入了`demo`这四个字符，如果用十六机制编辑器打开文件可以看到`64 65 6D 6F`，我们并没有在代码中指定编码方式，实际上，在我们没有指定时使用的是操作系统的默认字符编码方式来对我们要写入的字符进行编码。
 
- 由于字符流在输出前实际上是要完成Unicode码元序列到相应编码方式的字节序列的转换，所以它会使用内存缓冲区来存放转换后得到的字节序列，等待都转换完毕再一同写入磁盘文件中
- 
- 
- #### 字符流和字节流的区别
- - 字节流操作的基本单元为字节；字符流操作的基本单元为Unicode码元
- - 字节流默认不使用缓冲区；字符流使用缓冲区(转换编码)
- - 字节流通常用于处理二进制数据，实际上它可以处理任意类型的数据，但它不支持直接写入或读取Unicode码元；字符流通常处理文本数据，它支持写入及读取Unicode码元
-
-#### 字符流和字节流的选择
-- 字符流操作对象：
-    - 纯文本
-    - 需要查指定编码表，默认是（GBK）
-- 字节流操作的对象
-    - 图像，音频等文件
-    - 无需指定编码表
-    
-选择合适的流：
-1. 先明确源头和目的：源头使用的是输入流，InputStream或者Reader。目的使用的是输出流，OutputStream或者Writer
-2. 确定操作的对象是那些：纯文本用字符流，否则用字节流
-3. 当明确后，再确定使用哪一个具体的对象：内存，硬盘（比如操作文件的话用FileWriter/FileReader,或者FileInputStream/FileOutputStream），控制台（System）
-
-#### 字符流和字节流的转换
-##### 字符到字节
+##### 字符到字节转换
 
 可以从字符流中获取char[]数组，转换为String，然后调用String的API函数getBytes() 获取到byte[]，然后就可以通过ByteArrayInputStream、ByteArrayOutputStream来实现到字节流的转换。
 
@@ -133,6 +135,7 @@ public class FileWriterDemo {
 用法：`String str = new String(formMsg.getBytes("ISO-8859-1"),"utf-8");`
 
 ##### 字节流到字符流
+
 如下，是一个字节流上传文件到 hadoop hdfs 的工具方法。此处为了避免中文乱码的，将字节流指定编码转换为字符流，然后再用 getBytes("UTF-8") 方法获取相应编码的字节，实现字节流输出。
 ``` 
 /**
@@ -185,11 +188,15 @@ public static boolean upLoadFileToHdfs(InputStream iStream, String pathStr, Stri
 
 
 ### 缓存流
+
 缓冲流是处理流的一种, 它依赖于原始的输入输出流, 它令输入输出流具有1个缓冲区, 显著减少与外部设备的IO次数, 而且提供一些额外的方法。
 
 可见, 缓冲流最大的特点就是具有1个缓冲区，而我们使用缓冲流无非两个目的:
 1. 减少IO次数(提升performance)
 2. 使用一些缓冲流的额外的方法。
+
+> 备注： 这里需要注意的是， 缓存流实现类实际上底层还是调用的对应的被装饰的类的 read 方法(如 FileInputStream 的 read 方法)， 只不过一次性读取了 8K(默认， 可设置大小)数据到成员变量的 buffer 里面， 然后每次通过 buffer类(BufferedInputStream) 的 read 读取的实际上是成员变量 buffer。 如果不使用 buffer 的实现类自己调用 read 一次读取一定量数据(最好是操作系统页大小整数倍) 实际上的性能也差不多
+
 
 `BufferedInputStream`和`BufferedOutputStream`这两个类分别是`FilterInputStream`和`FilterOutputStream`的子类，作为装饰器子类，使用它们可以防止每次读取/发送数据时进行实际的写操作，代表着使用缓冲区,因为他们实现了缓存功能，所有使用`BufferedOutputStream`写完数据后，需要用`flush()`或者`close()`强行将缓存区内容数据写出，否则可能无法写出数据。与之相似还`BufferedReader`和`BufferedWriter`两个类
 
@@ -224,39 +231,7 @@ public static boolean upLoadFileToHdfs(InputStream iStream, String pathStr, Stri
         }catch (IOException e) {
             e.printStackTrace();
         }finally {
-
-            if( bufferedOutputStream != null ){
-                try {
-                    bufferedOutputStream.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            if( bufferedInputStream != null){
-                try {
-                    bufferedInputStream.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            
-            if( inputStream != null ){
-                try {
-                    inputStream.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            
-            if ( outputStream != null ) {
-                try {
-                    outputStream.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-
+            // close 回收流
         }
     }
 }
@@ -273,6 +248,7 @@ Java平台允许我们在内存中创建可复用的Java对象，但一般情况
 
 
 #### 序列化示例
+
 - 若某个类实现了 Serializable 接口，该类的对象就是可序列化的：
     - 创建一个 ObjectOutputStream
     - 调用 ObjectOutputStream 对象的 writeObject(对象) 方法输出可序列化对象。注意写出一次，操作flush()
@@ -449,11 +425,10 @@ private void writeObject(java.io.ObjectOutputStream s)
  我们可以通过在被序列化的类中增加writeObject 和 readObject方法来自定义序列化
 
 参考资料：  
-- [IBM java I/O模型及优化建议](https://www.ibm.com/developerworks/cn/java/j-lo-io-optimize/index.html)
+- [阮一峰-字符编码笔记](http://www.ruanyifeng.com/blog/2007/10/ascii_unicode_and_utf-8.html)
 - [java I/O流](http://blog.csdn.net/zhaoyanjun6/article/details/54292148)
 - [java I/O操作](https://www.cnblogs.com/baixl/p/4170599.html)
 - [java流总结](http://skye.fun/2017/11/11/JAVA%20IO%20%E6%B5%81%E8%AF%BB%E5%86%99%E6%80%BB%E7%BB%93/#more)
-- [字节流和字符流](http://www.cnblogs.com/absfree/p/5415092.html)
 - [Unicode字符集编码方式](https://www.cnblogs.com/benbenalin/p/6921553.html)
 - [理解java对象序列化](http://www.blogjava.net/jiangshachina/archive/2012/02/13/369898.html)
 - [深入分析java序列化](http://www.hollischuang.com/archives/1140)
