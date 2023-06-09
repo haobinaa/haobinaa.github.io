@@ -1,7 +1,7 @@
 ---
 title: pulsar总览
 date: 2022-08-16 09:09:24
-tags: 
+tags: mq
 categories: 中间件
 description: apache pulsar 总览介绍， 与其他MQ中间件设计对比
 ---
