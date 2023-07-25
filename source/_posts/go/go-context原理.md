@@ -665,16 +665,19 @@ func (pc *persistConn) roundTrip(req *transportRequest) (resp *Response, err err
 		case <-pcClosed:
 			// 省略 连接关闭
 		case <-respHeaderTimer:
-			// 省略 响应头超时(区别于下面请求超时)
+			// 省略 响应头超时(区别于下面请求超时)， response header timeout 是一种更加具体的超时， 仅代表服务器响应头超时
+			// response header timeout 可以理解为 java 发送 http 请求设置的 readTimeout(不过这里包含了响应头和响应体)
+			// 因为 response header timeout 是在与服务器建立连接后，等待接收到完整响应头部的最长时间
 		case re := <-resc:
 	        // 省略 收到返回处理
 		case <-cancelChan:
 			// 省略 取消请求
 		case <-ctxDoneChan:
-			// 省略 请求超时
+			// 省略 请求超时， 区别于响应头超时， 覆盖整个请求以及接受响应周期
+			// 这里近似可以理解为 java 的 connectTimeout + readTimeout
 		}
 	}
 }
 ```
 
-可以看到整个 httpClinet 利用 `for + select`的方式去监听 req.Context() 和其他 channel 的请求， 来处理超时和各种情况
+可以看到整个 httpClient 利用 `for + select`的方式去监听 req.Context() 和其他 channel 的请求， 来处理超时和各种情况
