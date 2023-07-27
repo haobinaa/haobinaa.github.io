@@ -142,4 +142,14 @@ Dropped 15 nodes (cum <= 0.16s)
 2. 分析内存使用情况 `go tool pprof http://localhost:6060/debug/pprof/heap`
 3. 阻塞同步分析 `go tool pprof http://localhost:6060/debug/pprof/block`
 4. 锁竞争分析 ` go tool pprof http://localhost:6060/debug/pprof/mutex`
+5. 协程堆栈分析 `go tool pprof http://localhost:6060/debug/pprof/goroutine`
+
+
+#### 可视化分析
+
+pprof 还提供了可视化界面的查看， 有两种操作方式(需要提前安装 `graphviz` 支持):
+1. 在本机操作, 在交互式终端输入 `web`, 此刻会打开浏览器跳转
+2. 如要将服务器/容器上的信息拉到本地分析， 在命令交互的时候会生成 `.pb.gz` 文件， 拉到本地后使用命令如: `go tool pprof -http=:8081 ./pprof.pprof-amd64-linux.goroutine.001.pb.gz`
+即可跳转浏览器查看（有top占用、火焰图等信息）
+备注: 这里生成的文件也可以采取 curl 生成: `curl -o cpu.prof  http://localhost:6060/debug/pprof/profile`
 
