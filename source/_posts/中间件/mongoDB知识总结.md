@@ -169,6 +169,109 @@ MongoDB 支持两种分片算法来满足不同的查询需求：
 MongoDB 3.2 默认使用 WiredTiger 存储引擎， MongoDB 的所有功能都是依靠存储引擎层实现的。
 
 
+#### 底层数据存储
+
+Wired Tiger 在内存和磁盘上的数据结构都 B+ Tree(还支持LSM, 默认 B+ Tree)。
+Wired Tiger 管理数据结构的基本单元是 Page:
+
+![](/images/mongodb/storage_structure.png)
+
+Page 上有3个重要的 list WT_ROW、WT_UPDATE、WT_INSERT:
+- WT_ROW：是从磁盘加载进来的数据数组
+- WT_UPDATE：是记录数据加载之后到下个checkpoint之间被修改的数据
+- WT_INSERT：是记录数据加载之后到下个checkpoint之间新增的数据
+
+#### Cache
+
+MongoDB 不是内存数据库， 在设计上为了效的读写操作存储引擎会最大化的利用内存缓存。当内存频繁和磁盘进行数据页交换的时候， MongoDB的性能会急剧下降。
+
+Wired Tiger 是这样设计利用内存cache， 首先 Wired Tiger 会将整个内存划分为3块：
+- 存储引擎内部cache：用于缓存数据，默认大小 `Max((RAM - 1G)/2,256M )`，服务器16G的话，就是(16-1)/2 = 7.5G 。这个内存不够可能会导致数据库宕机
+- 索引cache：缓存索引信息，默认500M
+- 文件系统cache：这个实际上不是存储引擎管理，是利用的操作系统的文件系统缓存(也就是 Page Cache)，目的是减少内存和磁盘交互,剩下的内存都会用来做这个
+
+引擎cache和文件系统cache在数据结构上是不一样的，文件系统cache是直接加载的内存文件，是经过压缩的数据，可以占用更少的内存空间，相对的就是数据不能直接用，需要解压；而引擎中的数据就是前面提到的B+ Tree，是解压后的，可以直接使用的数据，占有的内存会大一些。
+
+当内存不够用的时候， 就会触发 Evict(内存淘汰)。内存淘汰时机由 `eviction_target（内存使用量）` 和 `eviction_dirty_target（内存脏数据量）` 来控制，而内存淘汰默认是有后台的 evict 线程控制的。但是如果超过一定阈值就会把用户线程也用来淘汰，会严重影响性能，应该避免这种情况。用户线程参与evict的原因，一般是大量的写入导致磁盘IO抗不住了，需要控制写入或者更换磁盘。
+
+| 参数名称 |  默认值  | 含义         |
+|:--------|:--------|:-----------|
+| eviction_target  |  80%  |  当Cache的使用量达到80%时触发evict thread淘汰page  |
+| eviction_trigger  |  90%  |  当Cache的使用量达到90%时触发application thread和evict thread淘汰page  |
+|  eviction_dirty_target  |  5%  |  当“脏数据”所占Cache比例达到5%时触发evict thread淘汰page  |
+|  eviction_dirty_trigger  |  20%  | 当“脏数据”所占Cache比例达到20%时触发application thread和evict thread淘汰page  |
+
+
+#### CheckPoint
+
+MongoDB 的读写都是操作的内存，因此必须要有一定的机制将内存数据持久化到磁盘，这个功能就是 checkpoint 实现的。 checkpoint 主要有两个目的:
+- 将内存里面发生修改的数据写到数据文件进行持久化保存，确保数据一致性
+- 实现数据库在某个时刻意外发生故障，再次启动时，缩短数据库的恢复时间
+
+在 WT引擎里 Checkpoint 本质上相当于一个日志，记录了上次Checkpoint后相关数据文件的变化，每个checkpoint包含一个root page、三个指向磁盘具体位置上pages的列表以及磁盘上文件的大小:
+
+![](/images/mongodb/checkpoint.png)
+
+- root page：指向 B+ Tree 的根节点
+- allocated list pages：上个 checkpoint 结束之后到本checkpoint结束前新分配的 page 列表
+- available list pages：Wired Tiger 分配了但是没有使用的 page，新建page时直接从这里取。
+- discarded list pages：上个 checkpoint 结束之后到本checkpoint结束前被删掉的 page 列表
+
+
+checkpoint 的执行流程如下:
+1. 询集合数据(或系统启动)时，会打开集合对应的数据文件并读取其最新 checkpoint数据
+2. 根据 checkpoint 的 file size truncate 文件。因为只有checkpoint 确认的数据才是真正持久化的数据，它后面的数据可能是最新 checkpoint 之后到宕机之间的数据，不能直接用，需要通过 Journal 日志来回放。
+3. 根据 checkpoint 构建内存的 B+ Tree(live tree), 表示这是当前可以修改的checkpoint结构，用来跟踪后面写操作引起的文件变化；其它历史的checkpoint信息只能读，可以被删除
+4. 数据库 run 起来之后，各种修改操作都是操作 checkpoint 的 B+ Tree，并且会 checkpoint 会有专门的list来记录这些修改和新增的page(available列表中选取可用的page供其使用。随后，这个新的page被加入到checkpoint的allocated列表中)
+5. 在60s一次的checkpoint执行时，会创建新的checkpoint，并且将旧的checkpoint数据合并过来。然后执行 reconcile 将修改的数据刷新到磁盘，并删除旧的checkpoint。这时候会清空allocated，discarded 里面的page，并且将空闲的 page 加到 available里面
+
+![](/images/mongodb/checkpoint_process.png)
+
+#### 事务
+
+
+### chunk 与 rebalance
+
+#### chunk 分裂
+
+chunk 是分片集群的核心概念， chunk 本质上就是由一组 Document 组成的逻辑数据单元。它是分片集群用来管理数据存储和路由的基本单元。
+
+分片集群不会记录每条数据在哪个分片上，它只会记录哪一批（一个chunk）数据存储在哪个分片上，以及这个 chunk 包含哪些范围的数据。而数据与 chunk 之间的关联是有数据的 shard key 的分片算法 f(x) 的值是否在 chunk 的起始范围来确定的。
+
+片集群的 chunk 信息是存在 Config 里面的，而 Config 本质上是一个复制集群。如果你创建一个分片集群，那么你默认会得到两个库，admin和config，其中config库对应的就是分片集群架构里面的Config。其中的包含一个 Collection chunks 里面记录的就是分片集群的全部chunk信息，具体结构如下图：
+- _id：chunk 的唯一标识
+- ns：命名空间，就是 DB.COLLECTION 的结构
+- min：chunk包含数据的 shard key 的 f(x) 最小值
+- max：chunk包含数据的 shard key 的 f(x) 最大值
+- shard：chunk 当前所在分片ID
+
+chunk 是分片集群管理数据的基本单元，本身有一个大小（默认大小是 64M），那么随着 chunk 内的数据不断新增，最终大小会超过限制，这个时候就需要把 chunk 拆分成2个，这个就 chunk 的分裂
+
+导致 chunk 分裂有两个条件，达到任何一个都会触发：
+- 容量达到阈值：就是 chunk 中的数据大小加起来超过阈值，默认是 64M
+- 数据量到达阈值：前面提到了，如果单条数据太小，不加限制的话，一个chunk内数据量可能几十上百万条，这也会影响读写性能，因此 MongoDB 内置了一个阈值，chunk 内数据量超过 25W 条也会分裂。
+
+#### chunk rebalance
+
+chunk 分裂是 MongoDB 保证数据均衡的基础：数据的不断增加，chunk 不断分裂，如果数据不均匀就会导致不同分片上的 chunk 数目出现差异，这就解决了分片集群的数据不均匀问题发现。然后就可以通过将 chunk 从数据多的分片迁移到数据少的分片来实现数据均衡，这个过程就是 rebalance。
+
+执行 rebalance 是有几个前置条件的：
+- 数据库和集合开启了 rebalance 开关，默认是开启的。
+- 当前时间在设置的 rebalance 时间窗，默认没有配置，就是只要检测到了就会执行 rebalance。
+- 集群中分片 chunk 数最大和最小之差超过阈值
+
+
+rebalance 为了尽快完成数据迁移，其设计是尽最大努力迁移，因此是非常消耗系统资源的，在系统配置不高的时候会影响系统正常业务。因此，为了减少其影响需要：
+- 预分片：减少大量数据插入时频繁的分裂和迁移 chunk
+- 设置 rebalance 时间窗
+- 对于可能会影响业务的大规模数据迁移，如扩容分片，可以采取手段迁移的方式来控制迁移速度。
+
+### 一致性&高可用
+
+
+### 参考资料
+- [理解 checkpoint](https://pdai.tech/md/db/nosql-mongo/mongo-y-checkpoint.html)
+
 
 
 
