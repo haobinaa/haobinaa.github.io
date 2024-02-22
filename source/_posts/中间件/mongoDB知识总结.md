@@ -268,6 +268,12 @@ rebalance 为了尽快完成数据迁移，其设计是尽最大努力迁移，�
 
 ### 一致性&高可用
 
+#### MongoDB 的高可用(Raft)
+
+MongoDB 是基于 Raft 来做 Primary 节点的选举， 与其他主从架构类似， 选举的时间点有两个: 快速启动和 Primary 节点异常。
+
+
+
 
 ### 参考资料
 - [理解 checkpoint](https://pdai.tech/md/db/nosql-mongo/mongo-y-checkpoint.html)
