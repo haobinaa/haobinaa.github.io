@@ -176,7 +176,7 @@ epoll_wait 函数会检查 `eventpoll` 对象的就绪的连接 `rdllist` 上是
 1. socket 的数据接收队列有数据到达，会通过进程等待队列的回调函数 `ep_poll_callback` 唤醒红黑树中的节点 `epitem`
 2. `ep_poll_callback` 函数将有数据到达的 `epitem` 添加到 `eventpoll` 对象的就绪队列 `rdllist` 中；
 3. `ep_poll_callback` 函数检查 eventpoll 对象的进程等待队列上是否有等待项，通过回调函数 `default_wake_func` 唤醒这个进程，进行数据的处理；
-4. 当进程醒来后，继续从 `epoll_wait` 时暂停的代码继续执行，把 `rdlist` 中就绪的事件返回给用户进程，让用户进程调用 `recv` 把已经到达内核 `socket` 等待队列的数据拷贝到用户空间使用。
+4. 当进程醒来后，继续从 `epoll_wait` 时暂停的代码继续执行，遍历 `rdlist`， 把 `就绪的事件` 返回给用户进程，让用户进程调用 `recv` 把已经到达内核 `socket` 等待队列的数据拷贝到用户空间使用。
 
 
 ![](/images/io/epoll_wait.png)
@@ -190,6 +190,32 @@ epoll_wait 函数会检查 `eventpoll` 对象的就绪的连接 `rdllist` 上是
 
 - 水平触发(LT)：关注点是数据（读操作缓冲区不为空，写操作缓冲区不为满），epoll_wait总会返回就绪。LT是epoll的默认工作模式
 - 边缘触发(ET)：关注点是变化，只有监视的文件上有数据变化发生（读操作关注有数据写进缓冲区，写操作关注数据从缓冲区取走），epoll_wait才会返回
+
+在 `epoll_wait` 的逻辑中， 当 socket 有数据到达的时候， 会调用 socket 等待队列中的回调函数 `ep_poll_callback` 将 `epoll_item` 放到就绪队列 `rdllist` 中,  LT 与 ET 的区别实际上就是什么时候将 `socket fd`(实际上是 `epoll_item` 持有)从 `rdlist` 就绪队列中移除
+
+对于 ET 来说， 上述第 [4] 步实际上:
+遍历 epoll 的 rdlist，把就绪事件返回给用户进程, 将 socket fd 从 rdlist 中移除
+
+对于 LT 来说， 第 [4] 步会分为两个步骤:
+1. 遍历 epoll 的 rdlist，把就绪事件返回给用户进程, 将 socket fd 从 rdlist 中移除
+2. 如果返回了关心的事件(对于可读事件来说，就是POLL_IN事件)，那么该 socket fd 被重新加入到 epoll 的 rdlist 中
+
+对于可读事件而言，在 ET 模式下，如果某个 socket 有新的数据到达，那么该 socket fd 就会被放入 epoll 的 rdlist，从而 epoll_wait 就一定能收到可读事件的通知。
+于是，我们通常理解的缓冲区状态变化(从无到有)的理解是不准确的，准确的理解应该是是否有新的数据达到缓冲区。
+而在LT模式下，某个sk被探测到有数据可读，那么该 socket fd 会被重新加入到 read_list，那么在该 socket 的数据被全部取走前，下次调用 epoll_wait 就一定能够收到该 socket 的可读事件，从而 epoll_wait 就能返回
+
+
+可以看出LT比ET多了两个操作：
+(1) 对 rdlist 的遍历的时候，对于收集到可读事件的 socket 会重新放入 rdlist；
+(2) 下次 epoll_wait 的时候会再次遍历上次重新放入的 socket，如果 socket 本身没有数据可读了，那么这次遍历就变得多余了
+
+在服务端有海量活跃 socket 的时候，LT模式下，epoll_wait 返回的时候，会有海量的 socket 重新放入 rdlist。
+如果，用户在第一次 epoll_wait 返回的时候，将有数据的 socket 都处理掉了，那么下次 epoll_wait 的时候，上次 epoll_wait 重新入 rdlist 的 socket 被再次遍历就有点多余，这个时候LT确实会带来一些性能损失。
+
+然而，实际上会存在很多多余的遍历么？先不说第一次 epoll_wait 返回的时候，用户进程能否都将有数据返回的 socket 处理掉。在用户处理的过程中，如果该 socket有新的数据上来，那么协议栈发现 socket 已经在 rdlist，那么就不需要再次放入 rdlist，也就是在 LT 模式下，对该sk的再次遍历不是多余的，是有效的。
+同时，我们回归 epoll 高效的场景在于，服务器有海量 socket，但是活跃 socket 较少的情况下才会体现出 epoll 的高效、高性能。因此，在实际的应用场合，绝大多数情况下，ET模式在性能上并不会比LT模式具有压倒性的优势
+
+另外 ET 模式处理的复杂度是要高于 LT的
 
 ### 参考资料
 - [KM文章-mingguangtu-深入学习IO多路复用select/poll/epoll实现原理]
