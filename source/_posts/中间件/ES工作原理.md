@@ -1,5 +1,5 @@
 ---
-title: es工作原理
+title: ES工作原理
 date: 2022-02-13 09:33:53
 tags: es
 categories: 中间件
@@ -247,6 +247,7 @@ PUT test {
 - 优化数据模型、数据规模、查询语句。
 
 ### ES架构优化
+
 #### filesystem cache
  
  ![](/images/es/es-search-process.png)
