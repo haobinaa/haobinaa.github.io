@@ -2,7 +2,9 @@
 title: ES工作原理
 date: 2022-02-13 09:33:53
 tags: es
-categories: 中间件
+categories:
+ - ES
+ - 中间件
 description: 基本概念、读/写原理、优化技巧、部署架构、集群诊断
 ---
 
