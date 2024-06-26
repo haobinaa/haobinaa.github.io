@@ -128,7 +128,53 @@ Force Merge 是非常占用系统资源的， 尽量避免在线上业务期间�
 
 #### 缓存设计优化
 
+在文章开头介绍过 ES 的查询流程， 整个查询流程可以分为汇总后， 可以分为四个阶段的 cache:
+
+![](/images/es/es-cache.png)
+1. 第一层缓存是Elasticsearch的RequestCache，缓存的是整个查询的Shard级别的查询结果，如果数据节点收到重复的查询语句的请求，那么这级缓存就能利用上。
+2. 第二层缓存是Lucene的LRUQueryCache，缓存的是单条子查询语句的查询结果，如果有类似的查询进来，部分子查询重复，那么LRUQueryCache便能够发挥作用。
+3. 第三层缓存是程序内存中的MMAP文件映射缓存，Lucene通过DirectByteBuffer将整个文件或者文件的一部分映射到堆外内存，由操作系统负责获取页面请求和写入文件，Lucene就只需要读取内存数据，这样可以实现非常快速的IO操作。
+4. 第四层缓存是文件系统缓存，是由系统控制的。
+
+
+ES 可以在这些地方配置缓存使用:
+1. 系统缓存 (page cache/buffer cache) ：由 Linux 控制，ES 使用系统页缓存可以减少磁盘的访问次数。如果用户的索引比用户的内存配置小，可以通过配置 `"index.store.type": "mmapfs"` 让ES 尽可能将数据全部装入缓存。（ES 默认使用 NIOFS 读行存，所以默认读行存一定会读盘。）
+2. 分片级请求缓存（Shard Request Cache）：请求级别的查询缓存，主要用于缓存聚合结果跟 suggest 结果。
+3. 节点级查询缓存（Node Query Cache）：Segment 级别的查询缓存，主要用于缓存某个字段的查询结果，并且由节点级别的LRU策略来控制。使用 Filter 可以告知 ES 优先对某些查询语句优先进行缓存。 需要注意的是，当索引过大时，构建Node Query Cache 可能会造成查询毛刺，并占用较多的内存，可以通过 `indices.queries.cache.count` 调节，或者通过 `index.queries.cache.enabled` 关闭。
+
+#### 批量拉取
+
+ES 批量拉取数据的场景下通常有以下几种方式：
+
+1. **from + size** ：非常不建议，ES 默认限制 from + size < 10000，在分布式系统中深度翻页排序的花费会随着分页的深度而成倍增长，如果数据特别大对CPU和内存的消耗会非常巨大甚至会导致OOM。
+
+2. **滚动翻页（Search Scroll）**: 使用 [ES Scroll API](https://www.elastic.co/guide/en/elasticsearch/reference/current/scroll-api.html) 对某次查询的结果生成一个临时的结果快照跟游标 `scroll_id` ，在此之后的增删改查等操作不会影响到这个快照的结果。后续的查询只需要根据这个游标去取数据，直到结果集中返回的 hits 字段为空，就表示遍历结束。需要注意的是，每一个结果快照保存了全部的查询结果 doc 列表，所以会占用大量的资源，同时存在游标过多或者保存时间过长，会非常消耗内存。当不需要 scroll 数据的时候，尽可能快的把 scroll_id 显式删除掉（Delete scroll_id）。  Search_Scroll 在深度翻页场景有如下缺点:
+   1. scroll api 会缓存查询结构， 翻页越深, 内存占用越多， ES 需要处理的数据越多， 导致性能下降
+   2. scroll 是根据快照进行查询，翻页的过程中可能会丢失实时更新的数据
+
+3. **流式翻页（Search After）（7.10之前版本）**：这种方式是通过维护一个实时游标来避免 scroll 的缺点(不再生成游标快照， 并且不受深度翻页的性能影响)，它可以用于实时请求和高并发场景。因为 Search After 读取的并不是不可变的快照，而是依赖于上一页最后一条数据，所以无法跳页请求，用于滚动请求，与Scroll类似，不同之处在于它是无状态的，不需要像Scroll那样在内存中维护一个庞大的对象，所以内存占用较低。需要注意使用这种方式的条件是需要至少指定一个唯一不重复字段来排序。 Search_After 的流程:
+   1. 发送一个查询 dsl， 需要指定排序字段(指定 sort)， 带上 size 参数指定页大小
+   2. 请求成功得到响应， 拿到 `_sort` 中当前响应的最后一个结果
+   3. 下一次查询带上 `search_after` 查询， 值为 `_sort` 返回的结果
+
+
+相比 scroll api， search_after 会更加的高效和实时， 但是 search_after 参数使用上一页中的一组排序值来检索下一页的数据。(增加一个条件查询 排序值 > 上一页排序值 )使用 search_after 需要具有相同查询和排序值的多个搜索请求。 如果在这些请求之间发生刷新，结果的顺序可能会发生变化，从而导致跨页面的结果不一致。
+
+
+4. **流式翻页（Search After PIT）（7.10 以后版本）**： 在 es7.10 版本以后 search after 增加了通过 `pit API（point in time，轻量化视图）`参数来支持一个有状态的翻页查询，能够解决上述的实时性问题
+整体流程如下： 
+   1. 用户发送查询 dsl, 带上 `point_in_time` 参数， 例如 ` "point_in_time": {"keep_alive": "1m"}` 代表 pit 保持打开 1min
+   2. 请求成功会返回一个 `x-elastic-id`, 后续的请求中要使用这个值
+   3. 下一次请求的 `search_after` 中添加 `x-elastic-id` 来进行翻页
+
+ 
+总结:
+- pit 的缓存复用率是比Search Scroll要高的：比如有100w 个Scroll 查询进来，内存中需要缓存100w个Scroll 查询结果。但是pit 缓存的shard 内存引用实际上很多查询之间是可以复用的，按理说内存消耗会更低。
+- search scroll 是有状态的。Search After 原本是无状态的，但是pit 是有状态的，所以pit 解决了Search After 的无状态问题，同时也优化了Search Scroll的内存占用问题
+
+
 ### 参考资料
 - [关于Lucene词典FST深入剖析](https://www.shenyanchao.cn/blog/2018/12/04/lucene-fst/)
 - [KM文章-腾讯云ES让你的查询性能飞起来]
+- [KM文章-通过缓存提升ElasticSearch查询性能]
 - [腾讯云ES：PB日志查询大提速，自治索引查询裁剪详解](https://cloud.tencent.com/developer/article/2171412)
