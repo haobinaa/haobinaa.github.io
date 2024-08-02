@@ -1,7 +1,9 @@
 ---
 title: docker网络原理
 date: 2023-10-26 19:14:18
-tags: docker
+tags: 
+  - docker
+  - 网络
 categories: 云原生
 ---
 ### Docker 网络架构
@@ -166,7 +168,7 @@ Chain DOCKER (2 references)
 
 ### Overlay
 
-Overlay 指的就是在物理网络层上再搭建一层网络，通过某种技术再构建一张相同的逻辑网络。 
+Overlay 指的就是在物理网络层上再搭建一层网络，通过某种技术再构建一张相同的逻辑网络。 这里需要注意的是 overlay 模式， 是需要再 Docker Swarm(集群)环境下创建的
 
 在介绍 overlay 之前， 首先讲一下 `VXlan(Visual eXtensible Local Area Network)`: 通过 VXLAN 技术可以实现在已有三层网络上构建虚拟二层网络，实现主机之间的二层互通。
 VXLAN 的工作原理基于隧道封装技术，将二层的`以太网帧（Ethernet frames）` 封装成四层的 `UDP数据报（datagrams）`（所以 VXLAN 也称为 `mac in udp`），然后在 L3 的网络中传输，效果就像L2的以太网帧在一个广播域中传输一样，实际上是跨越了L3网络，但却感知不到L3网络的存在。具体来说，VXLAN 将二层以太网帧封装在四层 UDP 数据包中，通过源 VTEP（VXLAN Tunnel Endpoint）和目标 VTEP 之间的虚拟隧道进行传输:
