@@ -1,0 +1,171 @@
+---
+title: unsafe.Pointer与uintptr
+date: 2024-10-11 15:01:03
+tags:
+categories: go
+---
+
+### uintptr
+
+- 一个足够大的无符号整型，用来表示内存地址的值，比如 `0xffffffff`
+- 可以进行地址的数值计算
+- uintptr 可以和 `int、int8、int32、uint8` 等整型类型相互转换
+
+使用示例:
+``` 
+func main() {
+    var i int = 1
+    fmt.Println(uintptr(i))
+    fmt.Println(uintptr(2))
+    fmt.Println(uintptr(float32(1)))
+    fmt.Println(int(uintptr(1)))
+    fmt.Println(int32(uintptr(1)))
+    fmt.Println(uint32(uintptr(1)))
+    fmt.Println(uint8(uintptr(1)))
+}
+```
+
+#### uintptr 特殊示例
+
+``` 
+type Num struct {
+	i string
+	j int64
+}
+
+func test2() {
+	n := Num{i: "EDDYCJY", j: 1}
+	nPointer := unsafe.Pointer(&n)
+
+    // 将 uintptr 存储为一个变量
+	ptr := uintptr(nPointer)
+
+	njPointer := (*int64)(unsafe.Pointer(ptr + unsafe.Offsetof(n.j)))
+	*njPointer = 2
+
+	fmt.Println(n)
+}
+```
+
+上面的例子中，将 uintptr 值存储在变量 ptr 中，实际上这是一个错误的用法
+
+golang GC 在任何时候都可能会发生，当 GC 发生时，由于内存整理那么可能会将 n 变量移到到别的位置，那么此时 n 的内存地址就不是 ptr 记录的内存地址了，那么后面使用 ptr 来进行内存地址操作将会出现问题。
+
+### unsafe.Pointer
+
+- 通用型指针，表示任何一个数据类型的指针, **但是无法读取内存中的值，必须转换为某一个具体的指针类型**
+- 任何数据类型的指针都可以转换为 `unsafe.Pointer(unsafe.Pointer` 相当于指针中的 `interface{}`，不过相比数据类型和 `interface{}` 的区别在于 `unsafe.Pointer` 能够随意进行类型转换而不会出现问题)
+- `unsafe.Pointer` 可以转换为任何数据类型的指针
+- `uintptr` 可以转换为 `unsafe.Pointer`（因为 uintptr 存储的是内存地址，因此只要封装一下就可以变成指针，即 unsafe.Pointer）
+- `unsafe.Pointer` 可以转换为 `uintptr`
+
+
+在 golang 中，指针 ptr 是不能直接进行数值计算的，即无法通过加上某个偏移量来变成指向另一个内存地址的指针
+因此，出现了 `uintptr` 来解决这个问题，`unsafe.Pointer` 可以转换为 `uintptr` 来进行数值计算，计算完成得到另一个内存地址后再转换为 `unsafe.Pointer` 变成指针:
+``` 
+func test1() {
+	i := 1
+	ip := &i
+	new_ip := (*int)(unsafe.Pointer(uintptr(unsafe.Pointer(ip)) + 16))
+	fmt.Println(*new_ip)	// 这里的内存地址可能被别的程序使用了，可以是任何值，也可能没被别的程序使用，那么这里的值是 0
+}
+```
+
+上面的例子中 `(*int)((unsafe.Pointer(uintptr(unsafe.Pointer(ip)) + 16)))` 的计算过程是：
+
+- `unsafe.Pointer(ip)` 将 *int 指针 ip 转换为 `unsafe.Pointer` 类型的指针
+- `uintptr(unsafe.Pointer(ip))` 将 `unsafe.Pointer` 指针转换为 `uintptr`，以此获取 `unsafe.Pointer` 指针中的内存地址
+- `uintptr(unsafe.Pointer(ip)) + 16)` 将内存地址进行数值计算，在当前内存地址加上正偏移量 16，得到新的内存地址值
+- `unsafe.Pointer(uintptr(unsafe.Pointer(ip)) + 16)` 将新的内存地址进行封装，转换为 unsafe.Pointer
+- `(*int)(unsafe.Pointer(uintptr(unsafe.Pointer(ip)) + 16))` 将新的 unsafe.Pointer 指针转换为 *int 类型的指针
+
+
+#### unsafe.Pointer 的特殊示例
+
+```
+type Num struct {
+	i string
+	j int64
+}
+
+ 
+func test2() {
+	n := Num{i: "EDDYCJY", j: 1}
+	nPointer := unsafe.Pointer(&n)
+
+    // nPointer 是 string 变量 i 的指针，但是由于 unsafe.Pointer 没有保留类型信息，因此这里可以直接转换为 *int
+	niPointer2 := (*int)(nPointer)
+    // 重新赋值为 int，这里实际上是跳过了类型检查，没有保留类型信息，所以编译器无法检查到该内存地址上类型信息，因为对于计算机来说这里都是 01 二进制
+    // 因此这里对于计算机来说也只是把指针指向的内存地址上的 "EDDYCJY" 修改为 1 而已
+	*niPointer2 = 1
+	fmt.Println(*niPointer2)	// 1
+
+    // 将 j 修改为 2
+	njPointer := (*int64)(unsafe.Pointer(uintptr(nPointer) + unsafe.Offsetof(n.j)))
+	*njPointer = 2
+
+    // 报错，这里输出 n 是会打印 n.i 和 n.j，其中 n.i 在结构体中保存的类型是 string，而这里运行过程中检查到的是 int 类型，因此发现类型错误，报错
+	fmt.Println(n)
+}
+```
+
+可以看出，unsafe.Pointer 由于不会保留类型信息，因此可以绕过检查，直接赋值为不属于原本变量类型的值，并且在使用的时候只要不涉及到类型检查（比如直接输出该指针指向的值），那么就不会报错，一旦涉及到类型检查，那么如果发现类型不符，那么就会报错
+
+
+
+### unsafe.Offsetof
+
+上面情况下， 用 unsafe.Pointer 转成 uintptr 然后去进行偏移量计算没有任何意义。 举例:
+``` 
+func test() {
+	i := 1
+	j := 2
+	ip := &i
+	jp := &j
+    // 计算 i 和 j 之间的内存地址偏移量差值
+	diffp := uintptr(unsafe.Pointer(jp)) - uintptr(unsafe.Pointer(ip))
+    // i 内存地址加上 偏移量差值 得到 j 的内存地址
+	new_ip := (*int)(unsafe.Pointer(uintptr(unsafe.Pointer(ip)) + diffp))
+	*new_ip = 3
+	fmt.Println(*new_ip)	// 3
+	fmt.Println(j)			// 3
+}
+```
+
+一般的内存地址计算都是用在结构体上， 结构体是一段连续的内存空间，内部的多个变量是分配在一段连续的内存空间上的，而结构体指针实际上指向的是结构体第一个变量的内存地址，即结构体的起始地址
+因此，如果要获取结构体中任意一个变量的 `指针/内存地址`，那么只需要通过 **第一个变量的起始地址（结构体指针 uintptr 值）+ 变量的偏移量** 即可获取到对应变量的内存地址
+
+获取结构体变量的内存偏移量有两种方式:
+1. 结构体基地址 + 目标变量偏移量
+2. 通过 `unsafe.Offsetof`，它能够自动获取到结构体中某个变量的偏移量
+
+
+unsafe.Offsetof 例子:
+``` 
+type Num struct {
+	i string
+	j int64
+}
+
+func test2() {
+	n := Num{i: "EDDYCJY", j: 1}
+    // 将结构体指针转换为 unsafe.Pointer，实际上这里也是在转换 n.i 的指针
+    // &n 指针中保留着结构体 Num 的信息，因此它能够直接访问 &n.i 和 &n.j
+    // 而转换为 unsafe.Pointer 后，类似于转换成了 interface{}，没有保留 Num 的结构体信息，因此 nPointer 无法直接访问 nPointer.i 和 nPointer.j
+	nPointer := unsafe.Pointer(&n)
+
+    // 将 unsafe.Pointer 转换为 i 对应的 string 类型指针，重新赋值
+	niPointer := (*string)(nPointer)
+	*niPointer = "煎鱼"
+
+    // 加上 n.j 的偏移量，获取 j 的指针，重新赋值
+	njPointer := (*int64)(unsafe.Pointer(uintptr(nPointer) + unsafe.Offsetof(n.j)))
+	*njPointer = 2
+
+	fmt.Println(n)	// {煎鱼 2}
+}
+```
+
+
+### 参考资料:
+- [go 指针](https://github.com/1471104698/Go-Learning/blob/master/%E6%8C%87%E9%92%88.md)
