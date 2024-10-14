@@ -583,12 +583,14 @@ type entry struct {
     // 就是包装了一下 unsafe.Pointer
 	p atomic.Pointer[any]
 }
+
+
+// expunged is an arbitrary pointer that marks entries which have been deleted
+// from the dirty map.
+// expunged 标识 p 已经从 dirty 里面删除了
+var expunged = new(any)
 ```
 
-这里 entry 的 p 有三种状态:
-1. `p == nil`: 键值已经被删除，且 `m.dirty == nil`
-2. `p == expunged`: 键值已经被删除，但 `m.dirty!=nil` 且 m.dirty 不存在该键值（expunged 实际是空接口指针）
-3. 除以上情况，则键值对存在，存在于 m.read.m 中，如果 m.dirty!=nil 则也存在于 m.dirty
 
 
 #### 操作源码
@@ -646,7 +648,7 @@ func (m *Map) Store(key, value any) {
 
 func (m *Map) Swap(key, value any) (previous any, loaded bool) {
 	read := m.loadReadOnly()
-	// 如果 read 里面存在， 则尝试更新 entry
+	// 如果 read 里面存在， 则尝试更新 entry（CAS 操作， 保证了并发可见性）
 	if e, ok := read.m[key]; ok {
 		if v, ok := e.trySwap(&value); ok {
 			if v == nil {
@@ -657,20 +659,23 @@ func (m *Map) Swap(key, value any) (previous any, loaded bool) {
 	}
     
     // 如果上一步更新 entry 没成功
+    
+    // 先加锁
 	m.mu.Lock()
-	read = m.loadReadOnly()
 	// 从 read 读取一遍
+	
+	read = m.loadReadOnly()
+	
+	// case 1: 如果 read 存在
 	if e, ok := read.m[key]; ok {
-	    // case 1: 如果 read 存在
+		// 如果 p 是 expunged, 则需要先将 entry 赋值给 dirty（因为 expunged 数据不会留在 dirty）
 		if e.unexpungeLocked() {
-			// The entry was previously expunged, which implies that there is a
-			// non-nil dirty map and this entry is not in it.
-			// 如果 p 是 expunged, 则需要先将 entry 赋值给 dirty（因为 expunged 数据不会留在 dirty）
 			m.dirty[key] = e
 		}
-		// 更新 entry
+		// 更新 entry, 返回老的 value
 		if v := e.swapLocked(&value); v != nil {
 			loaded = true
+			// 老的 value 赋值给 previous
 			previous = *v
 		}
 	} else if e, ok := m.dirty[key]; ok {
@@ -681,10 +686,11 @@ func (m *Map) Swap(key, value any) (previous any, loaded bool) {
 		}
 	} else {
 	    // 如果 read 和 dirty 都不存在
+	   
+		// 如果 amended 为 false(dirty 没有比 read 多数据) ， 则代表进来的是一个新的 key
 		if !read.amended {
 			// We're adding the first new key to the dirty map.
 			// Make sure it is allocated and mark the read-only map as incomplete.
-			// 如果 amended 为 false ， 则调用 dirtyLocked 将 read 拷贝到 dirty（除了被标记删除的数据）
 			m.dirtyLocked()
 			// 然后将 amended 改为 true
 			m.read.Store(&readOnly{m: read.m, amended: true})
@@ -696,4 +702,101 @@ func (m *Map) Swap(key, value any) (previous any, loaded bool) {
 	return previous, loaded
 }
 
+// 更新 entry 的值， 如果 p == expunged， 则更新失败
+func (e *entry) trySwap(i *any) (*any, bool) {
+	for {
+		p := e.p.Load()
+		if p == expunged {
+			return nil, false
+		}
+		if e.p.CompareAndSwap(p, i) {
+			return p, true
+		}
+	}
+}
+
+// 判断 p 是否为 expunged
+// 如果 entry 的值是 expunged, 那么之前一定存在于 dirty
+// 注意， 这里是个 cas 操作， 只有 entry 为 expunged 才会返回 true， 并且把 p 置为 nil
+func (e *entry) unexpungeLocked() (wasExpunged bool) {
+	return e.p.CompareAndSwap(expunged, nil)
+}
+
+// 将 read 里面(不为 expunged)的值都赋给 dirty， 并且把标记为 nil 的都置为 expunged
+// 什么时候将 expunged 的值删除？ 在 missLock 将 dirty 给 read 的时候就覆盖这个值
+func (m *Map) dirtyLocked() {
+	if m.dirty != nil {
+		return
+	}
+
+	read := m.loadReadOnly()
+	m.dirty = make(map[any]*entry, len(read.m))
+	// 循环将 read 的数据拷贝到 dirty， 并删除被标记为 nil 的 entry
+	for k, e := range read.m {
+		if !e.tryExpungeLocked() {
+			m.dirty[k] = e
+		}
+	}
+}
+
+// 确保为 nil 的 entry 被置为 expunged
+func (e *entry) tryExpungeLocked() (isExpunged bool) {
+	p := e.p.Load()
+	// 如果 p 为 nil， 则循环 cas 将 p 置为 expunged
+	for p == nil {
+		if e.p.CompareAndSwap(nil, expunged) {
+			return true
+		}
+		p = e.p.Load()
+	}
+	// 如果p不是nil，检查它是否等于expunged，如果是，则返回true，表示条目已被删除
+	return p == expunged
+}
+```
+
+delete 过程:
+``` 
+// Delete deletes the value for a key.
+func (m *Map) Delete(key any) {
+	m.LoadAndDelete(key)
+}
+
+func (m *Map) LoadAndDelete(key any) (value any, loaded bool) {
+	read := m.loadReadOnly()
+	e, ok := read.m[key]
+	// read 不存在则查询 dirty
+	if !ok && read.amended {
+		m.mu.Lock()
+		read = m.loadReadOnly()
+		e, ok = read.m[key]
+		if !ok && read.amended {
+			e, ok = m.dirty[key]
+			delete(m.dirty, key)
+			// Regardless of whether the entry was present, record a miss: this key
+			// will take the slow path until the dirty map is promoted to the read
+			// map.
+			m.missLocked()
+		}
+		m.mu.Unlock()
+	}
+	// read 查询到 entry 后执行删除
+	if ok {
+		return e.delete()
+	}
+	return nil, false
+}
+
+func (e *entry) delete() (value any, ok bool) {
+	for {
+		p := e.p.Load()
+		if p == nil || p == expunged {
+			return nil, false
+		}
+		 // 将 entry.p 标记为 nil，数据并没有实际删除
+        // 真正删除数据并被被置为 expunged，是在 Store 的 tryExpungeLocked 中
+		if e.p.CompareAndSwap(p, nil) {
+			return *p, true
+		}
+	}
+}
 ```
