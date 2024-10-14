@@ -536,3 +536,164 @@ func mapiterinit(t *maptype, h *hmap, it *hiter) {
 	mapiternext(it)
 }
 ```
+
+### 并发安全 sync.map
+
+map 本身是不支持并发写的， map 写的时候就会置一个 `hashWriting`  标志位， 并且会进行判断， 如果已经是在写的状态就会 panic:
+``` 
+// 写的时候置标志位
+// Set hashWriting after calling t.hasher, since t.hasher may panic,
+// in which case we have not actually done a write.
+h.flags ^= hashWriting
+
+
+// 读写都会判断标志位
+if h.flags&hashWriting != 0 {
+    fatal("concurrent map read and map write")
+}
+```
+
+官方还提供了并发安全的 `sync.map` 来应对并发场景
+
+#### 数据结构
+
+``` 
+type Map struct {
+    // 加锁作用，保护 dirty 字段
+    mu Mutex
+    // 只读的数据，实际数据类型为 readOnly
+    read atomic.Pointer[readOnly]
+    // 最新写入的数据
+    dirty map[interface{}]*entry
+    // 计数器，每次需要读 dirty 则 +1
+    misses int
+}
+
+
+// readonly 结构
+type readOnly struct {
+    // 内建 map
+    m  map[interface{}]*entry
+    // 表示 dirty 里存在 read 里没有的 key，通过该字段决定是否加锁读 dirty
+    amended bool
+}
+
+// 存储值的 entry 
+type entry struct {
+    // 就是包装了一下 unsafe.Pointer
+	p atomic.Pointer[any]
+}
+```
+
+这里 entry 的 p 有三种状态:
+1. `p == nil`: 键值已经被删除，且 `m.dirty == nil`
+2. `p == expunged`: 键值已经被删除，但 `m.dirty!=nil` 且 m.dirty 不存在该键值（expunged 实际是空接口指针）
+3. 除以上情况，则键值对存在，存在于 m.read.m 中，如果 m.dirty!=nil 则也存在于 m.dirty
+
+
+#### 操作源码
+
+load 过程:
+``` 
+
+func (m *Map) Load(key interface{}) (value interface{}, ok bool) {
+    // 首先尝试从 read 中读取 readOnly 对象
+    read, _ := m.read.Load().(readOnly)
+    e, ok := read.m[key]
+
+    // 如果不存在则尝试从 dirty 中获取
+    if !ok && read.amended {
+        m.mu.Lock()
+        // 由于上面 read 获取没有加锁，为了安全再检查一次
+        read, _ = m.read.Load().(readOnly)
+        e, ok = read.m[key]
+
+        // 确实不存在则从 dirty 获取
+        if !ok && read.amended {
+            e, ok = m.dirty[key]
+            // 调用 miss 的逻辑
+            m.missLocked()
+        }
+        m.mu.Unlock()
+    }
+
+    if !ok {
+        return nil, false
+    }
+    // 从 entry.p 读取值
+    return e.load()
+}
+
+func (m *Map) missLocked() {
+    m.misses++
+    // 如果小于 dirty 的数量直接返回
+    if m.misses < len(m.dirty) {
+        return
+    }
+    // 当 miss 积累过多，会将 dirty 存入 read，然后 将 amended = false，且 m.dirty = nil
+    m.read.Store(readOnly{m: m.dirty})
+    m.dirty = nil
+    m.misses = 0
+}
+```
+
+
+store 过程:
+``` 
+func (m *Map) Store(key, value any) {
+	_, _ = m.Swap(key, value)
+}
+
+func (m *Map) Swap(key, value any) (previous any, loaded bool) {
+	read := m.loadReadOnly()
+	// 如果 read 里面存在， 则尝试更新 entry
+	if e, ok := read.m[key]; ok {
+		if v, ok := e.trySwap(&value); ok {
+			if v == nil {
+				return nil, false
+			}
+			return *v, true
+		}
+	}
+    
+    // 如果上一步更新 entry 没成功
+	m.mu.Lock()
+	read = m.loadReadOnly()
+	// 从 read 读取一遍
+	if e, ok := read.m[key]; ok {
+	    // case 1: 如果 read 存在
+		if e.unexpungeLocked() {
+			// The entry was previously expunged, which implies that there is a
+			// non-nil dirty map and this entry is not in it.
+			// 如果 p 是 expunged, 则需要先将 entry 赋值给 dirty（因为 expunged 数据不会留在 dirty）
+			m.dirty[key] = e
+		}
+		// 更新 entry
+		if v := e.swapLocked(&value); v != nil {
+			loaded = true
+			previous = *v
+		}
+	} else if e, ok := m.dirty[key]; ok {
+	    // case 2: read 里面不存在， 但是 dirty 存在， 则用值更新 entry
+		if v := e.swapLocked(&value); v != nil {
+			loaded = true
+			previous = *v
+		}
+	} else {
+	    // 如果 read 和 dirty 都不存在
+		if !read.amended {
+			// We're adding the first new key to the dirty map.
+			// Make sure it is allocated and mark the read-only map as incomplete.
+			// 如果 amended 为 false ， 则调用 dirtyLocked 将 read 拷贝到 dirty（除了被标记删除的数据）
+			m.dirtyLocked()
+			// 然后将 amended 改为 true
+			m.read.Store(&readOnly{m: read.m, amended: true})
+		}
+		// 将新的值写入 dirty
+		m.dirty[key] = newEntry(value)
+	}
+	m.mu.Unlock()
+	return previous, loaded
+}
+
+```
