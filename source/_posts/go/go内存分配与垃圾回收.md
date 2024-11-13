@@ -289,6 +289,13 @@ Golang团队遵循上述两种不变式提到的原则，分别提出了两种�
 - 堆上被删除的对象标记为灰色
 - 堆上新添加的对象标记为灰色
 
+![](/images/go/mem/mix-1.png)
+![](/images/go/mem/mix-2.png)
+![](/images/go/mem/mix-3.png)
+![](/images/go/mem/mix-4.png)
+![](/images/go/mem/mix-5.png)
+![](/images/go/mem/mix-6.png)
+![](/images/go/mem/mix-7.png)
 
 
 
