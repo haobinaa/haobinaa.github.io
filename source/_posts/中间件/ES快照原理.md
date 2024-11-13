@@ -2,9 +2,7 @@
 title: ES快照原理
 date: 2024-03-08 09:49:05
 tags: es
-categories:
-  - ES
-  - 中间件
+categories: 中间件
 ---
 
 ### ES Snapshot 快照 概览

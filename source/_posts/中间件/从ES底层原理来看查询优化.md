@@ -4,9 +4,7 @@ date: 2024-06-20 20:23:57
 tags: 
   - es
   - 算法
-categories:
-  - ES
-  - 中间件
+categories: 中间件
 ---
 
 ###  ES 底层设计概览
