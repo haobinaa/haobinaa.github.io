@@ -1,6 +1,6 @@
 ---
-title: ES工作原理
-date: 2022-02-13 09:33:53
+title: ES概念以及基本原理
+date: 2023-02-13 09:33:53
 tags: es
 categories: 中间件
 ---
