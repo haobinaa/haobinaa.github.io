@@ -335,6 +335,14 @@ func (rw *RWMutex) Lock() {
 ```
 之前说如果有写锁介入，等待读锁的 readerCount 应该是实际介入读锁流程的 goroutine 数量减 `rwmutexMaxReader`， 在这里也体现了
 
+另外：
+r代表着在写锁加锁的那一刻（是一个瞬时值，可能会变），已经获得读锁的reader数量，通过过对readerWait赋值和判断，决定是否需要等待信号量；那么问题来了，既然r是一个瞬时值，如果r已经变了，怎么保证readerWait是准的，例如：
+
+在执行这行代码时，r=5，代表有5个reader获得了读锁，此时readerWait==0: `r := rw.readerCount.Add(-rwmutexMaxReaders) + rwmutexMaxReaders`
+
+而在执行下面这行之前，有2个reader已经释放读锁，此时readerWait==-2，再执行下面这样代码后: `atomic.AddInt32(&rw.readerWait, r)` readerWait==3，这样设计的精妙之处就在于
+
+不管readerWait中间如何变化，只要在使用的那一刻他是最终准确的就可以，所以严格意义上讲readerWait记录的是已经持有读锁的reader数量，或者 **自有写锁pending那一刻来，被释放的读锁的负数量**
 
 
 解锁流程:
