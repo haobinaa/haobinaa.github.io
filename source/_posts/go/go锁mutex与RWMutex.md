@@ -271,7 +271,7 @@ type RWMutex struct {
 - `w`： 内置的一把普通互斥锁 sync.Mutex；
 - `writerSem`：关联写锁阻塞队列的信号量；
 - `readerSem`：关联读锁阻塞队列的信号量；
-- `readerCount`：正常情况下等于介入读锁流程的 goroutine 数量；当 goroutine 接入写锁流程时，该值为**实际介入读锁流程的 goroutine 数量减 `rwmutexMaxReaders`**.
+- `readerCount`：正常情况下等于介入读锁流程的 goroutine 数量；当 goroutine 接入写锁流程时，该值为**实际介入读锁流程的 goroutine 数量减 `rwmutexMaxReaders`(显然这个是一个负数)**.
 - `readerWait`：记录在当前 goroutine 获取写锁前，还需要等待多少个 goroutine 释放读锁
 
 #### 读锁流程
@@ -280,13 +280,14 @@ type RWMutex struct {
 ``` 
 func (rw *RWMutex) RLock() {
     // 将持有或等待写锁的 goroutine +1
+    // readerCount +1 后仍然是负数， 就代表此刻有写锁在等待或持有锁
+    // 将当前 goroutine 挂起放入读锁阻塞队列
     if atomic.AddInt32(&rw.readerCount, 1) < 0 {
-        // 走到这里说明有写锁未释放， 所以将 goroutine 放入读锁阻塞队列挂起等待
         runtime_SemacquireMutex(&rw.readerSem, false, 0)
     }
 }
 ```
-这里需要注意的是， 当 `readerCount` +1 后的值仍然小于0，说明有 goroutine 未释放写锁，因此将当前 goroutine 添加到读锁的阻塞队列中并阻塞挂起
+这里需要注意的是， 当 `readerCount` +1 后的值仍然小于0，说明有 goroutine 未释放写锁，因此将当前 goroutine 添加到读锁的阻塞队列中并阻塞挂起(读饥饿策略)
 
 
 解锁流程:
@@ -323,7 +324,7 @@ func (rw *RWMutex) rUnlockSlow(r int32) {
 func (rw *RWMutex) Lock() {
     // 用内置互斥锁加锁
     rw.w.Lock()
-    // 先对 readerCount 进行减少 -rwmutexMaxReaders 的原子操作
+    // 先对 readerCount 进行减少 -rwmutexMaxReaders 的原子操作， 让 readerCount 变为负数(表示有写锁持有或等待)
     // 然后加上 rwmutexMaxReaders 给 r 加回去
     r := atomic.AddInt32(&rw.readerCount, -rwmutexMaxReaders) + rwmutexMaxReaders
     // 如果存在未释放读锁的 goroutine， 给 readerWait 加上读锁的数量， 并将当前 goroutine 挂起
@@ -332,6 +333,8 @@ func (rw *RWMutex) Lock() {
     }
 }
 ```
+之前说如果有写锁介入，等待读锁的 readerCount 应该是实际介入读锁流程的 goroutine 数量减 `rwmutexMaxReader`， 在这里也体现了
+
 
 
 解锁流程:
@@ -349,5 +352,14 @@ func (rw *RWMutex) Unlock() {
     rw.w.Unlock()
 }
 ```
-之前说如果有写锁介入，等待读锁的 readerCount 应该是实际介入读锁流程的 goroutine 数量减 rwmutexMaxReader， 在这里也体现了
+
+#### 读写锁获取锁的优先级
+
+基于对读和写操作的优先级，读写锁的设计和实现也分成三类:
+
+1. `Read-preferring`： 读优先策略，可实现最大并发性，但如果读操作密集，会导致写锁饥饿。因为只要一个读取线程持有锁，写入线程就无法获取锁。如果有源源不断的读操作，写锁只能等待所有读锁释放后才能获取到(写锁饥饿)。
+2. `Writer-preferring`：写优先的策略，可以保证即便在读密集的场景下，写锁也不会饥饿；只要有一个写锁申请加锁，那么就会阻塞后续的所有读锁加锁行为（已经获取到读锁的reader不受影响，写锁仍然要等待这些读锁释放之后才能加锁）
+3. `Unspecified(不指定)`：不区分 reader 和 writer 优先级，中庸之道，读写性能不是最优，但是可以避免饥饿问题
+
+RWMutex 采取的就是写锁优先策略
 
